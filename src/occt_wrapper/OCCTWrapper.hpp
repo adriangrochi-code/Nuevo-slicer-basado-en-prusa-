@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef occtwrapper_OCCTWrapper_hpp_
+#define occtwrapper_OCCTWrapper_hpp_
 
 #include <array>
 #include <string>
@@ -25,3 +26,5 @@ struct OCCTResult {
 using LoadStepFn = bool (*)(const char *path, OCCTResult* occt_result, std::optional<std::pair<double, double>> deflections);
 
 }; // namespace Slic3r
+
+#endif // occtwrapper_OCCTWrapper_hpp_

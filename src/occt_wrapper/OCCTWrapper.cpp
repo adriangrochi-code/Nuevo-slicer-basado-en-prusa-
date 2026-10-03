@@ -4,7 +4,6 @@
 
 #include <cassert>
 
-
 #ifdef _WIN32
 #define DIR_SEPARATOR '\\'
 #else
@@ -23,7 +22,7 @@
 #include "TopExp_Explorer.hxx"
 #include "BRep_Tool.hxx"
 #include "admesh/stl.h"
-#include "Slic3r/Domain/Types.hpp"
+#include "libslic3r/Point.hpp"
 
 const double STEP_TRANS_CHORD_ERROR = 0.005;
 const double STEP_TRANS_ANGLE_RES = 1;
@@ -135,7 +134,7 @@ try {
                                       deflections.has_value() ? deflections.value().second : STEP_TRANS_ANGLE_RES, true);
         res->volumes.emplace_back();
 
-        std::vector<Domain::Vec3f> vertices;
+        std::vector<Vec3f>      vertices;
         std::vector<stl_facet> &facets = res->volumes.back().facets;
         for (TopExp_Explorer anExpSF(namedSolid.solid, TopAbs_FACE); anExpSF.More(); anExpSF.Next()) {
             const int aNodeOffset = int(vertices.size());
@@ -150,12 +149,13 @@ try {
             for (Standard_Integer aNodeIter = 1; aNodeIter <= aTriangulation->NbNodes(); ++aNodeIter) {
                 gp_Pnt aPnt = aTriangulation->Node(aNodeIter);
                 aPnt.Transform(aTrsf);
-                vertices.emplace_back(Domain::Vec3f(float(aPnt.X()), float(aPnt.Y()), float(aPnt.Z())));
+                vertices.emplace_back(std::move(Vec3f(float(aPnt.X()), float(aPnt.Y()), float(aPnt.Z()))));
             }
 
             // Now copy the facets.
             const TopAbs_Orientation anOrientation = anExpSF.Current().Orientation();
             for (Standard_Integer aTriIter = 1; aTriIter <= aTriangulation->NbTriangles(); ++aTriIter) {
+                const int aTriangleOffet = int(facets.size());
                 Poly_Triangle aTri = aTriangulation->Triangle(aTriIter);
 
                 Standard_Integer anId[3];

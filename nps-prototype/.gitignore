@@ -1,9 +1,0 @@
-__pycache__/
-*.egg-info/
-.pytest_cache/
-build/
-dist/
-out/
-*.gcode
-!examples/*.gcode
-!examples/cr5proh/*.gcode

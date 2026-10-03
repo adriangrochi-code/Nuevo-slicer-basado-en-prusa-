@@ -16,7 +16,7 @@
 
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "libslic3r/SVG.hpp"
 
 #include "seq_utilities.hpp"
 
@@ -26,7 +26,6 @@
 
 using namespace Slic3r;
 using namespace Sequential;
-using Biz::Algorithms::SVG::SVG;
 
 
 /*----------------------------------------------------------------*/

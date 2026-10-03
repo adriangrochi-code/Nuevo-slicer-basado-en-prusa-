@@ -1,13 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-#include "Slic3r/Biz/Algorithms/LineUtils.hpp"
+#include <libslic3r/SLA/SupportIslands/LineUtils.hpp>
 
 using namespace Slic3r;
-
-using Domain::coord_t;
-using Domain::Point;
-using Domain::Line;
-using Slic3r::Biz::Algorithms::PointUtils;
-using Slic3r::Biz::Algorithms::LineUtils;
+using namespace Slic3r::sla;
 
 TEST_CASE("Intersection point", "[Utils], [LineUtils]")
 {

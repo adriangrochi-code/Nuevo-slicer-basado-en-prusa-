@@ -6,7 +6,7 @@
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "libslic3r/SVG.hpp"
 
 using namespace Slic3r;
 using namespace Catch;

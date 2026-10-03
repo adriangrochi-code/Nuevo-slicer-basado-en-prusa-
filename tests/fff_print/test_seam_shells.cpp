@@ -2,8 +2,6 @@
 #include <catch2/catch_approx.hpp>
 #include <filesystem>
 #include <fstream>
-
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "test_data.hpp"
@@ -11,7 +9,6 @@
 #include "libslic3r/GCode/SeamShells.hpp"
 
 using namespace Slic3r;
-using namespace Slic3r::Biz;
 using namespace Slic3r::Seams;
 using namespace Catch;
 
@@ -28,7 +25,7 @@ struct ProjectionFixture
     ProjectionFixture() {
         extrusions.emplace_back(
             Polygon{extrusion_path},
-            Algorithms::Polygon::get_bounding_box(extrusion_path),
+            extrusion_path.bounding_box(),
             extrusion_width, island_boundary,
             Seams::Geometry::Overhangs{}
         );

@@ -1,7 +1,0 @@
-kind: filament
-inherits:
-- '*PA*'
-name: Generic PA
-id: Generic PA
-values:
-  filament_vendor: Generic

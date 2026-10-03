@@ -1,12 +1,9 @@
-#include "Slic3r/Biz/Algorithms/Color.hpp"
-#include "Slic3r/Domain/Color.hpp"
-
 #include <catch2/catch_test_macros.hpp>
+#include "libslic3r/libslic3r.h"
 
-using Slic3r::Domain::ColorRGB;
+#include "libslic3r/Color.hpp"
 
-using Slic3r::Biz::Algorithms::Color::decode_color;
-using Slic3r::Biz::Algorithms::Color::encode_color;
+using namespace Slic3r;
 
 SCENARIO("Color encoding/decoding cycle", "[Color]") {
     GIVEN("Color") {

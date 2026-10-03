@@ -10,9 +10,9 @@
 #include <unordered_set>
 
 #include "libslic3r/libslic3r.h"
-#include "Slic3r/Biz/Format/OBJ.hpp"
+#include "libslic3r/Format/OBJ.hpp"
 #include "libslic3r/SLAPrint.hpp"
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
 #include "libslic3r/SLA/SupportPointGenerator.hpp"
@@ -20,7 +20,7 @@
 #include "libslic3r/SLA/ConcaveHull.hpp"
 #include "libslic3r/MTUtils.hpp"
 
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "libslic3r/SVG.hpp"
 
 using namespace Slic3r;
 using Catch::Approx;
@@ -31,7 +31,7 @@ enum e_validity {
     ASSUME_NO_REPAIR = 4
 };
 
-void check_validity(const Domain::TriangleMesh &input_mesh,
+void check_validity(const TriangleMesh &input_mesh,
                     int flags = ASSUME_NO_EMPTY | ASSUME_MANIFOLD |
                                 ASSUME_NO_REPAIR);
 
@@ -39,7 +39,7 @@ struct PadByproducts
 {
     ExPolygons   model_contours;
     ExPolygons   support_contours;
-    Domain::TriangleMesh mesh;
+    TriangleMesh mesh;
 };
 
 void test_concave_hull(const ExPolygons &polys);
@@ -61,7 +61,7 @@ struct SupportByproducts
     std::vector<float>      slicegrid;
     std::vector<ExPolygons> model_slices;
     sla::SupportTreeBuilder suptree_builder;
-    Domain::TriangleMesh            input_mesh;
+    TriangleMesh            input_mesh;
 };
 
 const constexpr float CLOSING_RADIUS = 0.005f;
@@ -73,7 +73,7 @@ void check_support_tree_integrity(const sla::SupportTreeBuilder &stree,
 void test_supports(const std::string          &obj_filename,
                    const sla::SupportTreeConfig   &supportcfg,
                    const sla::HollowingConfig &hollowingcfg,
-                   const Domain::SLA::DrainHoles      &drainholes,
+                   const sla::DrainHoles      &drainholes,
                    SupportByproducts          &out);
 
 inline void test_supports(const std::string &obj_filename,
@@ -100,7 +100,7 @@ void test_support_model_collision(
     const std::string          &obj_filename,
     const sla::SupportTreeConfig   &input_supportcfg,
     const sla::HollowingConfig &hollowingcfg,
-    const Domain::SLA::DrainHoles      &drainholes);
+    const sla::DrainHoles      &drainholes);
 
 inline void test_support_model_collision(
     const std::string        &obj_filename,
@@ -134,8 +134,8 @@ long raster_pxsum(const sla::RasterGrayscaleAA &raster);
 
 double predict_error(const ExPolygon &p, const sla::PixelDim &pd);
 
-Domain::SLA::SupportPoints calc_support_pts(
-    const Domain::TriangleMesh &                      mesh,
+sla::SupportPoints calc_support_pts(
+    const TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg = {});
 
 #endif // SLA_TEST_UTILS_HPP

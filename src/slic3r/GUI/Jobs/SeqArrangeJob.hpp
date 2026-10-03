@@ -3,11 +3,10 @@
 
 #include "Job.hpp"
 
-namespace Slic3r::Domain {
-class Model;
-} // namespace Slic3r::Domain
-
 namespace Slic3r {
+
+class Model;
+
 
 class SeqArrange;
 class DynamicPrintConfig;

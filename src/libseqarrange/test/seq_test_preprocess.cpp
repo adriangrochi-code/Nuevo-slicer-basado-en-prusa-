@@ -21,8 +21,7 @@
 #include <vector>
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
-#include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "libslic3r/SVG.hpp"
 
 #include <z3++.h>
 
@@ -75,12 +74,9 @@ static Polygon scale_UP(const Polygon &polygon, double x_pos, double y_pos)
     Polygon poly = polygon;
 
     for (unsigned int i = 0; i < poly.points.size(); ++i)
-    {
-        using Slic3r::Biz::Algorithms::Point::round;
-	    poly.points[i] = Point(round(Vec2d{
-            poly.points[i].x() * SCALE_FACTOR + x_pos * SCALE_FACTOR,
-			poly.points[i].y() * SCALE_FACTOR + y_pos * SCALE_FACTOR
-        }).cast<coord_t>());
+    {	
+	poly.points[i] = Point(poly.points[i].x() * SCALE_FACTOR + x_pos * SCALE_FACTOR,
+			       poly.points[i].y() * SCALE_FACTOR + y_pos * SCALE_FACTOR);
     }
 
     return poly;
@@ -112,7 +108,7 @@ TEST_CASE("Preprocessing test 1", "[Sequential Arrangement Preprocessing]")
 
     for (unsigned int i = 0; i < test_polygons.size(); ++i)
     {
-	Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_1.svg");
+	SVG preview_svg("preprocess_test_1.svg");
 	Polygon display_polygon = scale_UP(test_polygons[i], 1000, 1000);
 	preview_svg.draw(display_polygon, "blue");
 	preview_svg.Close();
@@ -153,7 +149,7 @@ void preprocessing_test_2(void)
     {
 	Polygon scale_down_polygon;
 	scaleDown_PolygonForSequentialSolver(PRUSA_PART_POLYGONS[i], scale_down_polygon);
-	Slic3r::Biz::Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
+	scale_down_polygon.make_counter_clockwise();
 	polygons.push_back(scale_down_polygon);
 	unreachable_polygons.push_back(scale_down_polygon);
     }
@@ -210,7 +206,7 @@ void preprocessing_test_2(void)
 	    }
 	    #endif
 	
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_2.svg");
+	    SVG preview_svg("preprocess_test_2.svg");
 
 	    if (!unreachable_polygons.empty())
 	    {
@@ -416,7 +412,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 						nozzle_unreachable_polygons);
 	    REQUIRE(nozzle_unreachable_polygons.size() > 0);
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");
+	    SVG preview_svg("preprocess_test_3.svg");
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_NOZZLE_LEVEL_MK3S.size(); ++j)
 	    {
@@ -444,7 +440,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					    nozzle_unreachable_polygons);
 	    REQUIRE(nozzle_unreachable_polygons.size() > 0);	    
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");	    
+	    SVG preview_svg("preprocess_test_3.svg");	    
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_NOZZLE_LEVEL_MK3S.size(); ++j)
 	    {
@@ -472,7 +468,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					       extruder_unreachable_polygons);
 	    REQUIRE(extruder_unreachable_polygons.size() > 0);
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");
+	    SVG preview_svg("preprocess_test_3.svg");
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_EXTRUDER_LEVEL_MK3S.size(); ++j)
 	    {
@@ -500,7 +496,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					    extruder_unreachable_polygons);
 	    REQUIRE(extruder_unreachable_polygons.size() > 0);	    
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");	    
+	    SVG preview_svg("preprocess_test_3.svg");	    
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_EXTRUDER_LEVEL_MK3S.size(); ++j)
 	    {
@@ -528,7 +524,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					       hose_unreachable_polygons);
 	    REQUIRE(hose_unreachable_polygons.size() > 0);
 		    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");
+	    SVG preview_svg("preprocess_test_3.svg");
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_HOSE_LEVEL_MK3S.size(); ++j)
 	    {
@@ -556,7 +552,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					    hose_unreachable_polygons);
 	    REQUIRE(hose_unreachable_polygons.size() > 0);
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");	    
+	    SVG preview_svg("preprocess_test_3.svg");	    
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_HOSE_LEVEL_MK3S.size(); ++j)
 	    {
@@ -584,7 +580,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					       gantry_unreachable_polygons);
 	    REQUIRE(gantry_unreachable_polygons.size() > 0);
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");
+	    SVG preview_svg("preprocess_test_3.svg");
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_GANTRY_LEVEL_MK3S.size(); ++j)
 	    {
@@ -612,7 +608,7 @@ TEST_CASE("Preprocessing test 3", "[Sequential Arrangement Preprocessing]")
 					    gantry_unreachable_polygons);
 	    REQUIRE(gantry_unreachable_polygons.size() > 0);	    
 	    
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_3.svg");	    
+	    SVG preview_svg("preprocess_test_3.svg");	    
 
 	    for (unsigned int j = 0; j < SEQ_UNREACHABLE_POLYGON_GANTRY_LEVEL_MK3S.size(); ++j)
 	    {
@@ -738,7 +734,7 @@ void preprocessing_test_4(void)
 	    }
 	    #endif
 	
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_4.svg");
+	    SVG preview_svg("preprocess_test_4.svg");
 
 	    if (!unreachable_polygons.empty())
 	    {
@@ -959,7 +955,7 @@ TEST_CASE("Preprocessing test 5", "[Sequential Arrangement Preprocessing]")
 	REQUIRE(scale_down_unreachable_polygons.size() > 0);
 	unreachable_polygons.push_back(scale_down_unreachable_polygons);
 	
-	Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_5.svg");
+	SVG preview_svg("preprocess_test_5.svg");
 
 	preview_svg.draw(simplified_polygon, "lightgrey");	
 	preview_svg.draw(PRUSA_PART_POLYGONS[i], "blue");	    
@@ -1079,7 +1075,7 @@ void preprocessing_test_6(void)
 	    }
 	    #endif
 	
-	    Biz::Algorithms::SVG::SVG preview_svg("preprocess_test_6.svg");
+	    SVG preview_svg("preprocess_test_6.svg");
 
 	    if (!unreachable_polygons.empty())
 	    {

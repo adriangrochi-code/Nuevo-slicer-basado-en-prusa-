@@ -6,13 +6,11 @@
 
 #include <numeric>
 
-#include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
+#include "libslic3r/PNGReadWrite.hpp"
 #include "libslic3r/SLA/AGGRaster.hpp"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 using namespace Slic3r;
-
-namespace BB = Biz::Algorithms::BoundingBox;
 
 static sla::RasterGrayscaleAA create_raster(const sla::Resolution &res)
 {
@@ -20,8 +18,8 @@ static sla::RasterGrayscaleAA create_raster(const sla::Resolution &res)
 
     auto bb = BoundingBox({0, 0}, {scaled(1.), scaled(1.)});
     sla::RasterBase::Trafo trafo;
-    trafo.center_x = BB::center(bb).x();
-    trafo.center_y = BB::center(bb).y();
+    trafo.center_x = bb.center().x();
+    trafo.center_y = bb.center().y();
 
     return sla::RasterGrayscaleAA{res, pixdim, trafo, agg::gamma_threshold(.5)};
 }

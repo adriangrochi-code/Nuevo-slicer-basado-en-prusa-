@@ -1,18 +1,14 @@
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
-#include "Slic3r/Biz/Algorithms/SVG.hpp"
+#include "libslic3r/SVG.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <libslic3r/LayerRegion.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::Algorithm;
-using namespace Slic3r::Biz;
 using namespace Catch;
-
-using Algorithms::SVG::SVG;
 
 constexpr bool export_svgs = false;
 
@@ -94,14 +90,10 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the surface expansion", "[LayerRegion
             Point{scaled(2.0), scaled(2.0)}
         });
 
-        for (const Surface& surface : surfaces) {
-            svg.draw(surface.expolygon, "blue");
-        }
+        svg.draw(surfaces, "blue");
         svg.draw(expansion_zones[0].expolygons, "green");
         svg.draw(expansion_zones[1].expolygons, "red");
-        for (const Surface& surface : result) {
-            svg.draw_outline(surface.expolygon, "black", "", scale_(0.01));
-        }
+        svg.draw_outline(result, "black", "", scale_(0.01));
     }
 
     REQUIRE(result.size() == 2);
@@ -111,9 +103,9 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the surface expansion", "[LayerRegion
     CHECK(result.at(1).expolygon.contour.size() == 14);
 
     // These lines in the polygons should correspond to the expansion depth.
-    CHECK(Algorithms::Polygon::to_lines(result.at(0).expolygon.contour).at(2).length() == shells_expansion_depth);
-    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(7).length() == sparse_expansion_depth);
-    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(11).length() == sparse_expansion_depth);
+    CHECK(result.at(0).expolygon.contour.lines().at(2).length() == shells_expansion_depth);
+    CHECK(result.at(1).expolygon.contour.lines().at(7).length() == sparse_expansion_depth);
+    CHECK(result.at(1).expolygon.contour.lines().at(11).length() == sparse_expansion_depth);
 
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[0].expolygons).size() == 0);
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[1].expolygons).size() == 0);
@@ -134,14 +126,10 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the bridge expansion with the bridge 
             Point{scaled(2.0), scaled(2.0)}
         });
 
-        for (const Surface& surface : surfaces) {
-            svg.draw(surface.expolygon, "blue");
-        }
+        svg.draw(surfaces, "blue");
         svg.draw(expansion_zones[0].expolygons, "green");
         svg.draw(expansion_zones[1].expolygons, "red");
-        for (const Surface& surface : result) {
-            svg.draw_outline(surface.expolygon, "black", "", scale_(0.01));
-        }
+        svg.draw_outline(result, "black", "", scale_(0.01));
     }
 
     REQUIRE(result.size() == 2);
@@ -151,9 +139,9 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the bridge expansion with the bridge 
     CHECK(result.at(1).expolygon.contour.size() == 14);
 
     // These lines in the polygons should correspond to the expansion depth.
-    CHECK(Algorithms::Polygon::to_lines(result.at(0).expolygon.contour).at(2).length() == shells_expansion_depth);
-    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(7).length() == sparse_expansion_depth);
-    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(11).length() == sparse_expansion_depth);
+    CHECK(result.at(0).expolygon.contour.lines().at(2).length() == shells_expansion_depth);
+    CHECK(result.at(1).expolygon.contour.lines().at(7).length() == sparse_expansion_depth);
+    CHECK(result.at(1).expolygon.contour.lines().at(11).length() == sparse_expansion_depth);
 
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[0].expolygons).size() == 0);
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[1].expolygons).size() == 0);

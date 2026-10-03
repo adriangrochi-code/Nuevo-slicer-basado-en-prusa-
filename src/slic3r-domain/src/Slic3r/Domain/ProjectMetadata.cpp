@@ -1,1 +1,0 @@
-#include "Slic3r/Domain/ProjectMetadata.hpp"

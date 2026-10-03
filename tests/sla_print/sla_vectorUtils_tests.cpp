@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include "Slic3r/Biz/Algorithms/VectorUtils.hpp"
+#include <libslic3r/SLA/SupportIslands/VectorUtils.hpp>
 
-using Slic3r::Biz::Algorithms::VectorUtils;
+using namespace Slic3r::sla;
 
 TEST_CASE("Reorder", "[Utils], [VectorUtils]")
 {

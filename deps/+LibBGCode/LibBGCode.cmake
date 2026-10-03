@@ -1,8 +1,8 @@
 set(LibBGCode_SOURCE_DIR "" CACHE PATH "Optionally specify local LibBGCode source directory")
 
 set(_source_dir_line
-        URL https://github.com/prusa3d/libbgcode/archive/6744dbe827c03cf3a99b7783de43c9d945e38b97.zip
-        URL_HASH SHA256=139fe2a40fd0bdb6be7e7b86c9306bcb148eeb1872c36791a8cf87e00e4800b8)
+    URL https://github.com/prusa3d/libbgcode/archive/6f4ad7ce6b0e638b760199d6611039a610a5a479.zip
+    URL_HASH SHA256=1e91c944a52022e8af46b05b463add59b3ac011a5e1982e60891d41149c56144)
 
 if (LibBGCode_SOURCE_DIR)
     set(_source_dir_line "SOURCE_DIR;${LibBGCode_SOURCE_DIR};BUILD_ALWAYS;ON")
@@ -26,13 +26,8 @@ add_cmake_project(LibBGCode
     CMAKE_ARGS
         -DLibBGCode_BUILD_TESTS:BOOL=OFF
         -DLibBGCode_BUILD_CMD_TOOL:BOOL=OFF
-        -DCMAKE_FIND_ROOT_PATH=/
 )
 
 # set(DEP_LibBGCode_deps_DEPENDS ZLIB Boost)
 # set(DEP_LibBGCode_DEPENDS LibBGCode_deps)
-if (EMSCRIPTEN)
-    set(DEP_LibBGCode_DEPENDS heatshrink)
-else ()
-    set(DEP_LibBGCode_DEPENDS ZLIB Boost heatshrink)
-endif ()
+set(DEP_LibBGCode_DEPENDS ZLIB Boost heatshrink)

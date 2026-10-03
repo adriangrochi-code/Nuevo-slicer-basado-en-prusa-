@@ -1,29 +1,16 @@
 #include "sla_test_utils.hpp"
-#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/SLA/AGGRaster.hpp"
 #include "libslic3r/SLA/DefaultSupportTree.hpp"
 #include "libslic3r/SLA/BranchingTreeSLA.hpp"
-#include "libslic3r/ClipperUtils.hpp"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
-
-#include "Slic3r/Log.hpp"
 
 #include <iomanip>
-#include <catch2/interfaces/catch_interfaces_capture.hpp>
-
-using namespace Slic3r::Biz;
-using Algorithms::SVG::SVG;
-using Biz::Algorithms::TriangleMesh::construct;
-using Domain::TriangleMesh;
-namespace BB = Biz::Algorithms::BoundingBox;
 
 void test_support_model_collision(
     const std::string            &obj_filename,
     const sla::SupportTreeConfig &input_supportcfg,
     const sla::HollowingConfig   &hollowingcfg,
-    const Domain::SLA::DrainHoles        &drainholes)
+    const sla::DrainHoles        &drainholes)
 {
     SupportByproducts byproducts;
 
@@ -62,7 +49,7 @@ void test_support_model_collision(
         double pinhead_r  = scaled(input_supportcfg.head_front_radius_mm);
 
         // TODO:: make it strict without a threshold of PI * pihead_radius ^ 2
-        notouch = notouch && Algorithms::Polygon::area(intersections) < PI * pinhead_r * pinhead_r;
+        notouch = notouch && area(intersections) < PI * pinhead_r * pinhead_r;
     }
 
     if (!notouch)
@@ -95,10 +82,9 @@ void export_failed_case(const std::vector<ExPolygons> &support_slices, const Sup
     if (do_export_stl) {
         indexed_triangle_set its;
         byproducts.suptree_builder.retrieve_full_mesh(its);
-        TriangleMesh m{construct(its)};
+        TriangleMesh m{its};
         m.merge(byproducts.input_mesh);
-        namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
-        triangle_mesh::write_obj_file(m, (Catch::getResultCapture().getCurrentTestName() + "_" +
+        m.WriteOBJFile((Catch::getResultCapture().getCurrentTestName() + "_" +
                         byproducts.obj_fname).c_str());
     }
 }
@@ -106,7 +92,7 @@ void export_failed_case(const std::vector<ExPolygons> &support_slices, const Sup
 void test_supports(const std::string          &obj_filename,
                    const sla::SupportTreeConfig   &supportcfg,
                    const sla::HollowingConfig &hollowingcfg,
-                   const Domain::SLA::DrainHoles      &drainholes,
+                   const sla::DrainHoles      &drainholes,
                    SupportByproducts          &out)
 {
     using namespace Slic3r;
@@ -117,7 +103,7 @@ void test_supports(const std::string          &obj_filename,
     if (hollowingcfg.enabled) {
         sla::InteriorPtr interior = sla::generate_interior(mesh.its, hollowingcfg);
         REQUIRE(interior);
-        mesh.merge(TriangleMesh{construct(sla::get_mesh(*interior))});
+        mesh.merge(TriangleMesh{sla::get_mesh(*interior)});
     }
 
     auto   bb      = mesh.bounding_box();
@@ -132,7 +118,7 @@ void test_supports(const std::string          &obj_filename,
 
     // Create the special index-triangle mesh with spatial indexing which
     // is the input of the support point and support mesh generators
-    sla::SupportableMesh  sm{.emesh = AABBMesh(mesh.its), .cfg = supportcfg};
+    sla::SupportableMesh  sm{mesh.its, {}, supportcfg};
 
     #ifdef SLIC3R_HOLE_RAYCASTER
     if (hollowingcfg.enabled)
@@ -147,8 +133,7 @@ void test_supports(const std::string          &obj_filename,
     sla::LayerSupportPoints layer_support_points = sla::generate_support_points(gen_data, autogencfg);
     double allowed_move = (out.slicegrid[1] - out.slicegrid[0]) + std::numeric_limits<float>::epsilon();
     // Get the calculated support points.
-    sm.pts = std::make_shared<const Domain::SLA::SupportPoints>(
-        sla::move_on_mesh_surface(layer_support_points, sm.emesh, allowed_move));
+    sm.pts = sla::move_on_mesh_surface(layer_support_points, sm.emesh, allowed_move);
     out.model_slices = std::move(gen_data.slices); // return ownership
     
     int validityflags = ASSUME_NO_REPAIR;
@@ -169,12 +154,12 @@ void test_supports(const std::string          &obj_filename,
     sla::SupportTreeBuilder treebuilder;
 
     switch (sm.cfg.tree_type) {
-    case Domain::sla::SupportTreeType::Default: {
+    case sla::SupportTreeType::Default: {
         sla::DefaultSupportTree::execute(treebuilder, sm);
         check_support_tree_integrity(treebuilder, supportcfg, sla::ground_level(sm));
         break;
     }
-    case Domain::sla::SupportTreeType::Branching: {
+    case sla::SupportTreeType::Branching: {
         create_branching_tree(treebuilder, sm);
         // TODO: check_support_tree_integrity(treebuilder, supportcfg);
         break;
@@ -182,7 +167,7 @@ void test_supports(const std::string          &obj_filename,
     default:;
     }
 
-    TriangleMesh output_mesh{construct(treebuilder.retrieve_mesh(sla::MeshType::Support))};
+    TriangleMesh output_mesh{treebuilder.retrieve_mesh(sla::MeshType::Support)};
 
     check_validity(output_mesh, validityflags);
 
@@ -199,11 +184,9 @@ void test_supports(const std::string          &obj_filename,
     {
         indexed_triangle_set its;
         treebuilder.retrieve_full_mesh(its);
-        TriangleMesh m{construct(its)};
+        TriangleMesh m{its};
         m.merge(mesh);
-
-        namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
-        triangle_mesh::write_obj_file(m, (Catch::getResultCapture().getCurrentTestName() + "_" +
+        m.WriteOBJFile((Catch::getResultCapture().getCurrentTestName() + "_" +
                         obj_filename).c_str());
     }
 #endif
@@ -282,7 +265,7 @@ void test_pad(const std::string &obj_filename, const sla::PadConfig &padcfg, Pad
     // Create the pad geometry for the model contours only
     indexed_triangle_set out_its;
     Slic3r::sla::create_pad({}, out.model_contours, out_its, padcfg);
-    out.mesh = TriangleMesh{construct(out_its)};
+    out.mesh = TriangleMesh{out_its};
     
     check_validity(out.mesh);
     
@@ -304,14 +287,16 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
     
     size_t cchull_holes = 0;
     for (const Slic3r::Polygon &p : hull)
-        cchull_holes += Algorithms::Polygon::is_clockwise(p) ? 1 : 0;
+        cchull_holes += p.is_clockwise() ? 1 : 0;
     
     REQUIRE(cchull_holes == 0);
     
-    Polygons diff_poly = diff(Algorithms::ExPolygon::to_polygons(polys), hull);
+    Polygons diff_poly = diff(to_polygons(polys), hull);
 
     if (!diff_poly.empty()) {
-        SPDLOG_WARN("Concave hull diff with original shape is not completely empty. See pad_chull.svg for details.");
+        BOOST_LOG_TRIVIAL(warning)
+            << "Concave hull diff with original shape is not completely empty."
+            << "See pad_chull.svg for details.";
 
         SVG svg("pad_chull.svg");
         svg.draw(polys, "green");
@@ -319,7 +304,7 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
         svg.draw(diff_poly, "blue");
     }
 
-    double diff_area = Algorithms::Polygon::area(diff_poly);
+    double diff_area = area(diff_poly);
 
     REQUIRE(std::abs(diff_area) < std::pow(scaled(2 * EPSILON), 2));
 }
@@ -335,7 +320,7 @@ void test_concave_hull(const ExPolygons &polys) {
     ExPolygons wafflex = sla::offset_waffle_style_ex(cchull, delta);
     Polygons waffl = sla::offset_waffle_style(cchull, delta);
     
-    _test_concave_hull(Algorithms::ExPolygon::to_polygons(wafflex), polys);
+    _test_concave_hull(to_polygons(wafflex), polys);
     _test_concave_hull(waffl, polys);
 }
 
@@ -358,7 +343,7 @@ void check_validity(const TriangleMesh &input_mesh, int flags)
     }
     
     if (flags & ASSUME_MANIFOLD) {
-        if (!mesh.is_manifold()) mesh.write_obj_file("non_manifold.obj");
+        if (!mesh.is_manifold()) mesh.WriteOBJFile("non_manifold.obj");
         REQUIRE(mesh.is_manifold());
     }
     */
@@ -372,8 +357,8 @@ void check_raster_transformations(sla::RasterBase::Orientation o, sla::RasterBas
     
     auto bb = BoundingBox({0, 0}, {scaled(disp_w), scaled(disp_h)});
     sla::RasterBase::Trafo trafo{o, mirroring};
-    trafo.center_x = BB::center(bb).x();
-    trafo.center_y = BB::center(bb).y();
+    trafo.center_x = bb.center().x();
+    trafo.center_y = bb.center().y();
     double gamma = 1.;
     
     sla::RasterGrayscaleAAGammaPower raster{res, pixdim, trafo, gamma};
@@ -401,9 +386,9 @@ void check_raster_transformations(sla::RasterBase::Orientation o, sla::RasterBas
     
     raster.draw(box);
     
-    Point expected_coords = BB::center(Algorithms::Polygon::get_bounding_box(expected_box.contour));
-    double rx = unscaled(expected_coords.x() + BB::center(bb).x()) / pixdim.w_mm;
-    double ry = unscaled(expected_coords.y() + BB::center(bb).y()) / pixdim.h_mm;
+    Point expected_coords = expected_box.contour.bounding_box().center();
+    double rx = unscaled(expected_coords.x() + bb.center().x()) / pixdim.w_mm;
+    double ry = unscaled(expected_coords.y() + bb.center().y()) / pixdim.h_mm;
     auto w = size_t(std::floor(rx));
     auto h = res.height_px - size_t(std::floor(ry));
     
@@ -462,7 +447,7 @@ double raster_white_area(const sla::RasterGrayscaleAA &raster)
 
 double predict_error(const ExPolygon &p, const sla::PixelDim &pd)
 {
-    auto lines = Algorithms::ExPolygon::to_lines(p);
+    auto lines = p.lines();
     double pix_err = pixel_area(FullWhite, pd)  / 2.;
     
     // Worst case is when a line is parallel to the shorter axis of one pixel,
@@ -476,12 +461,10 @@ double predict_error(const ExPolygon &p, const sla::PixelDim &pd)
     return error;
 }
 
-Domain::SLA::SupportPoints calc_support_pts(
+sla::SupportPoints calc_support_pts(
     const TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg)
 {
-    using Slic3r::Biz::Algorithms::BoundingBox::cast;
-
     // Prepare the slice grid and the slices
     auto                    bb      = cast<float>(mesh.bounding_box());
     std::vector<float>      heights = grid(bb.min.z(), bb.max.z(), 0.1f);
