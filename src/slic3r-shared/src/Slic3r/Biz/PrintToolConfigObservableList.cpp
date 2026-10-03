@@ -144,7 +144,7 @@ void PrintToolConfigObservableList::set_tool_value(
 
     if (index_it != m_items.cend()) {
         for (size_t index : indexes) {
-            if (index > m_tool_config_boxes.size()) {
+            if (index >= m_tool_config_boxes.size()) {
                 continue;
             }
             m_tool_config_boxes.at(index)->overrides.set(key, value);
