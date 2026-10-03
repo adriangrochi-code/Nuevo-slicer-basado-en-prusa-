@@ -236,8 +236,35 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
 
     Domain::Preset::PresetValueMap unconditional_inherited_values;
     Domain::Preset::FeatureValueMap unconditional_inherited_features;
+    // Anonymous variants (neither id nor name) are part of the very same preset as their
+    // parent. A preset whose per-nozzle variants carry no `id:` is identified by the id of
+    // a node that may hold no values at all, so its matching anonymous variants have to be
+    // applied too, otherwise a user preset based on it loses the inherited values (GH #15881).
+    const auto collect_anonymous_variants =
+        [this, &overrides, expr_combine](const auto& self, const PresetNode& parent, PresetNodePath& out) -> void
+    {
+        const bool first_match_only =
+            !parent.match_mode.has_value() || *parent.match_mode == ConditionMatchMode::FirstMatch;
+        for (const auto& var : parent.variants) {
+            if (var.condition.has_value()
+                && !eval_condition(overrides, expr_combine, var.condition.value().expr))
+                continue;
+            if (var.id.empty() && !var.name.has_value()) {
+                out.push_back(&var);
+                self(self, var, out);
+            }
+            // Same as the regular evaluation below: with first-match semantics the first
+            // matching conditional variant ends the search (if it is a named one, that
+            // branch is another preset and contributes nothing here).
+            if (first_match_only && var.condition.has_value())
+                break;
+        }
+    };
+
     for (const auto& unc_inh : node.unconditional_inherits) {
-        const auto& node_path = named_preset(unc_inh);
+        PresetNodePath node_path = named_preset(unc_inh);
+        if (!node_path.empty())
+            collect_anonymous_variants(collect_anonymous_variants, *node_path.back(), node_path);
 
         for (const auto& n : node_path) {
             auto node_ctxs = eval_preset(

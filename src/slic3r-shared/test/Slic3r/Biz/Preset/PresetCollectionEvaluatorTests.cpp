@@ -365,6 +365,67 @@ variants:
         }
     }
 
+    SECTION("unconditional inherits of a preset whose variants have no id (GH #15881)")
+    {
+        // The system preset keeps all its values in anonymous per-nozzle variants, so
+        // the preset is identified by the root id, which itself holds almost nothing.
+        const char* yaml = R"(
+kind: printer
+id: 'Base PETG'
+name: 'Base PETG'
+values:
+  a: 1
+variants:
+  - condition: 'tool.nozzle_diameter == 0.6'
+    values:
+      type: "PETG-06"
+  - condition: 'tool.nozzle_diameter == 0.4'
+    values:
+      type: "PETG"
+      b: 2
+    variants:
+      - condition: 'tool.nozzle_high_flow'
+        values:
+          b: 3
+---
+kind: printer
+id: 'User PETG'
+variants:
+  - id: 'User PETG'
+    name: 'User PETG'
+    unconditional_inherits:
+      - 'Base PETG'
+    values:
+      c: 42
+)";
+
+        IO::PresetLoader loader;
+        try {
+            loader.load_from_string(yaml);
+        }
+        catch (Yaml::ParseError& e) {
+            std::cerr << e.what() << std::endl;
+            FAIL(e.what());
+        }
+        auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
+
+        Expr::ValueMap values{
+            {"tool.nozzle_diameter", 0.4},
+            {"tool.nozzle_high_flow", false},
+        };
+        auto evals = eval.eval_preset({values}, false);
+
+        auto it = std::find_if(evals.begin(), evals.end(), [](const auto& p){ return p.name == "User PETG"; });
+        REQUIRE(it != evals.end());
+        const auto& p = *it;
+        REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
+        // values of the matching anonymous variant are inherited, not the 0.6 ones
+        REQUIRE(p.values.find("type") != p.values.end());
+        REQUIRE(std::get<std::string>(p.values.find("type")->second) == "PETG");
+        REQUIRE(std::get<double>(p.values.find("b")->second) == 2);
+        REQUIRE(std::get<double>(p.values.find("c")->second) == 42);
+    }
+
     SECTION("mixing unconditional inherits with inherits")
     {
         const char* yaml = R"(
