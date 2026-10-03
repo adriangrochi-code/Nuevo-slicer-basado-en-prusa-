@@ -20,4 +20,4 @@ nps = "nps.cli:main"
 include = ["nps*"]
 
 [tool.setuptools.package-data]
-nps = ["*.ini", "profiles/*.ini"]
+nps = ["*.ini", "printers/*.toml"]

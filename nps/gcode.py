@@ -6,10 +6,14 @@ Para cada movimiento G0/G1:
 2. Cada punto se lleva al espacio real (z = z' + D).
 3. Extrusión: el volumen a depositar sobre un área XY dada es  w * L_xy * h * J,
    así que  E_real = E * J  (J = espesor real / nominal).
-4. Velocidad: se mantiene constante el caudal volumétrico de PrusaSlicer
-   (F_real = F * (L_3d / L_xy) / J), limitado por ``max_flow`` y ``max_feed``.
-   Caudal constante => cordones uniformes => resistencia homogénea, y el
-   límite volumétrico deja ir más rápido donde las capas son más finas.
+4. Velocidad según ``flow_policy``:
+   - "preserve": se conserva el caudal volumétrico que decidió PrusaSlicer
+     (F_real = F * (L_3d / L_xy) / J).
+   - "uniform": todas las extrusiones (salvo ``uniform_exclude``) salen al
+     mismo caudal ``uniform_flow``. Mismo caudal => misma temperatura de salida
+     y la misma soldadura entre cordones en toda la pieza.
+   - "off": se deja F tal cual.
+   Siempre se aplican ``max_flow``, ``max_feed`` y los límites del eje Z.
 """
 
 from __future__ import annotations
@@ -21,7 +25,10 @@ from typing import Iterable, Iterator
 
 import numpy as np
 
+from .homogeneity import HomogeneityMeter
 from .transform import Deformation
+
+FLOW_POLICIES = ("preserve", "uniform", "off")
 
 _WORD = re.compile(r"([A-Za-z])\s*([-+]?(?:\d+\.?\d*|\.\d+))")
 
@@ -34,9 +41,11 @@ class GcodeOptions:
     max_flow: float | None = None        # mm³/s, límite del hotend
     max_feed: float | None = None        # mm/min
     min_feed: float = 300.0              # mm/min
-    keep_flow_constant: bool = True
-    fast_infill_flow: float | None = None  # mm³/s objetivo para el relleno
-    fast_types: tuple[str, ...] = ("Internal infill", "Solid infill")
+    flow_policy: str = "preserve"
+    uniform_flow: float | None = None    # mm³/s para flow_policy="uniform"
+    uniform_exclude: tuple[str, ...] = ("External perimeter", "Overhang perimeter",
+                                        "Bridge infill", "Gap fill")
+    feature_flow: dict[str, float] = field(default_factory=dict)  # caudal por ;TYPE:
     z_max_speed: float | None = None     # mm/s, límite de firmware del eje Z (M203)
     z_max_accel: float | None = None     # mm/s², límite de firmware del eje Z (M201)
     top_slice_z: float | None = None     # por encima: sólo se desplaza (gcode final)
@@ -94,6 +103,12 @@ class GcodeTransformer:
         self.e_in_abs = 0.0
         self.e_out_abs = 0.0
         self.feature = ""                 # ;TYPE: actual de PrusaSlicer
+        if self.o.flow_policy not in FLOW_POLICIES:
+            raise ValueError(f"flow_policy debe ser una de {FLOW_POLICIES}")
+        if self.o.flow_policy == "uniform" and not self.o.uniform_flow:
+            raise ValueError("flow_policy='uniform' necesita uniform_flow (mm³/s)")
+        self.meter_in = HomogeneityMeter()
+        self.meter_out = HomogeneityMeter()
 
     # -- utilidades ---------------------------------------------------------
     def _real_z(self, x, y, zs):
@@ -126,6 +141,13 @@ class GcodeTransformer:
         code, sep, comment = line.partition(";")
         code = re.sub(r"E\s*[-+]?(?:\d+\.?\d*|\.\d+)", f"E{_fmt(self.e_out_abs, 5)}", code, count=1)
         return code + sep + comment
+
+    def _target_flow(self) -> float | None:
+        if self.feature in self.o.feature_flow:
+            return self.o.feature_flow[self.feature]
+        if self.o.flow_policy == "uniform" and self.feature not in self.o.uniform_exclude:
+            return self.o.uniform_flow
+        return None
 
     def _breakpoints(self, t, zr, J) -> list[int]:
         """Fusiona tramos mientras Z sea lineal (±z_tol) y J casi constante."""
@@ -264,6 +286,8 @@ class GcodeTransformer:
 
         extruding = de > 0 and lxy > 0
         if extruding:
+            self.meter_in.add(de * self.fil_area, de * self.fil_area * self.feed / 60.0 / lxy,
+                              1.0, 0.0, x1 - x0, y1 - y0)
             xm, ym = (xs[:-1] + xs[1:]) / 2, (ys[:-1] + ys[1:]) / 2
             zm = (zr[:-1] + zr[1:]) / 2
             J = self.d.jacobian(xm, ym, zm)
@@ -284,12 +308,11 @@ class GcodeTransformer:
             if extruding:
                 j = float(J[a:b].mean())
                 e_seg = de * frac * j
-                if self.o.keep_flow_constant and seg_xy > 0:
+                target = self._target_flow()
+                if target and seg3 > 0:
+                    f = target * seg3 * 60.0 / (e_seg * self.fil_area)
+                elif self.o.flow_policy != "off" and seg_xy > 0:
                     f = self.feed * (seg3 / seg_xy) / j
-                if (self.o.fast_infill_flow and self.feature in self.o.fast_types
-                        and e_seg > 0 and seg3 > 0):
-                    # F tal que el caudal volumétrico sea el objetivo
-                    f = max(f, self.o.fast_infill_flow * seg3 * 60.0 / (e_seg * self.fil_area))
                 if self.o.max_flow and seg3 > 0:
                     flow = e_seg * self.fil_area / (seg3 / (f / 60.0))
                     if flow > self.o.max_flow:
@@ -306,6 +329,13 @@ class GcodeTransformer:
                               float(curv[a:b].max()) if curv is not None else 0.0)
             if seg3 > 0:
                 self.stats.time_out += seg3 / f * 60.0
+            if extruding and seg3 > 0:
+                vol = e_seg * self.fil_area
+                xm, ym = (xs[a] + xs[b]) / 2, (ys[a] + ys[b]) / 2
+                slope = float(np.degrees(np.arctan(
+                    self.d.layer_slope(xm, ym, (zr[a] + zr[b]) / 2))))
+                self.meter_out.add(vol, vol / (seg3 / (f / 60.0)), j, slope,
+                                   xs[b] - xs[a], ys[b] - ys[a])
             words += self._f_word(f)
             out.append(words + (cmt if k == 0 else ""))
         return out

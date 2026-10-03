@@ -59,19 +59,31 @@ class Ramp:
 
 
 class Field:
-    """Forma de capa g(x, y) y su gradiente."""
+    """Forma de capa g(x, y[, z]) y sus derivadas.
+
+    Los campos con ``z_dependent = True`` cambian de forma con la altura (p. ej.
+    crestas que giran); el resto sólo dependen de (x, y).
+    """
 
     name = "planar"
+    z_dependent = False
 
-    def g(self, x, y):
+    def g(self, x, y, z=None):
         return np.zeros_like(np.asarray(x, dtype=np.float64))
 
-    def grad(self, x, y):
-        z = self.g(x, y)
-        return z, z
+    def grad(self, x, y, z=None):
+        z0 = self.g(x, y)
+        return z0, z0
 
-    def max_slope_deg(self, x, y) -> float:
-        gx, gy = self.grad(x, y)
+    def dgdz(self, x, y, z):
+        return np.zeros_like(np.asarray(x, dtype=np.float64))
+
+    def bound(self, x, y):
+        """Cota de |g| en (x, y) para cualquier z (para acotar la inversión)."""
+        return np.abs(self.g(x, y))
+
+    def max_slope_deg(self, x, y, z=None) -> float:
+        gx, gy = self.grad(x, y, z)
         return float(np.degrees(np.arctan(np.max(np.hypot(gx, gy), initial=0.0))))
 
 
@@ -83,44 +95,67 @@ class WaveField(Field):
     (que en planar sólo resiste la adhesión entre capas) en cortadura a través
     de los filamentos -> resistencia más homogénea en X/Y/Z.
 
-    pattern="egg":    A·sin(kx)·sin(ky)  (huevera, piezas anchas en X e Y)
-    pattern="ridges": A·sin(k·u), u en la dirección ``angle_deg``
-                      (crestas, para piezas estrechas o paredes)
+    pattern="egg":     A·sin(kx)·sin(ky)  (huevera, piezas anchas en X e Y)
+    pattern="ridges":  A·sin(k·u), u en la dirección ``angle_deg``
+                       (crestas, para piezas estrechas o paredes)
+    pattern="twisted": crestas cuya dirección gira ``twist_deg_per_mm`` con la
+                       altura (estructura helicoidal tipo Bouligand): el encaje
+                       actúa en todas las direcciones de XY, no sólo en una.
     """
 
     amplitude: float = 0.8    # mm
     wavelength: float = 16.0  # mm
     pattern: str = "egg"
-    angle_deg: float = 0.0    # ridges: dirección de la onda (0° = a lo largo de X)
+    angle_deg: float = 0.0    # ridges/twisted: dirección de la onda (0° = eje X)
+    twist_deg_per_mm: float = 3.0
     cx: float = 0.0
     cy: float = 0.0
     name = "wave"
 
     def __post_init__(self):
-        if self.pattern not in ("egg", "ridges"):
+        if self.pattern not in ("egg", "ridges", "twisted"):
             raise ValueError(f"patrón de onda desconocido: {self.pattern}")
+        self.z_dependent = self.pattern == "twisted"
 
-    def _uv(self, x, y):
+    def _theta(self, z):
+        t = np.radians(self.angle_deg)
+        if self.pattern == "twisted":
+            z = 0.0 if z is None else np.asarray(z, dtype=np.float64)
+            t = t + np.radians(self.twist_deg_per_mm) * z
+        return t
+
+    def g(self, x, y, z=None):
         k = 2.0 * np.pi / self.wavelength
         dx, dy = np.asarray(x) - self.cx, np.asarray(y) - self.cy
-        if self.pattern == "ridges":
-            a = np.radians(self.angle_deg)
-            return k, k * (dx * np.cos(a) + dy * np.sin(a)), None
-        return k, k * dx, k * dy
+        if self.pattern == "egg":
+            return self.amplitude * np.sin(k * dx) * np.sin(k * dy)
+        t = self._theta(z)
+        return self.amplitude * np.sin(k * (dx * np.cos(t) + dy * np.sin(t)))
 
-    def g(self, x, y):
-        _, u, v = self._uv(x, y)
-        if v is None:
-            return self.amplitude * np.sin(u)
-        return self.amplitude * np.sin(u) * np.sin(v)
-
-    def grad(self, x, y):
-        k, u, v = self._uv(x, y)
+    def grad(self, x, y, z=None):
+        k = 2.0 * np.pi / self.wavelength
+        dx, dy = np.asarray(x) - self.cx, np.asarray(y) - self.cy
         a = self.amplitude * k
-        if v is None:
-            t = np.radians(self.angle_deg)
-            return a * np.cos(u) * np.cos(t), a * np.cos(u) * np.sin(t)
-        return a * np.cos(u) * np.sin(v), a * np.sin(u) * np.cos(v)
+        if self.pattern == "egg":
+            return a * np.cos(k * dx) * np.sin(k * dy), a * np.sin(k * dx) * np.cos(k * dy)
+        t = self._theta(z)
+        c = np.cos(k * (dx * np.cos(t) + dy * np.sin(t)))
+        return a * c * np.cos(t), a * c * np.sin(t)
+
+    def dgdz(self, x, y, z):
+        if self.pattern != "twisted":
+            return super().dgdz(x, y, z)
+        k = 2.0 * np.pi / self.wavelength
+        dx, dy = np.asarray(x) - self.cx, np.asarray(y) - self.cy
+        t = self._theta(z)
+        u = dx * np.cos(t) + dy * np.sin(t)
+        du = (-dx * np.sin(t) + dy * np.cos(t)) * np.radians(self.twist_deg_per_mm)
+        return self.amplitude * k * np.cos(k * u) * du
+
+    def bound(self, x, y):
+        if self.pattern == "twisted":
+            return np.full_like(np.asarray(x, dtype=np.float64), abs(self.amplitude))
+        return np.abs(self.g(x, y))
 
     def nominal_slope_deg(self) -> float:
         return float(np.degrees(np.arctan(self.amplitude * 2 * np.pi / self.wavelength)))
@@ -144,11 +179,11 @@ class ConicalField(Field):
         dx, dy = np.asarray(x) - self.cx, np.asarray(y) - self.cy
         return dx, dy, np.sqrt(dx * dx + dy * dy + self.tip_radius ** 2)
 
-    def g(self, x, y):
+    def g(self, x, y, z=None):
         _, _, r = self._r(x, y)
         return np.tan(np.radians(self.angle_deg)) * (r - self.tip_radius)
 
-    def grad(self, x, y):
+    def grad(self, x, y, z=None):
         dx, dy, r = self._r(x, y)
         t = np.tan(np.radians(self.angle_deg))
         return t * dx / r, t * dy / r

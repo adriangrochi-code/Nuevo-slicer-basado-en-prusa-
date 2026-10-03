@@ -89,13 +89,39 @@ def test_arcs_rejected():
         list(tr.process(["G2 X1 Y1 I1 J0 E1"]))
 
 
-def test_fast_infill_raises_feed():
+def test_uniform_flow_policy_equalizes_flow():
+    lines = ["G90", "M83", "G1 X0 Y0 Z0.2 F3000",
+             ";TYPE:Internal infill", "G1 X20 Y0 E0.8 F6000",
+             ";TYPE:Perimeter", "G1 X20 Y20 E0.8 F1800",
+             ";TYPE:External perimeter", "G1 X0 Y20 E0.8 F1200"]
+    tr = GcodeTransformer(Deformation(Field(), Ramp()),
+                          GcodeOptions(seg_len=100, flow_policy="uniform", uniform_flow=5.0))
+    out = list(tr.process(lines))
+    infill, perim, ext = (round(flows_at(out, i), 2) for i in range(3))
+    assert infill == perim == 5.0           # mismo caudal
+    assert ext != 5.0                       # perímetro exterior excluido (calidad superficial)
+    assert tr.meter_out.result()["flow_cv"] < tr.meter_in.result()["flow_cv"]
+
+
+def flows_at(out, i):
+    area = np.pi * 0.875 ** 2
+    f = None
+    res = []
+    for l in out:
+        c, p, _ = parse(l)
+        if c == "G1":
+            f = p.get("F", f)
+            if p.get("E", 0) > 0:
+                res.append(p["E"] * area * f / 60 / 20)
+    return res[i]
+
+
+def test_feature_flow_overrides():
     lines = ["G90", "M83", "G1 X0 Y0 Z0.2 F3000", ";TYPE:Internal infill", "G1 X20 Y0 E0.8 F3000"]
-    base = GcodeTransformer(Deformation(Field(), Ramp()), GcodeOptions(seg_len=100))
-    fast = GcodeTransformer(Deformation(Field(), Ramp()),
-                            GcodeOptions(seg_len=100, fast_infill_flow=20))
-    list(base.process(lines)), list(fast.process(lines))
-    assert fast.stats.time_out < base.stats.time_out
+    tr = GcodeTransformer(Deformation(Field(), Ramp()),
+                          GcodeOptions(seg_len=100, feature_flow={"Internal infill": 8.0}))
+    out = list(tr.process(lines))
+    assert round(flows_at(out, 0), 1) == 8.0
 
 
 def test_detect_xy_offset():

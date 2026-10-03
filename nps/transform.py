@@ -24,8 +24,12 @@ class Deformation:
     dx: float = 0.0   # desplazamiento XY si PrusaSlicer movió la pieza
     dy: float = 0.0
 
+    def _xy(self, x, y):
+        return np.asarray(x, dtype=np.float64) - self.dx, np.asarray(y, dtype=np.float64) - self.dy
+
     def D(self, x, y, z):
-        return self.field.g(np.asarray(x) - self.dx, np.asarray(y) - self.dy) * self.ramp(z)
+        x, y = self._xy(x, y)
+        return self.field.g(x, y, z) * self.ramp(z)
 
     def to_slice(self, pts: np.ndarray) -> np.ndarray:
         out = np.array(pts, dtype=np.float64, copy=True)
@@ -34,26 +38,37 @@ class Deformation:
 
     def dzs_dz(self, x, y, z):
         """dz'/dz  (>0 garantiza que la transformación es invertible)."""
-        return 1.0 - self.field.g(np.asarray(x) - self.dx, np.asarray(y) - self.dy) * self.ramp.deriv(z)
+        x, y = self._xy(x, y)
+        f = self.field
+        return 1.0 - f.g(x, y, z) * self.ramp.deriv(z) - f.dgdz(x, y, z) * self.ramp(z)
 
     def jacobian(self, x, y, z):
         """J = dz/dz': factor de espesor de capa real / nominal."""
         return 1.0 / self.dzs_dz(x, y, z)
 
-    def to_real_z(self, x, y, zs, iters: int = 30):
+    def layer_slope(self, x, y, z):
+        """Pendiente de la capa real (|grad_xy D|) en cada punto."""
+        x, y = self._xy(x, y)
+        gx, gy = self.field.grad(x, y, z)
+        return np.hypot(gx, gy) * self.ramp(z)
+
+    def to_real_z(self, x, y, zs, iters: int = 40):
         x, y, zs = (np.atleast_1d(np.asarray(a, dtype=np.float64)) for a in (x, y, zs))
-        g = self.field.g(x - self.dx, y - self.dy)
-        # z - g*ramp(z) = zs ; ramp en [0,1] -> la raíz está entre zs y zs+g
-        lo, hi = np.minimum(zs, zs + g), np.maximum(zs, zs + g)
-        z = zs + g * self.ramp(zs + g)
+        x, y, zs = np.broadcast_arrays(x, y, zs)
+        xr, yr = self._xy(x, y)
+        f = self.field
+        # z - D(z) = zs con |D| <= cota  ->  raíz en [zs - cota, zs + cota]
+        b = f.bound(xr, yr)
+        lo, hi = zs - b, zs + b
+        z = zs + f.g(xr, yr, zs) * self.ramp(zs)
         for _ in range(iters):
-            f = z - g * self.ramp(z) - zs
-            if np.max(np.abs(f), initial=0.0) < 1e-10:
+            r = z - f.g(xr, yr, z) * self.ramp(z) - zs
+            if np.max(np.abs(r), initial=0.0) < 1e-10:
                 break
-            lo = np.where(f < 0, z, lo)
-            hi = np.where(f > 0, z, hi)
-            df = 1.0 - g * self.ramp.deriv(z)
-            step = z - f / np.where(np.abs(df) > 1e-9, df, 1e-9)
+            lo = np.where(r < 0, z, lo)
+            hi = np.where(r > 0, z, hi)
+            df = 1.0 - f.g(xr, yr, z) * self.ramp.deriv(z) - f.dgdz(xr, yr, z) * self.ramp(z)
+            step = z - r / np.where(np.abs(df) > 1e-9, df, 1e-9)
             bad = (step < lo) | (step > hi) | ~np.isfinite(step)
             z = np.where(bad, 0.5 * (lo + hi), step)
         return z
@@ -78,7 +93,7 @@ class Deformation:
                 f"La rampa es demasiado corta para esta amplitud: el espesor de capa varía "
                 f"x{j.min():.2f}..x{j.max():.2f} (admisible x{J_MIN}..x{J_MAX}). "
                 "Aumenta --ramp o reduce la amplitud/ángulo.")
-        slope = self.field.max_slope_deg(X[:, :, 0] - self.dx, Y[:, :, 0] - self.dy)
+        slope = float(np.degrees(np.arctan(self.layer_slope(X, Y, Z).max())))
         if slope > max_slope_deg:
             problems.append(
                 f"Pendiente máxima de capa {slope:.1f}° > {max_slope_deg:.1f}° permitidos por la boquilla. "

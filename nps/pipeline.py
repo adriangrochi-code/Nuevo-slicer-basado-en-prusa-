@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import numpy as np
 
+from . import config as cfgmod
 from . import prusa
-from .fields import Field, Ramp
+from .fields import ConicalField, Field, Ramp, WaveField
 from .gcode import GcodeOptions, GcodeTransformer, detect_xy_offset
+from .homogeneity import format_report
 from .stl import load_stl, save_stl
 from .subdivide import subdivide
 from .transform import Deformation
@@ -30,6 +33,43 @@ class Job:
     prusa_args: list[str] = field(default_factory=list)
     workdir: Path | None = None
     force: bool = False
+    config: dict | None = None          # si viene de un .toml: se genera el perfil Prusa
+
+
+def make_field(np_cfg: dict) -> Field:
+    mode = np_cfg["mode"]
+    if mode == "wave":
+        return WaveField(amplitude=np_cfg["amplitude"], wavelength=np_cfg["wavelength"],
+                         pattern=np_cfg["pattern"], angle_deg=np_cfg["angle"],
+                         twist_deg_per_mm=np_cfg["twist"])
+    if mode == "conical":
+        return ConicalField(angle_deg=np_cfg["cone_angle"])
+    return Field()
+
+
+def job_from_config(cfg: dict, model: Path, output: Path, workdir: Path | None = None,
+                    prusa_exe: str | None = None, force: bool = False) -> Job:
+    pr, np_, h, out = cfg["printer"], cfg["nonplanar"], cfg["homogeneity"], cfg["output"]
+    policy = h["flow_policy"]
+    gopts = GcodeOptions(
+        seg_len=out["seg_len"], z_tol=out["z_tol"],
+        filament_diameter=pr["filament_diameter"],
+        max_flow=pr["max_flow"] or None,
+        max_feed=pr["max_speed"] * 60 if pr["max_speed"] else None,
+        flow_policy=policy,
+        uniform_flow=cfgmod.uniform_flow(cfg) if policy == "uniform" else None,
+        uniform_exclude=tuple(h["uniform_exclude"]),
+        feature_flow=dict(h["feature_flow"]),
+        z_max_speed=pr["z_max_speed"] or None,
+        z_max_accel=pr["z_max_accel"] or None,
+    )
+    ramp = Ramp(z_flat=np_["flat_below"], z_ramp=np_["ramp"], z_ramp_top=np_["ramp"],
+                flat_top=np_["flat_top"])
+    return Job(model=model, output=output, field=make_field(np_), ramp=ramp,
+               profiles=[Path(p) for p in cfg["prusa_profiles"]],
+               center=cfgmod.bed_center(cfg), max_edge=np_["max_edge"],
+               max_slope_deg=pr["nozzle_clearance_deg"], gcode=gopts,
+               prusa_exe=prusa_exe, workdir=workdir, force=force, config=cfg)
 
 
 def prepare_mesh(job: Job) -> tuple[np.ndarray, np.ndarray]:
@@ -65,8 +105,12 @@ def run(job: Job, log=print) -> GcodeTransformer:
     stl_def = work / (job.output.stem + ".deformed.stl")
     planar = work / (job.output.stem + ".planar.gcode")
     save_stl(stl_def, sverts, faces)
+    profiles = list(job.profiles)
+    if job.config is not None:
+        ini = cfgmod.write_prusa_ini(job.config, work / (job.output.stem + ".prusa.ini"))
+        profiles.insert(0, ini)
     log(f"cortando con PrusaSlicer: {stl_def.name}")
-    prusa.slice_stl(stl_def, planar, job.profiles, job.prusa_exe, job.prusa_args)
+    prusa.slice_stl(stl_def, planar, profiles, job.prusa_exe, job.prusa_args)
 
     lines = planar.read_text().splitlines()
     dx, dy = detect_xy_offset(lines, sverts)
@@ -86,4 +130,14 @@ def run(job: Job, log=print) -> GcodeTransformer:
         for line in tr.process(lines):
             f.write(line + "\n")
     log(tr.stats.summary())
+    before, after = tr.meter_in.result(), tr.meter_out.result()
+    log(format_report(before, after))
+    report = {
+        "model": str(job.model), "field": job.field.name,
+        "flow_policy": job.gcode.flow_policy, "uniform_flow": job.gcode.uniform_flow,
+        "stats": {k: (None if isinstance(v, float) and not np.isfinite(v) else v)
+                  for k, v in asdict(tr.stats).items()},
+        "homogeneity": {"planar": before, "nps": after},
+    }
+    job.output.with_suffix(".report.json").write_text(json.dumps(report, indent=2))
     return tr

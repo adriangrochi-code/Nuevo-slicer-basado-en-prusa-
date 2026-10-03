@@ -21,7 +21,9 @@ validar la física (extrusión, caudal, colisiones) antes de invertir en C++.
 | `nps/fields.py` | forma de las capas `g(x,y)` (wave, conical) y rampa `ramp(z)` |
 | `nps/transform.py` | real ↔ corte, Jacobiano `J`, validación de espesor y pendiente |
 | `nps/prusa.py` | invocación de la CLI de PrusaSlicer con los overrides necesarios |
-| `nps/gcode.py` | transformación inversa: troceo, Z real, `E·J`, caudal constante, `--fast-infill` |
+| `nps/gcode.py` | transformación inversa: troceo, Z real, `E·J`, políticas de caudal (`preserve`, `uniform`, por tipo de extrusión) |
+| `nps/config.py` | configuración TOML universal, presets y generación del perfil de PrusaSlicer |
+| `nps/homogeneity.py` | métricas de homogeneidad ponderadas por volumen |
 | `nps/pipeline.py` | orquestación y compensación automática si PrusaSlicer desplaza la pieza |
 
 ## Plan para la fase 2 (C++)

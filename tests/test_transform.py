@@ -5,12 +5,15 @@ from nps.fields import ConicalField, Ramp, WaveField
 from nps.transform import Deformation
 
 
-@pytest.fixture(params=["wave", "conical", "wave_flat_top"])
+@pytest.fixture(params=["wave", "conical", "wave_flat_top", "twisted"])
 def deform(request):
     if request.param == "wave":
         return Deformation(WaveField(amplitude=0.8, wavelength=16), Ramp())
     if request.param == "conical":
         return Deformation(ConicalField(angle_deg=10), Ramp(z_ramp=15))
+    if request.param == "twisted":
+        return Deformation(WaveField(amplitude=0.5, wavelength=20, pattern="twisted",
+                                     twist_deg_per_mm=3), Ramp())
     return Deformation(WaveField(), Ramp(flat_top=True, z_top=40))
 
 
@@ -55,3 +58,11 @@ def test_ridges_gradient_matches_numeric():
     assert np.allclose(gy, (f.g(x, y + h) - f.g(x, y - h)) / (2 * h), atol=1e-6)
     assert np.isclose(f.max_slope_deg(np.linspace(0, 20, 400), np.zeros(400)),
                       f.nominal_slope_deg(), atol=0.1)
+
+
+def test_twisted_dgdz_matches_numeric():
+    f = WaveField(amplitude=0.5, wavelength=20, pattern="twisted", twist_deg_per_mm=4, cx=1, cy=-2)
+    x, y, z, h = np.linspace(-15, 15, 11), np.linspace(10, -10, 11), np.linspace(1, 40, 11), 1e-6
+    assert np.allclose(f.dgdz(x, y, z), (f.g(x, y, z + h) - f.g(x, y, z - h)) / (2 * h), atol=1e-6)
+    gx, gy = f.grad(x, y, z)
+    assert np.allclose(gx, (f.g(x + h, y, z) - f.g(x - h, y, z)) / (2 * h), atol=1e-6)
