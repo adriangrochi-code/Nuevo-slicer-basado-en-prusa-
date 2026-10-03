@@ -101,10 +101,16 @@ extern std::vector<GLuint> s_th_tex_id;
 
 static constexpr const float TRACKBALLSIZE = 0.8f;
 
-static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR  = { 0.478f, 0.478f, 0.478f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.753f, 0.753f, 0.753f, 1.0f };
-static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.478f, 0.192f, 0.039f, 1.0f };
-static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.753f, 0.192f, 0.039f, 1.0f };
+// Scene background gradients (top, bottom), palette of PrusaSlicer 3.0.
+static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR  = { 0.620f, 0.620f, 0.620f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.750f, 0.750f, 0.750f, 1.0f };
+static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.550f, 0.550f, 1.0f };
+static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.950f, 0.700f, 0.700f, 1.0f };
+// Dark mode.
+static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.350f, 0.350f, 0.350f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.230f, 0.230f, 0.230f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.700f, 0.200f, 0.200f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.450f, 0.150f, 0.150f, 1.0f };
 
 #define SHOW_IMGUI_DEMO_WINDOW
 #ifdef SHOW_IMGUI_DEMO_WINDOW
@@ -6085,8 +6091,11 @@ void GLCanvas3D::_render_background()
     // Draws a bottom to top gradient over the complete screen.
     glsafe(::glDisable(GL_DEPTH_TEST));
 
-    const ColorRGBA top_color = use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
-    const ColorRGBA bottom_color = use_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;
+    const bool      dark         = wxGetApp().dark_mode();
+    const ColorRGBA top_color    = dark ? (use_error_color ? DARK_MODE_ERROR_TOP_COLOR : DARK_MODE_BG_TOP_COLOR) :
+                                          (use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR);
+    const ColorRGBA bottom_color = dark ? (use_error_color ? DARK_MODE_ERROR_BOTTOM_COLOR : DARK_MODE_BG_BOTTOM_COLOR) :
+                                          (use_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR);
 
     if (!m_background.is_initialized()) {
         m_background.reset();

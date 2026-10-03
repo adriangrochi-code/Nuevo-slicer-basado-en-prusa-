@@ -1,7 +1,7 @@
 name: Build flatpak
 
+# Uses Prusa's private build actions, manual only in this fork.
 on:
-  push:
   workflow_dispatch:
 
 jobs:

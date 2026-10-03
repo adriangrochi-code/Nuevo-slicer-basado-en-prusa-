@@ -134,7 +134,7 @@ void AppConfig::set_defaults()
             set("use_binary_gcode_when_supported", "1");
  
        if (get("notify_release").empty())
-           set("notify_release", "all"); // or "none" or "release"
+           set("notify_release", "none"); // or "all" or "release". This fork does not follow the PrusaSlicer releases.
 
 #if ENABLE_ENVIRONMENT_MAP
         if (get("use_environment_map").empty())
@@ -228,8 +228,9 @@ void AppConfig::set_defaults()
     if (get("use_legacy_3DConnexion").empty())
         set("use_legacy_3DConnexion", "0");
 
+    // Dark interface by default, as in PrusaSlicer 3.0.
     if (get("dark_color_mode").empty())
-        set("dark_color_mode", "0");
+        set("dark_color_mode", "1");
 
     if (get("sys_menu_enabled").empty())
         set("sys_menu_enabled", "1");

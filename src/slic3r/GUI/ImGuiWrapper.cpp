@@ -1309,56 +1309,78 @@ void ImGuiWrapper::init_input()
 
 void ImGuiWrapper::init_style()
 {
+    // Flat, rounded style with the palette of PrusaSlicer 3.0: dark neutral panels, Prusa orange
+    // as the primary accent and blue for selections.
     ImGuiStyle &style = ImGui::GetStyle();
 
     auto set_color = [&](ImGuiCol_ entity, ImVec4 color) {
         style.Colors[entity] = color;
     };
+    const ImVec4 bg_alternate  = { 0.161f, 0.161f, 0.161f, 1.0f };
+    const ImVec4 bg_hovered    = { 0.212f, 0.212f, 0.212f, 1.0f };
+    const ImVec4 bg_active     = { 0.251f, 0.251f, 0.251f, 1.0f };
+    const ImVec4 accent_blue   = { 0.32f, 0.48f, 0.84f, 1.0f };
+    const ImVec4 selection     = { 0.21f, 0.29f, 0.46f, 1.0f };
+
+    // Geometry
+    style.WindowRounding    = 8.0f;
+    style.ChildRounding     = 6.0f;
+    style.PopupRounding     = 6.0f;
+    style.FrameRounding     = 4.0f;
+    style.GrabRounding      = 4.0f;
+    style.ScrollbarRounding = 8.0f;
+    style.TabRounding       = 4.0f;
+    style.WindowBorderSize  = 0.0f;
+    style.PopupBorderSize   = 0.0f;
+    style.FrameBorderSize   = 0.0f;
 
     // Window
-    style.WindowRounding = 4.0f;
     set_color(ImGuiCol_WindowBg,        ImGuiPureWrap::COL_WINDOW_BACKGROUND);
-    set_color(ImGuiCol_TitleBgActive,   ImGuiPureWrap::COL_ORANGE_DARK);
+    set_color(ImGuiCol_PopupBg,         { 0.08f, 0.08f, 0.08f, 0.96f });
+    set_color(ImGuiCol_TitleBg,         ImGuiPureWrap::COL_WINDOW_BACKGROUND);
+    set_color(ImGuiCol_TitleBgActive,   bg_alternate);
+    set_color(ImGuiCol_Border,          { 0.f, 0.f, 0.f, 0.f });
 
     // Generics
-    set_color(ImGuiCol_FrameBg,         ImGuiPureWrap::COL_GREY_DARK);
-    set_color(ImGuiCol_FrameBgHovered,  ImGuiPureWrap::COL_GREY_LIGHT);
-    set_color(ImGuiCol_FrameBgActive,   ImGuiPureWrap::COL_GREY_LIGHT);
+    set_color(ImGuiCol_FrameBg,         bg_alternate);
+    set_color(ImGuiCol_FrameBgHovered,  bg_hovered);
+    set_color(ImGuiCol_FrameBgActive,   bg_active);
 
     // Text selection
-    set_color(ImGuiCol_TextSelectedBg,  ImGuiPureWrap::COL_ORANGE_DARK);
+    set_color(ImGuiCol_TextSelectedBg,  { accent_blue.x, accent_blue.y, accent_blue.z, 0.45f });
 
     // Buttons
-    set_color(ImGuiCol_Button,          ImGuiPureWrap::COL_BUTTON_BACKGROUND);
-    set_color(ImGuiCol_ButtonHovered,   ImGuiPureWrap::COL_BUTTON_HOVERED);
-    set_color(ImGuiCol_ButtonActive,    ImGuiPureWrap::COL_BUTTON_ACTIVE);
+    set_color(ImGuiCol_Button,          bg_hovered);
+    set_color(ImGuiCol_ButtonHovered,   ImGuiPureWrap::COL_ORANGE_DARK);
+    set_color(ImGuiCol_ButtonActive,    ImGuiPureWrap::COL_ORANGE_LIGHT);
 
     // Checkbox
     set_color(ImGuiCol_CheckMark,       ImGuiPureWrap::COL_ORANGE_LIGHT);
 
     // ComboBox items
-    set_color(ImGuiCol_Header,          ImGuiPureWrap::COL_ORANGE_DARK);
-    set_color(ImGuiCol_HeaderHovered,   ImGuiPureWrap::COL_ORANGE_LIGHT);
-    set_color(ImGuiCol_HeaderActive,    ImGuiPureWrap::COL_ORANGE_LIGHT);
+    set_color(ImGuiCol_Header,          selection);
+    set_color(ImGuiCol_HeaderHovered,   { 1.f, 1.f, 1.f, 0.10f });
+    set_color(ImGuiCol_HeaderActive,    accent_blue);
 
     // Slider
     set_color(ImGuiCol_SliderGrab,      ImGuiPureWrap::COL_ORANGE_DARK);
     set_color(ImGuiCol_SliderGrabActive,ImGuiPureWrap::COL_ORANGE_LIGHT);
 
     // Separator
-    set_color(ImGuiCol_Separator,       ImGuiPureWrap::COL_ORANGE_LIGHT);
+    set_color(ImGuiCol_Separator,       { 0.30f, 0.30f, 0.30f, 1.0f });
 
     // Tabs
-    set_color(ImGuiCol_Tab,                 ImGuiPureWrap::COL_ORANGE_DARK);
+    set_color(ImGuiCol_Tab,                 bg_alternate);
     set_color(ImGuiCol_TabHovered,          ImGuiPureWrap::COL_ORANGE_LIGHT);
-    set_color(ImGuiCol_TabActive,           ImGuiPureWrap::COL_ORANGE_LIGHT);
-    set_color(ImGuiCol_TabUnfocused,        ImGuiPureWrap::COL_GREY_DARK);
-    set_color(ImGuiCol_TabUnfocusedActive,  ImGuiPureWrap::COL_GREY_LIGHT);
+    set_color(ImGuiCol_TabActive,           ImGuiPureWrap::COL_ORANGE_DARK);
+    set_color(ImGuiCol_TabUnfocused,        bg_alternate);
+    set_color(ImGuiCol_TabUnfocusedActive,  bg_active);
 
     // Scrollbars
-    set_color(ImGuiCol_ScrollbarGrab,       ImGuiPureWrap::COL_ORANGE_DARK);
-    set_color(ImGuiCol_ScrollbarGrabHovered,ImGuiPureWrap::COL_ORANGE_LIGHT);
-    set_color(ImGuiCol_ScrollbarGrabActive, ImGuiPureWrap::COL_ORANGE_LIGHT);
+    set_color(ImGuiCol_ScrollbarBg,         { 0.f, 0.f, 0.f, 0.f });
+    set_color(ImGuiCol_ScrollbarGrab,       { 0.31f, 0.31f, 0.31f, 1.0f });
+    set_color(ImGuiCol_ScrollbarGrabHovered,{ 0.41f, 0.41f, 0.41f, 1.0f });
+    set_color(ImGuiCol_ScrollbarGrabActive, { 0.51f, 0.51f, 0.51f, 1.0f });
 }
 
 void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)

@@ -1,23 +1,76 @@
 name: Build windows
 
+# Builds the Windows binaries (prusa-slicer.exe) with MSVC and uploads them as a zip artifact:
+# Actions > the run > Artifacts > NonPlanarSlicer-windows.
+# The dependencies are built from deps/ and cached, so only the first run is slow (~2-3 h).
+
 on:
   push:
   workflow_dispatch:
-    inputs:
-      create_pdb:
-        description: 'Zip pdbs'
-        default: false
-        type: boolean
-      create_installer:
-        description: 'Create installer'
-        default: false
-        type: boolean
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build_win:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@legacy
-    secrets: inherit
-    with:
-      actions_branch: legacy
-      create_pdb: ${{ inputs.create_pdb || false }}
-      create_installer: ${{ inputs.create_installer || false }}
+    runs-on: windows-2022
+    timeout-minutes: 360
+    env:
+      # Short paths: the dependency builds hit the Windows path length limit otherwise.
+      DEPS_BUILD: C:/d
+      DEPS_DEST: C:/dd
+      APP_BUILD: C:/b
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore dependencies
+        id: deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:/dd
+          key: deps-win-msvc2022-${{ hashFiles('deps/**') }}
+
+      - name: Build dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        shell: cmd
+        run: |
+          cmake -S deps -B %DEPS_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DDEP_DEBUG=OFF -DDESTDIR=%DEPS_DEST% || exit /b 1
+          cmake --build %DEPS_BUILD% --config Release -- /m /v:minimal || exit /b 1
+
+      # Saved right away, so a failure of the application build does not lose them.
+      - name: Save dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: C:/dd
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+      - name: Configure
+        shell: cmd
+        run: |
+          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
+
+      - name: Build
+        shell: cmd
+        run: |
+          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer -- /m /v:minimal
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $out = "NonPlanarSlicer"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Get-ChildItem "$env:APP_BUILD/src/Release" -File |
+            Where-Object { $_.Extension -in '.exe', '.dll' } |
+            Copy-Item -Destination $out
+          Copy-Item -Recurse resources "$out/resources"
+          Copy-Item doc/NonPlanarSlicer.md "$out/LEEME.md"
+          Get-ChildItem $out
+          & "$out/prusa-slicer-console.exe" --help | Select-Object -First 3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NonPlanarSlicer-windows
+          path: NonPlanarSlicer
+          retention-days: 30
