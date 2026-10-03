@@ -12,6 +12,8 @@ pendiente; de momento lo llamamos NPS (Non-Planar Slicer).
 | raíz (`src/`, `resources/`, `deps/`…) | PrusaSlicer 3.0 alpha12 sin modificar (de momento) |
 | `nps-prototype/` | prototipo en Python: deformación de capas, transformación inversa del G-code, políticas de caudal, límites de Z, métricas de homogeneidad, configuración TOML. Es la **referencia** con la que se valida la versión C++. |
 | `tools/update-upstream.sh` | trae nuevas versiones de PrusaSlicer |
+| `tools/presets/` | conversor de presets 2.9 → 3.0 (tras actualizar upstream, ejecuta `tools/presets/regenerate.sh`) |
+| `resources/presets/nps-community-fff/` | presets de otros fabricantes generados por el conversor |
 | `FORK.md` | este documento |
 
 ## Objetivos
@@ -24,10 +26,11 @@ pendiente; de momento lo llamamos NPS (Non-Planar Slicer).
    (patrón de onda, amplitud, longitud de onda, giro, rampa, política de
    caudal) e informe de homogeneidad tras el corte.
 3. **Impresoras de otros fabricantes.** La 3.0 alpha sólo trae presets de Prusa,
-   en el nuevo formato YAML (`resources/presets/`). Plan: un conversor de los
-   paquetes `.ini` por fabricante de la 2.9 (Creality, Voron, Anycubic,
-   Elegoo…) al formato 3.0, empezando por Creality (CR-5 Pro H incluida),
-   Voron/Klipper y Marlin genérica.
+   en el nuevo formato YAML (`resources/presets/`). **Hecho (pendiente de
+   probar en la 3.0 compilada):** `tools/presets/` convierte los paquetes
+   `.ini` de la 2.9 al formato 3.0. `resources/presets/nps-community-fff/`
+   contiene 31 fabricantes (Creality, Voron, Anycubic, Elegoo, Sovol, QIDI,
+   Snapmaker…) con 222 modelos. Ver [tools/presets/README.md](tools/presets/README.md).
 
 ## Actualizar a una nueva versión de PrusaSlicer
 

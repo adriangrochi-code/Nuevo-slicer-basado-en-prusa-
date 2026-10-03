@@ -1,0 +1,2457 @@
+{
+ "_source": "PrusaSlicer 3.0 ConfigCommon.cpp + ConfigDefsFDM.cpp",
+ "keys": {
+  "arc_fitting": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "autoemit_temperature_commands": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "automatic_extrusion_widths": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "automatic_infill_combination": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume",
+    "Tool"
+   ],
+   "type": "bool"
+  },
+  "automatic_infill_combination_max_layer_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume",
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "avoid_crossing_curled_overhangs": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "avoid_crossing_perimeters": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "avoid_crossing_perimeters_max_detour": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "bed_custom_model": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "bed_custom_texture": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "bed_shape": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<Vec2d>"
+  },
+  "bed_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "bed_temperature_extruder": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "before_layer_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "between_objects_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "binary_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "bottom_fill_pattern": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "bottom_solid_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "bottom_solid_min_thickness": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "bridge_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "bridge_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "bridge_fan_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "bridge_flow_ratio": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "bridge_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "brim_separation": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "brim_type": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "brim_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "chamber_minimal_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "chamber_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "color_change_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "colorprint_heights": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "compatible_printers": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "compatible_printers_condition": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "compatible_printers_condition_cummulative": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "compatible_prints": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "compatible_prints_condition": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "compatible_prints_condition_cummulative": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "complete_objects": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "cooling": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "cooling_perimeter_transition_distance": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "cooling_slowdown_logic": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "cooling_tube_length": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "cooling_tube_retraction": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "custom_parameters_filament": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "custom_parameters_print": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "custom_parameters_printer": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "default_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "default_filament_profile": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "default_material": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "default_print": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "default_print_profile": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "default_tool_print": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "deretract_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "disable_fan_first_layers": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "dont_support_bridges": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "draft_shield": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "duplicate_distance": {
+   "location": null,
+   "overrides_in": [],
+   "type": "double"
+  },
+  "elefant_foot_compensation": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "enable_dynamic_fan_speeds": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "enable_dynamic_overhang_speeds": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "enable_pressure_advance_during_ramming": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "end_filament_gcode": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "end_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "ensure_vertical_shell_thickness": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "external_perimeter_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "external_perimeter_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "external_perimeter_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "external_perimeters_first": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "extra_loading_move": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "extra_perimeters": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "extra_perimeters_on_overhangs": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "extruder": {
+   "location": "Object",
+   "overrides_in": [
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "extruder_clearance_height": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "extruder_clearance_radius": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "extruder_colour": {
+   "location": "Project",
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "extruder_offset": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<Vec2d>"
+  },
+  "extrusion_axis": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "extrusion_multiplier": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "fan_always_on": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "fan_below_layer_time": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "filament_abrasive": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "filament_change_time": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_colour": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "filament_cooling_final_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_cooling_initial_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_cooling_moves": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "filament_cost": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_density": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_diameter": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_flush_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_flush_volume": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_infill_max_crossing_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_infill_max_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_loading_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_loading_speed_start": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_max_volumetric_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_minimal_purge_on_wipe_tower": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_multitool_ramming": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "filament_multitool_ramming_flow": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_multitool_ramming_volume": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_notes": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "filament_purge_multiplier": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "Percentage"
+  },
+  "filament_ramming_initial_delay": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_ramming_parameters": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "filament_ramming_temperature_delta": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "filament_settings_id": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "filament_shrinkage_compensation_xy": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "Percentage"
+  },
+  "filament_shrinkage_compensation_z": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "Percentage"
+  },
+  "filament_soluble": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "filament_spool_weight": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_stamping_distance": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_stamping_loading_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_toolchange_delay": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_type": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "filament_unloading_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_unloading_speed_start": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "filament_vendor": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "fill_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "fill_density": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "Percentage"
+  },
+  "fill_pattern": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "first_layer_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "first_layer_acceleration_over_raft": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "first_layer_bed_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "first_layer_external_perimeter_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_gap_fill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_perimeter_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_solid_infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_speed_over_raft": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_support_material_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "first_layer_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "first_layer_top_solid_infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "full_fan_speed_layer": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "fuzzy_skin": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "fuzzy_skin_point_dist": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "fuzzy_skin_thickness": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "gap_fill_enabled": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "gap_fill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "gcode_comments": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "gcode_flavor": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "gcode_label_objects": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "gcode_resolution": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "gcode_substitutions": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "high_current_on_filament_swap": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "idle_temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::optional<int>"
+  },
+  "infill_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "infill_anchor": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "infill_anchor_max": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "infill_every_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "infill_extruder": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "infill_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "infill_first": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "infill_overlap": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "inherits": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "inherits_cummulative": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "interface_shells": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "interlocking_beam": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "interlocking_beam_layer_count": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "interlocking_beam_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "interlocking_boundary_avoidance": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "interlocking_depth": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "interlocking_orientation": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "ironing": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "ironing_flowrate": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "Percentage"
+  },
+  "ironing_spacing": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "ironing_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "ironing_type": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "layer_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "layer_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "machine_limits_usage": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "machine_max_acceleration_e": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_extruding": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_retracting": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_travel": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_x": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_y": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_acceleration_z": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_feedrate_e": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_feedrate_x": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_feedrate_y": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_feedrate_z": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_jerk_e": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_jerk_x": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_jerk_y": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_jerk_z": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_max_junction_deviation": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_min_extruding_rate": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "machine_min_travel_rate": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "max_fan_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "max_layer_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "max_print_height": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "max_print_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "max_volumetric_extrusion_rate_slope_negative": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "max_volumetric_extrusion_rate_slope_positive": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "max_volumetric_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "min_bead_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "min_fan_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "min_feature_size": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "min_layer_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "min_print_speed": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "min_skirt_length": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "mmu_segmented_region_interlocking_depth": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "mmu_segmented_region_max_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "multimaterial_purging": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "notes": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "only_one_perimeter_first_layer": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "only_retract_when_crossing_perimeters": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "bool"
+  },
+  "ooze_prevention": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "output_filename_format": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "over_bridge_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "overhang_fan_speed_0": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "overhang_fan_speed_1": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "overhang_fan_speed_2": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "overhang_fan_speed_3": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "overhang_speed_0": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "overhang_speed_1": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "overhang_speed_2": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "overhang_speed_3": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "overhangs": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "parking_pos_retraction": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "pause_print_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "perimeter_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "perimeter_extruder": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "perimeter_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "perimeter_generator": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "perimeter_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "perimeters": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "physical_printer_settings_id": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "post_process": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "std::vector<std::string>"
+  },
+  "prefer_clockwise_movements": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "preset_name": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "pressure_advance": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "pressure_advance_value": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "print_settings_id": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "printer_model": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "printer_notes": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "printer_settings_id": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "printer_technology": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "printer_variant": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "printer_vendor": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "profile_vendor": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "profile_version": {
+   "location": null,
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "raft_contact_distance": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "raft_expansion": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "raft_first_layer_density": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "Percentage"
+  },
+  "raft_first_layer_expansion": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "raft_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "remaining_times": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "resolution": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "retract_before_travel": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_before_wipe": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "Percentage"
+  },
+  "retract_layer_change": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "bool"
+  },
+  "retract_length": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_length_toolchange": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_lift": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_lift_above": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_lift_below": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_restart_extra": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_restart_extra_toolchange": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "retract_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "scarf_seam_entire_loop": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "scarf_seam_length": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "scarf_seam_max_segment_length": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "scarf_seam_on_inner_perimeters": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "scarf_seam_only_on_smooth": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "scarf_seam_placement": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "scarf_seam_start_height": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "Percentage"
+  },
+  "seam_gap_distance": {
+   "location": "Print",
+   "overrides_in": [
+    "Filament"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "seam_position": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "silent_mode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "single_extruder_multi_material": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "single_extruder_multi_material_priming": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "skirt_distance": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "skirt_height": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "skirts": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "slice_closing_radius": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "slicing_mode": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "slowdown_below_layer_time": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "small_perimeter_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "solid_infill_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "solid_infill_below_area": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "solid_infill_every_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "solid_infill_extruder": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "solid_infill_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "solid_infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "solid_layers": {
+   "location": null,
+   "overrides_in": [],
+   "type": "int"
+  },
+  "solid_min_thickness": {
+   "location": null,
+   "overrides_in": [],
+   "type": "double"
+  },
+  "spiral_vase": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "staggered_inner_seams": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "standby_temperature_delta": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "start_filament_gcode": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "start_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "stuck_filament_detection": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "support_material": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "support_material_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_bottom_contact_distance": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_bottom_interface_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_buildplate_only": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "support_material_closing_radius": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_contact_distance": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_enforce_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_extruder": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "support_material_first_layer_density": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "Percentage"
+  },
+  "support_material_first_layer_expansion": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_interface_contact_loops": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "support_material_interface_extruder": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_interface_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_interface_pattern": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "support_material_interface_spacing": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_interface_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "support_material_pattern": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "support_material_spacing": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_material_style": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "EnumWrapper"
+  },
+  "support_material_synchronize_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "support_material_threshold": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "int"
+  },
+  "support_material_with_sheath": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "support_material_xy_spacing": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "support_tree_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_angle_slow": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_branch_diameter": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_branch_diameter_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_branch_diameter_double_wall": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_branch_distance": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_tip_diameter": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "support_tree_top_rate": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "Percentage"
+  },
+  "temperature": {
+   "location": "Filament",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "template_custom_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "thick_bridges": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "bool"
+  },
+  "thin_walls": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "bool"
+  },
+  "thumbnails": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "thumbnails_format": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "EnumWrapper"
+  },
+  "toolchange_gcode": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "std::string"
+  },
+  "toolchange_ordering": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "EnumWrapper"
+  },
+  "top_fill_pattern": {
+   "location": "Print",
+   "overrides_in": [
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "top_infill_extrusion_width": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "top_one_perimeter_type": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "EnumWrapper"
+  },
+  "top_solid_infill_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "top_solid_infill_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "top_solid_layers": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "int"
+  },
+  "top_solid_min_thickness": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object",
+    "Volume"
+   ],
+   "type": "double"
+  },
+  "travel_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "travel_lift_before_obstacle": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "bool"
+  },
+  "travel_max_lift": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "travel_ramping_lift": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "bool"
+  },
+  "travel_short_distance_acceleration": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "travel_slope": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "double"
+  },
+  "travel_speed": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "travel_speed_z": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "use_firmware_retraction": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "use_relative_e_distances": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "use_volumetric_e": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "variable_layer_height": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "wall_distribution_count": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "int"
+  },
+  "wall_transition_angle": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "double"
+  },
+  "wall_transition_filter_deviation": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "wall_transition_length": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Object"
+   ],
+   "type": "FloatOrPercentage"
+  },
+  "wipe": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool",
+    "Filament"
+   ],
+   "type": "bool"
+  },
+  "wipe_into_infill": {
+   "location": "Volume",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "wipe_into_objects": {
+   "location": "Object",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "wipe_tower": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "wipe_tower_acceleration": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "wipe_tower_bridging": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "double"
+  },
+  "wipe_tower_brim_width": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "wipe_tower_cone_angle": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "wipe_tower_extra_flow": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "Percentage"
+  },
+  "wipe_tower_extra_spacing": {
+   "location": "Print",
+   "overrides_in": [
+    "Tool"
+   ],
+   "type": "Percentage"
+  },
+  "wipe_tower_extruder": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "int"
+  },
+  "wipe_tower_no_sparse_layers": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "wipe_tower_width": {
+   "location": "Print",
+   "overrides_in": [],
+   "type": "double"
+  },
+  "wiping_volumes_matrix": {
+   "location": "Project",
+   "overrides_in": [],
+   "type": "std::vector<double>"
+  },
+  "wiping_volumes_use_custom_matrix": {
+   "location": "Project",
+   "overrides_in": [],
+   "type": "bool"
+  },
+  "xy_size_compensation": {
+   "location": "Print",
+   "overrides_in": [
+    "Object"
+   ],
+   "type": "double"
+  },
+  "z_offset": {
+   "location": "Printer",
+   "overrides_in": [],
+   "type": "double"
+  }
+ }
+}
