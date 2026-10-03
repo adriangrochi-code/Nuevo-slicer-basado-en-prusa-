@@ -1,7 +1,7 @@
 # TODO Add individual tests as executables in separate directories
 # add_subirectory(<testcase>)
 
-find_package(Catch2 3.8 REQUIRED)
+find_package(Catch2 3.4 REQUIRED)
 slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
 slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
 
