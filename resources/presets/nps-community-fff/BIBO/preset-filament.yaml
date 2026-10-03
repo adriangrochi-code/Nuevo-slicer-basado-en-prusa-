@@ -1,0 +1,506 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: I+PfPcWDUH+FiqGygr8D3Q
+name: Generic PLA @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: |-
+    List of materials which typically use standard PLA print settings:
+
+    Das Filament
+    Esun PLA
+    EUMAKERS PLA
+    Fiberlogy HD-PLA
+    Fillamentum PLA
+    Floreon3D
+    Hatchbox PLA
+    Plasty Mladec PLA
+    Primavalue PLA
+    Proto pasta Matte Fiber
+    Verbatim PLA
+    Verbatim BVOH
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 60
+  fan_below_layer_time: 100
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 15.0
+  filament_type: PLA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 215
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  temperature: 200
+  filament_vendor: Generic
+---
+kind: filament
+id: ngtQ0AwaVmKRlX7UN8LtPQ
+name: BIBO White PLA @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: General Settings for the BIBO White Filament Which is included with the printer
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 30
+  fan_below_layer_time: 100
+  filament_colour: '#FFFFFF'
+  filament_max_volumetric_speed: 15.0
+  filament_type: PLA
+  first_layer_bed_temperature: 30
+  first_layer_temperature: 200
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  temperature: 190
+  filament_vendor: BIBO
+---
+kind: filament
+id: c/asUkcxXSO+1ykWdgJCWQ
+name: Generic PETG @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 30.0
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: PETG
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 240
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 100
+  temperature: 240
+  filament_vendor: Generic
+---
+kind: filament
+id: ohDXS5NQWHmfBxe5IduORQ
+name: Generic ABS @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 27.82
+  filament_density: 1.08
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 90
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 20
+  filament_colour: '#FFF2EC'
+  filament_max_volumetric_speed: 11.0
+  filament_type: ABS
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 245
+  fan_always_on: false
+  max_fan_speed: 15
+  min_fan_speed: 15
+  bridge_fan_speed: 25
+  temperature: 245
+  filament_vendor: Generic
+---
+kind: filament
+id: yThYiSONVnq7vDMhQSvtEw
+name: Esun ABS @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 27.82
+  filament_density: 1.08
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 90
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 20
+  filament_colour: '#FFF2EC'
+  filament_max_volumetric_speed: 11.0
+  filament_type: ABS
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 245
+  fan_always_on: false
+  max_fan_speed: 15
+  min_fan_speed: 15
+  bridge_fan_speed: 25
+  temperature: 245
+  filament_vendor: Esun
+---
+kind: filament
+id: dZ13A+JdVTqJevVk42BYTg
+name: Hatchbox ABS @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 27.82
+  filament_density: 1.08
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 90
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 20
+  filament_colour: '#FFF2EC'
+  filament_max_volumetric_speed: 11.0
+  filament_type: ABS
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 245
+  fan_always_on: false
+  max_fan_speed: 15
+  min_fan_speed: 15
+  bridge_fan_speed: 25
+  temperature: 245
+  filament_vendor: Hatchbox
+---
+kind: filament
+id: geGzNc18Ws2CfpIOCDDsEw
+name: Generic HIPS @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 5.70968 6.03226 7 8.25806 9 9.19355 9.3871 9.77419 10.129 10.3226 10.4516 10.5161| 0.05 5.69677 0.45 6.15484 0.95 8.76774 1.45 9.20323 1.95 9.95806 2.45 10.3871 2.95 10.5677 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 27.3
+  filament_density: 1.04
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: true
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 100
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 10
+  filament_colour: '#FFFFD7'
+  filament_max_volumetric_speed: 11.0
+  filament_type: HIPS
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 230
+  fan_always_on: true
+  max_fan_speed: 20
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 230
+  filament_vendor: Generic
+---
+kind: filament
+id: szjshbiEUXS932K3kZHcCQ
+name: AMOLEN bronze PLA @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 25.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 65
+  fan_below_layer_time: 100
+  filament_colour: '#808040'
+  filament_max_volumetric_speed: 15.0
+  filament_type: PLA
+  first_layer_bed_temperature: 65
+  first_layer_temperature: 215
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  temperature: 205
+  filament_vendor: AMOLEN
+---
+kind: filament
+id: 2wpBLsfFUZKmddpTw65nrg
+name: Prusament PLA @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 24.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 60
+  fan_below_layer_time: 100
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 15.0
+  filament_type: PLA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 215
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  temperature: 215
+  filament_vendor: Prusa Polymers
+---
+kind: filament
+id: zi1WTlK3VI+28qdr+sKaYQ
+name: Prusament PETG @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 24.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: PETG
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 245
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 100
+  temperature: 245
+  filament_vendor: Prusa Polymers
+---
+kind: filament
+id: RMBRwS+fXd+IM8Brq6nv9g
+name: PrimaSelect PVA+ @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_ramming_parameters: 120 100 8.3871 8.6129 8.93548 9.22581 9.48387 9.70968 9.87097 10.0323 10.2258 10.4194 10.6452 10.8065| 0.05 8.34193 0.45 8.73548 0.95 9.34836 1.45 9.78385 1.95 10.0871 2.45 10.5161 2.95 10.8903 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 108.0
+  filament_density: 1.23
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: true
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 60
+  fan_below_layer_time: 100
+  filament_colour: '#FFFFD7'
+  filament_max_volumetric_speed: 3.8
+  filament_type: PVA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 195
+  fan_always_on: false
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  temperature: 195
+  filament_vendor: PrimaSelect
+---
+kind: filament
+id: Uy1Qz9jkWySQnDTBfSM5Zg
+name: No Filament - standby only @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  first_layer_temperature: 170
+  temperature: 170
+---
+kind: filament
+id: 4uswWkVOX5GYXb2O1yE7CA
+name: Generic FLEX @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.2
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 82.0
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_always_on: false
+  fan_below_layer_time: 100
+  filament_colour: '#008000'
+  filament_max_volumetric_speed: 1.2
+  filament_type: FLEX
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 240
+  max_fan_speed: 90
+  min_fan_speed: 70
+  temperature: 240
+  retract_length: 0.0
+  deretract_speed: 15.0
+  wipe: false
+  filament_vendor: Generic
+---
+kind: filament
+id: WdimTNtuXySOWKyLg20r4Q
+name: Overture TPU @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.2
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 23.99
+  filament_density: 1.21
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  fan_always_on: false
+  fan_below_layer_time: 100
+  filament_colour: '#008000'
+  filament_max_volumetric_speed: 1.5
+  filament_type: FLEX
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 235
+  max_fan_speed: 80
+  min_fan_speed: 80
+  temperature: 235
+  retract_length: 0.8
+  deretract_speed: 15.0
+  retract_lift: 0.0
+  wipe: false
+  filament_vendor: Overture
+  retract_before_travel: 3.0
+---
+kind: filament
+id: +elyDIzbXtOJX0/pDI4lMg
+name: SainSmart TPU @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.15
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 32.99
+  filament_density: 1.21
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_colour: '#008000'
+  filament_max_volumetric_speed: 2.5
+  filament_type: FLEX
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 80
+  min_fan_speed: 80
+  temperature: 230
+  retract_length: 0.5
+  deretract_speed: 15.0
+  retract_lift: 0.0
+  wipe: false
+  filament_vendor: SainSmart
+  retract_before_travel: 3.0
+---
+kind: filament
+id: yuyiQZanW76I6aL0gZyq/w
+name: Filatech FilaFlex40 @BIBO2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(BIBO2)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.15
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_cost: 51.45
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 3
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_colour: '#008000'
+  filament_max_volumetric_speed: 2.5
+  filament_type: FLEX
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 50
+  min_fan_speed: 50
+  temperature: 230
+  retract_length: 0.5
+  deretract_speed: 15.0
+  retract_lift: 0.0
+  wipe: false
+  filament_vendor: Filatech
+  retract_before_travel: 3.0
+  retract_speed: 20.0

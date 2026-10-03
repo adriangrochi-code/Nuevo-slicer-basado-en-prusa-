@@ -1,0 +1,42 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: 4o1/69kRVzalAdFNCu83mg
+name: mycusini 3D Choco @MC2.0
+condition: (tool.nozzle_diameter == 1 and printer.model =~ /^(MC2\.0)$/)
+values:
+  filament_vendor: Print4Taste
+  bed_temperature: 0
+  bridge_fan_speed: 0
+  cooling: true
+  disable_fan_first_layers: 0
+  end_filament_gcode: ''
+  extrusion_multiplier: 0.95
+  fan_always_on: false
+  fan_below_layer_time: 60
+  filament_colour: '#F4A6FF'
+  filament_density: 1.26
+  filament_diameter: 18.0
+  filament_max_volumetric_speed: 8.0
+  filament_notes: |-
+    Full cartridge: 18 x 100 mm, 32g
+    Density: 1.26 g/cm3
+    Cut cartrige size: 18 x ~50 mm, 16g
+    Mycusini 2.0 does not require temperature control in gcode
+
+
+    Don't remove the following keywords! These keywords are used in the "compatible printer" condition of the print and filament profiles to link the particular print and filament profiles to this printer profile.
+    PRINTER_VENDOR_PRINT4TASTE
+    PRINTER_MODEL_MYCUSINI2.0
+  retract_layer_change: true
+  retract_length: 0.3
+  retract_lift: 1.0
+  filament_type: GLAZE
+  wipe: true
+  first_layer_bed_temperature: 0
+  first_layer_temperature: 0
+  max_fan_speed: 0
+  min_fan_speed: 0
+  min_print_speed: 9.0
+  slowdown_below_layer_time: 15
+  start_filament_gcode: ''
+  temperature: 0

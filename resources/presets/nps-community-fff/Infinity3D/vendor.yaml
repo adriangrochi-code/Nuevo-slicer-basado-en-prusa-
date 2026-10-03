@@ -1,0 +1,94 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Infinity3D
+name: Infinity3D
+version: 2.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Infinity3D DEV-200
+  base_model: Infinity3D DEV-200
+  printer_configs_order:
+  - dev-200
+- label: Infinity3D DEV-350
+  base_model: Infinity3D DEV-350
+  printer_configs_order:
+  - dev-350
+---
+kind: printer
+technology: FFF
+name: Infinity3D DEV-200
+id: DEV-200
+model:
+  base_model: Infinity3D DEV-200
+  model: DEV-200
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: DEV_200_bed.stl
+  bed_texture: DEV_200_texture.svg
+  thumbnail: DEV-200_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Infinity3D DEV-350
+id: DEV-350
+model:
+  base_model: Infinity3D DEV-350
+  model: DEV-350
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: DEV_350_bed.stl
+  bed_texture: DEV_350_texture.svg
+  thumbnail: DEV-350_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: dev-200
+name: Infinity3D DEV-200
+printer: DEV-200
+legacy_printer_model:
+- DEV-200
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: dev-350
+name: Infinity3D DEV-350
+printer: DEV-350
+legacy_printer_model:
+- DEV-350
+tools:
+- tool: '0.4'
+sheet: default

@@ -1,0 +1,30 @@
+{
+ "vendor": "Trimaker",
+ "counts": {
+  "printer_models": 3,
+  "printer": 3,
+  "print": 4,
+  "filament": 2
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 3,
+   "octoprint_apikey (no existe en 3.0)": 3,
+   "octoprint_host (no existe en 3.0)": 3,
+   "serial_port (no existe en 3.0)": 3,
+   "serial_speed (no existe en 3.0)": 3
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 4,
+   "external_fill_pattern (no existe en 3.0)": 4,
+   "infill_only_where_needed (no existe en 3.0)": 4,
+   "auto_generated_supports (no existe en 3.0)": 4,
+   "support_material_auto (no existe en 3.0)": 4,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 4,
+   "wipe_tower_x (no existe en 3.0)": 4,
+   "wipe_tower_y (no existe en 3.0)": 4
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

@@ -1,0 +1,308 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*Ultimaker ULTIMAKER2*'
+condition: printer.model == "ULTIMAKER2"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Ultimaker 2
+  id: tebLYPunU9ShnDFw/mK7Gw
+  values:
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;M117 Layer [layer_num];
+      ;LAYER:[layer_num]
+    between_objects_gcode: ''
+    gcode_flavor: marlin
+    silent_mode: false
+    remaining_times: false
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 3000.0
+    machine_max_acceleration_retracting:
+    - 3000.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 300.0
+    machine_max_feedrate_y:
+    - 300.0
+    machine_max_feedrate_z:
+    - 40.0
+    machine_max_jerk_e:
+    - 10.0
+    machine_max_jerk_x:
+    - 20.0
+    machine_max_jerk_y:
+    - 20.0
+    machine_max_jerk_z:
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    layer_gcode: ''
+    single_extruder_multi_material: false
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: false
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    extruder_clearance_height: 50.0
+    extruder_clearance_radius: 60.0
+    bed_shape:
+    - '0x0'
+    - 224x0
+    - 224x225
+    - '0x225'
+    max_print_height: 212.0
+    start_gcode: "; Printer_Settings_ID: [printer_settings_id]\n\n; # # # # # # START Header\nG21 \t\t; metric values\nG90 \t\t; absolute positioning\nM82 \t\t; set extruder to absolute mode\nM107 \t\t; start with the fan off\n\nM140 S[first_layer_bed_temperature]\t; start bed heating\n\nG28 X0 Y0 Z0\t; move X/Y/Z to endstops\nG1 X1 Y6 F15000\t; move X/Y to start position\nG1 Z35 F9000\t; move Z to start position\n\n; Wait for bed and nozzle temperatures\nM190 S{first_layer_bed_temperature[0] - 5}\t; wait for bed temperature - 5\nM140 S[first_layer_bed_temperature]\t; continue bed heating\nM109 S[first_layer_temperature]\t; wait for nozzle temperature\n\n; Purge and prime\nM83 \t\t; set extruder to relative mode\nG92 E0           ; reset extrusion distance\nG0 X0 Y1 F10000\nG1 F150 E20 ; compress the bowden tube\nG1 E-8 F1200\nG0 X30 Y1 F5000    \nG0 F1200 Z{first_layer_height/2} ; Cut the connection to priming blob\nG0 X100 F10000 ; disconnect with the prime blob\nG0 X50         ; Avoid the metal clip holding the Ultimaker glass plate\nG0 Z0.2 F720\nG1 E8 F1200\nG1 X80 E3 F1000  ; intro line 1\nG1 X110 E4 F1000 ; intro line 2\nG1 X140 F600        ; drag filament to decompress bowden tube\nG1 X100 F3200       ; wipe backwards a bit\nG1 X150 F3200       ; back to where there is no plastic: avoid dragging\nG92 E0           ; reset extruder reference\nM82 \t\t; set extruder to absolute mode\n\n; # # # # # # END Header"
+    end_gcode: "; # # # # # # START Footer\nG91 \t\t\t; relative coordinates\n;G1 E-1 F1200\t\t; retract the filament\nG1 Z+15  X-10 Y-10 E-7  F6000\t\t; move Z a bit\n; G1 X-10 Y-10 F6000\t; move XY a bit\nG1 E-5.5 F300\t\t; retract the filament\nG28 X0 Y0\t\t; move X/Y to min endstops, so the head is out of the way\nM104 S0\t\t\t; extruder heater off\nM140 S0\t\t\t; heated bed heater off (if you have it)\nM84 \t\t\t; disable motors\n; # # # # # # END Footer\n"
+    default_print: 0.20mm NORMAL @ULTIMAKER
+---
+kind: printer
+id: '*Ultimaker ULTIMAKERSline*'
+condition: printer.model == "ULTIMAKERSline"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Ultimaker S3
+  id: SAL6rjIXWzqsRAJ70iSe1Q
+  values:
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;M117 Layer [layer_num];
+      ;LAYER:[layer_num]
+    between_objects_gcode: ''
+    gcode_flavor: marlin
+    silent_mode: false
+    remaining_times: false
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 3000.0
+    machine_max_acceleration_retracting:
+    - 3000.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 300.0
+    machine_max_feedrate_y:
+    - 300.0
+    machine_max_feedrate_z:
+    - 40.0
+    machine_max_jerk_e:
+    - 10.0
+    machine_max_jerk_x:
+    - 20.0
+    machine_max_jerk_y:
+    - 20.0
+    machine_max_jerk_z:
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    layer_gcode: ''
+    single_extruder_multi_material: false
+    toolchange_gcode: |-
+      {if previous_extruder>= 0}
+      M104 S{temperature[previous_extruder] + standby_temperature_delta}
+      {endif}
+
+      M104 T{next_extruder} S{temperature[next_extruder]}
+
+      G91
+      G0 Z2
+      G90
+      M82
+
+      T{next_extruder}
+      M109 S{temperature[next_extruder]}
+
+      G91
+      G0 Z-2
+      G90
+      M82
+      G92 E0 ; reset extrusion distance
+    use_firmware_retraction: false
+    use_relative_e_distances: false
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    extruder_clearance_height: 50.0
+    extruder_clearance_radius: 60.0
+    extruder_offset:
+    - '0x0'
+    - 22x0
+    start_gcode: |-
+      ; Delete the first 'generated by PrusaSlicer' line to make gcode printable on Ultimaker S-line
+
+      ;START_OF_HEADER
+      ; Printer_Settings_ID: [printer_settings_id]
+
+      ;ULTIMAKER GRIFFIN HEADER
+      ;HEADER_VERSION:0.1
+      ;FLAVOR:Griffin
+      ;GENERATOR.NAME:PrusaSlicer
+      ;GENERATOR.VERSION:5.4.0
+      ;GENERATOR.BUILD_DATE:{year}-{month}-{day}
+      ;TARGET_MACHINE.NAME:Ultimaker S7
+      ;EXTRUDER_TRAIN.0.INITIAL_TEMPERATURE:{first_layer_temperature[0]}
+      ;EXTRUDER_TRAIN.0.MATERIAL.VOLUME_USED:{extruded_volume[0]}
+      ;EXTRUDER_TRAIN.0.MATERIAL.GUID:0f12978a-8e3c-4147-b9ca-726d5ed59368
+      ;EXTRUDER_TRAIN.0.NOZZLE.DIAMETER:{nozzle_diameter[0]}
+      ;EXTRUDER_TRAIN.0.NOZZLE.NAME:AA {nozzle_diameter[0]}
+      ;EXTRUDER_TRAIN.1.INITIAL_TEMPERATURE:{temperature[1] + standby_temperature_delta}
+      ;EXTRUDER_TRAIN.1.MATERIAL.VOLUME_USED:{extruded_volume[1]}
+      ;EXTRUDER_TRAIN.1.MATERIAL.GUID:0f12978a-8e3c-4147-b9ca-726d5ed59368
+      ;EXTRUDER_TRAIN.1.NOZZLE.DIAMETER:{nozzle_diameter[0]}
+      ;EXTRUDER_TRAIN.1.NOZZLE.NAME:AA {nozzle_diameter[0]}
+      ;BUILD_PLATE.INITIAL_TEMPERATURE:[first_layer_bed_temperature]
+      ;BUILD_VOLUME.TEMPERATURE:28
+      ;PRINT.TIME:0
+      ;PRINT.GROUPS:1
+      ;PRINT.SIZE.MIN.X:{print_bed_min[0]}
+      ;PRINT.SIZE.MIN.Y:{print_bed_min[1]}
+      ;PRINT.SIZE.MIN.Z:0
+      ;PRINT.SIZE.MAX.X:{print_bed_max[0]}
+      ;PRINT.SIZE.MAX.Y:{print_bed_max[1]}
+      ;PRINT.SIZE.MAX.Z:{max_print_height}
+      ;SLICE_UUID:32daaf1d-f868-4a8e-ad06-8536b153e789
+      ;END_OF_HEADER
+      T0
+      M82 ;absolute extrusion mode
+
+      G21 ; metric values
+      G90 ; absolute positioning
+      M107 ; start with the fan off
+
+      M140 S{first_layer_bed_temperature[initial_extruder]} ; start bed heating
+
+      G28 ; home if supported
+      G1 X1 Y6 F15000 ; move X/Y to start position
+      G1 Z35 F9000 ; move Z to start position
+
+      M104 S{temperature[initial_extruder] + standby_temperature_delta} ; heat nozzle
+
+      G280 S1 ; ultimaker home
+
+      ;To skip adaptive bed mesh probing uncomment G0 commands before ;LAYER:1
+      ;G0 X{print_bed_min[0]} Y{print_bed_max[1]}
+      ;G0 X{print_bed_min[0]} Y{print_bed_min[1]}
+      ;G0 X{print_bed_max[0]} Y{print_bed_min[1]}
+      ;G0 X{print_bed_max[0]} Y{print_bed_max[1]}
+      ;LAYER:1
+
+      ; purge retract_length_toolchange due to unknown state
+      ; prime extruders next to each other to verify extruder offset calibration
+
+      ; prime T0
+      M104 S{first_layer_temperature[0]} T0 ; start heat nozzle temperature
+      T0
+      M109 S{first_layer_temperature[0]} T0 ; wait for nozzle temperature
+      G90
+      M82
+      G0 X5 Y100 Z0.3 F7200
+      G92 E0
+      G1 X5 Y10 E1.9 F1000
+      G0 X5 Y1 Z0.3 F7200
+      G92 E0
+      G1 X{print_bed_max[0]-30} Y1 E5.553 F1000
+      G0 X{print_bed_max[0]-30} Y1.5 F7200
+      G92 E0
+      G1 X10 Y1.5 E5.458 F1000
+      G0 X10 Y1.9 F7200
+      M104 S{temperature[initial_extruder] + standby_temperature_delta} ; cool nozzle
+      M104 S{first_layer_temperature[1]} T1 ; start heat next nozzle temperature
+      G92 E0
+      G1 X{print_bed_max[0]-28} Y1.9 E5.489 F1000
+      G92 E0
+      G1 E-3.5 F1200
+      G0 X{print_bed_max[0]-20} Y3 F18000
+      G0 X{print_bed_max[0]-15} Y10 Z3 F2400
+
+      G0 X30 Y10 Z0.3 F7200
+      G92 E0
+      G1 E3.5 F1200
+      G92 E0
+      G0 Y110 E1.85 F1000
+      G92 E0
+      G1 E-{retract_length_toolchange[0]} F1200
+      G0 Y150 F18000
+      G0 Y{print_bed_max[1]} Z5 F18000
+
+      ; prime T1
+      T1
+      M109 S{first_layer_temperature[1]} T1 ; wait for nozzle temperature
+      G90
+      M82
+      G0 X5 Y100 Z0.3 F7200
+      G0 Y10 E1.9 F1000
+      G0 Y2.5 F7200
+      G92 E0
+      G1 X{print_bed_max[0]-30} Y2.5 E5.553 F1000
+      G0 X{print_bed_max[0]-30} Y2.9 F7200
+      G92 E0
+      G1 X10 Y2.9 E5.458 F1000
+      G0 X10 Y3.3 F7200
+      M104 S{temperature[1] + standby_temperature_delta} ; cool nozzle
+      M104 S{first_layer_temperature[initial_extruder]} ; start heating initial nozzle
+      G92 E0
+      G1 X{print_bed_max[0]-28} Y3.3 E5.489 F1000
+      G92 E0
+      G1 E-3.5 F1200 ;retract just a little because we don't have a way to tell the slicer T1 filament position when it starts printing from E0
+      G0 X{print_bed_max[0]-20} Y5 F18000
+      G0 X{print_bed_max[0]-15} Y15 Z3 F2400
+
+      ;minus extruder1 offset X 22 which macro is not supported in start gcode
+      G0 X{30+nozzle_diameter[1]-22} Y15 Z0.3 F7200
+      G92 E0
+      G1 E3.5 F1200
+      G92 E0
+      G0 Y115 E1.85 F1000
+      G92 E0
+      G1 E-3.5 F1200
+      G0 Y150 F18000
+      G0 Y{print_bed_max[1]} Z5 F18000
+
+      ; switch to initial nozzle
+      T{initial_extruder}
+      M109 S{first_layer_temperature[initial_extruder]} ; wait for nozzle temperature
+      G0 X{print_bed_max[0]-30} Y5 Z10 F7200
+      G0 X25 Y10 Z5
+      G0 X25 Y20 Z0.3
+      M82 ;absolute extrusion mode
+      G92 E0
+      G1 Y30 E{retract_length_toolchange[initial_extruder]} F1200 ;prime to set filament location for prusaslicer generated initial retract
+      G92 E0
+
+      ;END Start-gcode
+    end_gcode: |
+      ;End-gcode
+      M104 S0
+      M104 S0 T0
+      M104 S0 T1
+      G0 X5 Y5 Z{max_print_height} F2000
+      M140 S0
+      M106 S0
+      M84 ; disable motors
+    bed_shape:
+    - '0x0'
+    - 230x0
+    - 230x190
+    - '0x190'
+    max_print_height: 200.0
+    default_print: 0.20mm NORMAL @ULTIMAKER

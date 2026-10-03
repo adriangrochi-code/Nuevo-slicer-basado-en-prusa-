@@ -1,0 +1,29 @@
+{
+ "vendor": "Jubilee",
+ "counts": {
+  "printer_models": 1,
+  "printer": 2,
+  "print": 4,
+  "filament": 7
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 2
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 4,
+   "infill_only_where_needed (no existe en 3.0)": 4,
+   "support_material_auto (no existe en 3.0)": 4,
+   "threads (no existe en 3.0)": 4,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 4,
+   "wipe_tower_x (no existe en 3.0)": 4,
+   "wipe_tower_y (no existe en 3.0)": 4
+  },
+  "filament": {
+   "filament_load_time (no existe en 3.0)": 7,
+   "filament_unload_time (no existe en 3.0)": 7
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

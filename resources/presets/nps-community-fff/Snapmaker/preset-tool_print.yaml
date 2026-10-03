@@ -1,0 +1,1098 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: tool_print
+id: '*Snapmaker Snapmaker J1 tool*'
+condition: printer.model == "Snapmaker J1"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker J1 (0.2 nozzle)
+  id: 3OwWXUf8VV6C8435FfY8ug
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 25.0
+    deretract_speed: 25.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker J1 (0.4 nozzle)
+  id: exGuAreLVHWnPX6qyUytQQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 25.0
+    deretract_speed: 25.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker J1 (0.6 nozzle)
+  id: gY+F5c5vV4Ke3d4rSWSXSg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 25.0
+    deretract_speed: 25.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker J1 (0.8 nozzle)
+  id: ohPNw5TzVkaygJHFU58+SA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 25.0
+    deretract_speed: 25.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 tool*'
+condition: printer.model == "Snapmaker A250"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 (0.2 nozzle)
+  id: uOaP6BTeVp2r8+xD6h9YWQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 (0.4 nozzle)
+  id: c5zEp4aoX/yJqfJJiOQ8ZA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 (0.6 nozzle)
+  id: 1S6gApA/WNW56KgQyZHY9Q
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 (0.8 nozzle)
+  id: uJFUAFdiUoSXgLKWXuQt+w
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 tool*'
+condition: printer.model == "Snapmaker A350"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 (0.2 nozzle)
+  id: mCuMB4t6VQC4nRV8rmM/7g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 (0.4 nozzle)
+  id: KH4mT2H5W563YJXEeSoVNg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 (0.6 nozzle)
+  id: SVXYaONaXEKXP8uGhFMm1A
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 (0.8 nozzle)
+  id: oA1tZ47PUQe+3u7fn4Nc6g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 Dual tool*'
+condition: printer.model == "Snapmaker A250 Dual"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 Dual (0.2 nozzle)
+  id: 5dqT6eFmV7y3zrWeYlO6vQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 Dual (0.4 nozzle)
+  id: lb0XujRbUhGOpzD4xBMSGA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 Dual (0.6 nozzle)
+  id: /4408F6QVzOEbxXYzLh12g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 Dual (0.8 nozzle)
+  id: NKpS35TNU3C1pnwME/yl/A
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 Dual tool*'
+condition: printer.model == "Snapmaker A350 Dual"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 Dual (0.2 nozzle)
+  id: Rtvcg9J7WA2YRvauSeY2xQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 Dual (0.4 nozzle)
+  id: 9tBnWidKVhqTh46ZtSMdDw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 Dual (0.6 nozzle)
+  id: vOUN18ewUkCerwhz0VjeGw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 Dual (0.8 nozzle)
+  id: XFpfZhpzUjisCZEBla5h8w
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 QSKit tool*'
+condition: printer.model == "Snapmaker A250 QSKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 QSKit (0.2 nozzle)
+  id: Qn4lSCfqVf2WQRyD8ZSF5g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 QSKit (0.4 nozzle)
+  id: FbcE6AvWVLyHiviEltuyuw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 QSKit (0.6 nozzle)
+  id: opxJd8moVI24H3GfETGpJQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 QSKit (0.8 nozzle)
+  id: MevULv3gWvmOMNTrzO8HPg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 QSKit tool*'
+condition: printer.model == "Snapmaker A350 QSKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 QSKit (0.2 nozzle)
+  id: WTj5Z69CXx2NlJE+cMEkMw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 QSKit (0.4 nozzle)
+  id: 2XioaRlpVly7Mw1iQxcXZg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 QSKit (0.6 nozzle)
+  id: yABMKd2/Vqqq970mSKuHZg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 QSKit (0.8 nozzle)
+  id: KMdpEPajXOmwUcPShKPp0g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 BKit tool*'
+condition: printer.model == "Snapmaker A250 BKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 BKit (0.2 nozzle)
+  id: /BxEQ9aMXMiWJnImkLOCXw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 BKit (0.4 nozzle)
+  id: cUDV6sm8XGu6n70brMFRWg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 BKit (0.6 nozzle)
+  id: /30o0A9SWeKk5A0O7pZ7qg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 BKit (0.8 nozzle)
+  id: 61MOsmQQVF6B040jgSn5yQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 BKit tool*'
+condition: printer.model == "Snapmaker A350 BKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 BKit (0.2 nozzle)
+  id: 6de3NosEWlGe4GZvD1eczA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 BKit (0.4 nozzle)
+  id: 6azkfuBYVoWp2QYSdt6Suw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 BKit (0.6 nozzle)
+  id: wSldFP0lUs6tft1u/QCgkQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 BKit (0.8 nozzle)
+  id: WgddrdDuWYOcHlU/VDhRpA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 QS+B Kit tool*'
+condition: printer.model == "Snapmaker A250 QS+B Kit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 QS+B Kit (0.2 nozzle)
+  id: VGRJB3Z9X2ewqt9KadcdrA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 QS+B Kit (0.4 nozzle)
+  id: tJibUxyzUoycToOVS0p3dA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 QS+B Kit (0.6 nozzle)
+  id: E0qvwdTLX5qXkv+T+u03hw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 QS+B Kit (0.8 nozzle)
+  id: /ZnvPy99X46JXJCvM/+nPw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 QS+B Kit tool*'
+condition: printer.model == "Snapmaker A350 QS+B Kit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 QS+B Kit (0.2 nozzle)
+  id: PqkquYR6V8eFJW2EDq+pHQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 QS+B Kit (0.4 nozzle)
+  id: XcmEgkACWra6WWQjsCinlQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 QS+B Kit (0.6 nozzle)
+  id: yyIRvmN8Xli7qluRjhKa4g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 QS+B Kit (0.8 nozzle)
+  id: +nu4CID3UcG2r7DJp4rWKw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 45.0
+    deretract_speed: 45.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 2.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 Dual QSKit tool*'
+condition: printer.model == "Snapmaker A250 Dual QSKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 Dual QSKit (0.2 nozzle)
+  id: Hn/65IJ0UsOZgPbaJK+ZXA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 Dual QSKit (0.4 nozzle)
+  id: EMHMQisJUu+kydTwRLUeow
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 Dual QSKit (0.6 nozzle)
+  id: ujD6XaZ0WJCWluo1Z6WMfw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 Dual QSKit (0.8 nozzle)
+  id: inRaUXe4UdaEvoHPOwxwUQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 Dual QSKit tool*'
+condition: printer.model == "Snapmaker A350 Dual QSKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 Dual QSKit (0.2 nozzle)
+  id: yqDfur82UqqeY2LS34s4pw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 Dual QSKit (0.4 nozzle)
+  id: lG3w/sQAWS+7g8LvPHLE4Q
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 Dual QSKit (0.6 nozzle)
+  id: NBilrCIkXHqzVAadUPqyhA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 Dual QSKit (0.8 nozzle)
+  id: rq7xenz3VYCzVdYbXRInrg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 Dual BKit tool*'
+condition: printer.model == "Snapmaker A250 Dual BKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 Dual BKit (0.2 nozzle)
+  id: LAUMlPHDWjufGWriH11pUg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 Dual BKit (0.4 nozzle)
+  id: kNtS8bFHXJmeQhZ3gTO1ZA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 Dual BKit (0.6 nozzle)
+  id: Q1jMDGxGVd2fybfBSmvmJw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 Dual BKit (0.8 nozzle)
+  id: orLV+MkSWqSKazNxzExgxQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 Dual BKit tool*'
+condition: printer.model == "Snapmaker A350 Dual BKit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 Dual BKit (0.2 nozzle)
+  id: 0CBdCAxvXrGhEuH32LNXkA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 Dual BKit (0.4 nozzle)
+  id: jijtVBS1XpmxpDWLupDGmw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 Dual BKit (0.6 nozzle)
+  id: NfuIVsLGX/6jIKrPJhCvHQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 Dual BKit (0.8 nozzle)
+  id: gRmRrQNtWNSb4/DoR7kojQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A250 Dual QS+B Kit tool*'
+condition: printer.model == "Snapmaker A250 Dual QS+B Kit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A250 Dual QS+B Kit (0.2 nozzle)
+  id: Ldf7wwLJW3ei24jpzWfq7A
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A250 Dual QS+B Kit (0.4 nozzle)
+  id: 4Za2bs9LU1m0yokMpWszuQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A250 Dual QS+B Kit (0.6 nozzle)
+  id: +S5M+kUdVO+BKlHlHz82Wg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A250 Dual QS+B Kit (0.8 nozzle)
+  id: uMZZty9hUQKWIwvAz/t+AA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker A350 Dual QS+B Kit tool*'
+condition: printer.model == "Snapmaker A350 Dual QS+B Kit"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker A350 Dual QS+B Kit (0.2 nozzle)
+  id: DJjMCnz/XXmsHAupN+8tDg
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker A350 Dual QS+B Kit (0.4 nozzle)
+  id: 65y/iAD1Uxu09Lkxad9LQQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker A350 Dual QS+B Kit (0.6 nozzle)
+  id: 7YbnoCA0WxiOYtD5w88OhA
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker A350 Dual QS+B Kit (0.8 nozzle)
+  id: 9p8euPcZU5+rkuL84a0Eyw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24
+---
+kind: tool_print
+id: '*Snapmaker Snapmaker Artisan tool*'
+condition: printer.model == "Snapmaker Artisan"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Snapmaker Artisan (0.2 nozzle)
+  id: F0bXKvfUUISj9zIwsgXTrw
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.14
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.4
+  name: Snapmaker Artisan (0.4 nozzle)
+  id: lWHXkVDOUHy4acxruBWUbQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.28
+    min_layer_height: 0.08
+- condition: tool.nozzle_diameter == 0.6
+  name: Snapmaker Artisan (0.6 nozzle)
+  id: SBc/nlEbUAmkNEs9t+I4XQ
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.42
+    min_layer_height: 0.18
+- condition: tool.nozzle_diameter == 0.8
+  name: Snapmaker Artisan (0.8 nozzle)
+  id: sShpZVppUoC+qejJwawY6g
+  values:
+    wipe: true
+    retract_before_wipe: 0%
+    retract_length: 0.8
+    retract_speed: 35.0
+    deretract_speed: 35.0
+    retract_before_travel: 1.0
+    retract_lift: 0.4
+    retract_length_toolchange: 18.0
+    max_layer_height: 0.48
+    min_layer_height: 0.24

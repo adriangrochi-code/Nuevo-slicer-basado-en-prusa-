@@ -1,0 +1,241 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: LNL3D
+name: LNL3D
+version: 1.1.0
+features:
+  printer:
+    supports_02_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: LNL3D Small Printer
+  base_model: LNL3D Small Printer
+  printer_configs_order:
+  - lnl3d_d3
+  - lnl3d_d3_vulcan
+  - lnl3d_d3_v2
+- label: LNL3D Big Printer
+  base_model: LNL3D Big Printer
+  printer_configs_order:
+  - lnl3d_d5
+  - lnl3d_d6
+---
+kind: printer
+technology: FFF
+name: LNL3D D3
+id: LNL3D_D3
+model:
+  base_model: LNL3D Small Printer
+  model: LNL3D_D3
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: LNL3D_D3_bed.stl
+  bed_texture: LNL3D_D3_texture.svg
+  thumbnail: LNL3D_D3_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: LNL3D D3 Vulcan
+id: LNL3D_D3_VULCAN
+model:
+  base_model: LNL3D Small Printer
+  model: LNL3D_D3_VULCAN
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: LNL3D_D3_VULCAN_bed.stl
+  bed_texture: LNL3D_D3_VULCAN_texture.svg
+  thumbnail: LNL3D_D3_VULCAN_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: LNL3D D3 V2
+id: LNL3D_D3_V2
+model:
+  base_model: LNL3D Small Printer
+  model: LNL3D_D3_V2
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: LNL3D_D3_V2_bed.stl
+  bed_texture: LNL3D_D3_V2_texture.svg
+  thumbnail: LNL3D_D3_V2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: LNL3D D5
+id: LNL3D_D5
+model:
+  base_model: LNL3D Big Printer
+  model: LNL3D_D5
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: LNL3D_D5_bed.stl
+  bed_texture: LNL3D_D5_texture.svg
+  thumbnail: LNL3D_D5_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: LNL3D D6
+id: LNL3D_D6
+model:
+  base_model: LNL3D Big Printer
+  model: LNL3D_D6
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: LNL3D_D6_bed.stl
+  bed_texture: LNL3D_D6_texture.svg
+  thumbnail: LNL3D_D6_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.2'
+name: '0.2'
+condition: printer.supports_02_nozzle
+features:
+  nozzle_diameter:
+    default: 0.2
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: lnl3d_d3
+name: LNL3D D3
+printer: LNL3D_D3
+legacy_printer_model:
+- LNL3D_D3
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: lnl3d_d3_vulcan
+name: LNL3D D3 Vulcan
+printer: LNL3D_D3_VULCAN
+legacy_printer_model:
+- LNL3D_D3_VULCAN
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: lnl3d_d3_v2
+name: LNL3D D3 V2
+printer: LNL3D_D3_V2
+legacy_printer_model:
+- LNL3D_D3_V2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: lnl3d_d5
+name: LNL3D D5
+printer: LNL3D_D5
+legacy_printer_model:
+- LNL3D_D5
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: lnl3d_d6
+name: LNL3D D6
+printer: LNL3D_D6
+legacy_printer_model:
+- LNL3D_D6
+tools:
+- tool: '0.4'
+sheet: default

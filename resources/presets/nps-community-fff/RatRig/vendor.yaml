@@ -1,0 +1,468 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: RatRig
+name: RatRig
+version: 2.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_05_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: V-Core-4
+  base_model: V-Core-4
+  printer_configs_order:
+  - vc4_300 corexy
+  - vc4_400 corexy
+  - vc4_500 corexy
+  - vc4_300 hybrid
+  - vc4_400 hybrid
+  - vc4_500 hybrid
+  - vc4_300 idex
+  - vc4_400 idex
+  - vc4_500 idex
+- label: V-Core-3
+  base_model: V-Core-3
+  printer_configs_order:
+  - vc3_300
+  - vc3_400
+  - vc3_500
+- label: V-Minion
+  base_model: V-Minion
+  printer_configs_order:
+  - vminion
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 CoreXY 300mm
+id: VC4_300 COREXY
+model:
+  base_model: V-Core-4
+  model: VC4_300 COREXY
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-300.stl
+  bed_texture: rr-vc-300.svg
+  thumbnail: vc4-corexy.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 CoreXY 400mm
+id: VC4_400 COREXY
+model:
+  base_model: V-Core-4
+  model: VC4_400 COREXY
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-400.stl
+  bed_texture: rr-vc-400.svg
+  thumbnail: vc4-corexy.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 CoreXY 500mm
+id: VC4_500 COREXY
+model:
+  base_model: V-Core-4
+  model: VC4_500 COREXY
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-500.stl
+  bed_texture: rr-vc-500.svg
+  thumbnail: vc4-corexy.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 HYBRID 300mm
+id: VC4_300 HYBRID
+model:
+  base_model: V-Core-4
+  model: VC4_300 HYBRID
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-300.stl
+  bed_texture: rr-vc-300.svg
+  thumbnail: vc4-hybrid.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 HYBRID 400mm
+id: VC4_400 HYBRID
+model:
+  base_model: V-Core-4
+  model: VC4_400 HYBRID
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-400.stl
+  bed_texture: rr-vc-400.svg
+  thumbnail: vc4-hybrid.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 HYBRID 500mm
+id: VC4_500 HYBRID
+model:
+  base_model: V-Core-4
+  model: VC4_500 HYBRID
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-500.stl
+  bed_texture: rr-vc-500.svg
+  thumbnail: vc4-hybrid.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 IDEX 300mm
+id: VC4_300 IDEX
+model:
+  base_model: V-Core-4
+  model: VC4_300 IDEX
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-300.stl
+  bed_texture: rr-vc-300.svg
+  thumbnail: vc4-idex.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 IDEX 400mm
+id: VC4_400 IDEX
+model:
+  base_model: V-Core-4
+  model: VC4_400 IDEX
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-400.stl
+  bed_texture: rr-vc-400.svg
+  thumbnail: vc4-idex.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-4.0 IDEX 500mm
+id: VC4_500 IDEX
+model:
+  base_model: V-Core-4
+  model: VC4_500 IDEX
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-500.stl
+  bed_texture: rr-vc-500.svg
+  thumbnail: vc4-idex.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-3.1 300mm
+id: VC3_300
+model:
+  base_model: V-Core-3
+  model: VC3_300
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-300.stl
+  bed_texture: rr-vc-300.svg
+  thumbnail: VC3_300_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-3.1 400mm
+id: VC3_400
+model:
+  base_model: V-Core-3
+  model: VC3_400
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-400.stl
+  bed_texture: rr-vc-400.svg
+  thumbnail: VC3_400_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Core-3.1 500mm
+id: VC3_500
+model:
+  base_model: V-Core-3
+  model: VC3_500
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: rr-vc-500.stl
+  bed_texture: rr-vc-500.svg
+  thumbnail: VC3_500_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: RatRig V-Minion
+id: VMINION
+model:
+  base_model: V-Minion
+  model: VMINION
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+visual:
+  bed_model: rr-vminion.stl
+  bed_texture: rr-vminion.svg
+  thumbnail: VMINION_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+condition: printer.supports_05_nozzle
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: vc4_300 corexy
+name: RatRig V-Core-4.0 CoreXY 300mm
+printer: VC4_300 COREXY
+legacy_printer_model:
+- VC4_300 COREXY
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_400 corexy
+name: RatRig V-Core-4.0 CoreXY 400mm
+printer: VC4_400 COREXY
+legacy_printer_model:
+- VC4_400 COREXY
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_500 corexy
+name: RatRig V-Core-4.0 CoreXY 500mm
+printer: VC4_500 COREXY
+legacy_printer_model:
+- VC4_500 COREXY
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_300 hybrid
+name: RatRig V-Core-4.0 HYBRID 300mm
+printer: VC4_300 HYBRID
+legacy_printer_model:
+- VC4_300 HYBRID
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_400 hybrid
+name: RatRig V-Core-4.0 HYBRID 400mm
+printer: VC4_400 HYBRID
+legacy_printer_model:
+- VC4_400 HYBRID
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_500 hybrid
+name: RatRig V-Core-4.0 HYBRID 500mm
+printer: VC4_500 HYBRID
+legacy_printer_model:
+- VC4_500 HYBRID
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_300 idex
+name: RatRig V-Core-4.0 IDEX 300mm
+printer: VC4_300 IDEX
+legacy_printer_model:
+- VC4_300 IDEX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_400 idex
+name: RatRig V-Core-4.0 IDEX 400mm
+printer: VC4_400 IDEX
+legacy_printer_model:
+- VC4_400 IDEX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc4_500 idex
+name: RatRig V-Core-4.0 IDEX 500mm
+printer: VC4_500 IDEX
+legacy_printer_model:
+- VC4_500 IDEX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc3_300
+name: RatRig V-Core-3.1 300mm
+printer: VC3_300
+legacy_printer_model:
+- VC3_300
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc3_400
+name: RatRig V-Core-3.1 400mm
+printer: VC3_400
+legacy_printer_model:
+- VC3_400
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vc3_500
+name: RatRig V-Core-3.1 500mm
+printer: VC3_500
+legacy_printer_model:
+- VC3_500
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: vminion
+name: RatRig V-Minion
+printer: VMINION
+legacy_printer_model:
+- VMINION
+tools:
+- tool: '0.4'
+sheet: default

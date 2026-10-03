@@ -1,0 +1,52 @@
+{
+ "vendor": "Geeetech",
+ "counts": {
+  "printer_models": 25,
+  "printer": 104,
+  "print": 86,
+  "filament": 9
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 20
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 86,
+   "external_fill_pattern (no existe en 3.0)": 86,
+   "infill_only_where_needed (no existe en 3.0)": 86,
+   "brim_speed (no existe en 3.0)": 86,
+   "bridge_speed_internal (no existe en 3.0)": 86,
+   "overhangs_speed (no existe en 3.0)": 86,
+   "gap_fill_flow_match_perimeter (no existe en 3.0)": 86,
+   "thin_walls_speed (no existe en 3.0)": 86,
+   "first_layer_min_speed (no existe en 3.0)": 86,
+   "small_perimeter_min_length (no existe en 3.0)": 86,
+   "small_perimeter_max_length (no existe en 3.0)": 86,
+   "extrusion_spacing (no existe en 3.0)": 86,
+   "first_layer_extrusion_spacing (no existe en 3.0)": 86,
+   "perimeter_extrusion_spacing (no existe en 3.0)": 86,
+   "external_perimeter_extrusion_spacing (no existe en 3.0)": 86,
+   "infill_extrusion_spacing (no existe en 3.0)": 86,
+   "solid_infill_extrusion_spacing (no existe en 3.0)": 86,
+   "top_infill_extrusion_spacing (no existe en 3.0)": 86,
+   "skirt_extrusion_width (no existe en 3.0)": 86,
+   "ironing_speed (porcentaje en campo numérico (75%))": 44,
+   "ironing_speed (porcentaje en campo numérico (50%))": 42,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 7,
+   "wipe_tower_x (no existe en 3.0)": 7,
+   "wipe_tower_y (no existe en 3.0)": 7
+  },
+  "filament": {
+   "top_fan_speed (no existe en 3.0)": 4,
+   "bridge_internal_fan_speed (no existe en 3.0)": 2,
+   "external_perimeter_fan_speed (no existe en 3.0)": 2,
+   "support_material_interface_fan_speed (no existe en 3.0)": 2,
+   "max_speed_reduction (no existe en 3.0)": 2
+  }
+ },
+ "skipped_presets": [],
+ "notes": [
+  "filament:Thunder HS-PLA @Geeetech: compatible_prints_condition ignorada (infill_speed >= 150)",
+  "filament:Thunder PLA @Geeetech: compatible_prints_condition ignorada (infill_speed >= 150)"
+ ]
+}

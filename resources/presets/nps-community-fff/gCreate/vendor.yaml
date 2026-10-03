@@ -1,0 +1,244 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: gCreate
+name: gCreate
+version: 2.1.0
+features:
+  printer:
+    supports_03_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_05_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+    supports_1_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: GMAX
+  base_model: GMAX
+  printer_configs_order:
+  - gmax15p
+  - gmax2
+  - gmax2pro
+  - gmax2dual2in1
+  - gmax2dual
+---
+kind: printer
+technology: FFF
+name: gMax 1.5XT Plus
+id: GMAX15P
+model:
+  base_model: GMAX
+  model: GMAX15P
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: gmax15p_bed.stl
+  bed_texture: gmax15p.svg
+  thumbnail: GMAX15P_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: gMax 2
+id: GMAX2
+model:
+  base_model: GMAX
+  model: GMAX2
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: gmax2_bed.stl
+  bed_texture: gmax2.svg
+  thumbnail: GMAX2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: gMax 2 Pro
+id: GMAX2PRO
+model:
+  base_model: GMAX
+  model: GMAX2PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: gmax2_bed.stl
+  bed_texture: gmax2.svg
+  thumbnail: GMAX2PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: gMax 2 Dual 2in1
+id: GMAX2DUAL2IN1
+model:
+  base_model: GMAX
+  model: GMAX2DUAL2IN1
+tool_count: 1
+features:
+  supports_05_nozzle:
+    default: true
+visual:
+  bed_model: gmax2_bed.stl
+  bed_texture: gmax2.svg
+  thumbnail: GMAX2DUAL2IN1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: gMax 2 Dual Chimera
+id: GMAX2DUAL
+model:
+  base_model: GMAX
+  model: GMAX2DUAL
+tool_count: 1
+features:
+  supports_05_nozzle:
+    default: true
+visual:
+  bed_model: gmax2_bed.stl
+  bed_texture: gmax2.svg
+  thumbnail: GMAX2DUAL_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+condition: printer.supports_03_nozzle
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+condition: printer.supports_05_nozzle
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: tool
+technology: FFF
+id: '1'
+name: '1'
+condition: printer.supports_1_nozzle
+features:
+  nozzle_diameter:
+    default: 1.0
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: gmax15p
+name: gMax 1.5XT Plus
+printer: GMAX15P
+legacy_printer_model:
+- GMAX15P
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: gmax2
+name: gMax 2
+printer: GMAX2
+legacy_printer_model:
+- GMAX2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: gmax2pro
+name: gMax 2 Pro
+printer: GMAX2PRO
+legacy_printer_model:
+- GMAX2PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: gmax2dual2in1
+name: gMax 2 Dual 2in1
+printer: GMAX2DUAL2IN1
+legacy_printer_model:
+- GMAX2DUAL2IN1
+tools:
+- tool: '0.5'
+sheet: default
+---
+kind: printer_config
+id: gmax2dual
+name: gMax 2 Dual Chimera
+printer: GMAX2DUAL
+legacy_printer_model:
+- GMAX2DUAL
+tools:
+- tool: '0.5'
+sheet: default

@@ -1,0 +1,50 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: XmITZV++VkG29dTjrdtf5Q
+name: Cocoa Press Chocolates
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(Cocoa_Press)$/) or (tool.nozzle_diameter == 1.6 and printer.model =~ /^(Cocoa_Press)$/)
+values:
+  bed_temperature: 0
+  bridge_fan_speed: 0
+  cooling: false
+  disable_fan_first_layers: 3
+  enable_dynamic_fan_speeds: false
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_always_on: false
+  fan_below_layer_time: 60
+  filament_colour: '#3D2113'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 70.0
+  filament_density: 1.2912
+  filament_diameter: 22.66
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  filament_toolchange_delay: 0.0
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  filament_vendor: Cocoa Press
+  wipe: true
+  first_layer_bed_temperature: 0
+  first_layer_temperature: 0
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 35
+  min_print_speed: 10.0
+  overhang_fan_speed_0: 0
+  overhang_fan_speed_1: 0
+  overhang_fan_speed_2: 0
+  overhang_fan_speed_3: 0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 0
+  filament_type: CHOCOLATE

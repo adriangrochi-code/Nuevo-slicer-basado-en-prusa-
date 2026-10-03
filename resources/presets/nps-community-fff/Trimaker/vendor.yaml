@@ -1,0 +1,120 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Trimaker
+name: Trimaker
+version: 2.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Nebula
+  base_model: Nebula
+  printer_configs_order:
+  - trimaker nebula cloud
+  - trimaker nebula
+- label: Cosmos
+  base_model: Cosmos
+  printer_configs_order:
+  - trimaker cosmos ii
+---
+kind: printer
+technology: FFF
+name: Trimaker Nebula Cloud
+id: Trimaker Nebula Cloud
+model:
+  base_model: Nebula
+  model: Trimaker Nebula Cloud
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: NebulaCloud_bed.stl
+  bed_texture: NebulaCloud.svg
+  thumbnail: NPC_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Trimaker Cosmos II
+id: Trimaker Cosmos II
+model:
+  base_model: Cosmos
+  model: Trimaker Cosmos II
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: CosmosII_bed.stl
+  thumbnail: Cosmos_II_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Trimaker Nebula
+id: Trimaker Nebula
+model:
+  base_model: Nebula
+  model: Trimaker Nebula
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: NebulaCloud_bed.stl
+  bed_texture: NebulaCloud.svg
+  thumbnail: Nebula_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: trimaker nebula cloud
+name: Trimaker Nebula Cloud
+printer: Trimaker Nebula Cloud
+legacy_printer_model:
+- Trimaker Nebula Cloud
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: trimaker cosmos ii
+name: Trimaker Cosmos II
+printer: Trimaker Cosmos II
+legacy_printer_model:
+- Trimaker Cosmos II
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: trimaker nebula
+name: Trimaker Nebula
+printer: Trimaker Nebula
+legacy_printer_model:
+- Trimaker Nebula
+tools:
+- tool: '0.4'
+sheet: default

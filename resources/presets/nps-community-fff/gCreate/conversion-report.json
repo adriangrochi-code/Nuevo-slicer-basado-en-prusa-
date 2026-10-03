@@ -1,0 +1,32 @@
+{
+ "vendor": "gCreate",
+ "counts": {
+  "printer_models": 5,
+  "printer": 17,
+  "print": 13,
+  "filament": 16
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 17,
+   "retract_length_toolchange (no numérico ('30;30'))": 1
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 13,
+   "external_fill_pattern (no existe en 3.0)": 13,
+   "infill_only_where_needed (no existe en 3.0)": 13,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 13,
+   "wipe_tower_x (no existe en 3.0)": 13,
+   "wipe_tower_y (no existe en 3.0)": 13,
+   "infill_speed (porcentaje en campo numérico (85%))": 1,
+   "support_material_speed (porcentaje en campo numérico (75%))": 1,
+   "support_material_auto (no existe en 3.0)": 1,
+   "threads (no existe en 3.0)": 1
+  },
+  "filament": {
+   "filament_unload_time (no existe en 3.0)": 8
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

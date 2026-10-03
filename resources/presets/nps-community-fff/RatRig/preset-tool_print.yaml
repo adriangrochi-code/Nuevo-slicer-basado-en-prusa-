@@ -1,0 +1,823 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: tool_print
+id: '*RatRig VC4_300 COREXY tool*'
+condition: printer.model == "VC4_300 COREXY"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_CoreXY-300 0.4Nozzle
+  id: mq/TScJfVsu/uoZAwNDbrQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_CoreXY-300 0.5Nozzle
+  id: Ol7lZaNRW5G3WDsnQO6nbg
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_CoreXY-300 0.6Nozzle
+  id: sbBZbim7W+KMNigHi1byHw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_400 COREXY tool*'
+condition: printer.model == "VC4_400 COREXY"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_CoreXY-400 0.4Nozzle
+  id: akyRmCDbXtGhHN79ZszWZA
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_CoreXY-400 0.5Nozzle
+  id: xzwF8/+AXOurnSXCCWWvcw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_CoreXY-400 0.6Nozzle
+  id: xrkNYdQPXzynPIj+gmYUzA
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_500 COREXY tool*'
+condition: printer.model == "VC4_500 COREXY"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_CoreXY-500 0.4Nozzle
+  id: ifZ4nqINXwGTfCHxDfP6QA
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_CoreXY-500 0.5Nozzle
+  id: f5dzX+vrV5qjzBeNAlx15Q
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.25
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_CoreXY-500 0.6Nozzle
+  id: PD+xGKMBVTu8oepTUPtRQQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_300 HYBRID tool*'
+condition: printer.model == "VC4_300 HYBRID"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_HYBRID-300 0.4Nozzle
+  id: 7NvRRUnWW0qRlr4MhKT8fA
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_HYBRID-300 0.5Nozzle
+  id: oUzXNkhtXLmicwypZWLNVw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_HYBRID-300 0.6Nozzle
+  id: QPkWFdTQUmWCIoc1XEBI7g
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_400 HYBRID tool*'
+condition: printer.model == "VC4_400 HYBRID"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_HYBRID-400 0.4Nozzle
+  id: /LXvSpQBWgKn3+LWyix37Q
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_HYBRID-400 0.5Nozzle
+  id: piDWb97GVha5NjKvHQ/PvQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_HYBRID-400 0.6Nozzle
+  id: +RFsT3KSX7OVxRDaCpOtig
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_500 HYBRID tool*'
+condition: printer.model == "VC4_500 HYBRID"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_HYBRID-500 0.4Nozzle
+  id: KHYKCzQHW2acX/TH0+lbug
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_HYBRID-500 0.5Nozzle
+  id: 8epf2Z3ZXIqaZd8q56bd0Q
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.25
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_HYBRID-500 0.6Nozzle
+  id: +X53cBemXr+ubj8+g7p3fA
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC4_300 IDEX tool*'
+condition: printer.model == "VC4_300 IDEX"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_IDEX-300 0.4Nozzle
+  id: hHxQYH7cWLa0b8VStv8l1A
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_IDEX-300 0.5Nozzle
+  id: hUdA+wPTUw2K4xlW8bCNhQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_IDEX-300 0.6Nozzle
+  id: ovDbz2OYXLytlZ6l9nbm5g
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+---
+kind: tool_print
+id: '*RatRig VC4_400 IDEX tool*'
+condition: printer.model == "VC4_400 IDEX"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_IDEX-400 0.4Nozzle
+  id: svU3bzg9UsOVRvq7y87SKQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_IDEX-400 0.5Nozzle
+  id: EBcNiBzhWcuU3T5RUOqZ1w
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_IDEX-400 0.6Nozzle
+  id: NqeuQsu5UkqdRiyeieQCtQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+---
+kind: tool_print
+id: '*RatRig VC4_500 IDEX tool*'
+condition: printer.model == "VC4_500 IDEX"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-4.0_IDEX-500 0.4Nozzle
+  id: Iy5AQp24VO2Ct1N+v5zkag
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-4.0_IDEX-500 0.5Nozzle
+  id: rDRNp4KAUhyWzavtbSL0Lw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-4.0_IDEX-500 0.6Nozzle
+  id: 4VYR2wo1WYG6yTwOHSA48w
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+    retract_lift: 0.2
+    travel_lift_before_obstacle: false
+    travel_max_lift: 0.0
+    travel_ramping_lift: false
+    travel_slope: 0.0
+---
+kind: tool_print
+id: '*RatRig VC3_300 tool*'
+condition: printer.model == "VC3_300"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-3.1-300 0.4Nozzle
+  id: qv0/XFz9VRyck1wJiJU8Aw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-3.1-300 0.5Nozzle
+  id: c+S4SGqVWlud6EJXrIMqfQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-3.1-300 0.6Nozzle
+  id: DG3Bz9wCV0G6yZVH8REJBQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC3_400 tool*'
+condition: printer.model == "VC3_400"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-3.1-400 0.4Nozzle
+  id: 3ywecEJdWDCJiLKpypUPHQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-3.1-400 0.5Nozzle
+  id: TfShX78IWTCUaQfujTmg7g
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-3.1-400 0.6Nozzle
+  id: Lm3NxPVZXGu7AUYcmah1ig
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VC3_500 tool*'
+condition: printer.model == "VC3_500"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Core-3.1-500 0.4Nozzle
+  id: H5l8fM4AUqKtC159/rCfCQ
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Core-3.1-500 0.5Nozzle
+  id: h8lPf64kWKCM1HNYOWk2zw
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.25
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+- condition: tool.nozzle_diameter == 0.6
+  name: RatRig V-Core-3.1-500 0.6Nozzle
+  id: WYzz258KXICkt3SsoP59Eg
+  values:
+    deretract_speed: 120.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 120.0
+    wipe: false
+    retract_lift: 0.3
+    max_layer_height: 0.4
+    min_layer_height: 0.1
+---
+kind: tool_print
+id: '*RatRig VMINION tool*'
+condition: printer.model == "VMINION"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: RatRig V-Minion-180 0.4Nozzle
+  id: vkFWhrGYUEyiwf8lFpbfSA
+  values:
+    deretract_speed: 100.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 100.0
+    wipe: false
+    retract_lift: 0.2
+    max_layer_height: 0.3
+    min_layer_height: 0.06
+- condition: tool.nozzle_diameter == 0.5
+  name: RatRig V-Minion-180 0.5Nozzle
+  id: BbK2V+vrW/yXHO33tDRWxA
+  values:
+    deretract_speed: 100.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length: 0.8
+    retract_length_toolchange: 1.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 100.0
+    wipe: false
+    retract_lift: 0.25
+    max_layer_height: 0.32
+    min_layer_height: 0.07

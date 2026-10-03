@@ -1,0 +1,78 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: CocoaPress
+name: Cocoa Press
+version: 2.1.0
+features:
+  printer:
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+    supports_16_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Cocoa Press
+  base_model: Cocoa Press
+  printer_configs_order:
+  - cocoa_press
+---
+kind: printer
+technology: FFF
+name: Cocoa Press
+id: Cocoa_Press
+model:
+  base_model: Cocoa Press
+  model: Cocoa_Press
+tool_count: 1
+features:
+  supports_08_nozzle:
+    default: true
+  supports_16_nozzle:
+    default: true
+visual:
+  bed_model: minichef_bed.stl
+  bed_texture: minichef_texture.svg
+  thumbnail: CocoaPress_MiniChef.png
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: tool
+technology: FFF
+id: '1.6'
+name: '1.6'
+condition: printer.supports_16_nozzle
+features:
+  nozzle_diameter:
+    default: 1.6
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: cocoa_press
+name: Cocoa Press
+printer: Cocoa_Press
+legacy_printer_model:
+- Cocoa_Press
+tools:
+- tool: '0.8'
+sheet: default

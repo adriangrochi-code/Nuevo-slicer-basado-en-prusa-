@@ -1,0 +1,296 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: HiYEaTA4XnCtVuV9WAhBTg
+name: Generic PLA @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 1
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 0.92
+  fan_always_on: false
+  fan_below_layer_time: 600
+  filament_colour: '#29B2B2'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 24.0
+  filament_density: 0.0
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PLA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 190
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 30.0
+  slowdown_below_layer_time: 1
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 190
+  filament_vendor: Generic
+---
+kind: filament
+id: 2HXoE5v5Wv6M3i6ikYNhwA
+name: Hatchbox PLA @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 1
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 0.92
+  fan_always_on: false
+  fan_below_layer_time: 600
+  filament_colour: '#29B2B2'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 24.0
+  filament_density: 0.0
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PLA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 190
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 30.0
+  slowdown_below_layer_time: 1
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 190
+  filament_vendor: Hatchbox
+---
+kind: filament
+id: zeXDSYBHWqCEDyt5XBDwUg
+name: Generic PETG @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  filament_vendor: Generic
+  bed_temperature: 65
+  bridge_fan_speed: 0
+  cooling: true
+  disable_fan_first_layers: 3
+  end_filament_gcode: ; Filament-specific end gcode
+  extrusion_multiplier: 1.0
+  fan_always_on: false
+  fan_below_layer_time: 20
+  filament_colour: '#FF8000'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 24.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 8.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  retract_length: 2.0
+  retract_lift: 0.5
+  retract_speed: 150.0
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PETG
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 65
+  first_layer_temperature: 230
+  max_fan_speed: 50
+  min_fan_speed: 0
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  temperature: 240
+---
+kind: filament
+id: 3+axYIMPW9qba6BlPfmY9Q
+name: Proto-pasta HTPLA @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  filament_vendor: Proto-pasta
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 1
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 0.96
+  fan_always_on: false
+  fan_below_layer_time: 600
+  filament_colour: '#29B2B2'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 0
+  filament_cost: 24.0
+  filament_density: 0.0
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 0.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 8.87097 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PLA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 200
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 30.0
+  slowdown_below_layer_time: 1
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 200
+---
+kind: filament
+id: J9VERwU9V5Chugn33hTsJA
+name: Prusa PLA @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 1
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 0.96
+  fan_always_on: false
+  fan_below_layer_time: 600
+  filament_colour: '#29B2B2'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 24.0
+  filament_density: 0.0
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PLA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 210
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 30.0
+  slowdown_below_layer_time: 1
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 210
+  filament_vendor: Made for Prusa
+---
+kind: filament
+id: k1w8AvnFXneqWl/NPbqo6Q
+name: Solutech PLA @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 1
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 0.96
+  fan_always_on: false
+  fan_below_layer_time: 600
+  filament_colour: '#29B2B2'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 24.0
+  filament_density: 0.0
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 0.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PLA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 200
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 30.0
+  slowdown_below_layer_time: 1
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 200
+  filament_vendor: Solutech
+---
+kind: filament
+id: nPJXAWxMXHWBuqiB4kwXmA
+name: Verbatim BVOH @Jubilee
+condition: (tool.nozzle_diameter == 0.4 and ! tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/) or (tool.nozzle_diameter == 0.4 and tool.nozzle_high_flow and printer.model =~ /^(Jubilee)$/)
+values:
+  filament_vendor: Verbatim
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: false
+  disable_fan_first_layers: 1
+  end_filament_gcode: ; Filament-specific end gcode
+  extrusion_multiplier: 1.0
+  fan_always_on: false
+  fan_below_layer_time: 100
+  filament_colour: '#FFFFD7'
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 218.0
+  filament_density: 1.23
+  filament_diameter: 1.75
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  filament_max_volumetric_speed: 4.0
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: |-
+    List of materials tested with standard PVA print settings:
+
+    Verbatim BVOH
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: true
+  filament_toolchange_delay: 0.0
+  filament_type: PVA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 210
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  temperature: 210

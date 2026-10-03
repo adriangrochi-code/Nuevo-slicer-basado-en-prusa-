@@ -1,0 +1,120 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: 7b77JpABVhaSt8JpyiBt6Q
+name: ColorFabb PLA-PHA @lulzbot
+condition: (tool.nozzle_diameter == 0.5 and printer.model =~ /^(MINI_AERO|TAZ6_AERO)$/)
+values:
+  filament_vendor: ColorFabb
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_always_on: true
+  fan_below_layer_time: 60
+  filament_colour: '#29B2B2'
+  filament_cost: 0.0
+  filament_density: 1.25
+  filament_diameter: 2.85
+  filament_soluble: false
+  filament_type: PLA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 200
+  max_fan_speed: 100
+  min_fan_speed: 35
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 200
+---
+kind: filament
+id: ImN5BCWPVGuHv6VaWgU/Iw
+name: Jessie PLA @lulzbot
+condition: (tool.nozzle_diameter == 0.5 and printer.model =~ /^(MINI_AERO|TAZ6_AERO)$/)
+values:
+  filament_vendor: Printed Solid
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_always_on: true
+  fan_below_layer_time: 60
+  filament_colour: '#29B2B2'
+  filament_cost: 27.0
+  filament_density: 1.24
+  filament_diameter: 2.85
+  filament_type: PLA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 220
+---
+kind: filament
+id: UKN0/TMdWZCKzn8Pl80Plg
+name: Generic PLA @lulzbot
+condition: (tool.nozzle_diameter == 0.5 and printer.model =~ /^(MINI_AERO|TAZ6_AERO)$/)
+values:
+  filament_vendor: Generic
+  bed_temperature: 60
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_always_on: true
+  fan_below_layer_time: 60
+  filament_colour: '#29B2B2'
+  filament_cost: 27.0
+  filament_density: 1.24
+  filament_diameter: 2.85
+  filament_type: PLA
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  temperature: 220
+---
+kind: filament
+id: FT6wMsxwULuT5prbuvXnwA
+name: Generic PETG @lulzbot
+condition: (tool.nozzle_diameter == 0.5 and printer.model =~ /^(MINI_AERO|TAZ6_AERO)$/)
+values:
+  filament_vendor: Generic
+  bed_temperature: 60
+  first_layer_bed_temperature: 65
+  first_layer_temperature: 235
+  temperature: 230
+  bridge_fan_speed: 100
+  cooling: true
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_always_on: true
+  fan_below_layer_time: 60
+  filament_colour: '#29B2B2'
+  filament_cost: 27.0
+  filament_density: 1.27
+  filament_diameter: 2.85
+  filament_notes: Use glue stick.
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_type: PETG
+  max_fan_speed: 80
+  min_fan_speed: 40
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode

@@ -1,0 +1,274 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Artillery
+name: Artillery
+version: 1.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Artillery Sidewinder X1
+  base_model: Artillery Sidewinder X1
+  printer_configs_order:
+  - x1
+- label: Artillery Genius
+  base_model: Artillery Genius
+  printer_configs_order:
+  - genius
+- label: Artillery Hornet
+  base_model: Artillery Hornet
+  printer_configs_order:
+  - hornet
+- label: Artillery Sidewinder X3 Plus
+  base_model: Artillery Sidewinder X3 Plus
+  printer_configs_order:
+  - x3 plus
+- label: Artillery Sidewinder X3 Pro
+  base_model: Artillery Sidewinder X3 Pro
+  printer_configs_order:
+  - x3 pro
+- label: Artillery Sidewinder X4 Plus
+  base_model: Artillery Sidewinder X4 Plus
+  printer_configs_order:
+  - x4 plus
+- label: Artillery Sidewinder X4 Pro
+  base_model: Artillery Sidewinder X4 Pro
+  printer_configs_order:
+  - x4 pro
+- label: Artillery Sidewinder X4 Max
+  base_model: Artillery Sidewinder X4 Max
+  printer_configs_order:
+  - x4 max
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X1
+id: X1
+model:
+  base_model: Artillery Sidewinder X1
+  model: X1
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x1.stl
+  bed_texture: bed-x1.png
+  thumbnail: X1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Genius
+id: Genius
+model:
+  base_model: Artillery Genius
+  model: Genius
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-genius.stl
+  bed_texture: bed-genius.png
+  thumbnail: Genius_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Hornet
+id: Hornet
+model:
+  base_model: Artillery Hornet
+  model: Hornet
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-hornet.stl
+  bed_texture: bed-hornet.png
+  thumbnail: Hornet_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X3 Plus
+id: X3 Plus
+model:
+  base_model: Artillery Sidewinder X3 Plus
+  model: X3 Plus
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x3-plus.stl
+  bed_texture: bed-x1.png
+  thumbnail: X3 Plus_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X3 Pro
+id: X3 Pro
+model:
+  base_model: Artillery Sidewinder X3 Pro
+  model: X3 Pro
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x3-pro.stl
+  bed_texture: bed-x1.png
+  thumbnail: X3 Pro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X4 Plus
+id: X4 Plus
+model:
+  base_model: Artillery Sidewinder X4 Plus
+  model: X4 Plus
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x4-plus.stl
+  bed_texture: bed-x1.png
+  thumbnail: X4 Plus_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X4 Pro
+id: X4 Pro
+model:
+  base_model: Artillery Sidewinder X4 Pro
+  model: X4 Pro
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x4-pro.stl
+  bed_texture: bed-x1.png
+  thumbnail: X4 Pro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Artillery Sidewinder X4 Max
+id: X4 Max
+model:
+  base_model: Artillery Sidewinder X4 Max
+  model: X4 Max
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: bed-x4-max.stl
+  bed_texture: bed-x1.png
+  thumbnail: X4 Max_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: x1
+name: Artillery Sidewinder X1
+printer: X1
+legacy_printer_model:
+- X1
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: genius
+name: Artillery Genius
+printer: Genius
+legacy_printer_model:
+- Genius
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: hornet
+name: Artillery Hornet
+printer: Hornet
+legacy_printer_model:
+- Hornet
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x3 plus
+name: Artillery Sidewinder X3 Plus
+printer: X3 Plus
+legacy_printer_model:
+- X3 Plus
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x3 pro
+name: Artillery Sidewinder X3 Pro
+printer: X3 Pro
+legacy_printer_model:
+- X3 Pro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x4 plus
+name: Artillery Sidewinder X4 Plus
+printer: X4 Plus
+legacy_printer_model:
+- X4 Plus
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x4 pro
+name: Artillery Sidewinder X4 Pro
+printer: X4 Pro
+legacy_printer_model:
+- X4 Pro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x4 max
+name: Artillery Sidewinder X4 Max
+printer: X4 Max
+legacy_printer_model:
+- X4 Max
+tools:
+- tool: '0.4'
+sheet: default

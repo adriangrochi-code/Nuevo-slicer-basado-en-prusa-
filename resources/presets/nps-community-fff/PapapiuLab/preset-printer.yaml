@@ -1,0 +1,87 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*PapapiuLab Papapiu_N1S*'
+condition: printer.model == "Papapiu_N1S"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Papapiu N1S
+  id: wmFIqmSnVFSa2f7iHI74fw
+  values:
+    before_layer_gcode: |+
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+      ;{if layer_num == 2 }SET_FILAMENT_SENSOR SENSOR=my_sensor ENABLE=1{endif}
+
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: PRINT_END
+    extra_loading_move: -2.0
+    gcode_flavor: marlin
+    high_current_on_filament_swap: false
+    layer_gcode: |
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 9000.0
+    machine_max_acceleration_retracting:
+    - 9000.0
+    machine_max_acceleration_travel:
+    - 12000.0
+    - 12000.0
+    machine_max_acceleration_x:
+    - 12000.0
+    machine_max_acceleration_y:
+    - 12000.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S0
+      M140 S0
+      PRINT_START BED={first_layer_bed_temperature[0]} EXTRUDER={first_layer_temperature[0]}
+    thumbnails: 64x64,400x300
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    bed_shape:
+    - '0x0'
+    - 299x0
+    - 299x300
+    - '0x300'
+    max_print_height: 360.0
+    default_print: 0.20mm NORMAL @Papapiu

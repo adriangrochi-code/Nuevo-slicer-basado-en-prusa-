@@ -1,0 +1,955 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Geeetech
+name: Geeetech
+version: 1.1.0
+features:
+  printer:
+    supports_02_nozzle:
+      default: false
+      user_editable: false
+    supports_03_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_05_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Thunder
+  base_model: Thunder
+  printer_configs_order:
+  - thunder
+  - thunderpro
+- label: Mizar
+  base_model: Mizar
+  printer_configs_order:
+  - mizars
+  - mizarpro
+  - mizar
+  - mizarmax
+  - mizarm
+- label: A10
+  base_model: A10
+  printer_configs_order:
+  - a10pro
+  - a10m
+  - a10t
+- label: A20
+  base_model: A20
+  printer_configs_order:
+  - a20
+  - a20m
+  - a20t
+- label: A30
+  base_model: A30
+  printer_configs_order:
+  - a30pro
+  - a30m
+  - a30t
+- label: E180
+  base_model: E180
+  printer_configs_order:
+  - e180
+- label: Me
+  base_model: Me
+  printer_configs_order:
+  - meducer
+  - mecreator
+  - mecreator2
+- label: D200
+  base_model: D200
+  printer_configs_order:
+  - giantarmd200
+- label: I3
+  base_model: I3
+  printer_configs_order:
+  - i3prob
+  - i3prow
+  - i3proc
+- label: M1
+  base_model: M1
+  printer_configs_order:
+  - m1
+---
+kind: printer
+technology: FFF
+name: Geeetech Thunder
+id: Thunder
+model:
+  base_model: Thunder
+  model: Thunder
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 250x250.stl
+  bed_texture: 250x250.svg
+  thumbnail: Thunder_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Thunder Pro
+id: ThunderPro
+model:
+  base_model: Thunder
+  model: ThunderPro
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 250x250.stl
+  bed_texture: 250x250.svg
+  thumbnail: ThunderPro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Mizar S
+id: MizarS
+model:
+  base_model: Mizar
+  model: MizarS
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 255x255.stl
+  bed_texture: 255x255.svg
+  thumbnail: MizarS_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Mizar Pro
+id: MizarPro
+model:
+  base_model: Mizar
+  model: MizarPro
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 220x220.stl
+  bed_texture: 220x220.svg
+  thumbnail: MizarPro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Mizar
+id: Mizar
+model:
+  base_model: Mizar
+  model: Mizar
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 220x220.stl
+  bed_texture: 220x220.svg
+  thumbnail: Mizar_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Mizar Max
+id: MizarMax
+model:
+  base_model: Mizar
+  model: MizarMax
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 320x320.stl
+  bed_texture: 320x320.svg
+  thumbnail: MizarMax_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Mizar M
+id: MizarM
+model:
+  base_model: Mizar
+  model: MizarM
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 255x255.stl
+  bed_texture: 255x255.svg
+  thumbnail: MizarM_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A10 Pro
+id: A10Pro
+model:
+  base_model: A10
+  model: A10Pro
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 220x220.stl
+  bed_texture: 220x220.svg
+  thumbnail: A10Pro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A10 M
+id: A10M
+model:
+  base_model: A10
+  model: A10M
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 220x220.stl
+  bed_texture: 220x220.svg
+  thumbnail: A10M_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A10 T
+id: A10T
+model:
+  base_model: A10
+  model: A10T
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 220x220.stl
+  bed_texture: 220x220.svg
+  thumbnail: A10T_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A20
+id: A20
+model:
+  base_model: A20
+  model: A20
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 250x250.stl
+  bed_texture: 250x250.svg
+  thumbnail: A20_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A20 M
+id: A20M
+model:
+  base_model: A20
+  model: A20M
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 250x250.stl
+  bed_texture: 250x250.svg
+  thumbnail: A20M_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A20 T
+id: A20T
+model:
+  base_model: A20
+  model: A20T
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 250x250.stl
+  bed_texture: 250x250.svg
+  thumbnail: A20T_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A30 Pro
+id: A30Pro
+model:
+  base_model: A30
+  model: A30Pro
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 320x320.stl
+  bed_texture: 320x320.svg
+  thumbnail: A30Pro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A30 M
+id: A30M
+model:
+  base_model: A30
+  model: A30M
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 320x320.stl
+  bed_texture: 320x320.svg
+  thumbnail: A30M_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech A30 T
+id: A30T
+model:
+  base_model: A30
+  model: A30T
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 320x320.stl
+  bed_texture: 320x320.svg
+  thumbnail: A30T_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech E180
+id: E180
+model:
+  base_model: E180
+  model: E180
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 125X130.stl
+  thumbnail: E180_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Me Ducer
+id: MeDucer
+model:
+  base_model: Me
+  model: MeDucer
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 180X150.stl
+  thumbnail: MeDucer_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Me Creator
+id: MeCreator
+model:
+  base_model: Me
+  model: MeCreator
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 150x150.stl
+  bed_texture: 150x150.svg
+  thumbnail: MeCreator_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech Me Creator2
+id: MeCreator2
+model:
+  base_model: Me
+  model: MeCreator2
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 160x160.stl
+  bed_texture: 160x160.svg
+  thumbnail: MeCreator2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech GiantArmD200
+id: GiantArmD200
+model:
+  base_model: D200
+  model: GiantArmD200
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 300x180.stl
+  bed_texture: 300x180.svg
+  thumbnail: GiantArmD200_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech I3 ProB
+id: I3ProB
+model:
+  base_model: I3
+  model: I3ProB
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 200x200.stl
+  bed_texture: 200x200.svg
+  thumbnail: I3ProB_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech I3 ProW
+id: I3ProW
+model:
+  base_model: I3
+  model: I3ProW
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 200x200.stl
+  bed_texture: 200x200.svg
+  thumbnail: I3ProW_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech I3 ProC
+id: I3ProC
+model:
+  base_model: I3
+  model: I3ProC
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 200x200.stl
+  bed_texture: 200x200.svg
+  thumbnail: I3ProC_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Geeetech M1
+id: M1
+model:
+  base_model: M1
+  model: M1
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: 105x105.stl
+  bed_texture: M1.svg
+  thumbnail: M1_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.2'
+name: '0.2'
+condition: printer.supports_02_nozzle
+features:
+  nozzle_diameter:
+    default: 0.2
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+condition: printer.supports_03_nozzle
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+condition: printer.supports_05_nozzle
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: thunder
+name: Geeetech Thunder
+printer: Thunder
+legacy_printer_model:
+- Thunder
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: thunderpro
+name: Geeetech Thunder Pro
+printer: ThunderPro
+legacy_printer_model:
+- ThunderPro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mizars
+name: Geeetech Mizar S
+printer: MizarS
+legacy_printer_model:
+- MizarS
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mizarpro
+name: Geeetech Mizar Pro
+printer: MizarPro
+legacy_printer_model:
+- MizarPro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mizar
+name: Geeetech Mizar
+printer: Mizar
+legacy_printer_model:
+- Mizar
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mizarmax
+name: Geeetech Mizar Max
+printer: MizarMax
+legacy_printer_model:
+- MizarMax
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mizarm
+name: Geeetech Mizar M
+printer: MizarM
+legacy_printer_model:
+- MizarM
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a10pro
+name: Geeetech A10 Pro
+printer: A10Pro
+legacy_printer_model:
+- A10Pro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a10m
+name: Geeetech A10 M
+printer: A10M
+legacy_printer_model:
+- A10M
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a10t
+name: Geeetech A10 T
+printer: A10T
+legacy_printer_model:
+- A10T
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a20
+name: Geeetech A20
+printer: A20
+legacy_printer_model:
+- A20
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a20m
+name: Geeetech A20 M
+printer: A20M
+legacy_printer_model:
+- A20M
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a20t
+name: Geeetech A20 T
+printer: A20T
+legacy_printer_model:
+- A20T
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a30pro
+name: Geeetech A30 Pro
+printer: A30Pro
+legacy_printer_model:
+- A30Pro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a30m
+name: Geeetech A30 M
+printer: A30M
+legacy_printer_model:
+- A30M
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: a30t
+name: Geeetech A30 T
+printer: A30T
+legacy_printer_model:
+- A30T
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: e180
+name: Geeetech E180
+printer: E180
+legacy_printer_model:
+- E180
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: meducer
+name: Geeetech Me Ducer
+printer: MeDucer
+legacy_printer_model:
+- MeDucer
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mecreator
+name: Geeetech Me Creator
+printer: MeCreator
+legacy_printer_model:
+- MeCreator
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mecreator2
+name: Geeetech Me Creator2
+printer: MeCreator2
+legacy_printer_model:
+- MeCreator2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: giantarmd200
+name: Geeetech GiantArmD200
+printer: GiantArmD200
+legacy_printer_model:
+- GiantArmD200
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i3prob
+name: Geeetech I3 ProB
+printer: I3ProB
+legacy_printer_model:
+- I3ProB
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i3prow
+name: Geeetech I3 ProW
+printer: I3ProW
+legacy_printer_model:
+- I3ProW
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i3proc
+name: Geeetech I3 ProC
+printer: I3ProC
+legacy_printer_model:
+- I3ProC
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: m1
+name: Geeetech M1
+printer: M1
+legacy_printer_model:
+- M1
+tools:
+- tool: '0.4'
+sheet: default

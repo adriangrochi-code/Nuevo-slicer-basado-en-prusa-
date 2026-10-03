@@ -1,0 +1,21 @@
+{
+ "vendor": "Rigid3D",
+ "counts": {
+  "printer_models": 4,
+  "printer": 4,
+  "print": 6,
+  "filament": 6
+ },
+ "dropped_keys": {
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 6,
+   "infill_only_where_needed (no existe en 3.0)": 6,
+   "support_material_auto (no existe en 3.0)": 6,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 6,
+   "wipe_tower_x (no existe en 3.0)": 6,
+   "wipe_tower_y (no existe en 3.0)": 6
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

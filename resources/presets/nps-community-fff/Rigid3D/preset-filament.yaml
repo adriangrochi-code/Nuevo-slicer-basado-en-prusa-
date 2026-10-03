@@ -1,0 +1,216 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: jo9HGEjIUvWfuzkUKvkMnQ
+name: Generic PLA @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit|Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  filament_type: PLA
+  full_fan_speed_layer: 4
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bed_temperature: 55
+  filament_colour: '#FFFF00'
+  filament_density: 1.24
+  filament_max_volumetric_speed: 12.0
+  first_layer_temperature: 215
+  temperature: 215
+  first_layer_bed_temperature: 60
+---
+kind: filament
+id: zxvmZZxUWwKWS+bZFeWkkg
+name: Rigid3D PLA @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit|Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  filament_type: PLA
+  full_fan_speed_layer: 4
+  max_fan_speed: 100
+  min_fan_speed: 100
+  filament_colour: '#FFFF00'
+  filament_density: 1.24
+  first_layer_temperature: 210
+  temperature: 205
+  first_layer_bed_temperature: 60
+  bed_temperature: 55
+  filament_max_volumetric_speed: 12.0
+---
+kind: filament
+id: k4Y3xiWxWrGup6JZzNucVg
+name: Generic ABS @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  cooling: true
+  fan_always_on: false
+  filament_type: ABS
+  max_fan_speed: 0
+  min_fan_speed: 0
+  filament_colour: '#49B928'
+  filament_density: 1.04
+  first_layer_temperature: 235
+  temperature: 235
+  first_layer_bed_temperature: 100
+  bed_temperature: 100
+  filament_max_volumetric_speed: 8.0
+---
+kind: filament
+id: FWQ5D4uLVe2UXMQgV2rrfQ
+name: Generic PETG @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  cooling: true
+  fan_always_on: false
+  filament_type: PETG
+  max_fan_speed: 50
+  min_fan_speed: 30
+  filament_colour: '#FF8000'
+  filament_density: 1.27
+  first_layer_temperature: 240
+  temperature: 240
+  first_layer_bed_temperature: 70
+  bed_temperature: 70
+  filament_max_volumetric_speed: 8.0
+---
+kind: filament
+id: yhLWdL3AX0OQB93mSwSunA
+name: Generic FLEX @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  filament_type: FLEX
+  full_fan_speed_layer: 4
+  max_fan_speed: 100
+  min_fan_speed: 100
+  filament_colour: '#C80000'
+  filament_density: 1.21
+  first_layer_temperature: 225
+  temperature: 225
+  first_layer_bed_temperature: 70
+  bed_temperature: 70
+  filament_max_volumetric_speed: 2.5
+---
+kind: filament
+id: gfXEHaZ6X5Crka+2FzPk7w
+name: Generic Nylon @Rigid3D
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Mucit2|Zero2|Zero3)$/)
+values:
+  disable_fan_first_layers: 3
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  extrusion_multiplier: 1.0
+  fan_below_layer_time: 60
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_cooling_moves: 4
+  filament_cost: 0.0
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_notes: ''
+  filament_soluble: false
+  filament_spool_weight: 0.0
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  start_filament_gcode: |
+    ; Filament gcode
+  cooling: true
+  fan_always_on: false
+  filament_type: NYLON
+  max_fan_speed: 0
+  min_fan_speed: 0
+  filament_colour: '#0AF1CE'
+  filament_density: 1.12
+  first_layer_temperature: 250
+  temperature: 250
+  first_layer_bed_temperature: 100
+  bed_temperature: 100
+  filament_max_volumetric_speed: 8.0

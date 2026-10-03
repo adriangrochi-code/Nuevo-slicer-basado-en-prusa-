@@ -1,0 +1,1343 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: yXRsMBHAVbir5P7mo7TpQg
+name: Generic PLA @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 205
+  bed_temperature: 60
+  first_layer_temperature: 195
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Generic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.026}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: v5sMWFCNXmKTsm2BGTJmbA
+name: Generic PETG @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 30.0
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 245
+  bed_temperature: 80
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Generic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: qk0syntSVmi6o/V9348v3Q
+name: Generic ABS @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 20.0
+  filament_density: 1.04
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: ABS
+  temperature: 250
+  bed_temperature: 100
+  first_layer_temperature: 245
+  first_layer_bed_temperature: 100
+  idle_temperature: 170
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.92
+  filament_colour: '#3A80CA'
+  fan_always_on: true
+  min_fan_speed: 15
+  max_fan_speed: 15
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Generic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: q4ZHt6yJXnKeOwZ9kGMtag
+name: Generic ASA @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 40.0
+  filament_density: 1.06
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: ASA
+  temperature: 255
+  bed_temperature: 100
+  first_layer_temperature: 250
+  first_layer_bed_temperature: 100
+  idle_temperature: 170
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.92
+  filament_colour: '#3A08AC'
+  fan_always_on: true
+  min_fan_speed: 15
+  max_fan_speed: 15
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Generic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: tsLlFAcZWvqAwvvMH1y6Gg
+name: Layer Line Engineering PLA @HSP1 0.4 Takoto
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 34.99
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: Layer Line Engineering PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 215
+  bed_temperature: 60
+  first_layer_temperature: 210
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.03}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: 0EvUPJWdVzu+L2Uaygaltw
+name: Layer Line DuraPET @HSP1 0.4 Takoto
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.29
+  filament_diameter: 1.75
+  filament_notes: Layer Line DuraPET
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 285
+  bed_temperature: 80
+  first_layer_temperature: 280
+  first_layer_bed_temperature: 80
+  idle_temperature: 180
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 1.0
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: jRlYrXtCWHenqZUR55GoDQ
+name: Layer Line Engineering PLA @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 34.99
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: Layer Line Engineering PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 215
+  bed_temperature: 60
+  first_layer_temperature: 210
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.024}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: Wa3Jjd3LU9iyVnT3NnUytQ
+name: Layer Line DuraPET @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.29
+  filament_diameter: 1.75
+  filament_notes: Layer Line DuraPET
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 285
+  bed_temperature: 80
+  first_layer_temperature: 280
+  first_layer_bed_temperature: 80
+  idle_temperature: 180
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 1.0
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.012}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: XGws0A3WWTCQyW4kw/DAzQ
+name: Layer Line Engineering PLA @HSP1 0.8 Takoto
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 34.99
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: Layer Line Engineering PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 215
+  bed_temperature: 60
+  first_layer_temperature: 210
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 15
+  max_fan_speed: 40
+  bridge_fan_speed: 40
+  disable_fan_first_layers: 1
+  fan_below_layer_time: 60
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: Ob1IIP0OUL2vp0zFJB8+BA
+name: Layer Line DuraPET @HSP1 0.8 Takoto
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.29
+  filament_diameter: 1.75
+  filament_notes: Layer Line DuraPET
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 285
+  bed_temperature: 80
+  first_layer_temperature: 280
+  first_layer_bed_temperature: 80
+  idle_temperature: 180
+  filament_max_volumetric_speed: 20.0
+  extrusion_multiplier: 1.0
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: 60ZzCmURUr+F6RPDxUwTfw
+name: Layer Line Engineering PLA @HSP1 1.0 Takoto
+condition: (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 34.99
+  filament_density: 1.22
+  filament_diameter: 1.75
+  filament_notes: Layer Line Engineering PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 230
+  bed_temperature: 60
+  first_layer_temperature: 225
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 25.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.012}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: I3DviqxtXPmBbRlmEWAtMg
+name: Layer Line DuraPET @HSP1 1.0 Takoto
+condition: (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.29
+  filament_diameter: 1.75
+  filament_notes: Layer Line DuraPET
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 285
+  bed_temperature: 80
+  first_layer_temperature: 280
+  first_layer_bed_temperature: 80
+  idle_temperature: 180
+  filament_max_volumetric_speed: 25.0
+  extrusion_multiplier: 1.0
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: HartSmart Products
+  filament_spool_weight: 200.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: V7RBtQ1fUbaC5yQAT+5KNg
+name: Push Plastic PLA @HSP1 0.4 Takoto
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 200
+  bed_temperature: 60
+  first_layer_temperature: 195
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: GMJSeM3uWECQVllgoyED+w
+name: Push Plastic PETG @HSP1 0.4 Takoto
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 32.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PETG
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 245
+  bed_temperature: 80
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 40
+  max_fan_speed: 40
+  bridge_fan_speed: 40
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.042}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: ot8ylEOgXByeXYJTBZAv5A
+name: Push Plastic PLA @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 200
+  bed_temperature: 60
+  first_layer_temperature: 195
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.026}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: pbNSu9ZKWC6P+aV/UR5iCw
+name: Push Plastic PETG @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 32.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PETG
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 245
+  bed_temperature: 80
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.020}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: cT/9mx/aX4a9k6sGC4ogeA
+name: Push Plastic PLA @HSP1 0.8 Takoto
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 200
+  bed_temperature: 60
+  first_layer_temperature: 195
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: S3KQxZa4VhSI71LHEG9pZg
+name: Push Plastic PETG @HSP1 0.8 Takoto
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 32.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PETG
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 245
+  bed_temperature: 80
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 18.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: KyCl3qe/VxuACF2L+yb+dA
+name: Push Plastic PLA @HSP1 1.0 Takoto
+condition: (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PLA
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 200
+  bed_temperature: 60
+  first_layer_temperature: 195
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.0}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: NzRbxlfBXiiqzDanXwXswA
+name: Push Plastic PETG @HSP1 1.0 Takoto
+condition: (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 32.99
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PETG
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 250
+  bed_temperature: 80
+  first_layer_temperature: 245
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 25.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 80
+  max_fan_speed: 80
+  bridge_fan_speed: 80
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.016}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: 3aKZGC9EWHqx3GJsq18wLw
+name: Push Plastic PCTG @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 39.99
+  filament_density: 1.21
+  filament_diameter: 1.75
+  filament_notes: Push Plastic PCTG
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PCTG
+  temperature: 245
+  bed_temperature: 80
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 80
+  idle_temperature: 190
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 1.0
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.018}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.026}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: PK6V22f6Uxuuy3OFmvE6pg
+name: Push Plastic ABS @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.03
+  filament_diameter: 1.75
+  filament_notes: Push Plastic ABS
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: ABS
+  temperature: 250
+  bed_temperature: 100
+  first_layer_temperature: 240
+  first_layer_bed_temperature: 100
+  idle_temperature: 170
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.92
+  filament_colour: '#3A80CA'
+  fan_always_on: true
+  min_fan_speed: 15
+  max_fan_speed: 15
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.012}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.024}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: 07DTFhhkVoehNi2CFKybIw
+name: Push Plastic PC @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 54.0
+  filament_density: 1.19
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PC
+  temperature: 260
+  bed_temperature: 100
+  first_layer_temperature: 255
+  first_layer_bed_temperature: 100
+  idle_temperature: 180
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.94
+  filament_colour: '#3A08AC'
+  fan_always_on: true
+  min_fan_speed: 10
+  max_fan_speed: 10
+  bridge_fan_speed: 10
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Push Plastic
+  filament_spool_weight: 350.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: usiDcjTXUvy+n3HZJ4kX+Q
+name: 3D Fuel Pro PCTG @HSP1 0.4 Takoto
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 39.99
+  filament_density: 1.23
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PCTG
+  temperature: 260
+  bed_temperature: 80
+  first_layer_temperature: 260
+  first_layer_bed_temperature: 80
+  idle_temperature: 190
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.99
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 40
+  max_fan_speed: 40
+  bridge_fan_speed: 40
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: 3D Fuel
+  filament_spool_weight: 320.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.04}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: bM4pXR6kWBCF8X0wJKikpA
+name: Polymaker PolyFlex TPU95-HF @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 49.99
+  filament_density: 1.16
+  filament_diameter: 1.75
+  filament_notes: Polymaker PolyFlex TPU95-HF
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: FLEX
+  temperature: 220
+  bed_temperature: 50
+  first_layer_temperature: 220
+  first_layer_bed_temperature: 50
+  idle_temperature: 170
+  filament_max_volumetric_speed: 10.0
+  extrusion_multiplier: 0.96
+  filament_colour: '#ac5708'
+  fan_always_on: true
+  min_fan_speed: 50
+  max_fan_speed: 50
+  bridge_fan_speed: 50
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Polymaker
+  filament_spool_weight: 140.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.030}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    M98 P{"{directories.system^\"/System Macros/Change Settings/adjust_filament_monitor_sensitivity.g\"}"} D0 L65 H120
+    M98 P{"{directories.system^\"/System Macros/Change Settings/adjust_filament_monitor_sensitivity.g\"}"} D1 L65 H120
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    M98 P{"{directories.system^\"/System Macros/Change Settings/adjust_filament_monitor_sensitivity.g\"}"} D{current_extruder} L65 H120
+    {endif}
+---
+kind: filament
+id: BwBRaBpVVSGNO/LHxXfKmA
+name: Polymaker PolyLite PLA-CF @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 29.99
+  filament_density: 1.29
+  filament_diameter: 1.75
+  filament_notes: Polymaker PolyLite PLA-CF
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PLA
+  temperature: 205
+  bed_temperature: 60
+  first_layer_temperature: 200
+  first_layer_bed_temperature: 60
+  idle_temperature: 140
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.93
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 2
+  fan_below_layer_time: 60
+  filament_vendor: Polymaker
+  filament_spool_weight: 140.0
+  filament_abrasive: true
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.012}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: BU2DsIoJXBWSRTUszdz4CA
+name: Polymaker PolyMide PA6-CF @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 74.99
+  filament_density: 1.17
+  filament_diameter: 1.75
+  filament_notes: Polymaker PolyMide PA6-CF
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: NYLON
+  temperature: 290
+  bed_temperature: 50
+  first_layer_temperature: 285
+  first_layer_bed_temperature: 50
+  idle_temperature: 170
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.93
+  filament_colour: '#3A08AC'
+  fan_always_on: true
+  min_fan_speed: 10
+  max_fan_speed: 15
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Polymaker
+  filament_spool_weight: 140.0
+  enable_dynamic_fan_speeds: true
+  overhang_fan_speed_0: 30
+  overhang_fan_speed_1: 25
+  overhang_fan_speed_2: 15
+  overhang_fan_speed_3: 10
+  filament_abrasive: true
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.016}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: YC/y566tXDW91vd5fAh/jQ
+name: Polymaker PolyDissolve S1 @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 79.99
+  filament_density: 1.13
+  filament_diameter: 1.75
+  filament_notes: Polymaker PolyDissolve S1
+  filament_soluble: true
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PVA
+  temperature: 220
+  bed_temperature: 60
+  first_layer_temperature: 215
+  first_layer_bed_temperature: 60
+  idle_temperature: 120
+  filament_max_volumetric_speed: 10.0
+  extrusion_multiplier: 0.9
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 5
+  max_fan_speed: 10
+  bridge_fan_speed: 10
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 30
+  filament_vendor: Polymaker
+  filament_spool_weight: 140.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.018}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    M98 P{"{directories.system^\"/System Macros/Change Settings/adjust_filament_monitor_sensitivity.g\"}"} D{current_extruder} L60 H140
+    {endif}
+---
+kind: filament
+id: LYGKsoH1WuyTBTH3EMoYew
+name: Essentium HTN-CF25 @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: false
+  filament_cost: 230.0
+  filament_density: 1.32
+  filament_diameter: 1.75
+  filament_notes: Essentium HTN-CF25
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: NYLON
+  temperature: 280
+  bed_temperature: 80
+  first_layer_temperature: 275
+  first_layer_bed_temperature: 80
+  idle_temperature: 170
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.95
+  filament_colour: '#3A08AC'
+  fan_always_on: false
+  min_fan_speed: 0
+  max_fan_speed: 0
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Essentium
+  filament_spool_weight: 325.0
+  enable_dynamic_fan_speeds: true
+  overhang_fan_speed_0: 30
+  overhang_fan_speed_1: 25
+  overhang_fan_speed_2: 15
+  overhang_fan_speed_3: 10
+  filament_abrasive: true
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.006}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: Mog5IodXXu2UeGANdn4FCg
+name: Essentium Support S10 @HSP1 0.6 Takoto
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 100.0
+  filament_density: 1.14
+  filament_diameter: 1.75
+  filament_notes: Essentium Support S10
+  filament_soluble: true
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PVA
+  temperature: 215
+  bed_temperature: 60
+  first_layer_temperature: 210
+  first_layer_bed_temperature: 60
+  idle_temperature: 120
+  filament_max_volumetric_speed: 10.0
+  extrusion_multiplier: 0.9
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 5
+  max_fan_speed: 10
+  bridge_fan_speed: 10
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 30
+  filament_vendor: Essentium
+  filament_spool_weight: 325.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {local pressure_advance = 0.04}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: 6Tiu+uklX2ubOBXlJOpbfA
+name: BASF Ultrafuse ABS Fusion+ @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 45.0
+  filament_density: 1.07
+  filament_diameter: 1.75
+  filament_notes: BASF Ultrafuse ABS Fusion+
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: ABS
+  temperature: 255
+  bed_temperature: 100
+  first_layer_temperature: 250
+  first_layer_bed_temperature: 100
+  idle_temperature: 170
+  filament_max_volumetric_speed: 15.0
+  extrusion_multiplier: 0.95
+  filament_colour: '#3A80CA'
+  fan_always_on: true
+  min_fan_speed: 15
+  max_fan_speed: 15
+  bridge_fan_speed: 15
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: BASF
+  filament_spool_weight: 215.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: Ayx+EOg4V2GLKTfA03fAMA
+name: BASF Ultrafuse BVOH @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 143.0
+  filament_density: 1.14
+  filament_diameter: 1.75
+  filament_notes: BASF Ultrafuse BVOH
+  filament_soluble: true
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: BVOH
+  temperature: 215
+  bed_temperature: 60
+  first_layer_temperature: 210
+  first_layer_bed_temperature: 60
+  idle_temperature: 120
+  filament_max_volumetric_speed: 10.0
+  extrusion_multiplier: 0.91
+  filament_colour: '#FF3232'
+  fan_always_on: true
+  min_fan_speed: 5
+  max_fan_speed: 10
+  bridge_fan_speed: 10
+  disable_fan_first_layers: 4
+  fan_below_layer_time: 30
+  filament_vendor: BASF
+  filament_spool_weight: 215.0
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}
+---
+kind: filament
+id: BeFGFVR0XXChiq//ZAGZ3g
+name: Jabil PETG 0800 ESD @HSP1
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(HSP1\-I|HSP1\-I\ Duplicator\ Mode)$/)
+values:
+  cooling: true
+  filament_cost: 100.0
+  filament_density: 1.26
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: PETG
+  temperature: 265
+  bed_temperature: 80
+  first_layer_temperature: 260
+  first_layer_bed_temperature: 80
+  idle_temperature: 160
+  filament_max_volumetric_speed: 12.0
+  extrusion_multiplier: 0.96
+  filament_colour: '#FF8000'
+  fan_always_on: true
+  min_fan_speed: 70
+  max_fan_speed: 70
+  bridge_fan_speed: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_vendor: Jabil
+  filament_spool_weight: 325.0
+  filament_abrasive: true
+  start_filament_gcode: |-
+    ; Filament gcode
+    {if nozzle_diameter[initial_extruder] == 0.6}{local pressure_advance = 0.01}
+    {elsif nozzle_diameter[initial_extruder] == 0.4}{local pressure_advance = 0.0}
+    {elsif nozzle_diameter[initial_extruder] == 0.8}{local pressure_advance = 0.018}
+    {elsif nozzle_diameter[initial_extruder] == 1.0}{local pressure_advance = 0.0}
+    {endif}
+    {if printer_notes=~/.*DUPLICATOR_MODE.*/}
+    M572 D0:1 S{pressure_advance}
+    {else}
+    M572 D{current_extruder} S{pressure_advance}
+    {endif}

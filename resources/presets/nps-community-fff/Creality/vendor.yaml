@@ -1,0 +1,1498 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Creality
+name: Creality
+version: 1.1.0
+features:
+  printer:
+    supports_03_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_05_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: ENDER
+  base_model: ENDER
+  printer_configs_order:
+  - ender3
+  - ender3bltouch
+  - ender3pro
+  - ender3neo
+  - ender3v2
+  - ender3v2neo
+  - ender3s1
+  - ender3s1pro
+  - ender3s1plus
+  - ender3max
+  - ender3maxneo
+  - ender4
+  - ender5
+  - ender5pro
+  - ender5plus
+  - ender5s1
+  - ender6
+  - ender7
+  - ender2
+  - ender2pro
+- label: CR
+  base_model: CR
+  printer_configs_order:
+  - cr5pro
+  - cr5proh
+  - cr6se
+  - cr6max
+  - cr10smart
+  - cr10smartpro
+  - cr10mini
+  - cr10max
+  - cr10
+  - cr10v2
+  - cr10v3
+  - cr10s
+  - cr10spro
+  - cr10sprov2
+  - cr10s4
+  - cr10s5
+  - cr20
+  - cr20pro
+  - cr200b
+  - cr8
+- label: SERMOON
+  base_model: SERMOON
+  printer_configs_order:
+  - sermoond1
+  - sermoonv1
+  - sermoonv1pro
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3
+id: ENDER3
+model:
+  base_model: ENDER
+  model: ENDER3
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER3_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 BLTouch
+id: ENDER3BLTOUCH
+model:
+  base_model: ENDER
+  model: ENDER3BLTOUCH
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER3BLTOUCH_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 Pro
+id: ENDER3PRO
+model:
+  base_model: ENDER
+  model: ENDER3PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER3PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 Neo
+id: ENDER3NEO
+model:
+  base_model: ENDER
+  model: ENDER3NEO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER3NEO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 V2
+id: ENDER3V2
+model:
+  base_model: ENDER
+  model: ENDER3V2
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3v2_bed.stl
+  bed_texture: ender3v2.svg
+  thumbnail: ENDER3V2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 V2 Neo
+id: ENDER3V2NEO
+model:
+  base_model: ENDER
+  model: ENDER3V2NEO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3v2_bed.stl
+  bed_texture: ender3v2.svg
+  thumbnail: ENDER3V2NEO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 S1
+id: ENDER3S1
+model:
+  base_model: ENDER
+  model: ENDER3S1
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3v2_bed.stl
+  bed_texture: ender3v2.svg
+  thumbnail: ENDER3S1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 S1 Pro
+id: ENDER3S1PRO
+model:
+  base_model: ENDER
+  model: ENDER3S1PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3v2_bed.stl
+  bed_texture: ender3v2.svg
+  thumbnail: ENDER3S1PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 S1 Plus
+id: ENDER3S1PLUS
+model:
+  base_model: ENDER
+  model: ENDER3S1PLUS
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: ENDER3S1PLUS_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 Max
+id: ENDER3MAX
+model:
+  base_model: ENDER
+  model: ENDER3MAX
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: ENDER3MAX_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-3 Max Neo
+id: ENDER3MAXNEO
+model:
+  base_model: ENDER
+  model: ENDER3MAXNEO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: ENDER3MAXNEO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-4
+id: ENDER4
+model:
+  base_model: ENDER
+  model: ENDER4
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3v2_bed.stl
+  bed_texture: ender3v2.svg
+  thumbnail: ENDER4_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-5
+id: ENDER5
+model:
+  base_model: ENDER
+  model: ENDER5
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER5_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-5 Pro
+id: ENDER5PRO
+model:
+  base_model: ENDER
+  model: ENDER5PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER5PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-5 Plus
+id: ENDER5PLUS
+model:
+  base_model: ENDER
+  model: ENDER5PLUS
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender5plus_bed.stl
+  bed_texture: ender5plus.svg
+  thumbnail: ENDER5PLUS_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-5 S1
+id: ENDER5S1
+model:
+  base_model: ENDER
+  model: ENDER5S1
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: ender3.svg
+  thumbnail: ENDER5S1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-6
+id: ENDER6
+model:
+  base_model: ENDER
+  model: ENDER6
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender6_bed.stl
+  bed_texture: ender6.svg
+  thumbnail: ENDER6_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-7
+id: ENDER7
+model:
+  base_model: ENDER
+  model: ENDER7
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender7_bed.stl
+  bed_texture: ender7.svg
+  thumbnail: ENDER7_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-2
+id: ENDER2
+model:
+  base_model: ENDER
+  model: ENDER2
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender2_bed.stl
+  bed_texture: ender2.svg
+  thumbnail: ENDER2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Ender-2 Pro
+id: ENDER2PRO
+model:
+  base_model: ENDER
+  model: ENDER2PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender2pro_bed.stl
+  bed_texture: ender2pro.svg
+  thumbnail: ENDER2PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-5 Pro
+id: CR5PRO
+model:
+  base_model: CR
+  model: CR5PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr5pro_bed.stl
+  bed_texture: cr5pro.svg
+  thumbnail: CR5PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-5 Pro H
+id: CR5PROH
+model:
+  base_model: CR
+  model: CR5PROH
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr5pro_bed.stl
+  bed_texture: cr5pro.svg
+  thumbnail: CR5PROH_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-6 SE
+id: CR6SE
+model:
+  base_model: CR
+  model: CR6SE
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr6se_bed.stl
+  bed_texture: cr6se.svg
+  thumbnail: CR6SE_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-6 Max
+id: CR6MAX
+model:
+  base_model: CR
+  model: CR6MAX
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10s4_bed.stl
+  bed_texture: cr10s4.svg
+  thumbnail: CR6MAX_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 SMART
+id: CR10SMART
+model:
+  base_model: CR
+  model: CR10SMART
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: CR10SMART_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 SMART Pro
+id: CR10SMARTPRO
+model:
+  base_model: CR
+  model: CR10SMARTPRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: CR10SMARTPRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 Mini
+id: CR10MINI
+model:
+  base_model: CR
+  model: CR10MINI
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10mini_bed.stl
+  bed_texture: cr10mini.svg
+  thumbnail: CR10MINI_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 Max
+id: CR10MAX
+model:
+  base_model: CR
+  model: CR10MAX
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10max_bed.stl
+  bed_texture: cr10max.svg
+  thumbnail: CR10MAX_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10
+id: CR10
+model:
+  base_model: CR
+  model: CR10
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10_bed.stl
+  bed_texture: cr10.svg
+  thumbnail: CR10_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 V2
+id: CR10V2
+model:
+  base_model: CR
+  model: CR10V2
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10.svg
+  thumbnail: CR10V2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 V3
+id: CR10V3
+model:
+  base_model: CR
+  model: CR10V3
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10.svg
+  thumbnail: CR10V3_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 S
+id: CR10S
+model:
+  base_model: CR
+  model: CR10S
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10_bed.stl
+  bed_texture: cr10.svg
+  thumbnail: CR10S_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 S Pro
+id: CR10SPRO
+model:
+  base_model: CR
+  model: CR10SPRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10spro.svg
+  thumbnail: CR10SPRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 S Pro V2
+id: CR10SPROV2
+model:
+  base_model: CR
+  model: CR10SPROV2
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10v2_bed.stl
+  bed_texture: cr10.svg
+  thumbnail: CR10SPROV2_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 S4
+id: CR10S4
+model:
+  base_model: CR
+  model: CR10S4
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10s4_bed.stl
+  bed_texture: cr10s4.svg
+  thumbnail: CR10S4_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-10 S5
+id: CR10S5
+model:
+  base_model: CR
+  model: CR10S5
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr10s5_bed.stl
+  bed_texture: cr10s5.svg
+  thumbnail: CR10S5_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-20
+id: CR20
+model:
+  base_model: CR
+  model: CR20
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: cr20.svg
+  thumbnail: CR20_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-20 Pro
+id: CR20PRO
+model:
+  base_model: CR
+  model: CR20PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: ender3_bed.stl
+  bed_texture: cr20.svg
+  thumbnail: CR20PRO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-200B
+id: CR200B
+model:
+  base_model: CR
+  model: CR200B
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr200b_bed.stl
+  bed_texture: cr200b.svg
+  thumbnail: CR200B_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality CR-8
+id: CR8
+model:
+  base_model: CR
+  model: CR8
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: cr8_bed.stl
+  bed_texture: cr8.svg
+  thumbnail: CR8_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Sermoon-D1
+id: SERMOOND1
+model:
+  base_model: SERMOON
+  model: SERMOOND1
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: sermoond1_bed.stl
+  bed_texture: sermoond1.svg
+  thumbnail: SERMOOND1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Sermoon-V1
+id: SERMOONV1
+model:
+  base_model: SERMOON
+  model: SERMOONV1
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: sermoonv1_bed.stl
+  bed_texture: sermoonv1.svg
+  thumbnail: SERMOONV1_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Creality Sermoon-V1 Pro
+id: SERMOONV1PRO
+model:
+  base_model: SERMOON
+  model: SERMOONV1PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_05_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+visual:
+  bed_model: sermoonv1_bed.stl
+  bed_texture: sermoonv1.svg
+  thumbnail: SERMOONV1PRO_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+condition: printer.supports_03_nozzle
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+condition: printer.supports_05_nozzle
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: ender3
+name: Creality Ender-3
+printer: ENDER3
+legacy_printer_model:
+- ENDER3
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3bltouch
+name: Creality Ender-3 BLTouch
+printer: ENDER3BLTOUCH
+legacy_printer_model:
+- ENDER3BLTOUCH
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3pro
+name: Creality Ender-3 Pro
+printer: ENDER3PRO
+legacy_printer_model:
+- ENDER3PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3neo
+name: Creality Ender-3 Neo
+printer: ENDER3NEO
+legacy_printer_model:
+- ENDER3NEO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3v2
+name: Creality Ender-3 V2
+printer: ENDER3V2
+legacy_printer_model:
+- ENDER3V2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3v2neo
+name: Creality Ender-3 V2 Neo
+printer: ENDER3V2NEO
+legacy_printer_model:
+- ENDER3V2NEO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3s1
+name: Creality Ender-3 S1
+printer: ENDER3S1
+legacy_printer_model:
+- ENDER3S1
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3s1pro
+name: Creality Ender-3 S1 Pro
+printer: ENDER3S1PRO
+legacy_printer_model:
+- ENDER3S1PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3s1plus
+name: Creality Ender-3 S1 Plus
+printer: ENDER3S1PLUS
+legacy_printer_model:
+- ENDER3S1PLUS
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3max
+name: Creality Ender-3 Max
+printer: ENDER3MAX
+legacy_printer_model:
+- ENDER3MAX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender3maxneo
+name: Creality Ender-3 Max Neo
+printer: ENDER3MAXNEO
+legacy_printer_model:
+- ENDER3MAXNEO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender4
+name: Creality Ender-4
+printer: ENDER4
+legacy_printer_model:
+- ENDER4
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender5
+name: Creality Ender-5
+printer: ENDER5
+legacy_printer_model:
+- ENDER5
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender5pro
+name: Creality Ender-5 Pro
+printer: ENDER5PRO
+legacy_printer_model:
+- ENDER5PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender5plus
+name: Creality Ender-5 Plus
+printer: ENDER5PLUS
+legacy_printer_model:
+- ENDER5PLUS
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender5s1
+name: Creality Ender-5 S1
+printer: ENDER5S1
+legacy_printer_model:
+- ENDER5S1
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender6
+name: Creality Ender-6
+printer: ENDER6
+legacy_printer_model:
+- ENDER6
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender7
+name: Creality Ender-7
+printer: ENDER7
+legacy_printer_model:
+- ENDER7
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender2
+name: Creality Ender-2
+printer: ENDER2
+legacy_printer_model:
+- ENDER2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ender2pro
+name: Creality Ender-2 Pro
+printer: ENDER2PRO
+legacy_printer_model:
+- ENDER2PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr5pro
+name: Creality CR-5 Pro
+printer: CR5PRO
+legacy_printer_model:
+- CR5PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr5proh
+name: Creality CR-5 Pro H
+printer: CR5PROH
+legacy_printer_model:
+- CR5PROH
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr6se
+name: Creality CR-6 SE
+printer: CR6SE
+legacy_printer_model:
+- CR6SE
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr6max
+name: Creality CR-6 Max
+printer: CR6MAX
+legacy_printer_model:
+- CR6MAX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10smart
+name: Creality CR-10 SMART
+printer: CR10SMART
+legacy_printer_model:
+- CR10SMART
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10smartpro
+name: Creality CR-10 SMART Pro
+printer: CR10SMARTPRO
+legacy_printer_model:
+- CR10SMARTPRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10mini
+name: Creality CR-10 Mini
+printer: CR10MINI
+legacy_printer_model:
+- CR10MINI
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10max
+name: Creality CR-10 Max
+printer: CR10MAX
+legacy_printer_model:
+- CR10MAX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10
+name: Creality CR-10
+printer: CR10
+legacy_printer_model:
+- CR10
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10v2
+name: Creality CR-10 V2
+printer: CR10V2
+legacy_printer_model:
+- CR10V2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10v3
+name: Creality CR-10 V3
+printer: CR10V3
+legacy_printer_model:
+- CR10V3
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10s
+name: Creality CR-10 S
+printer: CR10S
+legacy_printer_model:
+- CR10S
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10spro
+name: Creality CR-10 S Pro
+printer: CR10SPRO
+legacy_printer_model:
+- CR10SPRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10sprov2
+name: Creality CR-10 S Pro V2
+printer: CR10SPROV2
+legacy_printer_model:
+- CR10SPROV2
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10s4
+name: Creality CR-10 S4
+printer: CR10S4
+legacy_printer_model:
+- CR10S4
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr10s5
+name: Creality CR-10 S5
+printer: CR10S5
+legacy_printer_model:
+- CR10S5
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr20
+name: Creality CR-20
+printer: CR20
+legacy_printer_model:
+- CR20
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr20pro
+name: Creality CR-20 Pro
+printer: CR20PRO
+legacy_printer_model:
+- CR20PRO
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr200b
+name: Creality CR-200B
+printer: CR200B
+legacy_printer_model:
+- CR200B
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: cr8
+name: Creality CR-8
+printer: CR8
+legacy_printer_model:
+- CR8
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sermoond1
+name: Creality Sermoon-D1
+printer: SERMOOND1
+legacy_printer_model:
+- SERMOOND1
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sermoonv1
+name: Creality Sermoon-V1
+printer: SERMOONV1
+legacy_printer_model:
+- SERMOONV1
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sermoonv1pro
+name: Creality Sermoon-V1 Pro
+printer: SERMOONV1PRO
+legacy_printer_model:
+- SERMOONV1PRO
+tools:
+- tool: '0.4'
+sheet: default

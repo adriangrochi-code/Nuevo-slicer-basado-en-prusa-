@@ -1,0 +1,139 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: HartSmartProducts
+name: HartSmart Products
+version: 1.2.1
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+    supports_1_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: HSP1
+  base_model: HSP1
+  printer_configs_order:
+  - hsp1-i
+  - hsp1-i duplicator mode
+---
+kind: printer
+technology: FFF
+name: HSP1-I
+id: HSP1-I
+model:
+  base_model: HSP1
+  model: HSP1-I
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: hsp1_i_bed.stl
+  bed_texture: hsp1_i.svg
+  thumbnail: HSP1-I_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: HSP1-I Duplicator Mode
+id: HSP1-I Duplicator Mode
+model:
+  base_model: HSP1
+  model: HSP1-I Duplicator Mode
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: hsp1_i_duplicator_bed.stl
+  bed_texture: hsp1_i_duplicator.svg
+  thumbnail: HSP1-I Duplicator Mode_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: tool
+technology: FFF
+id: '1'
+name: '1'
+condition: printer.supports_1_nozzle
+features:
+  nozzle_diameter:
+    default: 1.0
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: hsp1-i
+name: HSP1-I
+printer: HSP1-I
+legacy_printer_model:
+- HSP1-I
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: hsp1-i duplicator mode
+name: HSP1-I Duplicator Mode
+printer: HSP1-I Duplicator Mode
+legacy_printer_model:
+- HSP1-I Duplicator Mode
+tools:
+- tool: '0.4'
+sheet: default

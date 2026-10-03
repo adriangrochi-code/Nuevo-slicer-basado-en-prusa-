@@ -1,0 +1,33 @@
+{
+ "vendor": "BIQU",
+ "counts": {
+  "printer_models": 1,
+  "printer": 1,
+  "print": 7,
+  "filament": 3
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 1,
+   "thumbnails_color (no existe en 3.0)": 1,
+   "thumbnails_custom_color (no existe en 3.0)": 1,
+   "thumbnails_end_file (no existe en 3.0)": 1,
+   "thumbnails_with_bed (no existe en 3.0)": 1,
+   "z_step (no existe en 3.0)": 1
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 7,
+   "infill_only_where_needed (no existe en 3.0)": 7,
+   "support_material_solid_first_layer (no existe en 3.0)": 7,
+   "thin_perimeters (no existe en 3.0)": 7,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 7,
+   "wipe_tower_x (no existe en 3.0)": 7,
+   "wipe_tower_y (no existe en 3.0)": 7
+  },
+  "filament": {
+   "top_fan_speed (no existe en 3.0)": 1
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

@@ -1,0 +1,37 @@
+{
+ "vendor": "BIBO",
+ "counts": {
+  "printer_models": 1,
+  "printer": 1,
+  "print": 13,
+  "filament": 16
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 1
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 13,
+   "external_fill_pattern (no existe en 3.0)": 13,
+   "infill_only_where_needed (no existe en 3.0)": 13,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 13,
+   "wipe_tower_x (no existe en 3.0)": 13,
+   "wipe_tower_y (no existe en 3.0)": 13
+  },
+  "filament": {
+   "top_fan_speed (no existe en 3.0)": 4
+  }
+ },
+ "skipped_presets": [
+  "printer:BIBO2 Touch E1 right only extrusion (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO2 Touch E2 left only extrusion (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO2 E1 right E2 Ditto (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO2 E2 left E1 Ditto (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO M2 BLTouch Dual extrusion (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO M2 BLTouch E1 right only extrusion (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO M2 BLTouch E2 left only extrusion (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO M2 E1 right E2 Ditto BLTouch (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')",
+  "printer:BIBO M2 E2 left E1 Ditto BLTouch (duplica BIBO2 0.4 de 'BIBO2 Touch Dual extrusion')"
+ ],
+ "notes": []
+}

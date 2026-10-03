@@ -1,0 +1,12 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: tool_print
+id: '*Print4Taste MC2.0 tool*'
+condition: printer.model == "MC2.0"
+variants:
+- condition: tool.nozzle_diameter == 1
+  name: mycusini 2.0
+  id: K1rc9lfFWfauydMEyXt+Zw
+  values:
+    max_layer_height: 0.75
+    min_layer_height: 0.3
+    retract_length: 0.1

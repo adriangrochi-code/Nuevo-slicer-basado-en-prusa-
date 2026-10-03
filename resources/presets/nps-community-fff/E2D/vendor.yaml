@@ -1,0 +1,99 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: E2D
+name: E2D
+version: 1.1.0
+features:
+  printer:
+    supports_03_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: i3
+  base_model: i3
+  printer_configs_order:
+  - i311
+  - i310
+---
+kind: printer
+technology: FFF
+name: E2D i311
+id: i311
+model:
+  base_model: i3
+  model: i311
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+---
+kind: printer
+technology: FFF
+name: E2D i310
+id: i310
+model:
+  base_model: i3
+  model: i310
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+condition: printer.supports_03_nozzle
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: i311
+name: E2D i311
+printer: i311
+legacy_printer_model:
+- i311
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i310
+name: E2D i310
+printer: i310
+legacy_printer_model:
+- i310
+tools:
+- tool: '0.4'
+sheet: default

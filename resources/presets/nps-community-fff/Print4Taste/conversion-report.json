@@ -1,0 +1,16 @@
+{
+ "vendor": "Print4Taste",
+ "counts": {
+  "printer_models": 1,
+  "printer": 1,
+  "print": 3,
+  "filament": 1
+ },
+ "dropped_keys": {
+  "filament": {
+   "ilament_retract_before_wipe (no existe en 3.0)": 1
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

@@ -1,0 +1,276 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: jTxAjFxwVDGU61T9qpDSmw
+name: Generic PLA @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|M1|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Generic
+  extrusion_multiplier: 1.0
+  filament_cost: 25.4
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  fan_below_layer_time: 100
+  filament_colour: '#DDDDDD'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  first_layer_temperature: 210
+  temperature: 205
+  first_layer_bed_temperature: 60
+  bed_temperature: 60
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 2
+---
+kind: filament
+id: dxklql2FUhCkYSZniWoQaw
+name: Generic PETG @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|M1|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Generic
+  extrusion_multiplier: 1.0
+  filament_cost: 27.82
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#DDDDDD'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PETG
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 240
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 100
+  temperature: 240
+---
+kind: filament
+id: zbjF46VhXG6Ly4AUN+algQ
+name: Generic ABS @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: false
+  filament_vendor: Generic
+  extrusion_multiplier: 1.0
+  filament_cost: 27.82
+  filament_density: 1.04
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  bed_temperature: 100
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#DDDDDD'
+  filament_max_volumetric_speed: 0.0
+  filament_type: ABS
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 245
+  fan_always_on: false
+  max_fan_speed: 0
+  min_fan_speed: 0
+  bridge_fan_speed: 30
+  temperature: 245
+---
+kind: filament
+id: fSSnnsfQUKGC8IImWkJv/w
+name: Generic TPU @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|M1|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: false
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 30.0
+  filament_density: 1.2
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  bed_temperature: 55
+  disable_fan_first_layers: 3
+  fan_always_on: false
+  fan_below_layer_time: 20
+  filament_colour: '#CFFFFB'
+  filament_max_volumetric_speed: 0.0
+  retract_before_travel: 4.0
+  retract_length: 2.5
+  retract_speed: 30.0
+  filament_type: TPU
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 210
+  max_fan_speed: 70
+  min_fan_speed: 0
+---
+kind: filament
+id: 4CV5tl3tWlORFc+YSM1HNw
+name: Geeetech PLA @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|M1|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  fan_below_layer_time: 100
+  filament_colour: '#42BDD8'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  first_layer_temperature: 205
+  temperature: 200
+  first_layer_bed_temperature: 60
+  bed_temperature: 60
+  fan_always_on: true
+  max_fan_speed: 100
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 2
+---
+kind: filament
+id: VpBrsXd/V9eXdcbiMVf9ZA
+name: Geeetech PETG @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|M1|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|M1|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 30.0
+  filament_density: 1.27
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#42BDD8'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PETG
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 240
+  fan_always_on: true
+  max_fan_speed: 40
+  min_fan_speed: 20
+  bridge_fan_speed: 100
+  temperature: 240
+---
+kind: filament
+id: 9oE5QOdQUbimpcpFKPXacQ
+name: Geeetech ABS @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.3 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(A10M|A10Pro|A10T|A20|A20M|A20T|A30M|A30Pro|A30T|Mizar|MizarM|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(A10Pro|A20|A30Pro|Mizar|MizarMax|MizarPro|MizarS|Thunder|ThunderPro)$/)
+values:
+  cooling: false
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 20.0
+  filament_density: 1.04
+  filament_diameter: 1.75
+  filament_notes: ''
+  filament_soluble: false
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 20
+  filament_minimal_purge_on_wipe_tower: 90.0
+  bed_temperature: 100
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 20
+  filament_colour: '#42BDD8'
+  filament_max_volumetric_speed: 0.0
+  filament_type: ABS
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 240
+  fan_always_on: false
+  max_fan_speed: 0
+  min_fan_speed: 0
+  bridge_fan_speed: 30
+  temperature: 240
+---
+kind: filament
+id: txL9WKVRV9qbLKa2VY/+Sg
+name: Thunder HS-PLA @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: |-
+    HS-PLA is Geeetech's latest high-speed printing filament. By adjusting the melting point, melting index, glass transition temperature of raw materials and optimizing the production process, Geeetech enables HS-PLA to have stronger fluidity, smoother discharge, faster curing and forming speed and is not easy to deform under the melting condition. Compared with ordinary PLA, HS-pla has the advantages of faster printing speed, higher printing quality and more delicate model surface, which can better meet the high performance requirements of high-speed 3D printers for filament.
+
+    https://www.geeetech.com/wiki/index.php/Geeetech_Thunder_3D_printer#HS-PLA_Series_Filament_.22Speed-Temperature.22_Parameter_Settings_for_Reference
+  filament_soluble: false
+  min_print_speed: 211.0
+  slowdown_below_layer_time: 1
+  filament_minimal_purge_on_wipe_tower: 90.0
+  filament_colour: '#F5DC1E'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  first_layer_temperature: 210
+  temperature: 215
+  first_layer_bed_temperature: 60
+  bed_temperature: 60
+  fan_always_on: true
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 1
+  full_fan_speed_layer: 0
+  fan_below_layer_time: 10
+  max_fan_speed: 100
+---
+kind: filament
+id: GFUjqi56UhWdFQeWdhMlRg
+name: Thunder PLA @Geeetech
+condition: (tool.nozzle_diameter == 0.2 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.6 and printer.model =~ /^(Thunder|ThunderPro)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(Thunder|ThunderPro)$/)
+values:
+  cooling: true
+  filament_vendor: Geeetech
+  extrusion_multiplier: 1.0
+  filament_cost: 20.0
+  filament_density: 1.24
+  filament_diameter: 1.75
+  filament_notes: common PLA filament setting for high-speed printing
+  filament_soluble: false
+  min_print_speed: 211.0
+  slowdown_below_layer_time: 1
+  filament_minimal_purge_on_wipe_tower: 90.0
+  filament_colour: '#C8CF0A'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  first_layer_temperature: 210
+  temperature: 215
+  first_layer_bed_temperature: 60
+  bed_temperature: 60
+  fan_always_on: true
+  min_fan_speed: 100
+  bridge_fan_speed: 100
+  disable_fan_first_layers: 1
+  full_fan_speed_layer: 0
+  fan_below_layer_time: 10
+  max_fan_speed: 100

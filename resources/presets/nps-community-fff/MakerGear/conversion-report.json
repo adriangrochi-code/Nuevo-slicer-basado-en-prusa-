@@ -1,0 +1,44 @@
+{
+ "vendor": "MakerGear",
+ "counts": {
+  "printer_models": 9,
+  "printer": 33,
+  "print": 14,
+  "filament": 38
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 33,
+   "octoprint_apikey (no existe en 3.0)": 33,
+   "octoprint_host (no existe en 3.0)": 33,
+   "serial_port (no existe en 3.0)": 33,
+   "serial_speed (no existe en 3.0)": 33,
+   "extruders_count (no existe en 3.0)": 24
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 14,
+   "external_fill_pattern (no existe en 3.0)": 14,
+   "infill_only_where_needed (no existe en 3.0)": 14,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 14,
+   "wipe_tower_x (no existe en 3.0)": 14,
+   "wipe_tower_y (no existe en 3.0)": 14,
+   "support_material_auto (no existe en 3.0)": 3
+  },
+  "filament": {
+   "top_fan_speed (no existe en 3.0)": 13,
+   "bed_temperature (no numérico (''))": 2,
+   "disable_fan_first_layers (no numérico (''))": 1,
+   "fan_below_layer_time (no numérico (''))": 1,
+   "max_fan_speed (no numérico (''))": 1,
+   "min_fan_speed (no numérico (''))": 1,
+   "first_layer_bed_temperature (no numérico (''))": 1
+  }
+ },
+ "skipped_presets": [
+  "printer:MakerGear M3 Independent Dual Rev.0 (Duplication Mode) (duplica MAKERGEAR_M3_ID_0_DUPLICATION 0.35 de 'MakerGear M3 Independent Dual Rev.0')",
+  "printer:MakerGear M3 Independent Dual Rev.0 0.25 Nozzle (Duplication Mode) (duplica MAKERGEAR_M3_ID_0_DUPLICATION 0.25 de 'MakerGear M3 Independent Dual Rev.0 0.25 Nozzle')",
+  "printer:MakerGear M3 Independent Dual Rev.0 0.50 Nozzle (Duplication Mode) (duplica MAKERGEAR_M3_ID_0_DUPLICATION 0.5 de 'MakerGear M3 Independent Dual Rev.0 0.50 Nozzle')",
+  "printer:MakerGear M3 Independent Dual Rev.0 0.75 Nozzle (Duplication Mode) (duplica MAKERGEAR_M3_ID_0_DUPLICATION 0.75 de 'MakerGear M3 Independent Dual Rev.0 0.75 Nozzle')"
+ ],
+ "notes": []
+}

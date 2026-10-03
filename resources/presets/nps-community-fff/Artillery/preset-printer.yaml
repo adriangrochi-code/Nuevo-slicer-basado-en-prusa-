@@ -1,0 +1,1168 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*Artillery X1*'
+condition: printer.model == "X1"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X1
+  id: 6v9L755oW7S+xBSkyycJgA
+  values:
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+    between_objects_gcode: ''
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 5000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_y:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_z:
+    - 1000.0
+    - 1000.0
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_x:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_y:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_z:
+    - 12.0
+    - 12.0
+    machine_max_jerk_e:
+    - 1.5
+    - 1.5
+    machine_max_jerk_x:
+    - 8.0
+    - 8.0
+    machine_max_jerk_y:
+    - 8.0
+    - 8.0
+    machine_max_jerk_z:
+    - 0.4
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    max_print_height: 400.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    end_gcode: |
+      G4 ; wait
+      G92 E0 ; prepare to retract
+      G1 E-0.5 F3000; retract to avoid stringing
+
+      ; Anti-stringing end wiggle
+      G91 ; use relative coordinates
+      G1 X1 Y1 F1200
+
+      ; Raise nozzle and present bed
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+120, max_print_height)}{endif} ; Move print head up
+      G90 ; use absolute coordinates
+
+      ; Reset print setting overrides
+      M200 D0 ; disable volumetric e
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Shut down printer
+      M106 S0 ; turn-off fan
+      M104 S0 ; turn-off hotend
+      M140 S0 ; turn-off bed
+      M150 P0 ; turn off led
+      M85 S0 ; deactivate idle timeout
+      M84 ; disable motors
+    start_gcode: |-
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M190 S[first_layer_bed_temperature] ; wait for bed to heat up
+      M104 S[first_layer_temperature] ; start nozzle heating but don't wait
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+      G1 X3 Y3 F5000 ; move to corner of the bed to avoid ooze over centre
+
+      ; Wait for final heating
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+
+      ; Return to prime position, Prime line routine
+      G92 E0 ; Reset Extruder
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G1 X10 Y.5 Z0.25 F5000.0 ; Move to start position
+      G1 X100 Y.5 Z0.25 F1500.0 E15 ; Draw the first line
+      G1 X100 Y.2 Z0.25 F5000.0 ; Move to side a little
+      G1 X10 Y.2 Z0.25 F1500.0 E30 ; Draw the second line
+      G92 E0 ; Reset Extruder
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    bed_shape:
+    - '0x0'
+    - 300x0
+    - 300x300
+    - '0x300'
+    default_print: 0.20mm NORMAL @Artillery
+---
+kind: printer
+id: '*Artillery Genius*'
+condition: printer.model == "Genius"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Genius
+  id: 9m0ntYEsUi+43U1pqG6e8Q
+  values:
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+    between_objects_gcode: ''
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 5000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_y:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_z:
+    - 1000.0
+    - 1000.0
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_x:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_y:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_z:
+    - 12.0
+    - 12.0
+    machine_max_jerk_e:
+    - 1.5
+    - 1.5
+    machine_max_jerk_x:
+    - 8.0
+    - 8.0
+    machine_max_jerk_y:
+    - 8.0
+    - 8.0
+    machine_max_jerk_z:
+    - 0.4
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    max_print_height: 250.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    end_gcode: |
+      G4 ; wait
+      G92 E0 ; prepare to retract
+      G1 E-0.5 F3000; retract to avoid stringing
+
+      ; Anti-stringing end wiggle
+      G91 ; use relative coordinates
+      G1 X1 Y1 F1200
+
+      ; Raise nozzle and present bed
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+120, max_print_height)}{endif} ; Move print head up
+      G90 ; use absolute coordinates
+
+      ; Reset print setting overrides
+      M200 D0 ; disable volumetric e
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Shut down printer
+      M106 S0 ; turn-off fan
+      M104 S0 ; turn-off hotend
+      M140 S0 ; turn-off bed
+      M150 P0 ; turn off led
+      M85 S0 ; deactivate idle timeout
+      M84 ; disable motors
+    start_gcode: |-
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M190 S[first_layer_bed_temperature] ; wait for bed to heat up
+      M104 S[first_layer_temperature] ; start nozzle heating but don't wait
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+      G1 X3 Y3 F5000 ; move to corner of the bed to avoid ooze over centre
+
+      ; Wait for final heating
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+
+      ; Return to prime position, Prime line routine
+      G92 E0 ; Reset Extruder
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G1 X10 Y.5 Z0.25 F5000.0 ; Move to start position
+      G1 X100 Y.5 Z0.25 F1500.0 E15 ; Draw the first line
+      G1 X100 Y.2 Z0.25 F5000.0 ; Move to side a little
+      G1 X10 Y.2 Z0.25 F1500.0 E30 ; Draw the second line
+      G92 E0 ; Reset Extruder
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    default_print: 0.20mm NORMAL @Artillery
+---
+kind: printer
+id: '*Artillery Hornet*'
+condition: printer.model == "Hornet"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Hornet
+  id: r26gt3tbUO+zz2w1GddzyQ
+  values:
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+    between_objects_gcode: ''
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_y:
+    - 1000.0
+    - 960.0
+    machine_max_acceleration_z:
+    - 1000.0
+    - 1000.0
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_x:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_y:
+    - 200.0
+    - 100.0
+    machine_max_feedrate_z:
+    - 12.0
+    - 12.0
+    machine_max_jerk_e:
+    - 1.5
+    - 1.5
+    machine_max_jerk_x:
+    - 8.0
+    - 8.0
+    machine_max_jerk_y:
+    - 8.0
+    - 8.0
+    machine_max_jerk_z:
+    - 0.4
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    max_print_height: 250.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    end_gcode: |
+      G4 ; wait
+      G92 E0 ; prepare to retract
+      G1 E-0.5 F3000; retract to avoid stringing
+
+      ; Anti-stringing end wiggle
+      G91 ; use relative coordinates
+      G1 X1 Y1 F1200
+
+      ; Raise nozzle and present bed
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+120, max_print_height)}{endif} ; Move print head up
+      G90 ; use absolute coordinates
+
+      ; Reset print setting overrides
+      M200 D0 ; disable volumetric e
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Shut down printer
+      M106 S0 ; turn-off fan
+      M104 S0 ; turn-off hotend
+      M140 S0 ; turn-off bed
+      M150 P0 ; turn off led
+      M85 S0 ; deactivate idle timeout
+      M84 ; disable motors
+    start_gcode: |-
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M190 S[first_layer_bed_temperature] ; wait for bed to heat up
+      M104 S[first_layer_temperature] ; start nozzle heating but don't wait
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+      G1 X3 Y3 F5000 ; move to corner of the bed to avoid ooze over centre
+
+      ; Wait for final heating
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+
+      ; Return to prime position, Prime line routine
+      G92 E0 ; Reset Extruder
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G1 X10 Y.5 Z0.25 F5000.0 ; Move to start position
+      G1 X100 Y.5 Z0.25 F1500.0 E15 ; Draw the first line
+      G1 X100 Y.2 Z0.25 F5000.0 ; Move to side a little
+      G1 X10 Y.2 Z0.25 F1500.0 E30 ; Draw the second line
+      G92 E0 ; Reset Extruder
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    default_print: 0.20mm NORMAL @Artillery
+---
+kind: printer
+id: '*Artillery X3 Plus*'
+condition: printer.model == "X3 Plus"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X3 Plus
+  id: J1kQUYh0VZ+ePcOBjhNRVA
+  values:
+    autoemit_temperature_commands: true
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    high_current_on_filament_swap: false
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 10000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 10000.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 1250.0
+    machine_max_jerk_z:
+    - 0.2
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: true
+    single_extruder_multi_material: false
+    template_custom_gcode: ''
+    thumbnails: 256x256
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    start_gcode: |
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M140 S[first_layer_bed_temperature] ; start bed heating
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+
+      ; Auto bed Leveling
+      @BEDLEVELVISUALIZER
+      G29 ; perform bed leveling
+      M420 S1 Z3 ; reload and fade mesh bed leveling until it reach 3mm Z
+
+      ; Wait for final heating
+      G1 Z10 F3000 ; move z up little to prevent scratching of surface
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+
+      ; Сlean nozzle
+      G92 E0 ; reset extruder
+      G1 X150 Y{print_bed_size[1]-0.25} Z0.25 F5000.0 ; move to start position
+      G1 X100 Y{print_bed_size[1]-0.25} Z0.25 F1500.0 E30 ; draw the first line
+      G1 Z10 F3000 ; move z up little to prevent scratching
+      G12 C2 ; clean nozzle
+      G1 X25 Y{print_bed_size[1]-0.5} Z0.25 F5000.0 ; move to side a little
+      G1 X90 Y{print_bed_size[1]-0.5} Z0.25 F1500.0 E15 ; draw the second line
+      G92 E0 ; reset extruder
+
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    end_gcode: |
+      ; After G-Code
+      G4 ; wait
+      G92 E0 ; prepare to retract
+      G1 E-1.5 F3000; retract to avoid stringing
+
+      ; Anti-stringing end wiggle
+      G91 ; use relative coordinates
+      G1 X1 Y1 F1200
+
+      ; Raise nozzle and present bed
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+120, max_print_height)}{endif} ; move print head up
+      G90 ; use absolute coordinates
+
+      ; Reset print setting overrides
+      M200 D0 ; disable volumetric e
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Shut down printer
+      M106 S0 ; turn-off fan
+      M104 S0 ; turn-off hotend
+      M140 S0 ; turn-off bed
+      M150 P0 ; turn off led
+      M84 ; disable motors
+    gcode_flavor: marlin2
+    machine_max_acceleration_travel:
+    - 3000.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 3000.0
+    - 1000.0
+    machine_max_acceleration_y:
+    - 3000.0
+    - 1000.0
+    machine_max_acceleration_z:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_y:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_z:
+    - 12.0
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    - 10.0
+    bed_shape:
+    - '0x0'
+    - 300x0
+    - 300x300
+    - '0x300'
+    max_print_height: 400.0
+    default_print: X3 Default (0.20mm) @Artillery
+---
+kind: printer
+id: '*Artillery X3 Pro*'
+condition: printer.model == "X3 Pro"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X3 Pro
+  id: AdE+0e+UXLWRiZJ2YiPvdA
+  values:
+    autoemit_temperature_commands: true
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    high_current_on_filament_swap: false
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 10000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 10000.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 1250.0
+    machine_max_jerk_z:
+    - 0.2
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: true
+    single_extruder_multi_material: false
+    template_custom_gcode: ''
+    thumbnails: 256x256
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    start_gcode: |
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M140 S[first_layer_bed_temperature] ; start bed heating
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+
+      ; Auto bed Leveling
+      @BEDLEVELVISUALIZER
+      G29 ; perform bed leveling
+      M420 S1 Z3 ; reload and fade mesh bed leveling until it reach 3mm Z
+
+      ; Wait for final heating
+      G1 Z10 F3000 ; move z up little to prevent scratching of surface
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+
+      ; Сlean nozzle
+      G92 E0 ; reset extruder
+      G1 X150 Y{print_bed_size[1]-0.25} Z0.25 F5000.0 ; move to start position
+      G1 X100 Y{print_bed_size[1]-0.25} Z0.25 F1500.0 E30 ; draw the first line
+      G1 Z10 F3000 ; move z up little to prevent scratching
+      G12 C2 ; clean nozzle
+      G1 X25 Y{print_bed_size[1]-0.5} Z0.25 F5000.0 ; move to side a little
+      G1 X90 Y{print_bed_size[1]-0.5} Z0.25 F1500.0 E15 ; draw the second line
+      G92 E0 ; reset extruder
+
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      ;[layer_z]
+      G92 E0
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    end_gcode: |
+      ; After G-Code
+      G4 ; wait
+      G92 E0 ; prepare to retract
+      G1 E-1.5 F3000; retract to avoid stringing
+
+      ; Anti-stringing end wiggle
+      G91 ; use relative coordinates
+      G1 X1 Y1 F1200
+
+      ; Raise nozzle and present bed
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+120, max_print_height)}{endif} ; move print head up
+      G90 ; use absolute coordinates
+
+      ; Reset print setting overrides
+      M200 D0 ; disable volumetric e
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Shut down printer
+      M106 S0 ; turn-off fan
+      M104 S0 ; turn-off hotend
+      M140 S0 ; turn-off bed
+      M150 P0 ; turn off led
+      M84 ; disable motors
+    gcode_flavor: marlin2
+    machine_max_acceleration_travel:
+    - 3000.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 3000.0
+    - 1000.0
+    machine_max_acceleration_y:
+    - 3000.0
+    - 1000.0
+    machine_max_acceleration_z:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_y:
+    - 500.0
+    - 200.0
+    machine_max_feedrate_z:
+    - 12.0
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    - 10.0
+    bed_shape:
+    - '0x0'
+    - 240x0
+    - 240x240
+    - '0x240'
+    max_print_height: 260.0
+    default_print: X3 Default (0.20mm) @Artillery
+---
+kind: printer
+id: '*Artillery X4 Plus*'
+condition: printer.model == "X4 Plus"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X4 Plus
+  id: DsVqtXgcVgqkvTSDf5pNcw
+  values:
+    autoemit_temperature_commands: true
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    high_current_on_filament_swap: false
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 10000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 10000.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 1250.0
+    machine_max_jerk_z:
+    - 0.2
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: true
+    single_extruder_multi_material: false
+    template_custom_gcode: ''
+    thumbnails: 256x256
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    start_gcode: |
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M140 S[first_layer_bed_temperature] ; start bed heating
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+
+      ; Auto bed Leveling
+      @BEDLEVELVISUALIZER
+      G29 ; perform bed leveling
+      M420 S1 Z3 ; reload and fade mesh bed leveling until it reach 3mm Z
+
+      ; Wait for final heating
+      G1 Z10 F3000 ; move z up little to prevent scratching of surface
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+
+      ; Сlean nozzle
+      G92 E0 ; reset extruder
+      G1 X150 Y{print_bed_size[1]-0.25} Z0.25 F5000.0 ; move to start position
+      G1 X100 Y{print_bed_size[1]-0.25} Z0.25 F1500.0 E30 ; draw the first line
+      G1 Z10 F3000 ; move z up little to prevent scratching
+      G12 C2 ; clean nozzle
+      G1 X25 Y{print_bed_size[1]-0.5} Z0.25 F5000.0 ; move to side a little
+      G1 X90 Y{print_bed_size[1]-0.5} Z0.25 F1500.0 E15 ; draw the second line
+      G92 E0 ; reset extruder
+
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    before_layer_gcode: ''
+    layer_gcode: ''
+    gcode_flavor: klipper
+    machine_max_acceleration_travel:
+    - 1500.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_y:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_z:
+    - 200.0
+    - 200.0
+    machine_max_feedrate_x:
+    - 500.0
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    - 500.0
+    bed_shape:
+    - '0x0'
+    - 300x0
+    - 300x300
+    - '0x300'
+    machine_max_feedrate_e:
+    - 100.0
+    - 120.0
+    machine_max_feedrate_z:
+    - 13.0
+    - 12.0
+    machine_max_jerk_e:
+    - 10.0
+    - 2.5
+    machine_max_jerk_x:
+    - 20.0
+    - 10.0
+    machine_max_jerk_y:
+    - 20.0
+    - 10.0
+    max_print_height: 400.0
+    end_gcode: |-
+      G91 ;Relative positioning
+      G1 E-2 F2700 ;Retract a bit
+      G1 E-2 Z0.2 F2400 ;Retract and raise Z
+      G1 X5 Y5 F3000 ;Wipe out
+      G1 Z1 ;Raise Z more
+      G90 ;Absolute positionning
+      G1 X5 Y280 F3000 ;Wipe out
+      M106 S0 ;Turn-off fan
+      M104 S0 ;Turn-off hotend
+      M140 S0 ;Turn-off bed
+      M84 X Y E ;Disable all steppers but Z
+    default_print: ArtillerySlicer X4 Plus PETG & PLA & PLA+ @Artillery
+---
+kind: printer
+id: '*Artillery X4 Pro*'
+condition: printer.model == "X4 Pro"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X4 Pro
+  id: XLhyRtanUzqDix6JoDiaPw
+  values:
+    autoemit_temperature_commands: true
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    high_current_on_filament_swap: false
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 10000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 10000.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 1250.0
+    machine_max_jerk_z:
+    - 0.2
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: true
+    single_extruder_multi_material: false
+    template_custom_gcode: ''
+    thumbnails: 256x256
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    start_gcode: |
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M140 S[first_layer_bed_temperature] ; start bed heating
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+
+      ; Auto bed Leveling
+      @BEDLEVELVISUALIZER
+      G29 ; perform bed leveling
+      M420 S1 Z3 ; reload and fade mesh bed leveling until it reach 3mm Z
+
+      ; Wait for final heating
+      G1 Z10 F3000 ; move z up little to prevent scratching of surface
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+
+      ; Сlean nozzle
+      G92 E0 ; reset extruder
+      G1 X150 Y{print_bed_size[1]-0.25} Z0.25 F5000.0 ; move to start position
+      G1 X100 Y{print_bed_size[1]-0.25} Z0.25 F1500.0 E30 ; draw the first line
+      G1 Z10 F3000 ; move z up little to prevent scratching
+      G12 C2 ; clean nozzle
+      G1 X25 Y{print_bed_size[1]-0.5} Z0.25 F5000.0 ; move to side a little
+      G1 X90 Y{print_bed_size[1]-0.5} Z0.25 F1500.0 E15 ; draw the second line
+      G92 E0 ; reset extruder
+
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    before_layer_gcode: ''
+    layer_gcode: ''
+    gcode_flavor: klipper
+    machine_max_acceleration_travel:
+    - 1500.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_y:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_z:
+    - 200.0
+    - 200.0
+    machine_max_feedrate_x:
+    - 500.0
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    - 500.0
+    bed_shape:
+    - '0x0'
+    - 240x0
+    - 240x240
+    - '0x240'
+    machine_max_feedrate_e:
+    - 120.0
+    - 120.0
+    machine_max_feedrate_z:
+    - 13.0
+    - 13.0
+    machine_max_jerk_e:
+    - 2.5
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    - 10.0
+    max_print_height: 260.0
+    end_gcode: |-
+      G91 ;Relative positioning
+      G1 E-2 F2700 ;Retract a bit
+      G1 E-2 Z0.2 F2400 ;Retract and raise Z
+      G1 X5 Y5 F3000 ;Wipe out
+      G1 Z1 ;Raise Z more
+      G90 ;Absolute positionning
+      G1 X5 Y220 F3000 ;Wipe out
+      M106 S0 ;Turn-off fan
+      M104 S0 ;Turn-off hotend
+      M140 S0 ;Turn-off bed
+      M84 X Y E ;Disable all steppers but Z
+    default_print: ArtillerySlicer X4 Pro PETG & PLA & PLA+ @Artillery
+---
+kind: printer
+id: '*Artillery X4 Max*'
+condition: printer.model == "X4 Max"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Artillery Sidewinder X4 Max
+  id: r9bvQkZ+UDqBWD9xa23bvg
+  values:
+    autoemit_temperature_commands: true
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    high_current_on_filament_swap: false
+    machine_limits_usage: emit_to_gcode
+    machine_max_acceleration_e:
+    - 10000.0
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 10000.0
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 1250.0
+    machine_max_jerk_z:
+    - 0.2
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    parking_pos_retraction: 92.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: true
+    single_extruder_multi_material: false
+    template_custom_gcode: ''
+    thumbnails: 256x256
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    start_gcode: |
+      ; Initial setups
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M220 S100 ; reset speed factor to 100%
+      M221 S100 ; reset extrusion rate to 100%
+
+      ; Set the heating
+      M140 S[first_layer_bed_temperature] ; start bed heating
+
+      ; Home
+      G1 Z3 F3000 ; move z up little to prevent scratching of surface
+      G28 ; home all axes
+
+      ; Auto bed Leveling
+      @BEDLEVELVISUALIZER
+      G29 ; perform bed leveling
+      M420 S1 Z3 ; reload and fade mesh bed leveling until it reach 3mm Z
+
+      ; Wait for final heating
+      G1 Z10 F3000 ; move z up little to prevent scratching of surface
+      M190 S[first_layer_bed_temperature] ; wait for the bed to heat up
+      M109 S[first_layer_temperature] ; wait for the nozzle to heat up
+
+      ; Сlean nozzle
+      G92 E0 ; reset extruder
+      G1 X150 Y{print_bed_size[1]-0.25} Z0.25 F5000.0 ; move to start position
+      G1 X100 Y{print_bed_size[1]-0.25} Z0.25 F1500.0 E30 ; draw the first line
+      G1 Z10 F3000 ; move z up little to prevent scratching
+      G12 C2 ; clean nozzle
+      G1 X25 Y{print_bed_size[1]-0.5} Z0.25 F5000.0 ; move to side a little
+      G1 X90 Y{print_bed_size[1]-0.5} Z0.25 F1500.0 E15 ; draw the second line
+      G92 E0 ; reset extruder
+
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    before_layer_gcode: ''
+    layer_gcode: ''
+    gcode_flavor: klipper
+    machine_max_acceleration_travel:
+    - 1500.0
+    - 1250.0
+    machine_max_acceleration_x:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_y:
+    - 10000.0
+    - 1000.0
+    machine_max_acceleration_z:
+    - 200.0
+    - 200.0
+    machine_max_feedrate_x:
+    - 500.0
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    - 500.0
+    bed_shape:
+    - '0x0'
+    - 500x0
+    - 500x500
+    - '0x500'
+    machine_max_feedrate_e:
+    - 100.0
+    - 120.0
+    machine_max_feedrate_z:
+    - 13.0
+    - 12.0
+    machine_max_jerk_e:
+    - 10.0
+    - 2.5
+    machine_max_jerk_x:
+    - 20.0
+    - 10.0
+    machine_max_jerk_y:
+    - 20.0
+    - 10.0
+    max_print_height: 500.0
+    end_gcode: |-
+      G91 ;Relative positioning
+      G1 E-2 F2700 ;Retract a bit
+      G1 E-2 Z0.2 F2400 ;Retract and raise Z
+      G1 X5 Y5 F3000 ;Wipe out
+      G1 Z1 ;Raise Z more
+      G90 ;Absolute positionning
+      G1 X5 Y480 F3000;
+      M106 S0 ;Turn-off fan
+      M104 S0 ;Turn-off hotend
+      M140 S0 ;Turn-off bed
+      M84 X Y E ;Disable all steppers but Z
+    default_print: ArtillerySlicer X4 Max PETG & PLA & PLA+ @Artillery

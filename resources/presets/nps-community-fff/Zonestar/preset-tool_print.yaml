@@ -1,0 +1,120 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: tool_print
+id: '*Zonestar Z5 tool*'
+condition: printer.model == "Z5"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z5+M2 HOTEND
+  id: B3181iUYXOKQFFs6ioyjag
+  values:
+    deretract_speed: 30.0
+    max_layer_height: 0.3
+    min_layer_height: 0.15
+    retract_speed: 35.0
+    wipe: false
+    retract_before_travel: 2.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 10.0
+    retract_length_toolchange: 0.0
+    retract_lift: 0.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+---
+kind: tool_print
+id: '*Zonestar Z6 tool*'
+condition: printer.model == "Z6"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z6
+  id: QKXj9Pt3VK2JvIYRAXiSrA
+  values:
+    deretract_speed: 30.0
+    max_layer_height: 0.3
+    min_layer_height: 0.1
+    retract_speed: 40.0
+    wipe: false
+    retract_before_travel: 2.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 6.5
+    retract_length_toolchange: 0.0
+    retract_lift: 0.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+---
+kind: tool_print
+id: '*Zonestar Z5X tool*'
+condition: printer.model == "Z5X"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z5X
+  id: DhAPUkf9Wv67k1JYi7iraw
+  values:
+    deretract_speed: 30.0
+    max_layer_height: 0.3
+    min_layer_height: 0.1
+    retract_speed: 40.0
+    wipe: false
+    retract_before_travel: 2.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 6.5
+    retract_length_toolchange: 0.0
+    retract_lift: 0.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+---
+kind: tool_print
+id: '*Zonestar Z8 tool*'
+condition: printer.model == "Z8"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z8+M3 HOTEND
+  id: TzCtdOcwX9e4MjKZU+GP3g
+  values:
+    deretract_speed: 30.0
+    max_layer_height: 0.3
+    min_layer_height: 0.15
+    retract_speed: 35.0
+    wipe: false
+    retract_before_travel: 2.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 10.0
+    retract_length_toolchange: 0.0
+    retract_lift: 0.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+---
+kind: tool_print
+id: '*Zonestar Z9 tool*'
+condition: printer.model == "Z9"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z9+M3 HOTEND
+  id: ue/IeB9NVMytYyD33kGpCQ
+  values:
+    deretract_speed: 30.0
+    max_layer_height: 0.3
+    min_layer_height: 0.15
+    retract_speed: 35.0
+    wipe: false
+    retract_before_travel: 2.0
+    retract_before_wipe: 0%
+    retract_layer_change: false
+    retract_length: 10.0
+    retract_length_toolchange: 0.0
+    retract_lift: 0.0
+    retract_lift_above: 0.0
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0

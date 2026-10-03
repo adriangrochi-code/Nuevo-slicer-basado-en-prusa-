@@ -1,0 +1,3210 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*QIDITechnology X-Plus 4*'
+condition: printer.model == "X-Plus 4"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: X-Plus 4 0.2 nozzle
+  id: +hF0naJXU8a0yneJHtRsjw
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @X-Plus 4 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: X-Plus 4 0.4 nozzle
+  id: XC/K0zw4XL2qkotrsoE0gg
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @X-Plus 4 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: X-Plus 4 0.6 nozzle
+  id: sN1P9KpKU1uj7FLTU4ej8A
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @X-Plus 4 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: X-Plus 4 0.8 nozzle
+  id: DNH0arf9XcmjrdE88AuLyA
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @X-Plus 4 0.8 nozzle
+---
+kind: printer
+id: '*QIDITechnology X-Plus 4 + BOX*'
+condition: printer.model == "X-Plus 4 + BOX"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: X-Plus 4 + BOX 0.2 nozzle
+  id: 7up7LgHjUKqX7IUkUVwHdQ
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 0.0
+    cooling_tube_retraction: 0.0
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: 0.0
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 150.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: true
+    start_gcode: |-
+      DISABLE_BOX_HEATER
+      G90
+      BOX_TEMP_SET VT0=0 VT1=0 VT2=0 VT3=0
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature] EXTRUDER=[initial_tool]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: |-
+      M118 Starting toolchange from slot [current_extruder] to slot [next_extruder]
+      TOOL_CHANGE_START F=[current_extruder] T=[next_extruder]
+      DISABLE_ALL_SENSOR
+      {if current_extruder != next_extruder}
+      M118 Going to cut now
+      CUT_FILAMENT T=[current_extruder]
+
+      {if filament_type[current_extruder] == "FLEX" or filament_type[current_extruder] == "TPU"}
+          G1 X304 F24000 ; ensure cutting with flexible materials
+          G1 Y20 F24000
+          M400
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+      {endif}
+
+      MOVE_TO_TRASH
+
+      {if filament_type[current_extruder] == "PETG"}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET=260 WAIT=1
+      {else}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      {endif}
+
+      M118 Unloading [current_extruder]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[current_extruder] MOTION_QUEUE=extruder
+      UNLOAD_T[current_extruder]
+      TIMELAPSE_TAKE_FRAME
+
+      ; FLUSH_START
+      G1 E1 F50
+      G1 E17 F300
+      G92 E0
+      ; FLUSH_END
+
+      M400
+      M118 loading [next_extruder]
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      LOAD_T[next_extruder]
+      EXTRUDER_LOAD slot=slot[next_extruder]
+      M118 Loaded. Heating...
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+
+      {if filament_type[current_extruder] != filament_type[next_extruder]}
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+      {endif}
+
+      G92 E0
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+      M118 Finished toolchange from slot [current_extruder] to slot [next_extruder]
+      {else}
+      M118 NOT switching between slot [current_extruder] to slot [next_extruder], skipping toolchange
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      {endif}
+      TOOL_CHANGE_END
+      ENABLE_ALL_SENSOR
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @X-Plus 4 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: X-Plus 4 + BOX 0.4 nozzle
+  id: CuiHaPutUFyWb7kH13EEuQ
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 0.0
+    cooling_tube_retraction: 0.0
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: 0.0
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 150.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: true
+    start_gcode: |-
+      DISABLE_BOX_HEATER
+      G90
+      BOX_TEMP_SET VT0=0 VT1=0 VT2=0 VT3=0
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature] EXTRUDER=[initial_tool]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: |-
+      M118 Starting toolchange from slot [current_extruder] to slot [next_extruder]
+      TOOL_CHANGE_START F=[current_extruder] T=[next_extruder]
+      DISABLE_ALL_SENSOR
+      {if current_extruder != next_extruder}
+      M118 Going to cut now
+      CUT_FILAMENT T=[current_extruder]
+
+      {if filament_type[current_extruder] == "FLEX" or filament_type[current_extruder] == "TPU"}
+          G1 X304 F24000 ; ensure cutting with flexible materials
+          G1 Y20 F24000
+          M400
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+      {endif}
+
+      MOVE_TO_TRASH
+
+      {if filament_type[current_extruder] == "PETG"}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET=260 WAIT=1
+      {else}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      {endif}
+
+      M118 Unloading [current_extruder]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[current_extruder] MOTION_QUEUE=extruder
+      UNLOAD_T[current_extruder]
+      TIMELAPSE_TAKE_FRAME
+
+      ; FLUSH_START
+      G1 E1 F50
+      G1 E17 F300
+      G92 E0
+      ; FLUSH_END
+
+      M400
+      M118 loading [next_extruder]
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      LOAD_T[next_extruder]
+      EXTRUDER_LOAD slot=slot[next_extruder]
+      M118 Loaded. Heating...
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+
+      {if filament_type[current_extruder] != filament_type[next_extruder]}
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+      {endif}
+
+      G92 E0
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+      M118 Finished toolchange from slot [current_extruder] to slot [next_extruder]
+      {else}
+      M118 NOT switching between slot [current_extruder] to slot [next_extruder], skipping toolchange
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      {endif}
+      TOOL_CHANGE_END
+      ENABLE_ALL_SENSOR
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @X-Plus 4 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: X-Plus 4 + BOX 0.6 nozzle
+  id: Ko4vqgbaWHC/TtckDGJJxA
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 0.0
+    cooling_tube_retraction: 0.0
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: 0.0
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 150.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: true
+    start_gcode: |-
+      DISABLE_BOX_HEATER
+      G90
+      BOX_TEMP_SET VT0=0 VT1=0 VT2=0 VT3=0
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature] EXTRUDER=[initial_tool]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: |-
+      M118 Starting toolchange from slot [current_extruder] to slot [next_extruder]
+      TOOL_CHANGE_START F=[current_extruder] T=[next_extruder]
+      DISABLE_ALL_SENSOR
+      {if current_extruder != next_extruder}
+      M118 Going to cut now
+      CUT_FILAMENT T=[current_extruder]
+
+      {if filament_type[current_extruder] == "FLEX" or filament_type[current_extruder] == "TPU"}
+          G1 X304 F24000 ; ensure cutting with flexible materials
+          G1 Y20 F24000
+          M400
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+      {endif}
+
+      MOVE_TO_TRASH
+
+      {if filament_type[current_extruder] == "PETG"}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET=260 WAIT=1
+      {else}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      {endif}
+
+      M118 Unloading [current_extruder]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[current_extruder] MOTION_QUEUE=extruder
+      UNLOAD_T[current_extruder]
+      TIMELAPSE_TAKE_FRAME
+
+      ; FLUSH_START
+      G1 E1 F50
+      G1 E17 F300
+      G92 E0
+      ; FLUSH_END
+
+      M400
+      M118 loading [next_extruder]
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      LOAD_T[next_extruder]
+      EXTRUDER_LOAD slot=slot[next_extruder]
+      M118 Loaded. Heating...
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+
+      {if filament_type[current_extruder] != filament_type[next_extruder]}
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+      {endif}
+
+      G92 E0
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+      M118 Finished toolchange from slot [current_extruder] to slot [next_extruder]
+      {else}
+      M118 NOT switching between slot [current_extruder] to slot [next_extruder], skipping toolchange
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      {endif}
+      TOOL_CHANGE_END
+      ENABLE_ALL_SENSOR
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @X-Plus 4 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: X-Plus 4 + BOX 0.8 nozzle
+  id: dvA/YDY5V6mquqRumU0w4w
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 305x0
+    - 305x305
+    - '0x305'
+    before_layer_gcode: TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 0.0
+    cooling_tube_retraction: 0.0
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: 0.0
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: |-
+      G92 E0
+      SET_PRINT_STATS_INFO CURRENT_LAYER={layer_num + 1}
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 20.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 280.0
+    multimaterial_purging: 150.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: true
+    start_gcode: |-
+      DISABLE_BOX_HEATER
+      G90
+      BOX_TEMP_SET VT0=0 VT1=0 VT2=0 VT3=0
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature] EXTRUDER=[initial_tool]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+      SET_PRINT_STATS_INFO TOTAL_LAYER=[total_layer_count]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+      SET_PRINT_STATS_INFO CURRENT_LAYER=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[initial_tool] MOTION_QUEUE=extruder
+    template_custom_gcode: ''
+    thumbnails: 272x272/PNG, 96x96/PNG
+    toolchange_gcode: |-
+      M118 Starting toolchange from slot [current_extruder] to slot [next_extruder]
+      TOOL_CHANGE_START F=[current_extruder] T=[next_extruder]
+      DISABLE_ALL_SENSOR
+      {if current_extruder != next_extruder}
+      M118 Going to cut now
+      CUT_FILAMENT T=[current_extruder]
+
+      {if filament_type[current_extruder] == "FLEX" or filament_type[current_extruder] == "TPU"}
+          G1 X304 F24000 ; ensure cutting with flexible materials
+          G1 Y20 F24000
+          M400
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+          G1 Y4.5 F5000
+          G4 P500
+          G1 Y8 F9000
+          G1 Y4.3 F1500
+          G4 P500
+          G1 Y20 F9000
+      {endif}
+
+      MOVE_TO_TRASH
+
+      {if filament_type[current_extruder] == "PETG"}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET=260 WAIT=1
+      {else}
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      {endif}
+
+      M118 Unloading [current_extruder]
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[current_extruder] MOTION_QUEUE=extruder
+      UNLOAD_T[current_extruder]
+      TIMELAPSE_TAKE_FRAME
+
+      ; FLUSH_START
+      G1 E1 F50
+      G1 E17 F300
+      G92 E0
+      ; FLUSH_END
+
+      M400
+      M118 loading [next_extruder]
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      LOAD_T[next_extruder]
+      EXTRUDER_LOAD slot=slot[next_extruder]
+      M118 Loaded. Heating...
+      SET_HEATER_TEMPERATURE HEATER=extruder TARGET={max(temperature[next_extruder], temperature[current_extruder])} WAIT=1
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+
+      {if filament_type[current_extruder] != filament_type[next_extruder]}
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+
+      G1 Y300 F1000
+      MOVE_TO_TRASH
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+
+
+      ; FLUSH_START
+      G1 E{48.5 * 0.58} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.18} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E{48.5 * 0.02} F{min(filament_max_volumetric_speed[current_extruder], filament_max_volumetric_speed[next_extruder]) / 2.4 * 60}
+      G1 E-2 F1800
+      ; FLUSH_END
+      {endif}
+
+      G92 E0
+      G1 Y300 F9000
+      CLEAR_FLUSH
+      CLEAR_OOZE
+      M118 Finished toolchange from slot [current_extruder] to slot [next_extruder]
+      {else}
+      M118 NOT switching between slot [current_extruder] to slot [next_extruder], skipping toolchange
+      SYNC_EXTRUDER_MOTION EXTRUDER=slot[next_extruder] MOTION_QUEUE=extruder
+      {endif}
+      TOOL_CHANGE_END
+      ENABLE_ALL_SENSOR
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @X-Plus 4 0.8 nozzle
+---
+kind: printer
+id: '*QIDITechnology Q1 Pro*'
+condition: printer.model == "Q1 Pro"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: Q1 Pro 0.2 nozzle
+  id: c86ZaIhuVFGgPaCYBzXZZg
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 245x0
+    - 245x245
+    - '0x245'
+    before_layer_gcode: ;TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 240.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+    template_custom_gcode: ''
+    thumbnails: 160x160/PNG, 112x112/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @Q1 Pro 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: Q1 Pro 0.4 nozzle
+  id: T9acDm5uW+K4/okX8hpAxQ
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 245x0
+    - 245x245
+    - '0x245'
+    before_layer_gcode: ;TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 240.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+    template_custom_gcode: ''
+    thumbnails: 160x160/PNG, 112x112/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @Q1 Pro 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: Q1 Pro 0.6 nozzle
+  id: /py4UvqRVA6moiDyQE8v7w
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 245x0
+    - 245x245
+    - '0x245'
+    before_layer_gcode: ;TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 240.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+    template_custom_gcode: ''
+    thumbnails: 160x160/PNG, 112x112/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @Q1 Pro 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: Q1 Pro 0.8 nozzle
+  id: IFWif/EFWxig9iTrsjaRkw
+  values:
+    autoemit_temperature_commands: false
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 245x0
+    - 245x245
+    - '0x245'
+    before_layer_gcode: ;TIMELAPSE_TAKE_FRAME
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 240.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START BED=[first_layer_bed_temperature] HOTEND=[first_layer_temperature] CHAMBER=[chamber_temperature]
+      M83
+      M140 S[first_layer_bed_temperature]
+      M104 S[first_layer_temperature]
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 3} Z0
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 6}
+      G1 Z1 F600
+    template_custom_gcode: ''
+    thumbnails: 160x160/PNG, 112x112/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @Q1 Pro 0.8 nozzle
+---
+kind: printer
+id: '*QIDITechnology X-MAX 3*'
+condition: printer.model == "X-MAX 3"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: X-MAX 3 0.2 nozzle
+  id: 102gu0CGUMacHGoWAveBVA
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 325x0
+    - 325x325
+    - '0x325'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 315.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @X-MAX 3 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: X-MAX 3 0.4 nozzle
+  id: DHSsrxNvWlaFBXHBAfKFGg
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 325x0
+    - 325x325
+    - '0x325'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 315.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @X-MAX 3 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: X-MAX 3 0.6 nozzle
+  id: i9ZT2CY1XZmNlGlmD41yVA
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 325x0
+    - 325x325
+    - '0x325'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 315.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @X-MAX 3 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: X-MAX 3 0.8 nozzle
+  id: 5p8d18DSVpaIx2wRZk6PYg
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 325x0
+    - 325x325
+    - '0x325'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 315.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @X-MAX 3 0.8 nozzle
+---
+kind: printer
+id: '*QIDITechnology X-Plus 3*'
+condition: printer.model == "X-Plus 3"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: X-Plus 3 0.2 nozzle
+  id: vwabqEphX0WOGdOXzS36vQ
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 280x0
+    - 280x280
+    - '0x280'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 270.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @X-Plus 3 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: X-Plus 3 0.4 nozzle
+  id: J588OhJ8VSWqXgQo+7bKZw
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 280x0
+    - 280x280
+    - '0x280'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 270.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @X-Plus 3 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: X-Plus 3 0.6 nozzle
+  id: 2vwnZKXPX96bL5VrwUPjVw
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 280x0
+    - 280x280
+    - '0x280'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 270.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @X-Plus 3 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: X-Plus 3 0.8 nozzle
+  id: OYIxHJH3XBC0Jl+xhkz4dQ
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 280x0
+    - 280x280
+    - '0x280'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 270.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      M191 S[chamber_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 380x380/PNG, 210x210/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @X-Plus 3 0.8 nozzle
+---
+kind: printer
+id: '*QIDITechnology X-smart 3*'
+condition: printer.model == "X-smart 3"
+variants:
+- condition: tool.nozzle_diameter == 0.2
+  name: X-smart 3 0.2 nozzle
+  id: Oh+NEYY7XTuAUioYtFKtsA
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 175x0
+    - 175x180
+    - '0x180'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 170.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 205x205/PNG, 140x140/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.12mm Fine @X-smart 3 0.2 nozzle
+- condition: tool.nozzle_diameter == 0.4
+  name: X-smart 3 0.4 nozzle
+  id: 7nk5gg1zV1Wr04KdWfXHZA
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 175x0
+    - 175x180
+    - '0x180'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 170.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 205x205/PNG, 140x140/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Fine @X-smart 3 0.4 nozzle
+- condition: tool.nozzle_diameter == 0.6
+  name: X-smart 3 0.6 nozzle
+  id: UfGmdtf8V2u63q9rKOHEVw
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 175x0
+    - 175x180
+    - '0x180'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 170.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 205x205/PNG, 140x140/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.30mm Fine @X-smart 3 0.6 nozzle
+- condition: tool.nozzle_diameter == 0.8
+  name: X-smart 3 0.8 nozzle
+  id: B2bCn3p9VpeOXI2dCJU3XA
+  values:
+    autoemit_temperature_commands: true
+    extruder_clearance_height: 40.0
+    extruder_clearance_radius: 60.0
+    bed_custom_model: ''
+    bed_custom_texture: ''
+    bed_shape:
+    - '0x0'
+    - 175x0
+    - 175x180
+    - '0x180'
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    binary_gcode: false
+    color_change_gcode: M0
+    cooling_tube_length: 5.0
+    cooling_tube_retraction: 91.5
+    end_gcode: |-
+      M141 S0
+      M104 S0
+      M140 S0
+      G1 E-3 F1800
+      G0 Z{min(max_print_height, max_layer_z + 3)} F600
+      G0 X0 Y0 F12000
+      {if max_layer_z < max_print_height / 2}G1 Z{max_print_height / 2 + 10} F600{else}G1 Z{min(max_print_height, max_layer_z + 3)}{endif}
+    extra_loading_move: -2.0
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: klipper
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 20000.0
+    machine_max_acceleration_retracting:
+    - 5000.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 20000.0
+    machine_max_acceleration_y:
+    - 20000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 600.0
+    machine_max_feedrate_y:
+    - 600.0
+    machine_max_feedrate_z:
+    - 10.0
+    machine_max_jerk_e:
+    - 2.0
+    machine_max_jerk_x:
+    - 9.0
+    machine_max_jerk_y:
+    - 9.0
+    machine_max_jerk_z:
+    - 3.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 170.0
+    multimaterial_purging: 45.0
+    parking_pos_retraction: 0.0
+    pause_print_gcode: M0
+    remaining_times: true
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |
+      PRINT_START
+      G28
+      M141 S0
+      G0 Z50 F600
+      M190 S[first_layer_bed_temperature]
+      G28 Z
+      G29; mesh bed leveling ,comment this code to close it
+      G0 X0 Y0 Z50 F6000
+      M109 S[first_layer_temperature]
+      M106 P3 S255
+      M83
+      G4 P3000
+      G0 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0)} Z5 F6000
+      G0 Z[first_layer_height] F600
+      G1 E3 F1800
+      G1 X{(min(print_bed_max[0], first_layer_print_min[0] + 80))} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0)} E{85 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 85} E{83 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 2} E{2 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 Y{max((min(print_bed_max[1], first_layer_print_min[1] + 80) - 85),0) + 3} E{82 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 X{max((min(print_bed_max[0], first_layer_print_min[0] + 80) - 85),0) + 12} E{-10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+      G1 E{10 * 0.5 * first_layer_height * nozzle_diameter[0]} F3000
+    template_custom_gcode: ''
+    thumbnails: 205x205/PNG, 140x140/PNG
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.40mm Fine @X-smart 3 0.8 nozzle

@@ -1,0 +1,453 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*Zonestar Z5*'
+condition: printer.model == "Z5"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z5+M2 HOTEND
+  id: EYGQaHB0UZ6tb2hx/TqBHQ
+  values:
+    before_layer_gcode: G92 E0
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_retraction: 35.0
+    end_gcode: |-
+      G28 X
+      M106 S0 ; turn off FAN
+      M104 S0 ; turn off extruder
+      M140 S0 ; turn off bed
+      M84 ; disable motors
+    extra_loading_move: -2.0
+    gcode_flavor: marlin2
+    high_current_on_filament_swap: false
+    layer_gcode: ''
+    machine_limits_usage: ignore
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1500.0
+    machine_max_acceleration_retracting:
+    - 1500.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home all axes
+      G1 Z5 F3000 ; lift nozzle
+      G1 X5 Y10 F1500 ; move to prime
+      G1 Z0.2 F3000 ; get ready to prime
+      T[initial_tool]
+      G92 E0 ; reset extrusion distance
+      G1 Y200 E15 F600 ; prime nozzle
+      G1 Y100 F5000 ; quick wipe
+      G92 E0
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    max_print_height: 220.0
+    default_print: 0.20mm @Zonestar MULTI
+---
+kind: printer
+id: '*Zonestar Z6*'
+condition: printer.model == "Z6"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z6
+  id: RKYL+KTjVSisw4zsl6MmeA
+  values:
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_retraction: 35.0
+    end_gcode: |-
+      G28 X
+      M106 S0 ; turn off FAN
+      M104 S0 ; turn off extruder
+      M140 S0 ; turn off bed
+      M84 ; disable motors
+    extra_loading_move: -2.0
+    gcode_flavor: marlin2
+    high_current_on_filament_swap: false
+    layer_gcode: ''
+    machine_limits_usage: ignore
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1500.0
+    machine_max_acceleration_retracting:
+    - 1500.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home all axes
+      G1 Z5 F3000; lift nozzle
+      G1 X5 Y5 F1500 ; move to prime
+      G1 Z0.2 F3000 ; get ready to prime
+      G92 E0 ; reset extrusion distance
+      G1 Y100 E8 F600 ; prime nozzle
+      G1 Y50 F5000 ; quick wipe
+      G92 E0
+    use_firmware_retraction: false
+    use_relative_e_distances: false
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    bed_shape:
+    - '0x0'
+    - 150x0
+    - 150x150
+    - '0x150'
+    extruder_offset:
+    - '0x0'
+    max_print_height: 150.0
+    default_print: 0.20mm @Zonestar SINGLE
+---
+kind: printer
+id: '*Zonestar Z5X*'
+condition: printer.model == "Z5X"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z5X
+  id: +PxuL8eoV8Crzgur9I5U3w
+  values:
+    before_layer_gcode: ''
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_retraction: 35.0
+    end_gcode: |-
+      G28 X
+      M106 S0 ; turn off FAN
+      M104 S0 ; turn off extruder
+      M140 S0 ; turn off bed
+      M84 ; disable motors
+    extra_loading_move: -2.0
+    gcode_flavor: marlin2
+    high_current_on_filament_swap: false
+    layer_gcode: ''
+    machine_limits_usage: ignore
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1500.0
+    machine_max_acceleration_retracting:
+    - 1500.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home all axes
+      G1 Z5 F3000; lift nozzle
+      G1 X5 Y5 F1500 ; move to prime
+      G1 Z0.2 F3000 ; get ready to prime
+      G92 E0 ; reset extrusion distance
+      G1 Y200 E15 F600 ; prime nozzle
+      G1 Y50 F5000 ; quick wipe
+      G92 E0
+    use_firmware_retraction: false
+    use_relative_e_distances: false
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    bed_shape:
+    - '0x0'
+    - 310x0
+    - 310x310
+    - '0x310'
+    extruder_offset:
+    - '0x0'
+    max_print_height: 400.0
+    default_print: 0.20mm @Zonestar SINGLE
+---
+kind: printer
+id: '*Zonestar Z8*'
+condition: printer.model == "Z8"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z8+M3 HOTEND
+  id: 1f6/enK1XHynRy7n/eUCUw
+  values:
+    before_layer_gcode: G92 E0
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_retraction: 35.0
+    end_gcode: |-
+      G28 X
+      M106 S0 ; turn off FAN
+      M104 S0 ; turn off extruder
+      M140 S0 ; turn off bed
+      M84 ; disable motors
+    extra_loading_move: -2.0
+    gcode_flavor: marlin2
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: ignore
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1500.0
+    machine_max_acceleration_retracting:
+    - 1500.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home all axes
+      G1 Z5 F3000 ; lift nozzle
+      G1 X5 Y10 F1500 ; move to prime
+      G1 Z0.2 F3000 ; get ready to prime
+      T[initial_tool]
+      G92 E0 ; reset extrusion distance
+      G1 Y200 E15 F600 ; prime nozzle
+      G1 Y100 F5000 ; quick wipe
+      G92 E0
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    bed_shape:
+    - '0x0'
+    - 310x0
+    - 310x310
+    - '0x310'
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    max_print_height: 400.0
+    default_print: 0.20mm @Zonestar MULTI
+---
+kind: printer
+id: '*Zonestar Z9*'
+condition: printer.model == "Z9"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Zonestar Z9+M3 HOTEND
+  id: b3WdjSOdWBO/0GyG5kVCrg
+  values:
+    before_layer_gcode: G92 E0
+    between_objects_gcode: ''
+    color_change_gcode: M600
+    cooling_tube_retraction: 35.0
+    end_gcode: |-
+      G28 XY
+      M106 S0 ; turn off FAN
+      M104 S0 ; turn off extruder
+      M140 S0 ; turn off bed
+      M84 ; disable motors
+    extra_loading_move: -2.0
+    gcode_flavor: marlin2
+    high_current_on_filament_swap: false
+    layer_gcode: G92 E0
+    machine_limits_usage: ignore
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1500.0
+    machine_max_acceleration_retracting:
+    - 1500.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 9000.0
+    machine_max_acceleration_y:
+    - 9000.0
+    machine_max_acceleration_z:
+    - 500.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 12.0
+    machine_max_jerk_e:
+    - 2.5
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    pause_print_gcode: ''
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home all axes
+      G1 Z5 F3000 ; lift nozzle
+      G1 X5 Y10 F1500 ; move to prime
+      G1 Z0.2 F3000 ; get ready to prime
+      T[initial_tool]
+      G92 E0 ; reset extrusion distance
+      G1 Y200 E15 F600 ; prime nozzle
+      G1 Y100 F5000 ; quick wipe
+      G92 E0
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: false
+    z_offset: 0.0
+    bed_shape:
+    - '0x0'
+    - 310x0
+    - 310x310
+    - '0x310'
+    extruder_offset:
+    - '0x0'
+    - '0x0'
+    - '0x0'
+    max_print_height: 400.0
+    default_print: 0.20mm @Zonestar MULTI

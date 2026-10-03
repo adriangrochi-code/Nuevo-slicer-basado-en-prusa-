@@ -1,0 +1,337 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Sovol
+name: Sovol
+version: 2.1.0
+features:
+  printer:
+    supports_03_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: SV
+  base_model: SV
+  printer_configs_order:
+  - sv06
+  - sv06 plus
+  - sv05
+  - sv04
+  - sv03
+  - sv02
+  - sv01
+  - sv01 pro
+---
+kind: printer
+technology: FFF
+name: SV06
+id: SV06
+model:
+  base_model: SV
+  model: SV06
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV06_bed.stl
+  bed_texture: SV06_texture.svg
+  thumbnail: SV06_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV06 PLUS
+id: SV06 PLUS
+model:
+  base_model: SV
+  model: SV06 PLUS
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV06PLUS_bed.stl
+  bed_texture: SV06PLUS_texture.svg
+  thumbnail: SV06 PLUS_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV05
+id: SV05
+model:
+  base_model: SV
+  model: SV05
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV05_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV05_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV04
+id: SV04
+model:
+  base_model: SV
+  model: SV04
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV04_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV04_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV03 / SV03 BLTOUCH
+id: SV03
+model:
+  base_model: SV
+  model: SV03
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV03_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV03_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV02 / SV02 BLTOUCH
+id: SV02
+model:
+  base_model: SV
+  model: SV02
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV01_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV02_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV01 / SV01 BLTOUCH
+id: SV01
+model:
+  base_model: SV
+  model: SV01
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV01_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV01_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: SV01 PRO
+id: SV01 PRO
+model:
+  base_model: SV
+  model: SV01 PRO
+tool_count: 1
+features:
+  supports_03_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: SV01_bed.stl
+  bed_texture: SV03_texture.svg
+  thumbnail: SV01 PRO_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+condition: printer.supports_03_nozzle
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: sv06
+name: SV06
+printer: SV06
+legacy_printer_model:
+- SV06
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv06 plus
+name: SV06 PLUS
+printer: SV06 PLUS
+legacy_printer_model:
+- SV06 PLUS
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv05
+name: SV05
+printer: SV05
+legacy_printer_model:
+- SV05
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv04
+name: SV04
+printer: SV04
+legacy_printer_model:
+- SV04
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv03
+name: SV03 / SV03 BLTOUCH
+printer: SV03
+legacy_printer_model:
+- SV03
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv02
+name: SV02 / SV02 BLTOUCH
+printer: SV02
+legacy_printer_model:
+- SV02
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv01
+name: SV01 / SV01 BLTOUCH
+printer: SV01
+legacy_printer_model:
+- SV01
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: sv01 pro
+name: SV01 PRO
+printer: SV01 PRO
+legacy_printer_model:
+- SV01 PRO
+tools:
+- tool: '0.4'
+sheet: default

@@ -1,0 +1,3483 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: tool_print
+id: '*Creality ENDER3 tool*'
+condition: printer.model == "ENDER3"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 (0.3 mm nozzle)
+  id: bfatBI6jXo+U8vM978TMNQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 (0.4 mm nozzle)
+  id: 1oW0fCppUsi3IRcu+pjZTw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 (0.5 mm nozzle)
+  id: 6CbOmTmeX1CKC38GScLN2g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 (0.6 mm nozzle)
+  id: FXKqoGqtUd6DXUl/VZVGcg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3BLTOUCH tool*'
+condition: printer.model == "ENDER3BLTOUCH"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 BLTouch (0.3 mm nozzle)
+  id: XKewDFBFW7ueWEFlUvVZpQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 BLTouch (0.4 mm nozzle)
+  id: 98th+6NTXOq8UtpiITJ9kQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 BLTouch (0.5 mm nozzle)
+  id: SBYRUE8NVNCOB8ZboM1frA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 BLTouch (0.6 mm nozzle)
+  id: nvdJBW8TVUOrabruNYn2Yg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3PRO tool*'
+condition: printer.model == "ENDER3PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 Pro (0.3 mm nozzle)
+  id: NftwTj+iXt6fHQNiAfzYvw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 Pro (0.4 mm nozzle)
+  id: wTKFih0XWayheohQGtbb2A
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 Pro (0.5 mm nozzle)
+  id: 8YxuyxT1VC+Agev3wmBqNQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 Pro (0.6 mm nozzle)
+  id: leoiG62cVHGXCSu/QeThZA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3NEO tool*'
+condition: printer.model == "ENDER3NEO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 Neo (0.3 mm nozzle)
+  id: 6RjuoMgWUEmljYWNnZhNAQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 Neo (0.4 mm nozzle)
+  id: 3zwBcpvgWdGtY0LctMhyqg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 Neo (0.5 mm nozzle)
+  id: 6UGIciUgVyCPwrIQEIX2zw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 Neo (0.6 mm nozzle)
+  id: mgcpilQqUWWXpPrRKuQG2Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3V2 tool*'
+condition: printer.model == "ENDER3V2"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 V2 (0.3 mm nozzle)
+  id: tr3e+sy2W5ewVOFRKI5csA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 V2 (0.4 mm nozzle)
+  id: MDXG6lIdXhWhApG4SF05rw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 V2 (0.5 mm nozzle)
+  id: nzSUfUUeVIGKKziRpQV3Gw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 V2 (0.6 mm nozzle)
+  id: 8SS2CYSkUd6/gjNj6iEulQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3V2NEO tool*'
+condition: printer.model == "ENDER3V2NEO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 V2 Neo (0.3 mm nozzle)
+  id: wl5AnHsjXmmb7J3D1GvXxg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 V2 Neo (0.4 mm nozzle)
+  id: e7+CvC+BXnCmzqp+E3Cm7w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 V2 Neo (0.5 mm nozzle)
+  id: /MG01PC2XCaEDDHbKnjx1g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 V2 Neo (0.6 mm nozzle)
+  id: DNai8o2xVPKG/XiH5BqL6Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3S1 tool*'
+condition: printer.model == "ENDER3S1"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 S1 (0.3 mm nozzle)
+  id: 2KgUffuOXHexVq8nt4RBCw
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 S1 (0.4 mm nozzle)
+  id: nMiOftMIWDmK5dwBXdbbBg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 S1 (0.5 mm nozzle)
+  id: Wp89vAwyUYi/8K76rX1LFA
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 S1 (0.6 mm nozzle)
+  id: vQ3ofrenVZmaO/sVEh2Eqg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3S1PRO tool*'
+condition: printer.model == "ENDER3S1PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 S1 Pro (0.3 mm nozzle)
+  id: EJY6Ae+SW5S7cUcOEEpafg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 S1 Pro (0.4 mm nozzle)
+  id: 7Fp3XQiGXY66qb42OPfy3w
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 S1 Pro (0.5 mm nozzle)
+  id: 1UGyDhY5XsaPZNxo+gvULg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 S1 Pro (0.6 mm nozzle)
+  id: OVWCQrdpUmGNotBjkayrLQ
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3S1PLUS tool*'
+condition: printer.model == "ENDER3S1PLUS"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 S1 Plus (0.3 mm nozzle)
+  id: GLOM9AbxUtmkCP1q7QdTJg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 S1 Plus (0.4 mm nozzle)
+  id: UD/kOBlfXRiJXxMiO6cW+Q
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 S1 Plus (0.5 mm nozzle)
+  id: 1w7PW14HVpuJw/LA5CudEA
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 S1 Plus (0.6 mm nozzle)
+  id: vCTBYm42VTmFTNrm9QQF9A
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3MAX tool*'
+condition: printer.model == "ENDER3MAX"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 Max (0.3 mm nozzle)
+  id: l3/ND5qAW8+Wz/0RJ1yIJA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 Max (0.4 mm nozzle)
+  id: Wb0EhrNsXkyYohfEh0d6Pw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 Max (0.5 mm nozzle)
+  id: DURFtrpzUI6KCGWXh3hazg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 Max (0.6 mm nozzle)
+  id: BG9pEJPBVrat4kwwvMtWbA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER3MAXNEO tool*'
+condition: printer.model == "ENDER3MAXNEO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-3 Max Neo (0.3 mm nozzle)
+  id: RCLhWNTdVFS/GDxyfcohgw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-3 Max Neo (0.4 mm nozzle)
+  id: pGRRo9gvVI27LNSP3HA2LQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-3 Max Neo (0.5 mm nozzle)
+  id: xWh06/ieWpqFxccL66Dthg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-3 Max Neo (0.6 mm nozzle)
+  id: V9Cqr43UU+C41wLAP6BiqA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER4 tool*'
+condition: printer.model == "ENDER4"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-4 (0.3 mm nozzle)
+  id: Iv1DUaqhVxCJyxqKmkaW7A
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-4 (0.4 mm nozzle)
+  id: OWSAtKP5W5GIGrWEhVJ6Eg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-4 (0.5 mm nozzle)
+  id: +EThRdHtXKmrdvAEnqPAjA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-4 (0.6 mm nozzle)
+  id: KdRsso9kXLOfPaSLQwxIcw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER5 tool*'
+condition: printer.model == "ENDER5"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-5 (0.3 mm nozzle)
+  id: a2g6OizXUfOho6aJF9yxrQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-5 (0.4 mm nozzle)
+  id: hsbEdCjnUC2Y0izvyqymYg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-5 (0.5 mm nozzle)
+  id: rPHgJSMgWFSswQuXUMnvDw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-5 (0.6 mm nozzle)
+  id: Bc8W+Ze3UAO8wNr8AihfFA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER5PRO tool*'
+condition: printer.model == "ENDER5PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-5 Pro (0.3 mm nozzle)
+  id: 1Fh1ClsYVS2FLK7BKVnJbw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-5 Pro (0.4 mm nozzle)
+  id: rD16k4wgWJy7uGQwuXG+bA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-5 Pro (0.5 mm nozzle)
+  id: sWH0v/1zVpavw3NlxaC2EA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-5 Pro (0.6 mm nozzle)
+  id: /dEO2r1gUMWw8Fi/zlQwZw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER5PLUS tool*'
+condition: printer.model == "ENDER5PLUS"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-5 Plus (0.3 mm nozzle)
+  id: 390ZssLBWdWLy3LJ4Oc7tQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-5 Plus (0.4 mm nozzle)
+  id: hUPYi6h3X72Kio8YrrQ9mA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-5 Plus (0.5 mm nozzle)
+  id: sF3Mo+tAV+29EBtbKcjAlw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-5 Plus (0.6 mm nozzle)
+  id: Tksa+LDdWGyPXdf3021+KA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER5S1 tool*'
+condition: printer.model == "ENDER5S1"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-5 S1 (0.3 mm nozzle)
+  id: tucuk97KWVubw8A/YnAFrg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-5 S1 (0.4 mm nozzle)
+  id: F07z24ClUZedNt04aY+nLA
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-5 S1 (0.5 mm nozzle)
+  id: wspnP65AWnyxMD/mbWtbOg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-5 S1 (0.6 mm nozzle)
+  id: LcPrjt6YXqqgDPeKb3ZGxQ
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER6 tool*'
+condition: printer.model == "ENDER6"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-6 (0.3 mm nozzle)
+  id: u3BZVRa/XWiHHNKn9WlBwA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-6 (0.4 mm nozzle)
+  id: SbNxchYJWQ+mDTOGquhILA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-6 (0.5 mm nozzle)
+  id: KJgb2H5xXxaRdUMHtrn/HQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-6 (0.6 mm nozzle)
+  id: eL2JZGttUI+ntw/6r1jYRA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER7 tool*'
+condition: printer.model == "ENDER7"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-7 (0.3 mm nozzle)
+  id: ZNlLPD8eUf2t5qwqfZk+cA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-7 (0.4 mm nozzle)
+  id: SkecbfVsVEeVi3z3Hpb+cA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-7 (0.5 mm nozzle)
+  id: WTeMVEDeUpmeTjaGQIHbOQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-7 (0.6 mm nozzle)
+  id: WGV9MLFwWT6+7EKlF2iuAw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER2 tool*'
+condition: printer.model == "ENDER2"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-2 (0.3 mm nozzle)
+  id: wYgMRpScUCq1GPoq25qYOA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-2 (0.4 mm nozzle)
+  id: /0qTJN/zWdqCMBiRG7ND9g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-2 (0.5 mm nozzle)
+  id: KuWU09oHX7e76++1cDIPkw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-2 (0.6 mm nozzle)
+  id: n7WihslXVSCDqtB2HkN5Fw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality ENDER2PRO tool*'
+condition: printer.model == "ENDER2PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Ender-2 Pro (0.3 mm nozzle)
+  id: oB+A7BVkWu2DDONaxDI5Tg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Ender-2 Pro (0.4 mm nozzle)
+  id: qWA9CTsNWdSbe+XbWBs8MA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Ender-2 Pro (0.5 mm nozzle)
+  id: WSOPFQ9VVROLMnEWoFq65w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Ender-2 Pro (0.6 mm nozzle)
+  id: o11MEaPYWSKnFuBiqyAvgQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR5PRO tool*'
+condition: printer.model == "CR5PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-5 Pro (0.3 mm nozzle)
+  id: PP+gCWjuWq+KcPaKNNIZOA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-5 Pro (0.4 mm nozzle)
+  id: mnIT0VaPUN+unFl4znEkcw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-5 Pro (0.5 mm nozzle)
+  id: erc8EYMiXti8DTwAWcFVaA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-5 Pro (0.6 mm nozzle)
+  id: 8FM6oMbFUOuLPVmi21it/w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR5PROH tool*'
+condition: printer.model == "CR5PROH"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-5 Pro H (0.3 mm nozzle)
+  id: A9wexY26VMuvg3FkMddO+w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 3.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-5 Pro H (0.4 mm nozzle)
+  id: NCIZvuGpXfKfbQwSZS+EPA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 3.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-5 Pro H (0.5 mm nozzle)
+  id: REdf5MsBXKyudApxCNN2uQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 3.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-5 Pro H (0.6 mm nozzle)
+  id: R1j5r3JpUvW1Ip51zjlSKA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 3.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR6SE tool*'
+condition: printer.model == "CR6SE"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-6 SE (0.3 mm nozzle)
+  id: gO2t10ENXtman+i4q2cvJA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-6 SE (0.4 mm nozzle)
+  id: xeNisnTxUXeoiNpYOwPWpw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-6 SE (0.5 mm nozzle)
+  id: ZFQSb4tTWXWPEd2yu0I/8g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-6 SE (0.6 mm nozzle)
+  id: 6NoAj7FeUrSawFGVPbQKUQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR6MAX tool*'
+condition: printer.model == "CR6MAX"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-6 Max (0.3 mm nozzle)
+  id: dQoyrFuaXxWTviYPHiaI/g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-6 Max (0.4 mm nozzle)
+  id: aOy6SX7sVHul0MHyZVoPvQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-6 Max (0.5 mm nozzle)
+  id: 2xsxCTPfU1SFcYGF3GWrHQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-6 Max (0.6 mm nozzle)
+  id: E8vsVmF/WPmODPpa5qBtuA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10SMART tool*'
+condition: printer.model == "CR10SMART"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 SMART (0.3 mm nozzle)
+  id: 3rjMXTwNUBW5RNbPCToAoA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 SMART (0.4 mm nozzle)
+  id: 2ea3GqhKUWOaRZ3IEqTkng
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 SMART (0.5 mm nozzle)
+  id: oM7J9Kt2WV6oJR9P9xnctw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 SMART (0.6 mm nozzle)
+  id: 2u7BORRcVWakcNV1h6m+fg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10SMARTPRO tool*'
+condition: printer.model == "CR10SMARTPRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 SMART Pro (0.3 mm nozzle)
+  id: VWV5agWUXN68QgWI9ilT6A
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 SMART Pro (0.4 mm nozzle)
+  id: QCWJ5EBXXvayg5iHbG0h4g
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 SMART Pro (0.5 mm nozzle)
+  id: JG8xcFcqWr29kraWojiYYQ
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 SMART Pro (0.6 mm nozzle)
+  id: qviXXr+lX/+mLWeUCZHhOg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10MINI tool*'
+condition: printer.model == "CR10MINI"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 Mini (0.3 mm nozzle)
+  id: hKw1Zcr6Uz6E0X+S+MyNDA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 Mini (0.4 mm nozzle)
+  id: taxgEwifWmWzrgvSMPHFdw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 Mini (0.5 mm nozzle)
+  id: vcJP9+RbWMifVj9uhLUYnQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 Mini (0.6 mm nozzle)
+  id: 7CpV/jNnW1GqOo6BXdALVQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10MAX tool*'
+condition: printer.model == "CR10MAX"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 Max (0.3 mm nozzle)
+  id: U4Tl7Cu9V8KkSFwRkm4h5w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 Max (0.4 mm nozzle)
+  id: S6P5VEM7VQ+HXQD39Blgww
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 Max (0.5 mm nozzle)
+  id: LI3J4NQjV/2i97RaMCD2xg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 Max (0.6 mm nozzle)
+  id: GEzb2LAmVWqUAk7myEPZaA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10 tool*'
+condition: printer.model == "CR10"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 (0.3 mm nozzle)
+  id: HBCu20WxWjiJmkz3izjEGQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 (0.4 mm nozzle)
+  id: XCByI9azUHaIc7x3q+tqzw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 (0.5 mm nozzle)
+  id: 86TfgjpzWcyhE9ruqqAQMw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 (0.6 mm nozzle)
+  id: nQQ2NnYvXQ2zjmI2PE6NcQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10V2 tool*'
+condition: printer.model == "CR10V2"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 V2 (0.3 mm nozzle)
+  id: mI00TwVTXcK1Fl5u1K8QcA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 V2 (0.4 mm nozzle)
+  id: CRncIi5BUYi2NGQxmQd0bg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 V2 (0.5 mm nozzle)
+  id: YCv+gEeHWT+1b7q6nNyC5Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 V2 (0.6 mm nozzle)
+  id: m+QbWhwkVXmA26A6WGSD4w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10V3 tool*'
+condition: printer.model == "CR10V3"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 V3 (0.3 mm nozzle)
+  id: PB/HiUKAV+W6/r4rJEu9lw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 V3 (0.4 mm nozzle)
+  id: W8/cLut/V2uPKVQ4wwHoTg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 V3 (0.5 mm nozzle)
+  id: Ow6S8x0bUH2Jhfdbyf0jZQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 V3 (0.6 mm nozzle)
+  id: OcaBz2WcU/eqRzDZsXDv4g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10S tool*'
+condition: printer.model == "CR10S"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 S (0.3 mm nozzle)
+  id: sjd5Csv9VQepxoN59nR5eg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 S (0.4 mm nozzle)
+  id: NTzW/zN0WxO6HJWMQz5MGg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 S (0.5 mm nozzle)
+  id: 14KLYq0dX+Gxx1F+VXK2Ww
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 S (0.6 mm nozzle)
+  id: rRGLMJLHVma4kWvslG50qg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10SPRO tool*'
+condition: printer.model == "CR10SPRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 S Pro (0.3 mm nozzle)
+  id: 8eH0fPgGUXCSVfKPoYjy5w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 S Pro (0.4 mm nozzle)
+  id: CF9/Sh+0XpuRh4ttmPL2gw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 S Pro (0.5 mm nozzle)
+  id: I4NoqTVLWvW/R+ahQF+L0Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 S Pro (0.6 mm nozzle)
+  id: E9zs7hDlWMG5uI4dyvMVpg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10SPROV2 tool*'
+condition: printer.model == "CR10SPROV2"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 S Pro V2 (0.3 mm nozzle)
+  id: kLszHDYZWLOKN9+lS+10PQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 S Pro V2 (0.4 mm nozzle)
+  id: u91ld0W4VRuXDnAznt6Daw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 S Pro V2 (0.5 mm nozzle)
+  id: LQUAkZu+WMut427QnGLP0Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 S Pro V2 (0.6 mm nozzle)
+  id: IDOua4ErUbiNSM7s2/nv+A
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10S4 tool*'
+condition: printer.model == "CR10S4"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 S4 (0.3 mm nozzle)
+  id: 96UPwJNUUw+2wNGqI5h1sw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 S4 (0.4 mm nozzle)
+  id: XVnCfqGzVJeOQm3sUZgEug
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 S4 (0.5 mm nozzle)
+  id: 41HsupvnXcu3fEnBh7Q1sg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 S4 (0.6 mm nozzle)
+  id: T+ORVtAjUUi35EDP/qlu0Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR10S5 tool*'
+condition: printer.model == "CR10S5"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-10 S5 (0.3 mm nozzle)
+  id: EKsvHWH8VTSzeAfutRLR0w
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-10 S5 (0.4 mm nozzle)
+  id: vYHTwt2vXb2uYQS5ZRfOeA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-10 S5 (0.5 mm nozzle)
+  id: S2U6SKtqXz+821J6edE9/g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-10 S5 (0.6 mm nozzle)
+  id: ZqJ/roBUW4iqaCe90ktMBg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 6.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR20 tool*'
+condition: printer.model == "CR20"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-20 (0.3 mm nozzle)
+  id: i6m+3W07WSWQNxW4LuYOVA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-20 (0.4 mm nozzle)
+  id: us0P7/BOU76yj5Qow1htpg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-20 (0.5 mm nozzle)
+  id: vn8rgRApUPuGyYSgStT6NQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-20 (0.6 mm nozzle)
+  id: 5+S4VU1nWlegBTESD6YPOg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR20PRO tool*'
+condition: printer.model == "CR20PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-20 Pro (0.3 mm nozzle)
+  id: 42VLgc44WnCCNWbHEabC6g
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-20 Pro (0.4 mm nozzle)
+  id: ZgWzhsPrUGW+Acoz7e5YmQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-20 Pro (0.5 mm nozzle)
+  id: XtNu71KSX9WmzvcCB9LMmg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-20 Pro (0.6 mm nozzle)
+  id: Fhzf9B3SUw+QH3/DnCMsEQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 4.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR200B tool*'
+condition: printer.model == "CR200B"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-200B (0.3 mm nozzle)
+  id: pnIiXDJeXeCXS2O282YMyw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-200B (0.4 mm nozzle)
+  id: 5i6cWhLjWXW45JewPk45EA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-200B (0.5 mm nozzle)
+  id: quYmKm2sVZqEuDpvl09+/A
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-200B (0.6 mm nozzle)
+  id: eK/WJxDkWIKI185Q+MzLRA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality CR8 tool*'
+condition: printer.model == "CR8"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality CR-8 (0.3 mm nozzle)
+  id: zHrK9CydXTOcr85/9SUzzQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality CR-8 (0.4 mm nozzle)
+  id: nlLFoBAVXgS+jsuea/1SIw
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality CR-8 (0.5 mm nozzle)
+  id: d+Osn/K3VWqLDs6K9AwuIg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality CR-8 (0.6 mm nozzle)
+  id: L066sfCTUTat/Wu6jCN/mA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 5.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality SERMOOND1 tool*'
+condition: printer.model == "SERMOOND1"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Sermoon-D1 (0.3 mm nozzle)
+  id: a9RZDUYJVluQT81twDuX/Q
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Sermoon-D1 (0.4 mm nozzle)
+  id: 1hhQN9JpXXKxBP7WRWrMbg
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Sermoon-D1 (0.5 mm nozzle)
+  id: lEvNF62aWRaBChbrDMRGHQ
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Sermoon-D1 (0.6 mm nozzle)
+  id: fp5FA3/NXvmtrhnh7yRRIA
+  values:
+    deretract_speed: 40.0
+    retract_before_travel: 2.0
+    retract_before_wipe: 70%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 60.0
+    wipe: true
+    retract_length: 1.0
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality SERMOONV1 tool*'
+condition: printer.model == "SERMOONV1"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Sermoon-V1 (0.3 mm nozzle)
+  id: qtBGHGJwVDiNhXbhNYDZEg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Sermoon-V1 (0.4 mm nozzle)
+  id: mX1YEjSeXtWOU1UQw7JNeA
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Sermoon-V1 (0.5 mm nozzle)
+  id: VNScRpIWUBealo4EgPznZg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Sermoon-V1 (0.6 mm nozzle)
+  id: 1xdwdLfMXjyMTpy6WqMFFw
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48
+---
+kind: tool_print
+id: '*Creality SERMOONV1PRO tool*'
+condition: printer.model == "SERMOONV1PRO"
+variants:
+- condition: tool.nozzle_diameter == 0.3
+  name: Creality Sermoon-V1 Pro (0.3 mm nozzle)
+  id: 8dpGabMfXOKNg8PSBR48SQ
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.24
+- condition: tool.nozzle_diameter == 0.4
+  name: Creality Sermoon-V1 Pro (0.4 mm nozzle)
+  id: IB9O+Pc2WNagJBvjXyC7TA
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.06
+    max_layer_height: 0.32
+- condition: tool.nozzle_diameter == 0.5
+  name: Creality Sermoon-V1 Pro (0.5 mm nozzle)
+  id: SSeWVThEUgqcs3Rf456nLg
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.2
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.4
+- condition: tool.nozzle_diameter == 0.6
+  name: Creality Sermoon-V1 Pro (0.6 mm nozzle)
+  id: lVhZFecQUXCdqUjeiOc1wQ
+  values:
+    deretract_speed: 30.0
+    retract_before_travel: 1.0
+    retract_before_wipe: 0%
+    retract_layer_change: true
+    retract_length_toolchange: 1.0
+    retract_lift: 0.0
+    retract_lift_above: 0.3
+    retract_lift_below: 0.0
+    retract_restart_extra: 0.0
+    retract_restart_extra_toolchange: 0.0
+    retract_speed: 30.0
+    wipe: true
+    retract_length: 0.8
+    min_layer_height: 0.08
+    max_layer_height: 0.48

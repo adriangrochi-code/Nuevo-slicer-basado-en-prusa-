@@ -1,0 +1,33 @@
+{
+ "vendor": "HartSmartProducts",
+ "counts": {
+  "printer_models": 2,
+  "printer": 8,
+  "print": 48,
+  "filament": 33
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 8
+  },
+  "print": {
+   "support_material_auto (no existe en 3.0)": 48,
+   "threads (no existe en 3.0)": 48
+  },
+  "filament": {
+   "full_fan_speed_layers (no existe en 3.0)": 30,
+   "filament_spool_weight (no numérico ('320 # 750g spools weight 350g'))": 10
+  }
+ },
+ "skipped_presets": [
+  "printer:HSP1-I - 0.6mm Takoto Mirror (duplica HSP1-I Duplicator Mode 0.6 de 'HSP1-I - 0.6mm Takoto Duplicator')",
+  "printer:HSP1-I - 0.4mm Takoto Mirror (duplica HSP1-I Duplicator Mode 0.4 de 'HSP1-I - 0.4mm Takoto Duplicator')",
+  "printer:HSP1-I - 0.8mm Takoto Mirror (duplica HSP1-I Duplicator Mode 0.8 de 'HSP1-I - 0.8mm Takoto Duplicator')",
+  "printer:HSP1-I - 1.0mm Takoto Mirror (duplica HSP1-I Duplicator Mode 1 de 'HSP1-I - 1.0mm Takoto Duplicator')"
+ ],
+ "notes": [
+  "filament:Polymaker PolyDissolve S1 @HSP1: compatible_prints_condition ignorada (notes=~/.*SOLUBLE_SUPPORT.*/)",
+  "filament:Essentium Support S10 @HSP1 0.6 Takoto: compatible_prints_condition ignorada (notes=~/.*SOLUBLE_SUPPORT.*/)",
+  "filament:BASF Ultrafuse BVOH @HSP1: compatible_prints_condition ignorada (notes=~/.*SOLUBLE_SUPPORT.*/)"
+ ]
+}

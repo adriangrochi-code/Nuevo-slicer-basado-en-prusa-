@@ -1,0 +1,4334 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: 9fcONfjVWlWIhHnCTXIKpw
+name: Generic PLA @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: X6cllUBDXj6Hhu/RH5Nj/A
+name: Generic PLA @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 28.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: QuRns/AmV2O9c12G6vin6w
+name: Prusament PLA @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.99
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.2
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 220
+  full_fan_speed_layer: 0
+---
+kind: filament
+id: sNK2dEChV4i1iuRO0eFaUw
+name: Prusament PLA @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.02
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 12.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 100%
+  retract_layer_change: true
+  retract_length: 3.8
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 230
+  full_fan_speed_layer: 0
+---
+kind: filament
+id: caIsRChxWH2tQDR1JcejUA
+name: Prusament PLA @DQ2 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 1
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 40.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: false
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 8
+  temperature: 230
+  deretract_speed: 25.0
+  full_fan_speed_layer: 0
+---
+kind: filament
+id: Odp3iNjTVZaOZ6lDz0Vdpw
+name: Prusament PLA (Door Opened) @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 3.7
+  retract_lift: 0.2
+  retract_speed: 29.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 230
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 18.0
+  slowdown_below_layer_time: 1
+  temperature: 230
+  full_fan_speed_layer: 0
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+---
+kind: filament
+id: dH+i8da5XUW6M2p7Rk6ppw
+name: Prusament PLA (Door Opened) @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 3.7
+  retract_lift: 0.2
+  retract_speed: 29.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 230
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 18.0
+  slowdown_below_layer_time: 1
+  temperature: 230
+  full_fan_speed_layer: 0
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+---
+kind: filament
+id: UmOpIiDmW3+lPZF+/ru4Bg
+name: Fillamentum PLA @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: 3tjl78U+VGy+Z2epJhlunw
+name: Fillamentum PLA @DQ2 0.25 nozzle
+condition: (tool.nozzle_diameter == 0.25 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: JW
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: RUvcZz9uV+aS5Z4z96eieA
+name: Fillamentum PLA @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: pnjopY/oX0ulgNZ+ePzo1w
+name: Fillamentum PLA @DQ2 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 1
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 40.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: false
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 230
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 8
+  temperature: 230
+  deretract_speed: 25.0
+---
+kind: filament
+id: kFuHLO2AVE+ZFhagf69jdw
+name: Prusament PVB @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.95
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 41.3
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: LP-CU
+  bed_temperature: 75
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 0%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PVB
+  wipe: false
+  first_layer_bed_temperature: 75
+  first_layer_temperature: 215
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 2
+  temperature: 215
+---
+kind: filament
+id: bnhCCen3Uq6ZQjfXERqezg
+name: Fillamentum PLA @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: 4fbA6q9dUMOrSblpAF0djA
+name: Generic PLA @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 1.2
+  retract_lift: 0.2
+  retract_speed: 28.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: wggPu7/6WyyitXEABt/Dng
+name: Prusament PLA @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 550.0
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 1.2
+  retract_lift: 0.2
+  retract_speed: 28.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 215
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+  full_fan_speed_layer: 0
+---
+kind: filament
+id: O6Sm9liCWRCRdEhOZcIetQ
+name: Fillamentum PLA @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 1.2
+  retract_lift: 0.2
+  retract_speed: 28.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 215
+---
+kind: filament
+id: HH/ycf3GUDOBfQH+0Sr26Q
+name: Fiberlogy PP @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 5
+  extrusion_multiplier: 0.91
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 54.36
+  filament_spool_weight: 250.0
+  filament_vendor: Fiberlogy
+  filament_notes: LP-CU
+  bed_temperature: 0
+  bridge_fan_speed: 75
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 0.8
+  retract_lift: 0.2
+  retract_speed: 28.0
+  filament_type: PP
+  wipe: true
+  first_layer_bed_temperature: 0
+  first_layer_temperature: 230
+  max_fan_speed: 50
+  min_fan_speed: 15
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 2
+  temperature: 230
+---
+kind: filament
+id: 5aU8CZdmVwO2V1aLdz1KGw
+name: Generic PETG @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: Ihfqv6j4UqSO3dkve0x+iQ
+name: Devil Design PETG @DQ2
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 16.53
+  filament_spool_weight: 247.0
+  filament_vendor: DevilDesign
+  filament_notes: BN
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: kBg5KquxUseu3yZmvzij6g
+name: Devil Design PETG @DQ2 0.25 nozzle
+condition: (tool.nozzle_diameter == 0.25 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: JW
+  bed_temperature: 80
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 225
+  max_fan_speed: 65
+  min_fan_speed: 40
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 220
+---
+kind: filament
+id: TR3iPj6KXbS1a5i3QWS4Uw
+name: Devil Design PETG @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.025
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 80
+  bridge_fan_speed: 70
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: false
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 255
+  max_fan_speed: 50
+  min_fan_speed: 35
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 255
+---
+kind: filament
+id: yZXq/hY9WiOQmksNIR5cGg
+name: Devil Design PETG @DQ2 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 40.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 80%
+  retract_layer_change: false
+  retract_length: 4.3
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 8
+  temperature: 240
+---
+kind: filament
+id: D9Ee3CU6UKO9x1JMSWG/pA
+name: Prusament PETG @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.99
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.4
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 235
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 230
+---
+kind: filament
+id: oKiESmI/U2mTpbyJuP2nQQ
+name: Prusament PETG @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  bed_temperature: 80
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.5
+  retract_before_wipe: 100%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 250
+  max_fan_speed: 80
+  min_fan_speed: 15
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 3
+  temperature: 250
+---
+kind: filament
+id: p6jONDQjW4KFCRJH2mi9IQ
+name: Prusament PETG @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  bed_temperature: 80
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.5
+  retract_before_wipe: 100%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 250
+  max_fan_speed: 80
+  min_fan_speed: 15
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 3
+  temperature: 250
+---
+kind: filament
+id: WWDPofCDX7WZmWipEOLQlw
+name: Prusament PETG Carbon Fiber @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.95
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 45.45
+  filament_spool_weight: 250.0
+  filament_vendor: Prusa Polymers
+  filament_notes: CU
+  bed_temperature: 85
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.5
+  retract_before_wipe: 50%
+  retract_layer_change: true
+  retract_length: 3.5
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PETGCF
+  wipe: true
+  first_layer_bed_temperature: 85
+  first_layer_temperature: 275
+  max_fan_speed: 80
+  min_fan_speed: 55
+  min_print_speed: 18.0
+  slowdown_below_layer_time: 2
+  temperature: 275
+---
+kind: filament
+id: zdJ1O5WFV22YuM9BCGJZJg
+name: Prusament PETG Carbon Fiber @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  bed_temperature: 85
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.5
+  retract_before_wipe: 50%
+  retract_layer_change: true
+  retract_length: 3.5
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PETGCF
+  wipe: true
+  first_layer_bed_temperature: 85
+  first_layer_temperature: 275
+  max_fan_speed: 80
+  min_fan_speed: 55
+  min_print_speed: 18.0
+  slowdown_below_layer_time: 2
+  temperature: 275
+---
+kind: filament
+id: i0SsIGEUWqyKeMv4Qg0Shw
+name: Generic PETG @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: YCvpHRYgXrODxscnrGRXUw
+name: Devil Design PETG @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 16.53
+  filament_spool_weight: 247.0
+  filament_vendor: DevilDesign
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: 71Bk19hUWQ6Z6qjJuSEuuA
+name: Generic PETG @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 0%
+  retract_layer_change: true
+  retract_length: 1.4
+  retract_lift: 0.2
+  retract_speed: 35.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: Q4kglCEUXGuM8KbjapDoXA
+name: Devil Design PETG @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 16.53
+  filament_spool_weight: 247.0
+  filament_vendor: DevilDesign
+  filament_notes: LP-CU
+  bed_temperature: 80
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.27
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 0%
+  retract_layer_change: true
+  retract_length: 1.4
+  retract_lift: 0.2
+  retract_speed: 35.0
+  filament_type: PET
+  wipe: true
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 245
+---
+kind: filament
+id: 6xaNXMhqVnW1i/3W6BReKA
+name: Generic ABS @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: yXsICjJGWESzzEftbPXLOg
+name: Fillamentum ABS @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: AEEE8mlnXRihpWd6S5AFWQ
+name: Fillamentum ABS @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: 1sS78ZbbVdO096AwRpxQXA
+name: Generic ABS @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: 3HbUpI3vXwG1VZT1nTUB5Q
+name: Fillamentum ABS @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: uKe4i5DaWSataG5DXPjrmA
+name: Generic ABS @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.8
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: 9ecp3A1kWZa11PSMSj1TbQ
+name: Fillamentum ABS @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.8
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: Y88hbJNhVTm/IHQgRfM93Q
+name: Fillamentum ASA @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.53
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 265
+---
+kind: filament
+id: Xn+r619VURKMMYR7kpvKgg
+name: Fillamentum ASA @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 265
+---
+kind: filament
+id: QPlxqQ0MWHu4OiGa82MZqA
+name: Fillamentum ASA @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 265
+---
+kind: filament
+id: y/m1oxSfUky2+R4618XY5Q
+name: Fillamentum ASA @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  max_fan_speed: 15
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 265
+---
+kind: filament
+id: MRvF7kKiW42LTEPIjELizg
+name: Spectrum ASA @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.86
+  filament_spool_weight: 250.0
+  filament_vendor: Spectrum
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.3
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 230
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 230
+---
+kind: filament
+id: fEpsMuL8VdmdhYSaFYiLlg
+name: Spectrum ASA @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 55
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.3
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 230
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 230
+---
+kind: filament
+id: GAXsAxMtWMy0/CP/ScVytA
+name: Fillamentum CPE HG100 @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 39.07
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 90
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.25
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 4.3
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: CPE
+  wipe: true
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 265
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 260
+---
+kind: filament
+id: B+hwdPgdVOGFShYEE5OrSA
+name: Fillamentum CPE HG100 @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  bed_temperature: 90
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.25
+  deretract_speed: 25.0
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 4.3
+  retract_lift: 0.2
+  retract_speed: 45.0
+  filament_type: CPE
+  wipe: true
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 265
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 260
+---
+kind: filament
+id: gBYSqltLXQ27z0y2eTZvLg
+name: Fillamentum CPE HG100 @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP|DQ2P\+FP)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 90
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.25
+  deretract_speed: 0.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 0%
+  retract_layer_change: false
+  retract_length: 0.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: CPE
+  wipe: true
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 265
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 260
+---
+kind: filament
+id: MNb3pGmBVQScz2ia/+Zghg
+name: Fillamentum CPE HG100 @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 90
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.25
+  deretract_speed: 0.0
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 0%
+  retract_layer_change: false
+  retract_length: 0.8
+  retract_lift: 0.2
+  retract_speed: 35.0
+  filament_type: CPE
+  wipe: true
+  first_layer_bed_temperature: 90
+  first_layer_temperature: 265
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  temperature: 260
+---
+kind: filament
+id: v5NPQD7AUpGM2XHuE92Iog
+name: Generic FLEX @DQ2FP
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 1
+  extrusion_multiplier: 1.07
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  filament_max_volumetric_speed: 3.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 2.5
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: FLEX
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 240
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 5.0
+  slowdown_below_layer_time: 4
+  temperature: 240
+---
+kind: filament
+id: JVC2alQDUmO5ysR5Dh/TaA
+name: Generic FLEX @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 1
+  extrusion_multiplier: 1.07
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  filament_max_volumetric_speed: 3.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 2.5
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: FLEX
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 225
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 5.0
+  slowdown_below_layer_time: 4
+  temperature: 225
+---
+kind: filament
+id: PxmzBCWJXP+u4Nrmms8ElA
+name: NinjaTek TPU 75D @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.9
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 91.67
+  filament_spool_weight: 250.0
+  filament_vendor: NinjaTek
+  filament_notes: LP-CU
+  bed_temperature: 55
+  bridge_fan_speed: 90
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.1
+  filament_max_volumetric_speed: 5.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 95%
+  retract_layer_change: false
+  retract_length: 1.4
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: TPU75D
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 240
+  max_fan_speed: 70
+  min_fan_speed: 50
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 2
+  temperature: 240
+---
+kind: filament
+id: F4aMvhp2XxGqnNClv4b2+A
+name: Fillamentum TPU 92A @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 1
+  extrusion_multiplier: 1.1
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 58.33
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  filament_max_volumetric_speed: 3.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 2.5
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: TPU92A
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 70
+  min_fan_speed: 50
+  min_print_speed: 5.0
+  slowdown_below_layer_time: 4
+  temperature: 230
+---
+kind: filament
+id: fFpwkvzSWbWeu04Vz4d5cw
+name: Fillamentum TPU 98A @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.1
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 58.33
+  filament_spool_weight: 229.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.23
+  filament_max_volumetric_speed: 3.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 2.5
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: TPU98A
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 230
+  max_fan_speed: 70
+  min_fan_speed: 50
+  min_print_speed: 5.0
+  slowdown_below_layer_time: 4
+  temperature: 230
+---
+kind: filament
+id: okxPWj4EUAq8TQ/ZiHJB5w
+name: Smartfil TPU 93A @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 38.21
+  filament_spool_weight: 250.0
+  filament_vendor: Smartfil
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 10
+  filament_density: 1.21
+  filament_max_volumetric_speed: 2.5
+  retract_before_travel: 2.0
+  retract_layer_change: false
+  retract_length: 2.9
+  retract_lift: 0.2
+  retract_speed: 35.0
+  filament_type: TPU93A
+  wipe: false
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 235
+  max_fan_speed: 70
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 235
+---
+kind: filament
+id: 3mIIQghBWYGNv7+YLhQFwQ
+name: Fillamentum PEBA 90A @DQ2FP2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2\+FP2|DQ2P\+FP2)$/)
+values:
+  disable_fan_first_layers: 2
+  extrusion_multiplier: 1.1
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 139.67
+  filament_spool_weight: 229.0
+  filament_vendor: Generic
+  filament_notes: LP-CU
+  bed_temperature: 75
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.0
+  filament_max_volumetric_speed: 2.9
+  retract_before_travel: 2.0
+  retract_before_wipe: 70%
+  retract_layer_change: false
+  retract_length: 0.0
+  retract_lift: 0.2
+  retract_speed: 20.0
+  filament_type: PEBA90A
+  wipe: true
+  first_layer_bed_temperature: 75
+  first_layer_temperature: 245
+  max_fan_speed: 50
+  min_fan_speed: 50
+  min_print_speed: 5.0
+  slowdown_below_layer_time: 4
+  temperature: 245
+---
+kind: filament
+id: q8XBpcGVUR+DkOl/xBK1jA
+name: Fiberlogy Nylon PA12 @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 45.11
+  filament_spool_weight: 230.0
+  filament_vendor: Fiberlogy
+  filament_notes: LP-CU
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.02
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 30
+  min_fan_speed: 20
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: 8EhKncxRWMKK1Qvboz9Pag
+name: Fiberlogy Nylon PA12+CF15 @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.97
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 133.82
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: MV-DG
+  bed_temperature: 100
+  bridge_fan_speed: 15
+  cooling: true
+  fan_always_on: false
+  fan_below_layer_time: 11
+  filament_density: 1.02
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.15
+  retract_lift: 0.25
+  retract_speed: 25.0
+  filament_type: PACF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 260
+  max_fan_speed: 30
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  temperature: 260
+---
+kind: filament
+id: vZRiUrfCXHSM1gDAjYJokw
+name: Fiberlogy Nylon PA12+CF15 @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.075
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: SL
+  bed_temperature: 100
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 12
+  filament_density: 1.02
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PACF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 270
+  max_fan_speed: 40
+  min_fan_speed: 20
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 3
+  temperature: 270
+---
+kind: filament
+id: 6mtJM3/BVlmdZGd1wbsuZg
+name: Fiberlogy Nylon PA12+GF15 @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.97
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 113.82
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: MV-DG
+  bed_temperature: 100
+  bridge_fan_speed: 15
+  cooling: true
+  fan_always_on: false
+  fan_below_layer_time: 11
+  filament_density: 1.02
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.15
+  retract_lift: 0.25
+  retract_speed: 25.0
+  filament_type: PAGF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 260
+  max_fan_speed: 30
+  min_fan_speed: 5
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 10
+  temperature: 260
+---
+kind: filament
+id: ucASRK5oWq+m5pGDyUBBRQ
+name: Fiberlogy Nylon PA12+GF15 @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.075
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: SL
+  bed_temperature: 100
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 12
+  filament_density: 1.02
+  filament_max_volumetric_speed: 15.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PAGF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 270
+  max_fan_speed: 40
+  min_fan_speed: 20
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 3
+  temperature: 270
+---
+kind: filament
+id: 7cpjBmceXcWE8O3jHeWjtA
+name: Fillamentum Nylon CF15 @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.95
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 88.17
+  filament_spool_weight: 229.0
+  filament_vendor: Generic
+  filament_notes: MV-DG
+  bed_temperature: 100
+  bridge_fan_speed: 25
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.08
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 2.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PACF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  max_fan_speed: 50
+  min_fan_speed: 20
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 255
+---
+kind: filament
+id: C3jHy6FcU/OboXD84VgefQ
+name: Prusament PA11 Carbon Fiber @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 5
+  extrusion_multiplier: 1.02
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 82.64
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: MV-DG
+  bed_temperature: 100
+  bridge_fan_speed: 50
+  cooling: true
+  fan_always_on: false
+  fan_below_layer_time: 10
+  filament_density: 1.08
+  filament_max_volumetric_speed: 6.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 2.5
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PACF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 275
+  max_fan_speed: 50
+  min_fan_speed: 0
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 5
+  temperature: 275
+---
+kind: filament
+id: HguZ41tuVGW+IL/G3UfDNA
+name: Prusament PA11 Carbon Fiber @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.05
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: DG
+  bed_temperature: 100
+  bridge_fan_speed: 30
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 10
+  filament_density: 1.08
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 100%
+  retract_layer_change: true
+  retract_length: 2.9
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PACF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  max_fan_speed: 25
+  min_fan_speed: 5
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 2
+  temperature: 265
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+---
+kind: filament
+id: UqtYGE5CW2m5YA3F+4Eing
+name: Filament PM PAJet 160 @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.9
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 79.08
+  filament_spool_weight: 250.0
+  filament_vendor: Filament PM
+  filament_notes: DG
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 80
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 100%
+  retract_layer_change: true
+  retract_length: 6.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PA
+  wipe: false
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 245
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 20
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 2
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 245
+---
+kind: filament
+id: 0car7nrVX3CXV8ucqizQyA
+name: Prusament PC Blend Carbon Fiber @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 4
+  extrusion_multiplier: 1.04
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 49.58
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: MV-DG
+  bed_temperature: 100
+  bridge_fan_speed: 30
+  cooling: true
+  fan_always_on: false
+  fan_below_layer_time: 20
+  filament_density: 1.08
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.3
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PCCF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 280
+  max_fan_speed: 20
+  min_fan_speed: 20
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  temperature: 280
+---
+kind: filament
+id: 7s6jYBr/XFCQvfDLlTdBgA
+name: Prusament PC Blend Carbon Fiber @DQ2 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(DQ2|DQ2P)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.075
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: SL
+  bed_temperature: 100
+  bridge_fan_speed: 75
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 12
+  filament_density: 1.08
+  filament_max_volumetric_speed: 12.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PCCF
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 285
+  max_fan_speed: 65
+  min_fan_speed: 10
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 4
+  temperature: 285
+---
+kind: filament
+id: TCeWHULmU/eDOwpvp2LVmw
+name: Wax-Alike MoldLay @DQ2
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(DQ2|DQ2P|DQL|DQM|DQXL)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 79.07
+  filament_spool_weight: 230.0
+  filament_vendor: Wax-Alike
+  filament_notes: LP-CU
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 100
+  filament_density: 1.24
+  filament_max_volumetric_speed: 8.0
+  retract_before_travel: 2.0
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 2.0
+  retract_lift: 0.2
+  retract_speed: 30.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 175
+  max_fan_speed: 70
+  min_fan_speed: 70
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 4
+  temperature: 175
+---
+kind: filament
+id: hHnoOGxXVFi3CMj8h4+uow
+name: Generic PLA (Door Opened) @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 0.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 215
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 90
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 210
+---
+kind: filament
+id: SW2t4sy0WGOJdK6xR98UOw
+name: Smartfil PLA (Door Opened) @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.93
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 21.12
+  filament_spool_weight: 250.0
+  filament_vendor: Smartfil
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 2.5
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 3.9
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 20.0
+  slowdown_below_layer_time: 2
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 220
+---
+kind: filament
+id: j6T2THmzXg2jZlo92xE57Q
+name: Smartfil PLA (Door Opened) @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 55
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 2.5
+  retract_before_wipe: 90%
+  retract_layer_change: true
+  retract_length: 3.9
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 55
+  first_layer_temperature: 220
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 20.0
+  slowdown_below_layer_time: 2
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 220
+---
+kind: filament
+id: 9H2rBEdkVcu1uc/S8damxg
+name: Generic PLA (Door Opened) @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 215
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 90
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 210
+---
+kind: filament
+id: 5y6Fo8FsV3utxEsaN1kZ4w
+name: Fillamentum PLA (Door Opened) @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 215
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 90
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 210
+---
+kind: filament
+id: qrZhkhe3Vz6U1eDnvoH0eA
+name: Fillamentum PLA (Door Opened) @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 215
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 90
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 15
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 210
+---
+kind: filament
+id: GK2N1NdSXLOMCypfNLNsNA
+name: Fillamentum PLA (PLA Printhead) @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 220
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 215
+---
+kind: filament
+id: 4U+F+5nWXhKWu/pAowbvTQ
+name: Fillamentum PLA (PLA Printhead) @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 50
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.24
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PLA
+  wipe: true
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 220
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 100
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S0 ; Wait for chamber temperature
+  temperature: 215
+---
+kind: filament
+id: fXVKxHIoVj+1ThlxHfW9Jw
+name: Generic ABS @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 0.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: 5hWkAY7uVem7p7rTbO4cQQ
+name: Generic ABS @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: JYvqQnzxWeiv4cR6ADwlPQ
+name: Generic ABS @AQI 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  filament_max_volumetric_speed: 0.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: UMRhiQv6Xai3AH0aYLUvhQ
+name: Fillamentum ABS @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 24.27
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: se3u0DNkUK6v284sENo0pA
+name: Fillamentum ABS @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: bAYUEY/9XzSt8vy547xZLw
+name: Fillamentum ABS @AQI 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.95
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: KQZKw4NyW1iia/Uc3Pby2g
+name: Prusa EasyABS @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.96
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 22.31
+  filament_spool_weight: 230.0
+  filament_vendor: Prusa
+  filament_notes: CU
+  filament_max_volumetric_speed: 10.0
+  bed_temperature: 100
+  bridge_fan_speed: 90
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 15
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABST
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 250
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 3
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 250
+---
+kind: filament
+id: T9Vae1iuW0CBOdHF3apDyw
+name: Prusa EasyABS @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.925
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 90
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 15
+  filament_density: 1.04
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 80%
+  retract_layer_change: true
+  retract_length: 4.2
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ABST
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 250
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 30
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 3
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 250
+---
+kind: filament
+id: 6miJktD3Uh68s8TRjMpnmw
+name: Fillamentum PC/ABS @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 53.71
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PCABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: D6NJRGhFWPy5WGSWo4KhgA
+name: Fillamentum PC/ABS @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PCABS
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: 5FakF+7DW7GBLkHOHdwNqA
+name: Polymaker PC @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 52.4
+  filament_spool_weight: 230.0
+  filament_vendor: Polymaker
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.21
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PC
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: wQt1mffmXRKWl90xLomuJw
+name: Polymaker PC @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.21
+  filament_loading_speed: 28.0
+  filament_loading_speed_start: 3.0
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.0
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PC
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: p/ju3HcbXS6dfnMBF8folA
+name: Generic ASA @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 0.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 75
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: hyS8cwuiXK+YRQy9iEc24A
+name: Generic ASA @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 265
+  full_fan_speed_layer: 0
+  max_fan_speed: 75
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 265
+---
+kind: filament
+id: fdMx/h9eVtarGePj0zScUA
+name: Fillamentum ASA @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.53
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 60
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: h4Ys5+KyXuSBd0JU0KqILA
+name: Fillamentum ASA @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 60
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: 7pMJ87nOWKWVIjsVFQx/Ig
+name: Fillamentum ASA @AQI 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  filament_max_volumetric_speed: 0.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 250
+  full_fan_speed_layer: 0
+  max_fan_speed: 100
+  min_fan_speed: 80
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 250
+---
+kind: filament
+id: v82qFedgWiCJORaZAu5IQw
+name: Prusament ASA @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 29.16
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 260
+  full_fan_speed_layer: 0
+  max_fan_speed: 70
+  min_fan_speed: 70
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 260
+---
+kind: filament
+id: z5zJsNnIULCcLW63QHF/Mw
+name: Prusament ASA @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 260
+  full_fan_speed_layer: 0
+  max_fan_speed: 70
+  min_fan_speed: 70
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 260
+---
+kind: filament
+id: 2sKAXsxpVE+SjVTS4QZvwQ
+name: Prusament ASA @AQI 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  filament_max_volumetric_speed: 0.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 250
+  full_fan_speed_layer: 0
+  max_fan_speed: 80
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 250
+---
+kind: filament
+id: iHStZSl0W/mKVnazTYcsaA
+name: Prusament ASA @AQD
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQD)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 0.925
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: CU
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.07
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 2.7
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: ASA
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 250
+  full_fan_speed_layer: 0
+  max_fan_speed: 70
+  min_fan_speed: 20
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 250
+---
+kind: filament
+id: aBhHF0N3XfiDfhLWXrydrQ
+name: Fiberlogy Nylon PA12 @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 45.11
+  filament_spool_weight: 230.0
+  filament_vendor: Fiberlogy
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.02
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 75
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: nq4WzLgyWuG6VCL8m6MexA
+name: Fiberlogy Nylon PA12 @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.02
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 75
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S50 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: GDoI9yHLVyOpIwjGaR50aw
+name: Fillamentum Nylon FX256 @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 57.32
+  filament_spool_weight: 229.0
+  filament_vendor: Fillamentum
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.01
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 85
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S60 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: XGD8YScqXKqyNW24PFWrYw
+name: Fillamentum Nylon FX256 @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 100
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.01
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 6.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PA
+  filament_unloading_speed: 90.0
+  filament_unloading_speed_start: 100.0
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 255
+  full_fan_speed_layer: 0
+  max_fan_speed: 85
+  min_fan_speed: 50
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S60 ; Wait for chamber temperature
+  temperature: 255
+---
+kind: filament
+id: yjy+isoeUCuDnXY72RyX+g
+name: Prusament PC Blend @AQI
+condition: (tool.nozzle_diameter == 0.4 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 61.98
+  filament_spool_weight: 201.0
+  filament_vendor: Prusa Polymers
+  filament_notes: CU
+  filament_max_volumetric_speed: 8.0
+  bed_temperature: 100
+  bridge_fan_speed: 75
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PC
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 270
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 270
+---
+kind: filament
+id: wzQ6yIk4VE6l95DHO8RADA
+name: Prusament PC Blend @AQI 0.6 nozzle
+condition: (tool.nozzle_diameter == 0.6 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: BN
+  filament_max_volumetric_speed: 15.0
+  bed_temperature: 100
+  bridge_fan_speed: 75
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 4.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PC
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 270
+  full_fan_speed_layer: 0
+  max_fan_speed: 50
+  min_fan_speed: 30
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 270
+---
+kind: filament
+id: BcZsYDMKUkCo5VvG7B/EGA
+name: Prusament PC Blend @AQI 0.8 nozzle
+condition: (tool.nozzle_diameter == 0.8 and printer.model =~ /^(AQI)$/)
+values:
+  disable_fan_first_layers: 3
+  extrusion_multiplier: 1.0
+  filament_colour: '#EC626F'
+  filament_diameter: 1.75
+  filament_minimal_purge_on_wipe_tower: 15.0
+  filament_ramming_parameters: 120 100 6.6 6.8 7.2 7.6 7.9 8.2 8.7 9.4 9.9 10.0| 0.05 6.6 0.45 6.8 0.95 7.8 1.45 8.3 1.95 9.7 2.45 10 2.95 7.6 3.45 7.6 3.95 7.6 4.45 7.6 4.95 7.6
+  filament_soluble: false
+  filament_toolchange_delay: 0.0
+  filament_cost: 0.0
+  filament_spool_weight: 250.0
+  filament_vendor: Generic
+  filament_notes: ZL
+  filament_max_volumetric_speed: 0.0
+  bed_temperature: 100
+  bridge_fan_speed: 75
+  cooling: true
+  fan_always_on: true
+  fan_below_layer_time: 20
+  filament_density: 1.22
+  retract_before_travel: 3.0
+  retract_before_wipe: 70%
+  retract_layer_change: true
+  retract_length: 7.1
+  retract_lift: 0.2
+  retract_speed: 25.0
+  filament_type: PC
+  wipe: true
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 275
+  full_fan_speed_layer: 0
+  max_fan_speed: 60
+  min_fan_speed: 60
+  min_print_speed: 10.0
+  slowdown_below_layer_time: 5
+  start_filament_gcode: |-
+    ; FILAMENT_START_GCODE
+    M191 S75 ; Wait for chamber temperature
+  temperature: 275

@@ -1,0 +1,277 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: QIDITechnology
+name: QIDITechnology
+version: 2.3.1
+features:
+  printer:
+    supports_02_nozzle:
+      default: false
+      user_editable: false
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: X 4
+  base_model: X 4
+  printer_configs_order:
+  - x-plus 4
+  - x-plus 4 + box
+- label: Q
+  base_model: Q
+  printer_configs_order:
+  - q1 pro
+- label: X 3
+  base_model: X 3
+  printer_configs_order:
+  - x-max 3
+  - x-plus 3
+  - x-smart 3
+---
+kind: printer
+technology: FFF
+name: X-Plus 4
+id: X-Plus 4
+model:
+  base_model: X 4
+  model: X-Plus 4
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: X-Plus 4_bed.stl
+  bed_texture: X-Plus 4.svg
+  thumbnail: X-Plus 4_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: X-Plus 4 + BOX
+id: X-Plus 4 + BOX
+model:
+  base_model: X 4
+  model: X-Plus 4 + BOX
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: X-Plus 4_bed.stl
+  bed_texture: X-Plus 4.svg
+  thumbnail: X-Plus 4 + BOX_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Q1 Pro
+id: Q1 Pro
+model:
+  base_model: Q
+  model: Q1 Pro
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: Q1 Pro_bed.stl
+  bed_texture: Q1 Pro.svg
+  thumbnail: Q1 Pro_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: X-MAX 3
+id: X-MAX 3
+model:
+  base_model: X 3
+  model: X-MAX 3
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: X-MAX 3_bed.stl
+  bed_texture: X-MAX 3.svg
+  thumbnail: X-MAX 3_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: X-Plus 3
+id: X-Plus 3
+model:
+  base_model: X 3
+  model: X-Plus 3
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: X-Plus 3_bed.stl
+  bed_texture: X-Plus 3.svg
+  thumbnail: X-Plus 3_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: X-smart 3
+id: X-smart 3
+model:
+  base_model: X 3
+  model: X-smart 3
+tool_count: 1
+features:
+  supports_02_nozzle:
+    default: true
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  bed_model: X-smart 3_bed.stl
+  bed_texture: X-smart 3.svg
+  thumbnail: X-smart 3_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.2'
+name: '0.2'
+condition: printer.supports_02_nozzle
+features:
+  nozzle_diameter:
+    default: 0.2
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: x-plus 4
+name: X-Plus 4
+printer: X-Plus 4
+legacy_printer_model:
+- X-Plus 4
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x-plus 4 + box
+name: X-Plus 4 + BOX
+printer: X-Plus 4 + BOX
+legacy_printer_model:
+- X-Plus 4 + BOX
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: q1 pro
+name: Q1 Pro
+printer: Q1 Pro
+legacy_printer_model:
+- Q1 Pro
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x-max 3
+name: X-MAX 3
+printer: X-MAX 3
+legacy_printer_model:
+- X-MAX 3
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x-plus 3
+name: X-Plus 3
+printer: X-Plus 3
+legacy_printer_model:
+- X-Plus 3
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: x-smart 3
+name: X-smart 3
+printer: X-smart 3
+legacy_printer_model:
+- X-smart 3
+tools:
+- tool: '0.4'
+sheet: default

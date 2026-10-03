@@ -1,0 +1,64 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Print4Taste
+name: Print4Taste
+version: 1.1.0
+features:
+  printer:
+    supports_1_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: mycusini
+  base_model: mycusini
+  printer_configs_order:
+  - mc2.0
+---
+kind: printer
+technology: FFF
+name: mycusini 2.0
+id: MC2.0
+model:
+  base_model: mycusini
+  model: MC2.0
+tool_count: 1
+features:
+  supports_1_nozzle:
+    default: true
+visual:
+  bed_model: MC2.0_bed.stl
+  bed_texture: MC2.0_texture.svg
+  thumbnail: MC2.0_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '1'
+name: '1'
+condition: printer.supports_1_nozzle
+features:
+  nozzle_diameter:
+    default: 1.0
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: mc2.0
+name: mycusini 2.0
+printer: MC2.0
+legacy_printer_model:
+- MC2.0
+tools:
+- tool: '1'
+sheet: default

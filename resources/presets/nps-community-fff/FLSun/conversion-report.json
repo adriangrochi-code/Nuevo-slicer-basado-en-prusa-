@@ -1,0 +1,28 @@
+{
+ "vendor": "FLSun",
+ "counts": {
+  "printer_models": 2,
+  "printer": 4,
+  "print": 14,
+  "filament": 6
+ },
+ "dropped_keys": {
+  "printer": {
+   "extruder_colour (en 3.0 pertenece a Project)": 4
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 14,
+   "external_fill_pattern (no existe en 3.0)": 14,
+   "infill_only_where_needed (no existe en 3.0)": 14,
+   "support_material_auto (no existe en 3.0)": 14,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 14,
+   "wipe_tower_x (no existe en 3.0)": 14,
+   "wipe_tower_y (no existe en 3.0)": 14
+  },
+  "filament": {
+   "top_fan_speed (no existe en 3.0)": 1
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

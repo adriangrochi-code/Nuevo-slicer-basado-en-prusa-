@@ -1,0 +1,2207 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*Anycubic AKLP*'
+condition: printer.model == "AKLP"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic Kossel Linear Plus
+  id: 4yZq4QdfW+KMR59JEi4cbA
+  values:
+    bed_shape:
+    - 114.562x10.0229
+    - 113.253x19.9695
+    - 111.081x29.7642
+    - 108.065x39.3323
+    - 104.225x48.6011
+    - 99.5929x57.5
+    - 94.2025x65.9613
+    - 88.0951x73.9206
+    - 81.3173x81.3173
+    - 73.9206x88.0951
+    - 65.9613x94.2025
+    - 57.5x99.5929
+    - 48.6011x104.225
+    - 39.3323x108.065
+    - 29.7642x111.081
+    - 19.9695x113.253
+    - 10.0229x114.562
+    - 7.04172e-15x115
+    - -10.0229x114.562
+    - -19.9695x113.253
+    - -29.7642x111.081
+    - -39.3323x108.065
+    - -48.6011x104.225
+    - -57.5x99.5929
+    - -65.9613x94.2025
+    - -73.9206x88.0951
+    - -81.3173x81.3173
+    - -88.0951x73.9206
+    - -94.2025x65.9613
+    - -99.5929x57.5
+    - -104.225x48.6011
+    - -108.065x39.3323
+    - -111.081x29.7642
+    - -113.253x19.9695
+    - -114.562x10.0229
+    - -115x1.40834e-14
+    - -114.562x-10.0229
+    - -113.253x-19.9695
+    - -111.081x-29.7642
+    - -108.065x-39.3323
+    - -104.225x-48.6011
+    - -99.5929x-57.5
+    - -94.2025x-65.9613
+    - -88.0951x-73.9206
+    - -81.3173x-81.3173
+    - -73.9206x-88.0951
+    - -65.9613x-94.2025
+    - -57.5x-99.5929
+    - -48.6011x-104.225
+    - -39.3323x-108.065
+    - -29.7642x-111.081
+    - -19.9695x-113.253
+    - -10.0229x-114.562
+    - -2.11252e-14x-115
+    - 10.0229x-114.562
+    - 19.9695x-113.253
+    - 29.7642x-111.081
+    - 39.3323x-108.065
+    - 48.6011x-104.225
+    - 57.5x-99.5929
+    - 65.9613x-94.2025
+    - 73.9206x-88.0951
+    - 81.3173x-81.3173
+    - 88.0951x-73.9206
+    - 94.2025x-65.9613
+    - 99.5929x-57.5
+    - 104.225x-48.6011
+    - 108.065x-39.3323
+    - 111.081x-29.7642
+    - 113.253x-19.9695
+    - 114.562x-10.0229
+    - 115x-2.81669e-14
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      G92 E0
+      ;[layer_z]
+    between_objects_gcode: ''
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    silent_mode: false
+    remaining_times: false
+    machine_max_acceleration_e:
+    - 3000.0
+    machine_max_acceleration_extruding:
+    - 1000.0
+    machine_max_acceleration_retracting:
+    - 1000.0
+    machine_max_acceleration_x:
+    - 1500.0
+    machine_max_acceleration_y:
+    - 1500.0
+    machine_max_acceleration_z:
+    - 1500.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 200.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    max_print_height: 300.0
+    single_extruder_multi_material: false
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home
+      G1 X-54.672 Y95.203 Z0.3 F9000
+      G92 E0.0
+      G1 F1000
+      G1 X-52.931 Y96.185 E0.300
+      G1 X-50.985 Y97.231 E0.331
+      G1 X-49.018 Y98.238 E0.331
+      G1 X-47.032 Y99.205 E0.331
+      G1 X-45.026 Y100.132 E0.331
+      G1 X-43.003 Y101.019 E0.331
+      G1 X-40.961 Y101.864 E0.331
+      G1 X-38.904 Y102.668 E0.331
+      G1 X-36.83 Y103.431 E0.331
+      G1 X-34.742 Y104.152 E0.331
+      G1 X-32.639 Y104.83 E0.331
+      G1 X-30.523 Y105.466 E0.331
+      G1 X-28.395 Y106.06 E0.331
+      G1 X-26.255 Y106.61 E0.331
+      G1 X-24.105 Y107.117 E0.331
+      G1 X-21.945 Y107.581 E0.331
+      G1 X-19.776 Y108.001 E0.331
+      G1 X-17.599 Y108.377 E0.331
+      G1 X-15.415 Y108.71 E0.331
+      G1 X-13.224 Y108.998 E0.331
+      G1 X-11.028 Y109.242 E0.331
+      G1 X-8.828 Y109.442 E0.331
+      G1 X-6.624 Y109.598 E0.331
+      G1 X-4.418 Y109.709 E0.331
+      G1 X-2.209 Y109.776 E0.332
+      G1 X0 Y109.798 E0.331
+      G1 X2.209 Y109.776 E0.690
+      G1 X4.418 Y109.709 E0.691
+      G1 X6.624 Y109.598 E0.690
+      G1 X8.828 Y109.442 E0.690
+      G1 X11.028 Y109.242 E0.690
+      G1 X13.224 Y108.998 E0.690
+      G1 X15.415 Y108.71 E0.691
+      G1 X17.599 Y108.377 E0.690
+      G1 X19.776 Y108.001 E0.690
+      G1 X21.945 Y107.581 E0.690
+      G1 X24.105 Y107.117 E0.690
+      G1 X26.255 Y106.61 E0.690
+      G1 X28.395 Y106.06 E0.690
+      G1 X30.523 Y105.466 E0.690
+      G1 X32.639 Y104.83 E0.690
+      G1 X34.742 Y104.152 E0.690
+      G1 X36.83 Y103.431 E0.690
+      G1 X38.904 Y102.668 E0.691
+      G1 X40.961 Y101.864 E0.690
+      G1 X43.003 Y101.019 E0.691
+      G1 X45.026 Y100.132 E0.690
+      G1 X47.032 Y99.205 E0.691
+      G1 X49.018 Y98.238 E0.690
+      G1 X50.985 Y97.231 E0.691
+      G1 X52.931 Y96.185 E0.690
+      G1 X54.672 Y95.203 E0.625
+      G92 E0.0
+      G1 E-5 F3000 ; retract 5mm
+      G1 X52.931 Y96.185 F1000 ; wipe
+      G1 X50.985 Y97.231 F1000 ; wipe
+      G1 X49.018 Y98.238 F1000 ; wipe
+      G1 X0 Y109.798 F1000
+      G1 E4.8 F1500; de-retract
+      G92 E0.0 ; reset extrusion distance
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      G28 ; home
+      M84 ; disable motors
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.20mm QUALITY @AKOSSEL
+---
+kind: printer
+id: '*Anycubic AK*'
+condition: printer.model == "AK"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic Kossel Pulley (Linear)
+  id: 19RUs5uzUz+Q/BjN7OPZAA
+  values:
+    bed_shape:
+    - 89.6575x7.84402
+    - 88.6327x15.6283
+    - 86.9333x23.2937
+    - 84.5723x30.7818
+    - 81.5677x38.0356
+    - 77.9423x45
+    - 73.7237x51.6219
+    - 68.944x57.8509
+    - 63.6396x63.6396
+    - 57.8509x68.944
+    - 51.6219x73.7237
+    - 45x77.9423
+    - 38.0356x81.5677
+    - 30.7818x84.5723
+    - 23.2937x86.9333
+    - 15.6283x88.6327
+    - 7.84402x89.6575
+    - 5.51091e-15x90
+    - -7.84402x89.6575
+    - -15.6283x88.6327
+    - -23.2937x86.9333
+    - -30.7818x84.5723
+    - -38.0356x81.5677
+    - -45x77.9423
+    - -51.6219x73.7237
+    - -57.8509x68.944
+    - -63.6396x63.6396
+    - -68.944x57.8509
+    - -73.7237x51.6219
+    - -77.9423x45
+    - -81.5677x38.0356
+    - -84.5723x30.7818
+    - -86.9333x23.2937
+    - -88.6327x15.6283
+    - -89.6575x7.84402
+    - -90x1.10218e-14
+    - -89.6575x-7.84402
+    - -88.6327x-15.6283
+    - -86.9333x-23.2937
+    - -84.5723x-30.7818
+    - -81.5677x-38.0356
+    - -77.9423x-45
+    - -73.7237x-51.6219
+    - -68.944x-57.8509
+    - -63.6396x-63.6396
+    - -57.8509x-68.944
+    - -51.6219x-73.7237
+    - -45x-77.9423
+    - -38.0356x-81.5677
+    - -30.7818x-84.5723
+    - -23.2937x-86.9333
+    - -15.6283x-88.6327
+    - -7.84402x-89.6575
+    - -1.65327e-14x-90
+    - 7.84402x-89.6575
+    - 15.6283x-88.6327
+    - 23.2937x-86.9333
+    - 30.7818x-84.5723
+    - 38.0356x-81.5677
+    - 45x-77.9423
+    - 51.6219x-73.7237
+    - 57.8509x-68.944
+    - 63.6396x-63.6396
+    - 68.944x-57.8509
+    - 73.7237x-51.6219
+    - 77.9423x-45
+    - 81.5677x-38.0356
+    - 84.5723x-30.7818
+    - 86.9333x-23.2937
+    - 88.6327x-15.6283
+    - 89.6575x-7.84402
+    - 90x-2.20436e-14
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      G92 E0
+      ;[layer_z]
+    between_objects_gcode: ''
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    silent_mode: false
+    remaining_times: false
+    machine_max_acceleration_e:
+    - 3000.0
+    machine_max_acceleration_extruding:
+    - 1000.0
+    machine_max_acceleration_retracting:
+    - 1000.0
+    machine_max_acceleration_x:
+    - 1500.0
+    machine_max_acceleration_y:
+    - 1500.0
+    machine_max_acceleration_z:
+    - 1500.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 200.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    max_print_height: 300.0
+    single_extruder_multi_material: false
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G28 ; home
+      G1 X-39.672 Y69.712 Z0.3 F9000
+      G92 E0.0
+      G1 F1000
+      G1 X-38.457 Y70.397 E0.209
+      G1 X-37.043 Y71.157 E0.241
+      G1 X-35.614 Y71.889 E0.241
+      G1 X-34.171 Y72.591 E0.241
+      G1 X-32.714 Y73.265 E0.241
+      G1 X-31.244 Y73.909 E0.241
+      G1 X-29.761 Y74.523 E0.241
+      G1 X-28.266 Y75.108 E0.241
+      G1 X-26.759 Y75.662 E0.241
+      G1 X-25.242 Y76.185 E0.241
+      G1 X-23.714 Y76.678 E0.241
+      G1 X-22.177 Y77.14 E0.241
+      G1 X-20.63 Y77.571 E0.241
+      G1 X-19.076 Y77.971 E0.241
+      G1 X-17.514 Y78.34 E0.241
+      G1 X-15.944 Y78.677 E0.241
+      G1 X-14.368 Y78.982 E0.241
+      G1 X-12.786 Y79.255 E0.241
+      G1 X-11.199 Y79.497 E0.241
+      G1 X-9.608 Y79.706 E0.241
+      G1 X-8.013 Y79.884 E0.241
+      G1 X-6.414 Y80.029 E0.241
+      G1 X-4.813 Y80.142 E0.241
+      G1 X-3.21 Y80.223 E0.241
+      G1 X-1.605 Y80.271 E0.241
+      G1 X0 Y80.287 E0.241
+      G1 X1.605 Y80.271 E0.502
+      G1 X3.21 Y80.223 E0.502
+      G1 X4.813 Y80.142 E0.502
+      G1 X6.414 Y80.029 E0.502
+      G1 X8.013 Y79.884 E0.502
+      G1 X9.608 Y79.706 E0.502
+      G1 X11.199 Y79.497 E0.501
+      G1 X12.786 Y79.255 E0.502
+      G1 X14.368 Y78.982 E0.502
+      G1 X15.944 Y78.677 E0.502
+      G1 X17.514 Y78.34 E0.502
+      G1 X19.076 Y77.971 E0.502
+      G1 X20.63 Y77.571 E0.501
+      G1 X22.177 Y77.14 E0.502
+      G1 X23.714 Y76.678 E0.502
+      G1 X25.242 Y76.185 E0.502
+      G1 X26.759 Y75.662 E0.501
+      G1 X28.266 Y75.108 E0.502
+      G1 X29.761 Y74.523 E0.502
+      G1 X31.244 Y73.909 E0.502
+      G1 X32.714 Y73.265 E0.502
+      G1 X34.171 Y72.591 E0.502
+      G1 X35.614 Y71.889 E0.501
+      G1 X37.043 Y71.157 E0.502
+      G1 X38.457 Y70.397 E0.502
+      G1 X39.672 Y69.712 E0.436
+      G92 E0.0
+      M221 S{if layer_height<0.075}100{else}95{endif}
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      G28 ; home
+      M84 ; disable motors
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.20mm QUALITY @AKOSSEL
+---
+kind: printer
+id: '*Anycubic MEGA0*'
+condition: printer.model == "MEGA0"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic Mega Zero
+  id: OVHyXMfTUoS7Z+HoTqk0yg
+  values:
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    before_layer_gcode: |-
+      ; BEFORE_LAYER_CHANGE [layer_num] @ [layer_z]mm
+      G92 E0
+    between_objects_gcode: ''
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    silent_mode: false
+    remaining_times: false
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 500.0
+    machine_max_acceleration_retracting:
+    - 500.0
+    machine_max_acceleration_x:
+    - 500.0
+    machine_max_acceleration_y:
+    - 500.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_feedrate_e:
+    - 25.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 5.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.4
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    layer_gcode: ; AFTER_LAYER_CHANGE [layer_num] @ [layer_z]mm
+    max_print_height: 250.0
+    single_extruder_multi_material: false
+    start_gcode: |
+      G21 ;metric values
+      G90 ;absolute positioning
+      M82 ;set extruder to absolute mode
+      M107 ;start with the fan off
+      M117 Homing X/Y ...
+      G28 X0 Y0 ;move X/Y to min endstops
+      M117 Homing Z ...
+      G28 Z0 ;move Z to min endstops
+      G1 Z15.0 F240 ;move the platform down 15mm
+      M117 Heating ...
+      M104 S[first_layer_temperature]
+       ; set extruder temp
+      M109 S[first_layer_temperature]
+       ; wait for extruder temp
+      M117 Start cleaning ...
+      G92 E0 ;zero the extruded length
+      G1 F200 E10 ;extrude 10mm of feed stock
+      G92 E0 ;zero the extruded length again
+      M117 Intro line ...
+      G1 Z2.0 F3000 ; Move Z Axis up little to prevent scratching of Heat Bed
+      G1 X0.1 Y20 Z[first_layer_height] F5000.0 ; Move to start position
+      G1 X0.1 Y200.0 Z[first_layer_height] F1500.0 E15 ; Draw the first line
+      G1 X0.4 Y200.0 Z[first_layer_height] F5000.0 ; Move to side a little
+      G1 X0.4 Y20 Z0.3[first_layer_height] F1500.0 E30 ; Draw the second line
+      G92 E0 ; Reset Extruder
+      G1 E-1 F500 ; Retract filiment by 1 mm
+      G1 Z2.0 F3000 ; Move Z Axis up little to prevent scratching of Heat Bed
+      G1 X5 Y20 Z0.3 F240 ; Move over to prevent blob squish
+      G92 E0 ; Reset Extruder
+      M117 Printing...
+    end_gcode: |
+      M117 Cooling down...
+      M104 S0 ; turn off extruder
+      M107 ; Fan off
+      M84 ; disable motors
+      G91 ;relative positioning
+      G1 E-1 F300 ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+      G1 Z+0.5 E-5 ;X-20 Y-20 F240 ;move Z up a bit and retract filament even more
+      G28 X0 ;move X to min endstops, so the head is out of the way
+      G90 ;Absolute positionning
+      G1 Y200 F3000 ;Present print
+      M84 ;steppers off
+      M300 P300 S4000
+      M117 Finished.
+    toolchange_gcode: ''
+    use_firmware_retraction: false
+    use_relative_e_distances: true
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.20mm NORMAL @MEGA0
+---
+kind: printer
+id: '*Anycubic I3MEGA*'
+condition: printer.model == "I3MEGA"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic i3 Mega
+  id: qnD+aVz7XXONOi52ohTlPw
+  values:
+    bed_shape:
+    - '0x0'
+    - 210x0
+    - 210x210
+    - '0x210'
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+    end_gcode: |-
+      G1 E-1.0 F2100 ; retract
+      G92 E0.0
+      G1{if max_layer_z < max_print_height} Z{z_offset+min(max_layer_z+30, max_print_height)}{endif} E-34.0 F720 ; move print head up & retract filament
+      G4 ; wait
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      G1 X0 Y105 F3000 ; park print head
+      M84 ; disable motors
+    gcode_flavor: marlin
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    max_print_height: 205.0
+    remaining_times: true
+    silent_mode: false
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M204 S[machine_max_acceleration_extruding] T[machine_max_acceleration_retracting]
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G1 Y1.0 Z0.3 F1000 ; move print head up
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G92 E0.0
+      ; initial load
+      G1 X205.0 E19 F1000
+      G1 Y1.6
+      G1 X5.0 E19 F1000
+      G92 E0.0
+      ; intro line
+      G1 Y2.0 Z0.2 F1000
+      G1 X65.0 E9.0 F1000
+      G1 X105.0 E12.5 F1000
+      G92 E0.0
+    thumbnails: 16x16,220x124
+    use_relative_e_distances: true
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    machine_max_acceleration_x:
+    - 3000.0
+    machine_max_acceleration_y:
+    - 2000.0
+    machine_max_acceleration_z:
+    - 60.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 6.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.4
+    extruder_clearance_height: 35.0
+    extruder_clearance_radius: 60.0
+    default_print: 0.15mm QUALITY @MEGA
+---
+kind: printer
+id: '*Anycubic I3MEGAS*'
+condition: printer.model == "I3MEGAS"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic i3 Mega S
+  id: 7vyCem+iWsSjmGeXz2OaMA
+  values:
+    bed_shape:
+    - '0x0'
+    - 210x0
+    - 210x210
+    - '0x210'
+    before_layer_gcode: |-
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+    end_gcode: |-
+      G1 E-1.0 F2100 ; retract
+      G92 E0.0
+      G1{if max_layer_z < max_print_height} Z{z_offset+min(max_layer_z+30, max_print_height)}{endif} E-34.0 F720 ; move print head up & retract filament
+      G4 ; wait
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      G1 X0 Y105 F3000 ; park print head
+      M84 ; disable motors
+    gcode_flavor: marlin
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    max_print_height: 205.0
+    remaining_times: true
+    silent_mode: false
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M204 S[machine_max_acceleration_extruding] T[machine_max_acceleration_retracting]
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G1 Y1.0 Z0.3 F1000 ; move print head up
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G92 E0.0
+      ; initial load
+      G1 X205.0 E19 F1000
+      G1 Y1.6
+      G1 X5.0 E19 F1000
+      G92 E0.0
+      ; intro line
+      G1 Y2.0 Z0.2 F1000
+      G1 X65.0 E9.0 F1000
+      G1 X105.0 E12.5 F1000
+      G92 E0.0
+    thumbnails: 16x16,220x124
+    use_relative_e_distances: true
+    machine_max_acceleration_e:
+    - 10000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    machine_max_acceleration_x:
+    - 3000.0
+    machine_max_acceleration_y:
+    - 2000.0
+    machine_max_acceleration_z:
+    - 60.0
+    machine_max_feedrate_e:
+    - 30.0
+    machine_max_feedrate_x:
+    - 500.0
+    machine_max_feedrate_y:
+    - 500.0
+    machine_max_feedrate_z:
+    - 8.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.4
+    extruder_clearance_height: 35.0
+    extruder_clearance_radius: 60.0
+    default_print: 0.15mm QUALITY @MEGA
+---
+kind: printer
+id: '*Anycubic 4MAXPRO20*'
+condition: printer.model == "4MAXPRO20"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic 4Max Pro 2.0
+  id: KOobuD0yV32YZgfIZXbRgw
+  values:
+    bed_shape:
+    - '0x0'
+    - 270x0
+    - 270x210
+    - '0x210'
+    color_change_gcode: M600
+    end_gcode: |
+      M104 S0 ; turn off extruder heating
+      M140 S0 ; turn off bed heating
+      M107 ; turn off fans
+      G91 ; relative positioning
+      G0 Z+0.5 ; move Z up a tiny bit
+      G90 ; absolute positioning
+      G0 X135 Y105 F{machine_max_feedrate_x[0]*60} ; move extruder to center position
+      G0 Z190.5 F{machine_max_feedrate_z[0]*60} ; lower the plattform to Z min
+      M84 ; steppers off
+      G90 ; absolute positioning
+    extruder_offset:
+    - '0x0'
+    gcode_flavor: marlin
+    machine_limits_usage: time_estimate_only
+    machine_max_acceleration_e:
+    - 5000.0
+    machine_max_acceleration_extruding:
+    - 1250.0
+    machine_max_acceleration_retracting:
+    - 1250.0
+    machine_max_acceleration_travel:
+    - 1500.0
+    machine_max_acceleration_x:
+    - 900.0
+    machine_max_acceleration_y:
+    - 900.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_feedrate_e:
+    - 120.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 16.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 6.0
+    machine_max_jerk_y:
+    - 6.0
+    machine_max_jerk_z:
+    - 0.2
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    max_print_height: 190.0
+    pause_print_gcode: M601
+    remaining_times: false
+    silent_mode: false
+    single_extruder_multi_material: false
+    start_gcode: |-
+      G21 ; metric values
+      G90 ; absolute positioning
+      M82 ; set extruder to absolute mode
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 X0 Y0 ; home X and Y
+      G28 Z0 ; home Z
+      G1 Z30 F{machine_max_feedrate_z[0]*60} ; move Z a bit down to not blow on the bed edge while heating
+      G1 X10 F3900 ; let some space on x to prevent the filament cooling exhaust from beeing blocked by the servo motor
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M104 S[first_layer_temperature] ; set extruder temp
+      M106 S80 ; turn on fan to prevent air nozzle melt while heating up
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      M107 ; start with the fan off
+      G28 X0 ; goto X home again
+      G92 E0 ; zero the extruded length
+      G1 Z0.2 F360 ; move plattform upwards
+      ; extrude material next to the plattform (comment or remove following lines to disable)
+      G1 F180 E20 ; extrude some material next to the plattform
+      G92 E0 ; zero the extruded length
+      G1 E-[retract_length] F{retract_speed[0]*60} ; do a filament retract
+      G92 E0 ; zero the extruded length again
+      G1 X5 F3900 ; move sideways to get rid of that string
+      G1 E[retract_length] F{retract_speed[0]*60} ; do a filament deretract with retract parameters
+      G92 E0 ; zero the extruded length again
+      ; draw intro line (comment or remove following lines to disable)
+      G1 X30 E5 F700 ; draw intro line
+      G92 E0 ; zero the extruded length
+      G1 E-[retract_length] F{retract_speed[0]*60} ; do a filament retract
+      G1 X40 Z2.0 ; move away from the introline
+      G92 E0 ; zero the extruded length again
+      G1 E[retract_length] F{retract_speed[0]*60} ; do a filament deretract with retract parameters
+      ; end of intro line code
+      M117 Printing...
+      G5
+    use_firmware_retraction: false
+    use_relative_e_distances: false
+    use_volumetric_e: false
+    variable_layer_height: true
+    z_offset: 0.0
+    default_print: 0.20mm Quality @4Max Pro 2.0
+---
+kind: printer
+id: '*Anycubic PREDATOR*'
+condition: printer.model == "PREDATOR"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: Anycubic Predator 0.4 nozzle
+  id: WuWMJH5HVty1RwdsqcX9qA
+  values:
+    thumbnails: 16x16,220x124
+    bed_shape:
+    - 188.779x16.516
+    - 186.621x32.9063
+    - 183.043x49.0462
+    - 178.072x64.8128
+    - 171.745x80.0862
+    - 164.112x94.75
+    - 155.229x108.693
+    - 145.165x121.808
+    - 133.997x133.997
+    - 121.808x145.165
+    - 108.693x155.229
+    - 94.75x164.112
+    - 80.0862x171.745
+    - 64.8128x178.072
+    - 49.0462x183.043
+    - 32.9063x186.621
+    - 16.516x188.779
+    - 1.16035e-14x189.5
+    - -16.516x188.779
+    - -32.9063x186.621
+    - -49.0462x183.043
+    - -64.8128x178.072
+    - -80.0862x171.745
+    - -94.75x164.112
+    - -108.693x155.229
+    - -121.808x145.165
+    - -133.997x133.997
+    - -145.165x121.808
+    - -155.229x108.693
+    - -164.112x94.75
+    - -171.745x80.0862
+    - -178.072x64.8128
+    - -183.043x49.0462
+    - -186.621x32.9063
+    - -188.779x16.516
+    - -189.5x2.32071e-14
+    - -188.779x-16.516
+    - -186.621x-32.9063
+    - -183.043x-49.0462
+    - -178.072x-64.8128
+    - -171.745x-80.0862
+    - -164.112x-94.75
+    - -155.229x-108.693
+    - -145.165x-121.808
+    - -133.997x-133.997
+    - -121.808x-145.165
+    - -108.693x-155.229
+    - -94.75x-164.112
+    - -80.0862x-171.745
+    - -64.8128x-178.072
+    - -49.0462x-183.043
+    - -32.9063x-186.621
+    - -16.516x-188.779
+    - -3.48106e-14x-189.5
+    - 16.516x-188.779
+    - 32.9063x-186.621
+    - 49.0462x-183.043
+    - 64.8128x-178.072
+    - 80.0862x-171.745
+    - 94.75x-164.112
+    - 108.693x-155.229
+    - 121.808x-145.165
+    - 133.997x-133.997
+    - 145.165x-121.808
+    - 155.229x-108.693
+    - 164.112x-94.75
+    - 171.745x-80.0862
+    - 178.072x-64.8128
+    - 183.043x-49.0462
+    - 186.621x-32.9063
+    - 188.779x-16.516
+    - 189.5x-4.64141e-14
+    max_print_height: 445.0
+    z_offset: 0.0
+    single_extruder_multi_material: false
+    gcode_flavor: reprap
+    silent_mode: false
+    remaining_times: false
+    use_relative_e_distances: false
+    use_firmware_retraction: false
+    use_volumetric_e: false
+    variable_layer_height: true
+    start_gcode: |-
+      ; start_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; set metric values
+
+      G21
+
+      ; use absolute positioning
+
+      G90
+
+      ; set extruder to absolute mode
+
+      M82
+
+      ; start with fan off
+
+      M107
+
+      ; set temps
+
+      M104 S[first_layer_temperature]
+      M140 S[first_layer_bed_temperature]
+
+      ; home xy
+
+      G28 X0 Y0
+
+      ; home z
+
+      G28 Z0
+
+      ; move the head down to Z 94mm
+
+      G1 Z94.0 F2394
+
+      ; set and wait for temps
+
+      M109 S[first_layer_temperature]
+      M190 S[first_layer_bed_temperature]
+
+      ; zero the extruded length
+
+      G92 E0
+
+      ; extrude 3mm of feed stock
+
+      G1 F200 E3
+
+      ; zero the extruded length again
+
+      G92 E0
+
+      ; set speed
+
+      G1 F{travel_speed}
+
+      ; print preskirt
+
+      G92 E0
+      G1 E3.94000 F2520.00000
+
+      G1 X125.464 Y-139.310
+      G1 Z0.329 F3994.000
+
+      G1 F994.000
+
+      G1 X125.464 Y-139.310 E4.19679
+      G1 X130.218 Y-134.876 E4.70359
+      G1 X132.569 Y-132.567 E4.96053
+      G1 X137.099 Y-127.877 E5.46890
+      G1 X139.325 Y-125.447 E5.72585
+      G1 X141.507 Y-122.981 E5.98254
+      G1 X145.685 Y-118.002 E6.48934
+      G1 X149.741 Y-112.810 E7.00296
+      G1 X153.561 Y-107.552 E7.50975
+      G1 X155.440 Y-104.819 E7.76827
+      G1 X158.980 Y-99.367 E8.27506
+      G1 X160.702 Y-96.558 E8.53201
+      G1 X163.962 Y-90.911 E9.04038
+      G1 X165.535 Y-88.015 E9.29732
+      G1 X168.496 Y-82.205 E9.80570
+      G1 X169.915 Y-79.231 E10.06264
+      G1 X171.280 Y-76.235 E10.31934
+      G1 X173.819 Y-70.251 E10.82613
+      G1 X176.180 Y-64.101 E11.33975
+      G1 X178.297 Y-57.955 E11.84654
+      G1 X179.294 Y-54.793 E12.10507
+      G1 X181.085 Y-48.544 E12.61186
+      G1 X181.911 Y-45.354 E12.86880
+      G1 X183.378 Y-39.001 E13.37718
+      G1 X184.035 Y-35.771 E13.63412
+      G1 X185.168 Y-29.350 E14.14250
+      G1 X185.655 Y-26.091 E14.39944
+      G1 X186.084 Y-22.826 E14.65614
+      G1 X186.764 Y-16.362 E15.16293
+      G1 X187.223 Y-9.790 E15.67655
+      G1 X187.450 Y-3.294 E16.18334
+      G1 X187.479 Y0.002 E16.44028
+      G1 X187.450 Y3.294 E16.69698
+      G1 X187.223 Y9.810 E17.20529
+      G1 X187.021 Y13.100 E17.46229
+      G1 X186.454 Y19.575 E17.96909
+      G1 X186.079 Y22.870 E18.22761
+      G1 X185.174 Y29.307 E18.73440
+      G1 X184.031 Y35.794 E19.24802
+      G1 X182.679 Y42.152 E19.75481
+      G1 X181.910 Y45.357 E20.01176
+      G1 X180.223 Y51.655 E20.52013
+      G1 X179.287 Y54.815 E20.77708
+      G1 X177.272 Y61.017 E21.28545
+      G1 X176.172 Y64.123 E21.54239
+      G1 X175.019 Y67.207 E21.79909
+      G1 X172.584 Y73.234 E22.30588
+      G1 X169.905 Y79.252 E22.81950
+      G1 X167.055 Y85.094 E23.32629
+      G1 X165.524 Y88.035 E23.58482
+      G1 X162.373 Y93.721 E24.09161
+      G1 X160.700 Y96.560 E24.34855
+      G1 X157.245 Y102.090 E24.85693
+      G1 X155.427 Y104.838 E25.11387
+      G1 X151.687 Y110.180 E25.62225
+      G1 X149.727 Y112.829 E25.87919
+      G1 X147.722 Y115.441 E26.13588
+      G1 X143.631 Y120.493 E26.64268
+      G1 X139.310 Y125.464 E27.15629
+      G1 X134.876 Y130.218 E27.66309
+      G1 X132.567 Y132.569 E27.92003
+      G1 X127.877 Y137.099 E28.42840
+      G1 X125.447 Y139.325 E28.68535
+      G1 X122.981 Y141.507 E28.94204
+      G1 X118.002 Y145.685 E29.44883
+      G1 X112.810 Y149.741 E29.96245
+      G1 X107.552 Y153.561 E30.46924
+      G1 X104.819 Y155.440 E30.72777
+      G1 X99.367 Y158.980 E31.23456
+      G1 X96.558 Y160.702 E31.49151
+      G1 X90.911 Y163.962 E31.99988
+      G1 X88.015 Y165.535 E32.25682
+      G1 X82.205 Y168.496 E32.76520
+      G1 X79.231 Y169.915 E33.02214
+      G1 X76.235 Y171.280 E33.27884
+      G1 X70.251 Y173.819 E33.78563
+      G1 X64.101 Y176.180 E34.29925
+      G1 X57.955 Y178.297 E34.80604
+      G1 X54.793 Y179.294 E35.06457
+      G1 X48.544 Y181.085 E35.57136
+      G1 X45.354 Y181.911 E35.82830
+      G1 X39.001 Y183.378 E36.33668
+      G1 X35.771 Y184.035 E36.59362
+      G1 X29.350 Y185.168 E37.10200
+      G1 X26.091 Y185.655 E37.35894
+      G1 X22.826 Y186.084 E37.61563
+      G1 X16.362 Y186.764 E38.12242
+      G1 X9.790 Y187.223 E38.63605
+      G1 X3.294 Y187.450 E39.14283
+      G1 X-0.002 Y187.479 E39.39978
+      G1 X-3.294 Y187.450 E39.65648
+      G1 X-9.810 Y187.223 E40.16479
+      G1 X-13.100 Y187.021 E40.42179
+      G1 X-19.575 Y186.454 E40.92858
+      G1 X-22.870 Y186.079 E41.18711
+      G1 X-29.307 Y185.174 E41.69390
+      G1 X-35.794 Y184.031 E42.20752
+      G1 X-42.152 Y182.679 E42.71431
+      G1 X-45.357 Y181.910 E42.97126
+      G1 X-51.655 Y180.223 E43.47963
+      G1 X-54.815 Y179.287 E43.73657
+      G1 X-61.017 Y177.272 E44.24495
+      G1 X-64.123 Y176.172 E44.50189
+      G1 X-67.207 Y175.019 E44.75859
+      G1 X-73.234 Y172.584 E45.26538
+      G1 X-79.252 Y169.905 E45.77900
+      G1 X-85.094 Y167.055 E46.28579
+      G1 X-88.035 Y165.524 E46.54432
+      G1 X-93.721 Y162.373 E47.05111
+      G1 X-96.560 Y160.700 E47.30805
+      G1 X-102.090 Y157.245 E47.81643
+      G1 X-104.838 Y155.427 E48.07337
+      G1 X-110.180 Y151.687 E48.58174
+      G1 X-112.829 Y149.727 E48.83869
+      G1 X-115.441 Y147.722 E49.09538
+      G1 X-120.493 Y143.631 E49.60218
+      G1 X-125.464 Y139.310 E50.11579
+      G1 X-130.218 Y134.876 E50.62259
+      G1 X-132.569 Y132.567 E50.87953
+      G1 X-137.099 Y127.877 E51.38790
+      G1 X-139.325 Y125.447 E51.64485
+      G1 X-141.507 Y122.981 E51.90154
+      G1 X-145.685 Y118.002 E52.40833
+      G1 X-149.741 Y112.810 E52.92195
+      G1 X-153.561 Y107.552 E53.42874
+      G1 X-155.440 Y104.819 E53.68727
+      G1 X-158.980 Y99.367 E54.19406
+      G1 X-160.702 Y96.558 E54.45101
+      G1 X-163.962 Y90.911 E54.95938
+      G1 X-165.535 Y88.015 E55.21632
+      G1 X-168.496 Y82.205 E55.72470
+      G1 X-169.915 Y79.231 E55.98164
+      G1 X-171.280 Y76.235 E56.23834
+      G1 X-173.819 Y70.251 E56.74513
+      G1 X-176.180 Y64.101 E57.25875
+      G1 X-178.297 Y57.955 E57.76554
+      G1 X-179.294 Y54.793 E58.02407
+      G1 X-181.085 Y48.544 E58.53086
+      G1 X-181.911 Y45.354 E58.78780
+      G1 X-183.378 Y39.001 E59.29618
+      G1 X-184.035 Y35.771 E59.55312
+      G1 X-185.168 Y29.350 E60.06149
+      G1 X-185.655 Y26.091 E60.31844
+      G1 X-186.084 Y22.826 E60.57513
+      G1 X-186.764 Y16.362 E61.08192
+      G1 X-187.223 Y9.790 E61.59554
+      G1 X-187.450 Y3.294 E62.10233
+      G1 X-187.479 Y-0.002 E62.35928
+      G1 X-187.450 Y-3.294 E62.61598
+      G1 X-187.223 Y-9.810 E63.12429
+      G1 X-187.021 Y-13.100 E63.38129
+      G1 X-186.454 Y-19.575 E63.88808
+      G1 X-186.079 Y-22.870 E64.14661
+      G1 X-185.174 Y-29.307 E64.65340
+      G1 X-184.031 Y-35.794 E65.16702
+      G1 X-182.679 Y-42.152 E65.67381
+      G1 X-181.910 Y-45.357 E65.93076
+      G1 X-180.223 Y-51.655 E66.43913
+      G1 X-179.287 Y-54.815 E66.69607
+      G1 X-177.272 Y-61.017 E67.20445
+      G1 X-176.172 Y-64.123 E67.46139
+      G1 X-175.019 Y-67.207 E67.71809
+      G1 X-172.584 Y-73.234 E68.22488
+      G1 X-169.905 Y-79.252 E68.73850
+      G1 X-167.055 Y-85.094 E69.24529
+      G1 X-165.524 Y-88.035 E69.50382
+      G1 X-162.373 Y-93.721 E70.01061
+      G1 X-160.700 Y-96.560 E70.26755
+      G1 X-157.245 Y-102.090 E70.77593
+      G1 X-155.427 Y-104.838 E71.03287
+      G1 X-151.687 Y-110.180 E71.54124
+      G1 X-149.727 Y-112.829 E71.79819
+      G1 X-147.722 Y-115.441 E72.05488
+      G1 X-143.631 Y-120.493 E72.56167
+      G1 X-139.310 Y-125.464 E73.07529
+      G1 X-134.876 Y-130.218 E73.58209
+      G1 X-132.567 Y-132.569 E73.83903
+      G1 X-127.877 Y-137.099 E74.34740
+      G1 X-125.447 Y-139.325 E74.60435
+      G1 X-122.981 Y-141.507 E74.86104
+      G1 X-118.002 Y-145.685 E75.36783
+      G1 X-112.810 Y-149.741 E75.88145
+      G1 X-107.552 Y-153.561 E76.38824
+      G1 X-104.819 Y-155.440 E76.64677
+      G1 X-99.367 Y-158.980 E77.15356
+      G1 X-96.558 Y-160.702 E77.41051
+      G1 X-90.911 Y-163.962 E77.91888
+      G1 X-88.015 Y-165.535 E78.17582
+      G1 X-82.205 Y-168.496 E78.68420
+      G1 X-79.231 Y-169.915 E78.94114
+      G1 X-76.235 Y-171.280 E79.19784
+      G1 X-70.251 Y-173.819 E79.70463
+      G1 X-64.101 Y-176.180 E80.21825
+      G1 X-57.955 Y-178.297 E80.72504
+      G1 X-54.793 Y-179.294 E80.98356
+      G1 X-48.544 Y-181.085 E81.49036
+      G1 X-45.354 Y-181.911 E81.74730
+      G1 X-39.001 Y-183.378 E82.25568
+      G1 X-35.771 Y-184.035 E82.51262
+      G1 X-29.350 Y-185.168 E83.02099
+      G1 X-26.091 Y-185.655 E83.27794
+      G1 X-22.826 Y-186.084 E83.53463
+      G1 X-16.362 Y-186.764 E84.04142
+      G1 X-9.790 Y-187.223 E84.55504
+      G1 X-3.294 Y-187.450 E85.06183
+      G1 X0.006 Y-187.479 E85.31908
+      G1 X6.521 Y-187.366 E85.82715
+      G1 X9.810 Y-187.223 E86.08379
+      G1 X13.100 Y-187.021 E86.34079
+      G1 X19.575 Y-186.454 E86.84758
+      G1 X22.870 Y-186.079 E87.10611
+      G1 X29.307 Y-185.174 E87.61290
+      G1 X35.794 Y-184.031 E88.12652
+      G1 X42.152 Y-182.679 E88.63331
+      G1 X45.357 Y-181.910 E88.89025
+      G1 X51.655 Y-180.223 E89.39863
+      G1 X54.815 Y-179.287 E89.65557
+      G1 X61.017 Y-177.272 E90.16395
+      G1 X64.123 Y-176.172 E90.42089
+      G1 X67.207 Y-175.019 E90.67759
+      G1 X73.234 Y-172.584 E91.18438
+      G1 X79.252 Y-169.905 E91.69800
+      G1 X85.094 Y-167.055 E92.20479
+      G1 X88.035 Y-165.524 E92.46332
+      G1 X93.721 Y-162.373 E92.97011
+      G1 X96.560 Y-160.700 E93.22705
+      G1 X102.090 Y-157.245 E93.73543
+      G1 X104.838 Y-155.427 E93.99237
+      G1 X110.180 Y-151.687 E94.50074
+      G1 X112.829 Y-149.727 E94.75768
+      G1 X115.441 Y-147.722 E95.01438
+      G1 X120.493 Y-143.631 E95.52117
+      G1 X122.911 Y-141.529 E95.77098
+
+      ; end preskirt
+      ; start_gcode | end
+    end_gcode: |
+      ; end_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; use relative positioning
+
+      G91
+
+      ; retract the filament a bit before lifting the nozzle to release some of the pressure
+
+      G1 E-1 F300
+
+      ; home
+
+      G28
+
+      ; use absolute positioning
+
+      G90
+
+      ; cooldown
+
+      M104 S0
+      M140 S0
+
+      ; end_gcode | end
+    before_layer_gcode: ''
+    layer_gcode: ''
+    toolchange_gcode: ''
+    between_objects_gcode: ''
+    machine_max_acceleration_e:
+    - 3000.0
+    machine_max_acceleration_extruding:
+    - 1000.0
+    machine_max_acceleration_retracting:
+    - 1000.0
+    machine_max_acceleration_x:
+    - 1500.0
+    machine_max_acceleration_y:
+    - 1500.0
+    machine_max_acceleration_z:
+    - 1500.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 200.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.16mm 0.4 nozzle DETAILED QUALITY @PREDATOR
+- condition: tool.nozzle_diameter == 0.6
+  name: Anycubic Predator 0.6 nozzle
+  id: AL9eG/v3UQ2Z3IX/rsn/TA
+  values:
+    thumbnails: 16x16,220x124
+    bed_shape:
+    - 188.779x16.516
+    - 186.621x32.9063
+    - 183.043x49.0462
+    - 178.072x64.8128
+    - 171.745x80.0862
+    - 164.112x94.75
+    - 155.229x108.693
+    - 145.165x121.808
+    - 133.997x133.997
+    - 121.808x145.165
+    - 108.693x155.229
+    - 94.75x164.112
+    - 80.0862x171.745
+    - 64.8128x178.072
+    - 49.0462x183.043
+    - 32.9063x186.621
+    - 16.516x188.779
+    - 1.16035e-14x189.5
+    - -16.516x188.779
+    - -32.9063x186.621
+    - -49.0462x183.043
+    - -64.8128x178.072
+    - -80.0862x171.745
+    - -94.75x164.112
+    - -108.693x155.229
+    - -121.808x145.165
+    - -133.997x133.997
+    - -145.165x121.808
+    - -155.229x108.693
+    - -164.112x94.75
+    - -171.745x80.0862
+    - -178.072x64.8128
+    - -183.043x49.0462
+    - -186.621x32.9063
+    - -188.779x16.516
+    - -189.5x2.32071e-14
+    - -188.779x-16.516
+    - -186.621x-32.9063
+    - -183.043x-49.0462
+    - -178.072x-64.8128
+    - -171.745x-80.0862
+    - -164.112x-94.75
+    - -155.229x-108.693
+    - -145.165x-121.808
+    - -133.997x-133.997
+    - -121.808x-145.165
+    - -108.693x-155.229
+    - -94.75x-164.112
+    - -80.0862x-171.745
+    - -64.8128x-178.072
+    - -49.0462x-183.043
+    - -32.9063x-186.621
+    - -16.516x-188.779
+    - -3.48106e-14x-189.5
+    - 16.516x-188.779
+    - 32.9063x-186.621
+    - 49.0462x-183.043
+    - 64.8128x-178.072
+    - 80.0862x-171.745
+    - 94.75x-164.112
+    - 108.693x-155.229
+    - 121.808x-145.165
+    - 133.997x-133.997
+    - 145.165x-121.808
+    - 155.229x-108.693
+    - 164.112x-94.75
+    - 171.745x-80.0862
+    - 178.072x-64.8128
+    - 183.043x-49.0462
+    - 186.621x-32.9063
+    - 188.779x-16.516
+    - 189.5x-4.64141e-14
+    max_print_height: 445.0
+    z_offset: 0.0
+    single_extruder_multi_material: false
+    gcode_flavor: reprap
+    silent_mode: false
+    remaining_times: false
+    use_relative_e_distances: false
+    use_firmware_retraction: false
+    use_volumetric_e: false
+    variable_layer_height: true
+    start_gcode: |-
+      ; start_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; set metric values
+
+      G21
+
+      ; use absolute positioning
+
+      G90
+
+      ; set extruder to absolute mode
+
+      M82
+
+      ; start with fan off
+
+      M107
+
+      ; set temps
+
+      M104 S[first_layer_temperature]
+      M140 S[first_layer_bed_temperature]
+
+      ; home xy
+
+      G28 X0 Y0
+
+      ; home z
+
+      G28 Z0
+
+      ; move the head down to Z 94mm
+
+      G1 Z94.0 F2394
+
+      ; set and wait for temps
+
+      M109 S[first_layer_temperature]
+      M190 S[first_layer_bed_temperature]
+
+      ; zero the extruded length
+
+      G92 E0
+
+      ; extrude 3mm of feed stock
+
+      G1 F200 E3
+
+      ; zero the extruded length again
+
+      G92 E0
+
+      ; set speed
+
+      G1 F{travel_speed}
+
+      ; print preskirt
+
+      G92 E0
+      G1 E3.94000 F2520.00000
+
+      G1 X125.464 Y-139.310
+      G1 Z0.329 F3994.000
+
+      G1 F994.000
+
+      G1 X125.464 Y-139.310 E4.19679
+      G1 X130.218 Y-134.876 E4.70359
+      G1 X132.569 Y-132.567 E4.96053
+      G1 X137.099 Y-127.877 E5.46890
+      G1 X139.325 Y-125.447 E5.72585
+      G1 X141.507 Y-122.981 E5.98254
+      G1 X145.685 Y-118.002 E6.48934
+      G1 X149.741 Y-112.810 E7.00296
+      G1 X153.561 Y-107.552 E7.50975
+      G1 X155.440 Y-104.819 E7.76827
+      G1 X158.980 Y-99.367 E8.27506
+      G1 X160.702 Y-96.558 E8.53201
+      G1 X163.962 Y-90.911 E9.04038
+      G1 X165.535 Y-88.015 E9.29732
+      G1 X168.496 Y-82.205 E9.80570
+      G1 X169.915 Y-79.231 E10.06264
+      G1 X171.280 Y-76.235 E10.31934
+      G1 X173.819 Y-70.251 E10.82613
+      G1 X176.180 Y-64.101 E11.33975
+      G1 X178.297 Y-57.955 E11.84654
+      G1 X179.294 Y-54.793 E12.10507
+      G1 X181.085 Y-48.544 E12.61186
+      G1 X181.911 Y-45.354 E12.86880
+      G1 X183.378 Y-39.001 E13.37718
+      G1 X184.035 Y-35.771 E13.63412
+      G1 X185.168 Y-29.350 E14.14250
+      G1 X185.655 Y-26.091 E14.39944
+      G1 X186.084 Y-22.826 E14.65614
+      G1 X186.764 Y-16.362 E15.16293
+      G1 X187.223 Y-9.790 E15.67655
+      G1 X187.450 Y-3.294 E16.18334
+      G1 X187.479 Y0.002 E16.44028
+      G1 X187.450 Y3.294 E16.69698
+      G1 X187.223 Y9.810 E17.20529
+      G1 X187.021 Y13.100 E17.46229
+      G1 X186.454 Y19.575 E17.96909
+      G1 X186.079 Y22.870 E18.22761
+      G1 X185.174 Y29.307 E18.73440
+      G1 X184.031 Y35.794 E19.24802
+      G1 X182.679 Y42.152 E19.75481
+      G1 X181.910 Y45.357 E20.01176
+      G1 X180.223 Y51.655 E20.52013
+      G1 X179.287 Y54.815 E20.77708
+      G1 X177.272 Y61.017 E21.28545
+      G1 X176.172 Y64.123 E21.54239
+      G1 X175.019 Y67.207 E21.79909
+      G1 X172.584 Y73.234 E22.30588
+      G1 X169.905 Y79.252 E22.81950
+      G1 X167.055 Y85.094 E23.32629
+      G1 X165.524 Y88.035 E23.58482
+      G1 X162.373 Y93.721 E24.09161
+      G1 X160.700 Y96.560 E24.34855
+      G1 X157.245 Y102.090 E24.85693
+      G1 X155.427 Y104.838 E25.11387
+      G1 X151.687 Y110.180 E25.62225
+      G1 X149.727 Y112.829 E25.87919
+      G1 X147.722 Y115.441 E26.13588
+      G1 X143.631 Y120.493 E26.64268
+      G1 X139.310 Y125.464 E27.15629
+      G1 X134.876 Y130.218 E27.66309
+      G1 X132.567 Y132.569 E27.92003
+      G1 X127.877 Y137.099 E28.42840
+      G1 X125.447 Y139.325 E28.68535
+      G1 X122.981 Y141.507 E28.94204
+      G1 X118.002 Y145.685 E29.44883
+      G1 X112.810 Y149.741 E29.96245
+      G1 X107.552 Y153.561 E30.46924
+      G1 X104.819 Y155.440 E30.72777
+      G1 X99.367 Y158.980 E31.23456
+      G1 X96.558 Y160.702 E31.49151
+      G1 X90.911 Y163.962 E31.99988
+      G1 X88.015 Y165.535 E32.25682
+      G1 X82.205 Y168.496 E32.76520
+      G1 X79.231 Y169.915 E33.02214
+      G1 X76.235 Y171.280 E33.27884
+      G1 X70.251 Y173.819 E33.78563
+      G1 X64.101 Y176.180 E34.29925
+      G1 X57.955 Y178.297 E34.80604
+      G1 X54.793 Y179.294 E35.06457
+      G1 X48.544 Y181.085 E35.57136
+      G1 X45.354 Y181.911 E35.82830
+      G1 X39.001 Y183.378 E36.33668
+      G1 X35.771 Y184.035 E36.59362
+      G1 X29.350 Y185.168 E37.10200
+      G1 X26.091 Y185.655 E37.35894
+      G1 X22.826 Y186.084 E37.61563
+      G1 X16.362 Y186.764 E38.12242
+      G1 X9.790 Y187.223 E38.63605
+      G1 X3.294 Y187.450 E39.14283
+      G1 X-0.002 Y187.479 E39.39978
+      G1 X-3.294 Y187.450 E39.65648
+      G1 X-9.810 Y187.223 E40.16479
+      G1 X-13.100 Y187.021 E40.42179
+      G1 X-19.575 Y186.454 E40.92858
+      G1 X-22.870 Y186.079 E41.18711
+      G1 X-29.307 Y185.174 E41.69390
+      G1 X-35.794 Y184.031 E42.20752
+      G1 X-42.152 Y182.679 E42.71431
+      G1 X-45.357 Y181.910 E42.97126
+      G1 X-51.655 Y180.223 E43.47963
+      G1 X-54.815 Y179.287 E43.73657
+      G1 X-61.017 Y177.272 E44.24495
+      G1 X-64.123 Y176.172 E44.50189
+      G1 X-67.207 Y175.019 E44.75859
+      G1 X-73.234 Y172.584 E45.26538
+      G1 X-79.252 Y169.905 E45.77900
+      G1 X-85.094 Y167.055 E46.28579
+      G1 X-88.035 Y165.524 E46.54432
+      G1 X-93.721 Y162.373 E47.05111
+      G1 X-96.560 Y160.700 E47.30805
+      G1 X-102.090 Y157.245 E47.81643
+      G1 X-104.838 Y155.427 E48.07337
+      G1 X-110.180 Y151.687 E48.58174
+      G1 X-112.829 Y149.727 E48.83869
+      G1 X-115.441 Y147.722 E49.09538
+      G1 X-120.493 Y143.631 E49.60218
+      G1 X-125.464 Y139.310 E50.11579
+      G1 X-130.218 Y134.876 E50.62259
+      G1 X-132.569 Y132.567 E50.87953
+      G1 X-137.099 Y127.877 E51.38790
+      G1 X-139.325 Y125.447 E51.64485
+      G1 X-141.507 Y122.981 E51.90154
+      G1 X-145.685 Y118.002 E52.40833
+      G1 X-149.741 Y112.810 E52.92195
+      G1 X-153.561 Y107.552 E53.42874
+      G1 X-155.440 Y104.819 E53.68727
+      G1 X-158.980 Y99.367 E54.19406
+      G1 X-160.702 Y96.558 E54.45101
+      G1 X-163.962 Y90.911 E54.95938
+      G1 X-165.535 Y88.015 E55.21632
+      G1 X-168.496 Y82.205 E55.72470
+      G1 X-169.915 Y79.231 E55.98164
+      G1 X-171.280 Y76.235 E56.23834
+      G1 X-173.819 Y70.251 E56.74513
+      G1 X-176.180 Y64.101 E57.25875
+      G1 X-178.297 Y57.955 E57.76554
+      G1 X-179.294 Y54.793 E58.02407
+      G1 X-181.085 Y48.544 E58.53086
+      G1 X-181.911 Y45.354 E58.78780
+      G1 X-183.378 Y39.001 E59.29618
+      G1 X-184.035 Y35.771 E59.55312
+      G1 X-185.168 Y29.350 E60.06149
+      G1 X-185.655 Y26.091 E60.31844
+      G1 X-186.084 Y22.826 E60.57513
+      G1 X-186.764 Y16.362 E61.08192
+      G1 X-187.223 Y9.790 E61.59554
+      G1 X-187.450 Y3.294 E62.10233
+      G1 X-187.479 Y-0.002 E62.35928
+      G1 X-187.450 Y-3.294 E62.61598
+      G1 X-187.223 Y-9.810 E63.12429
+      G1 X-187.021 Y-13.100 E63.38129
+      G1 X-186.454 Y-19.575 E63.88808
+      G1 X-186.079 Y-22.870 E64.14661
+      G1 X-185.174 Y-29.307 E64.65340
+      G1 X-184.031 Y-35.794 E65.16702
+      G1 X-182.679 Y-42.152 E65.67381
+      G1 X-181.910 Y-45.357 E65.93076
+      G1 X-180.223 Y-51.655 E66.43913
+      G1 X-179.287 Y-54.815 E66.69607
+      G1 X-177.272 Y-61.017 E67.20445
+      G1 X-176.172 Y-64.123 E67.46139
+      G1 X-175.019 Y-67.207 E67.71809
+      G1 X-172.584 Y-73.234 E68.22488
+      G1 X-169.905 Y-79.252 E68.73850
+      G1 X-167.055 Y-85.094 E69.24529
+      G1 X-165.524 Y-88.035 E69.50382
+      G1 X-162.373 Y-93.721 E70.01061
+      G1 X-160.700 Y-96.560 E70.26755
+      G1 X-157.245 Y-102.090 E70.77593
+      G1 X-155.427 Y-104.838 E71.03287
+      G1 X-151.687 Y-110.180 E71.54124
+      G1 X-149.727 Y-112.829 E71.79819
+      G1 X-147.722 Y-115.441 E72.05488
+      G1 X-143.631 Y-120.493 E72.56167
+      G1 X-139.310 Y-125.464 E73.07529
+      G1 X-134.876 Y-130.218 E73.58209
+      G1 X-132.567 Y-132.569 E73.83903
+      G1 X-127.877 Y-137.099 E74.34740
+      G1 X-125.447 Y-139.325 E74.60435
+      G1 X-122.981 Y-141.507 E74.86104
+      G1 X-118.002 Y-145.685 E75.36783
+      G1 X-112.810 Y-149.741 E75.88145
+      G1 X-107.552 Y-153.561 E76.38824
+      G1 X-104.819 Y-155.440 E76.64677
+      G1 X-99.367 Y-158.980 E77.15356
+      G1 X-96.558 Y-160.702 E77.41051
+      G1 X-90.911 Y-163.962 E77.91888
+      G1 X-88.015 Y-165.535 E78.17582
+      G1 X-82.205 Y-168.496 E78.68420
+      G1 X-79.231 Y-169.915 E78.94114
+      G1 X-76.235 Y-171.280 E79.19784
+      G1 X-70.251 Y-173.819 E79.70463
+      G1 X-64.101 Y-176.180 E80.21825
+      G1 X-57.955 Y-178.297 E80.72504
+      G1 X-54.793 Y-179.294 E80.98356
+      G1 X-48.544 Y-181.085 E81.49036
+      G1 X-45.354 Y-181.911 E81.74730
+      G1 X-39.001 Y-183.378 E82.25568
+      G1 X-35.771 Y-184.035 E82.51262
+      G1 X-29.350 Y-185.168 E83.02099
+      G1 X-26.091 Y-185.655 E83.27794
+      G1 X-22.826 Y-186.084 E83.53463
+      G1 X-16.362 Y-186.764 E84.04142
+      G1 X-9.790 Y-187.223 E84.55504
+      G1 X-3.294 Y-187.450 E85.06183
+      G1 X0.006 Y-187.479 E85.31908
+      G1 X6.521 Y-187.366 E85.82715
+      G1 X9.810 Y-187.223 E86.08379
+      G1 X13.100 Y-187.021 E86.34079
+      G1 X19.575 Y-186.454 E86.84758
+      G1 X22.870 Y-186.079 E87.10611
+      G1 X29.307 Y-185.174 E87.61290
+      G1 X35.794 Y-184.031 E88.12652
+      G1 X42.152 Y-182.679 E88.63331
+      G1 X45.357 Y-181.910 E88.89025
+      G1 X51.655 Y-180.223 E89.39863
+      G1 X54.815 Y-179.287 E89.65557
+      G1 X61.017 Y-177.272 E90.16395
+      G1 X64.123 Y-176.172 E90.42089
+      G1 X67.207 Y-175.019 E90.67759
+      G1 X73.234 Y-172.584 E91.18438
+      G1 X79.252 Y-169.905 E91.69800
+      G1 X85.094 Y-167.055 E92.20479
+      G1 X88.035 Y-165.524 E92.46332
+      G1 X93.721 Y-162.373 E92.97011
+      G1 X96.560 Y-160.700 E93.22705
+      G1 X102.090 Y-157.245 E93.73543
+      G1 X104.838 Y-155.427 E93.99237
+      G1 X110.180 Y-151.687 E94.50074
+      G1 X112.829 Y-149.727 E94.75768
+      G1 X115.441 Y-147.722 E95.01438
+      G1 X120.493 Y-143.631 E95.52117
+      G1 X122.911 Y-141.529 E95.77098
+
+      ; end preskirt
+      ; start_gcode | end
+    end_gcode: |
+      ; end_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; use relative positioning
+
+      G91
+
+      ; retract the filament a bit before lifting the nozzle to release some of the pressure
+
+      G1 E-1 F300
+
+      ; home
+
+      G28
+
+      ; use absolute positioning
+
+      G90
+
+      ; cooldown
+
+      M104 S0
+      M140 S0
+
+      ; end_gcode | end
+    before_layer_gcode: ''
+    layer_gcode: ''
+    toolchange_gcode: ''
+    between_objects_gcode: ''
+    machine_max_acceleration_e:
+    - 3000.0
+    machine_max_acceleration_extruding:
+    - 1000.0
+    machine_max_acceleration_retracting:
+    - 1000.0
+    machine_max_acceleration_x:
+    - 1500.0
+    machine_max_acceleration_y:
+    - 1500.0
+    machine_max_acceleration_z:
+    - 1500.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 200.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.24mm 0.8 nozzle DETAILED QUALITY @PREDATOR
+- condition: tool.nozzle_diameter == 0.8
+  name: Anycubic Predator 0.8 nozzle
+  id: c5qpAEnWVVqn8IhVxP/kfg
+  values:
+    thumbnails: 16x16,220x124
+    bed_shape:
+    - 188.779x16.516
+    - 186.621x32.9063
+    - 183.043x49.0462
+    - 178.072x64.8128
+    - 171.745x80.0862
+    - 164.112x94.75
+    - 155.229x108.693
+    - 145.165x121.808
+    - 133.997x133.997
+    - 121.808x145.165
+    - 108.693x155.229
+    - 94.75x164.112
+    - 80.0862x171.745
+    - 64.8128x178.072
+    - 49.0462x183.043
+    - 32.9063x186.621
+    - 16.516x188.779
+    - 1.16035e-14x189.5
+    - -16.516x188.779
+    - -32.9063x186.621
+    - -49.0462x183.043
+    - -64.8128x178.072
+    - -80.0862x171.745
+    - -94.75x164.112
+    - -108.693x155.229
+    - -121.808x145.165
+    - -133.997x133.997
+    - -145.165x121.808
+    - -155.229x108.693
+    - -164.112x94.75
+    - -171.745x80.0862
+    - -178.072x64.8128
+    - -183.043x49.0462
+    - -186.621x32.9063
+    - -188.779x16.516
+    - -189.5x2.32071e-14
+    - -188.779x-16.516
+    - -186.621x-32.9063
+    - -183.043x-49.0462
+    - -178.072x-64.8128
+    - -171.745x-80.0862
+    - -164.112x-94.75
+    - -155.229x-108.693
+    - -145.165x-121.808
+    - -133.997x-133.997
+    - -121.808x-145.165
+    - -108.693x-155.229
+    - -94.75x-164.112
+    - -80.0862x-171.745
+    - -64.8128x-178.072
+    - -49.0462x-183.043
+    - -32.9063x-186.621
+    - -16.516x-188.779
+    - -3.48106e-14x-189.5
+    - 16.516x-188.779
+    - 32.9063x-186.621
+    - 49.0462x-183.043
+    - 64.8128x-178.072
+    - 80.0862x-171.745
+    - 94.75x-164.112
+    - 108.693x-155.229
+    - 121.808x-145.165
+    - 133.997x-133.997
+    - 145.165x-121.808
+    - 155.229x-108.693
+    - 164.112x-94.75
+    - 171.745x-80.0862
+    - 178.072x-64.8128
+    - 183.043x-49.0462
+    - 186.621x-32.9063
+    - 188.779x-16.516
+    - 189.5x-4.64141e-14
+    max_print_height: 445.0
+    z_offset: 0.0
+    single_extruder_multi_material: false
+    gcode_flavor: reprap
+    silent_mode: false
+    remaining_times: false
+    use_relative_e_distances: false
+    use_firmware_retraction: false
+    use_volumetric_e: false
+    variable_layer_height: true
+    start_gcode: |-
+      ; start_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; set metric values
+
+      G21
+
+      ; use absolute positioning
+
+      G90
+
+      ; set extruder to absolute mode
+
+      M82
+
+      ; start with fan off
+
+      M107
+
+      ; set temps
+
+      M104 S[first_layer_temperature]
+      M140 S[first_layer_bed_temperature]
+
+      ; home xy
+
+      G28 X0 Y0
+
+      ; home z
+
+      G28 Z0
+
+      ; move the head down to Z 94mm
+
+      G1 Z94.0 F2394
+
+      ; set and wait for temps
+
+      M109 S[first_layer_temperature]
+      M190 S[first_layer_bed_temperature]
+
+      ; zero the extruded length
+
+      G92 E0
+
+      ; extrude 3mm of feed stock
+
+      G1 F200 E3
+
+      ; zero the extruded length again
+
+      G92 E0
+
+      ; set speed
+
+      G1 F{travel_speed}
+
+      ; print preskirt
+
+      G92 E0
+      G1 E3.94000 F2520.00000
+
+      G1 X125.464 Y-139.310
+      G1 Z0.329 F3994.000
+
+      G1 F994.000
+
+      G1 X125.464 Y-139.310 E4.19679
+      G1 X130.218 Y-134.876 E4.70359
+      G1 X132.569 Y-132.567 E4.96053
+      G1 X137.099 Y-127.877 E5.46890
+      G1 X139.325 Y-125.447 E5.72585
+      G1 X141.507 Y-122.981 E5.98254
+      G1 X145.685 Y-118.002 E6.48934
+      G1 X149.741 Y-112.810 E7.00296
+      G1 X153.561 Y-107.552 E7.50975
+      G1 X155.440 Y-104.819 E7.76827
+      G1 X158.980 Y-99.367 E8.27506
+      G1 X160.702 Y-96.558 E8.53201
+      G1 X163.962 Y-90.911 E9.04038
+      G1 X165.535 Y-88.015 E9.29732
+      G1 X168.496 Y-82.205 E9.80570
+      G1 X169.915 Y-79.231 E10.06264
+      G1 X171.280 Y-76.235 E10.31934
+      G1 X173.819 Y-70.251 E10.82613
+      G1 X176.180 Y-64.101 E11.33975
+      G1 X178.297 Y-57.955 E11.84654
+      G1 X179.294 Y-54.793 E12.10507
+      G1 X181.085 Y-48.544 E12.61186
+      G1 X181.911 Y-45.354 E12.86880
+      G1 X183.378 Y-39.001 E13.37718
+      G1 X184.035 Y-35.771 E13.63412
+      G1 X185.168 Y-29.350 E14.14250
+      G1 X185.655 Y-26.091 E14.39944
+      G1 X186.084 Y-22.826 E14.65614
+      G1 X186.764 Y-16.362 E15.16293
+      G1 X187.223 Y-9.790 E15.67655
+      G1 X187.450 Y-3.294 E16.18334
+      G1 X187.479 Y0.002 E16.44028
+      G1 X187.450 Y3.294 E16.69698
+      G1 X187.223 Y9.810 E17.20529
+      G1 X187.021 Y13.100 E17.46229
+      G1 X186.454 Y19.575 E17.96909
+      G1 X186.079 Y22.870 E18.22761
+      G1 X185.174 Y29.307 E18.73440
+      G1 X184.031 Y35.794 E19.24802
+      G1 X182.679 Y42.152 E19.75481
+      G1 X181.910 Y45.357 E20.01176
+      G1 X180.223 Y51.655 E20.52013
+      G1 X179.287 Y54.815 E20.77708
+      G1 X177.272 Y61.017 E21.28545
+      G1 X176.172 Y64.123 E21.54239
+      G1 X175.019 Y67.207 E21.79909
+      G1 X172.584 Y73.234 E22.30588
+      G1 X169.905 Y79.252 E22.81950
+      G1 X167.055 Y85.094 E23.32629
+      G1 X165.524 Y88.035 E23.58482
+      G1 X162.373 Y93.721 E24.09161
+      G1 X160.700 Y96.560 E24.34855
+      G1 X157.245 Y102.090 E24.85693
+      G1 X155.427 Y104.838 E25.11387
+      G1 X151.687 Y110.180 E25.62225
+      G1 X149.727 Y112.829 E25.87919
+      G1 X147.722 Y115.441 E26.13588
+      G1 X143.631 Y120.493 E26.64268
+      G1 X139.310 Y125.464 E27.15629
+      G1 X134.876 Y130.218 E27.66309
+      G1 X132.567 Y132.569 E27.92003
+      G1 X127.877 Y137.099 E28.42840
+      G1 X125.447 Y139.325 E28.68535
+      G1 X122.981 Y141.507 E28.94204
+      G1 X118.002 Y145.685 E29.44883
+      G1 X112.810 Y149.741 E29.96245
+      G1 X107.552 Y153.561 E30.46924
+      G1 X104.819 Y155.440 E30.72777
+      G1 X99.367 Y158.980 E31.23456
+      G1 X96.558 Y160.702 E31.49151
+      G1 X90.911 Y163.962 E31.99988
+      G1 X88.015 Y165.535 E32.25682
+      G1 X82.205 Y168.496 E32.76520
+      G1 X79.231 Y169.915 E33.02214
+      G1 X76.235 Y171.280 E33.27884
+      G1 X70.251 Y173.819 E33.78563
+      G1 X64.101 Y176.180 E34.29925
+      G1 X57.955 Y178.297 E34.80604
+      G1 X54.793 Y179.294 E35.06457
+      G1 X48.544 Y181.085 E35.57136
+      G1 X45.354 Y181.911 E35.82830
+      G1 X39.001 Y183.378 E36.33668
+      G1 X35.771 Y184.035 E36.59362
+      G1 X29.350 Y185.168 E37.10200
+      G1 X26.091 Y185.655 E37.35894
+      G1 X22.826 Y186.084 E37.61563
+      G1 X16.362 Y186.764 E38.12242
+      G1 X9.790 Y187.223 E38.63605
+      G1 X3.294 Y187.450 E39.14283
+      G1 X-0.002 Y187.479 E39.39978
+      G1 X-3.294 Y187.450 E39.65648
+      G1 X-9.810 Y187.223 E40.16479
+      G1 X-13.100 Y187.021 E40.42179
+      G1 X-19.575 Y186.454 E40.92858
+      G1 X-22.870 Y186.079 E41.18711
+      G1 X-29.307 Y185.174 E41.69390
+      G1 X-35.794 Y184.031 E42.20752
+      G1 X-42.152 Y182.679 E42.71431
+      G1 X-45.357 Y181.910 E42.97126
+      G1 X-51.655 Y180.223 E43.47963
+      G1 X-54.815 Y179.287 E43.73657
+      G1 X-61.017 Y177.272 E44.24495
+      G1 X-64.123 Y176.172 E44.50189
+      G1 X-67.207 Y175.019 E44.75859
+      G1 X-73.234 Y172.584 E45.26538
+      G1 X-79.252 Y169.905 E45.77900
+      G1 X-85.094 Y167.055 E46.28579
+      G1 X-88.035 Y165.524 E46.54432
+      G1 X-93.721 Y162.373 E47.05111
+      G1 X-96.560 Y160.700 E47.30805
+      G1 X-102.090 Y157.245 E47.81643
+      G1 X-104.838 Y155.427 E48.07337
+      G1 X-110.180 Y151.687 E48.58174
+      G1 X-112.829 Y149.727 E48.83869
+      G1 X-115.441 Y147.722 E49.09538
+      G1 X-120.493 Y143.631 E49.60218
+      G1 X-125.464 Y139.310 E50.11579
+      G1 X-130.218 Y134.876 E50.62259
+      G1 X-132.569 Y132.567 E50.87953
+      G1 X-137.099 Y127.877 E51.38790
+      G1 X-139.325 Y125.447 E51.64485
+      G1 X-141.507 Y122.981 E51.90154
+      G1 X-145.685 Y118.002 E52.40833
+      G1 X-149.741 Y112.810 E52.92195
+      G1 X-153.561 Y107.552 E53.42874
+      G1 X-155.440 Y104.819 E53.68727
+      G1 X-158.980 Y99.367 E54.19406
+      G1 X-160.702 Y96.558 E54.45101
+      G1 X-163.962 Y90.911 E54.95938
+      G1 X-165.535 Y88.015 E55.21632
+      G1 X-168.496 Y82.205 E55.72470
+      G1 X-169.915 Y79.231 E55.98164
+      G1 X-171.280 Y76.235 E56.23834
+      G1 X-173.819 Y70.251 E56.74513
+      G1 X-176.180 Y64.101 E57.25875
+      G1 X-178.297 Y57.955 E57.76554
+      G1 X-179.294 Y54.793 E58.02407
+      G1 X-181.085 Y48.544 E58.53086
+      G1 X-181.911 Y45.354 E58.78780
+      G1 X-183.378 Y39.001 E59.29618
+      G1 X-184.035 Y35.771 E59.55312
+      G1 X-185.168 Y29.350 E60.06149
+      G1 X-185.655 Y26.091 E60.31844
+      G1 X-186.084 Y22.826 E60.57513
+      G1 X-186.764 Y16.362 E61.08192
+      G1 X-187.223 Y9.790 E61.59554
+      G1 X-187.450 Y3.294 E62.10233
+      G1 X-187.479 Y-0.002 E62.35928
+      G1 X-187.450 Y-3.294 E62.61598
+      G1 X-187.223 Y-9.810 E63.12429
+      G1 X-187.021 Y-13.100 E63.38129
+      G1 X-186.454 Y-19.575 E63.88808
+      G1 X-186.079 Y-22.870 E64.14661
+      G1 X-185.174 Y-29.307 E64.65340
+      G1 X-184.031 Y-35.794 E65.16702
+      G1 X-182.679 Y-42.152 E65.67381
+      G1 X-181.910 Y-45.357 E65.93076
+      G1 X-180.223 Y-51.655 E66.43913
+      G1 X-179.287 Y-54.815 E66.69607
+      G1 X-177.272 Y-61.017 E67.20445
+      G1 X-176.172 Y-64.123 E67.46139
+      G1 X-175.019 Y-67.207 E67.71809
+      G1 X-172.584 Y-73.234 E68.22488
+      G1 X-169.905 Y-79.252 E68.73850
+      G1 X-167.055 Y-85.094 E69.24529
+      G1 X-165.524 Y-88.035 E69.50382
+      G1 X-162.373 Y-93.721 E70.01061
+      G1 X-160.700 Y-96.560 E70.26755
+      G1 X-157.245 Y-102.090 E70.77593
+      G1 X-155.427 Y-104.838 E71.03287
+      G1 X-151.687 Y-110.180 E71.54124
+      G1 X-149.727 Y-112.829 E71.79819
+      G1 X-147.722 Y-115.441 E72.05488
+      G1 X-143.631 Y-120.493 E72.56167
+      G1 X-139.310 Y-125.464 E73.07529
+      G1 X-134.876 Y-130.218 E73.58209
+      G1 X-132.567 Y-132.569 E73.83903
+      G1 X-127.877 Y-137.099 E74.34740
+      G1 X-125.447 Y-139.325 E74.60435
+      G1 X-122.981 Y-141.507 E74.86104
+      G1 X-118.002 Y-145.685 E75.36783
+      G1 X-112.810 Y-149.741 E75.88145
+      G1 X-107.552 Y-153.561 E76.38824
+      G1 X-104.819 Y-155.440 E76.64677
+      G1 X-99.367 Y-158.980 E77.15356
+      G1 X-96.558 Y-160.702 E77.41051
+      G1 X-90.911 Y-163.962 E77.91888
+      G1 X-88.015 Y-165.535 E78.17582
+      G1 X-82.205 Y-168.496 E78.68420
+      G1 X-79.231 Y-169.915 E78.94114
+      G1 X-76.235 Y-171.280 E79.19784
+      G1 X-70.251 Y-173.819 E79.70463
+      G1 X-64.101 Y-176.180 E80.21825
+      G1 X-57.955 Y-178.297 E80.72504
+      G1 X-54.793 Y-179.294 E80.98356
+      G1 X-48.544 Y-181.085 E81.49036
+      G1 X-45.354 Y-181.911 E81.74730
+      G1 X-39.001 Y-183.378 E82.25568
+      G1 X-35.771 Y-184.035 E82.51262
+      G1 X-29.350 Y-185.168 E83.02099
+      G1 X-26.091 Y-185.655 E83.27794
+      G1 X-22.826 Y-186.084 E83.53463
+      G1 X-16.362 Y-186.764 E84.04142
+      G1 X-9.790 Y-187.223 E84.55504
+      G1 X-3.294 Y-187.450 E85.06183
+      G1 X0.006 Y-187.479 E85.31908
+      G1 X6.521 Y-187.366 E85.82715
+      G1 X9.810 Y-187.223 E86.08379
+      G1 X13.100 Y-187.021 E86.34079
+      G1 X19.575 Y-186.454 E86.84758
+      G1 X22.870 Y-186.079 E87.10611
+      G1 X29.307 Y-185.174 E87.61290
+      G1 X35.794 Y-184.031 E88.12652
+      G1 X42.152 Y-182.679 E88.63331
+      G1 X45.357 Y-181.910 E88.89025
+      G1 X51.655 Y-180.223 E89.39863
+      G1 X54.815 Y-179.287 E89.65557
+      G1 X61.017 Y-177.272 E90.16395
+      G1 X64.123 Y-176.172 E90.42089
+      G1 X67.207 Y-175.019 E90.67759
+      G1 X73.234 Y-172.584 E91.18438
+      G1 X79.252 Y-169.905 E91.69800
+      G1 X85.094 Y-167.055 E92.20479
+      G1 X88.035 Y-165.524 E92.46332
+      G1 X93.721 Y-162.373 E92.97011
+      G1 X96.560 Y-160.700 E93.22705
+      G1 X102.090 Y-157.245 E93.73543
+      G1 X104.838 Y-155.427 E93.99237
+      G1 X110.180 Y-151.687 E94.50074
+      G1 X112.829 Y-149.727 E94.75768
+      G1 X115.441 Y-147.722 E95.01438
+      G1 X120.493 Y-143.631 E95.52117
+      G1 X122.911 Y-141.529 E95.77098
+
+      ; end preskirt
+      ; start_gcode | end
+    end_gcode: |
+      ; end_gcode | start
+
+      ; v11 2020-11-14_11-27 tillverka
+
+      ; use relative positioning
+
+      G91
+
+      ; retract the filament a bit before lifting the nozzle to release some of the pressure
+
+      G1 E-1 F300
+
+      ; home
+
+      G28
+
+      ; use absolute positioning
+
+      G90
+
+      ; cooldown
+
+      M104 S0
+      M140 S0
+
+      ; end_gcode | end
+    before_layer_gcode: ''
+    layer_gcode: ''
+    toolchange_gcode: ''
+    between_objects_gcode: ''
+    machine_max_acceleration_e:
+    - 3000.0
+    machine_max_acceleration_extruding:
+    - 1000.0
+    machine_max_acceleration_retracting:
+    - 1000.0
+    machine_max_acceleration_x:
+    - 1500.0
+    machine_max_acceleration_y:
+    - 1500.0
+    machine_max_acceleration_z:
+    - 1500.0
+    machine_max_feedrate_e:
+    - 60.0
+    machine_max_feedrate_x:
+    - 200.0
+    machine_max_feedrate_y:
+    - 200.0
+    machine_max_feedrate_z:
+    - 200.0
+    machine_max_jerk_e:
+    - 5.0
+    machine_max_jerk_x:
+    - 5.0
+    machine_max_jerk_y:
+    - 5.0
+    machine_max_jerk_z:
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    extruder_clearance_height: 25.0
+    extruder_clearance_radius: 45.0
+    default_print: 0.24mm 0.8 nozzle DETAILED QUALITY @PREDATOR

@@ -6,4 +6,12 @@
     "url": "http://localhost:8000/prusa-research-fff/",
     "index_url": "http://localhost:8000/prusa-research-fff/vendor_indices.zip",
     "selected": true
+},{
+    "name": "Community FFF",
+    "description": "Non-Prusa FFF printers converted from PrusaSlicer 2.9 vendor bundles",
+    "visibility": "",
+    "id": "nps-community-fff",
+    "url": "http://localhost:8000/nps-community-fff/",
+    "index_url": "http://localhost:8000/nps-community-fff/vendor_indices.zip",
+    "selected": true
 }]

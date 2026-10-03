@@ -1,0 +1,392 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*E2D i311*'
+condition: printer.model == "i311"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: E2D i311 0.4 nozzle
+  id: Gfdle71ZWW+lQdkwRjs88g
+  values:
+    gcode_flavor: marlin2
+    silent_mode: true
+    variable_layer_height: true
+    before_layer_gcode: |+
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    extruder_clearance_radius: 40.0
+    extruder_clearance_height: 20.0
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    max_print_height: 200.0
+    machine_max_feedrate_x:
+    - 200.0
+    - 150.0
+    machine_max_feedrate_y:
+    - 200.0
+    - 150.0
+    machine_max_feedrate_z:
+    - 8.0
+    - 8.0
+    machine_max_feedrate_e:
+    - 20.0
+    - 20.0
+    machine_max_acceleration_x:
+    - 2000.0
+    - 1500.0
+    machine_max_acceleration_y:
+    - 2000.0
+    - 2500.0
+    machine_max_acceleration_z:
+    - 100.0
+    - 100.0
+    machine_max_acceleration_e:
+    - 4000.0
+    - 2500.0
+    machine_max_acceleration_extruding:
+    - 1200.0
+    - 1200.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 20000.0
+    machine_max_acceleration_travel:
+    - 4000.0
+    - 2500.0
+    machine_max_jerk_x:
+    - 10.0
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    - 10.0
+    machine_max_jerk_z:
+    - 0.3
+    - 0.3
+    machine_max_jerk_e:
+    - 5.0
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G29; Detailed Z-Probe
+      ;M420 S1; Bed Leveling State
+      G1 Z3 F240
+      G1 X-5 Y2 F3000
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      ;
+      ; Extrude purge line
+      ;
+      G92 E0 ; reset extruder position
+      G1 E{(filament_type[0] == "FLEX" ? 4 : 2)} F2400 ; deretraction after the initial one before nozzle cleaning
+      G0 E7 X15 Z0.2 F500 ; purge
+      G0 X25 E4 F500 ; purge
+      G0 X35 E4 F650 ; purge
+      G0 X45 E4 F800 ; purge
+      G0 X{45 + 3} Z{0.05} F{8000} ; wipe, move close to the bed
+      G0 X{45 + 3 * 2} Z0.2 F{8000} ; wipe, move quickly away from the bed
+
+      G92 E0
+      M221 S100 ; set flow to 100%
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+10, max_print_height)} F600{endif} ; Move print head up
+      G27 ; present print
+      G1 E-6 F300  ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+      M84 X Y E ; disable motors
+    use_relative_e_distances: true
+    default_print: 0.20mm NORMAL i311
+- condition: tool.nozzle_diameter == 0.3
+  name: E2D i311 0.3 nozzle
+  id: cNPLqgNeV+WMzdwv9Yv5iA
+  values:
+    gcode_flavor: marlin2
+    silent_mode: true
+    variable_layer_height: true
+    before_layer_gcode: |+
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    extruder_clearance_radius: 40.0
+    extruder_clearance_height: 20.0
+    bed_shape:
+    - '0x0'
+    - 220x0
+    - 220x220
+    - '0x220'
+    max_print_height: 200.0
+    machine_max_feedrate_x:
+    - 200.0
+    - 150.0
+    machine_max_feedrate_y:
+    - 200.0
+    - 150.0
+    machine_max_feedrate_z:
+    - 8.0
+    - 8.0
+    machine_max_feedrate_e:
+    - 20.0
+    - 20.0
+    machine_max_acceleration_x:
+    - 2000.0
+    - 1500.0
+    machine_max_acceleration_y:
+    - 2000.0
+    - 2500.0
+    machine_max_acceleration_z:
+    - 100.0
+    - 100.0
+    machine_max_acceleration_e:
+    - 4000.0
+    - 2500.0
+    machine_max_acceleration_extruding:
+    - 1200.0
+    - 1200.0
+    machine_max_acceleration_retracting:
+    - 10000.0
+    - 20000.0
+    machine_max_acceleration_travel:
+    - 4000.0
+    - 2500.0
+    machine_max_jerk_x:
+    - 10.0
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    - 10.0
+    machine_max_jerk_z:
+    - 0.3
+    - 0.3
+    machine_max_jerk_e:
+    - 5.0
+    - 5.0
+    machine_min_extruding_rate:
+    - 0.0
+    - 0.0
+    machine_min_travel_rate:
+    - 0.0
+    - 0.0
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G29; Detailed Z-Probe
+      ;M420 S1; Bed Leveling State
+      G1 Z3 F240
+      G1 X-5 Y2 F3000
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      ;
+      ; Extrude purge line
+      ;
+      G92 E0 ; reset extruder position
+      G1 E{(filament_type[0] == "FLEX" ? 4 : 2)} F2400 ; deretraction after the initial one before nozzle cleaning
+      G0 E7 X15 Z0.2 F500 ; purge
+      G0 X25 E4 F500 ; purge
+      G0 X35 E4 F650 ; purge
+      G0 X45 E4 F800 ; purge
+      G0 X{45 + 3} Z{0.05} F{8000} ; wipe, move close to the bed
+      G0 X{45 + 3 * 2} Z0.2 F{8000} ; wipe, move quickly away from the bed
+
+      G92 E0
+      M221 S100 ; set flow to 100%
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+10, max_print_height)} F600{endif} ; Move print head up
+      G27 ; present print
+      G1 E-6 F300  ;retract the filament a bit before lifting the nozzle, to release some of the pressure
+      M84 X Y E ; disable motors
+    use_relative_e_distances: true
+    default_print: 0.20mm NORMAL @0.30 nozzle i311
+---
+kind: printer
+id: '*E2D i310*'
+condition: printer.model == "i310"
+variants:
+- condition: tool.nozzle_diameter == 0.4
+  name: E2D i310 0.4 nozzle
+  id: N8KPL9foWKmKfCBbw3+F6Q
+  values:
+    gcode_flavor: marlin2
+    silent_mode: false
+    variable_layer_height: true
+    before_layer_gcode: |+
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    extruder_clearance_radius: 40.0
+    extruder_clearance_height: 20.0
+    bed_shape:
+    - '0x0'
+    - 200x0
+    - 200x200
+    - '0x200'
+    max_print_height: 200.0
+    machine_max_feedrate_x:
+    - 185.0
+    machine_max_feedrate_y:
+    - 185.0
+    machine_max_feedrate_z:
+    - 9.0
+    machine_max_feedrate_e:
+    - 20.0
+    machine_max_acceleration_x:
+    - 3000.0
+    machine_max_acceleration_y:
+    - 3000.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_acceleration_e:
+    - 600.0
+    machine_max_acceleration_extruding:
+    - 600.0
+    machine_max_acceleration_retracting:
+    - 600.0
+    machine_max_acceleration_travel:
+    - 3000.0
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.3
+    machine_max_jerk_e:
+    - 5.0
+    use_relative_e_distances: true
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G29; Detailed Z-Probe
+      G1 Z3 F240
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G1 X2 Y10 F3000
+      G1 Z0.28 F240
+      G92 E0.0
+      G1 Y190 E15.0 F1500.0 ; intro line
+      G1 X2.3 F5000
+      G1 Y10 E30 F1200.0 ; intro line
+      G92 E0.0
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+10, max_print_height)} F600{endif} ; Move print head up
+      G1 X0 Y200 F3000 ; present print
+      M84 X Y E ; disable motors
+    default_print: 0.20mm NORMAL i310
+- condition: tool.nozzle_diameter == 0.3
+  name: E2D i310 0.3 nozzle
+  id: wtpTwyboUpSzi55mGHeAOw
+  values:
+    gcode_flavor: marlin2
+    silent_mode: false
+    variable_layer_height: true
+    before_layer_gcode: |+
+      ;BEFORE_LAYER_CHANGE
+      G92 E0.0
+      ;[layer_z]
+
+    layer_gcode: |-
+      ;AFTER_LAYER_CHANGE
+      ;[layer_z]
+    machine_limits_usage: time_estimate_only
+    extruder_clearance_radius: 40.0
+    extruder_clearance_height: 20.0
+    bed_shape:
+    - '0x0'
+    - 200x0
+    - 200x200
+    - '0x200'
+    max_print_height: 200.0
+    machine_max_feedrate_x:
+    - 185.0
+    machine_max_feedrate_y:
+    - 185.0
+    machine_max_feedrate_z:
+    - 9.0
+    machine_max_feedrate_e:
+    - 20.0
+    machine_max_acceleration_x:
+    - 3000.0
+    machine_max_acceleration_y:
+    - 3000.0
+    machine_max_acceleration_z:
+    - 100.0
+    machine_max_acceleration_e:
+    - 600.0
+    machine_max_acceleration_extruding:
+    - 600.0
+    machine_max_acceleration_retracting:
+    - 600.0
+    machine_max_acceleration_travel:
+    - 3000.0
+    machine_max_jerk_x:
+    - 10.0
+    machine_max_jerk_y:
+    - 10.0
+    machine_max_jerk_z:
+    - 0.3
+    machine_max_jerk_e:
+    - 5.0
+    use_relative_e_distances: true
+    start_gcode: |-
+      G90 ; use absolute coordinates
+      M83 ; extruder relative mode
+      M104 S[first_layer_temperature] ; set extruder temp
+      M140 S[first_layer_bed_temperature] ; set bed temp
+      G28 ; home all
+      G29; Detailed Z-Probe
+      G1 Z3 F240
+      M190 S[first_layer_bed_temperature] ; wait for bed temp
+      M109 S[first_layer_temperature] ; wait for extruder temp
+      G1 X2 Y10 F3000
+      G1 Z0.28 F240
+      G92 E0.0
+      G1 Y190 E15.0 F1500.0 ; intro line
+      G1 X2.3 F5000
+      G1 Y10 E30 F1200.0 ; intro line
+      G92 E0.0
+    end_gcode: |-
+      M104 S0 ; turn off temperature
+      M140 S0 ; turn off heatbed
+      M107 ; turn off fan
+      {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+10, max_print_height)} F600{endif} ; Move print head up
+      G1 X0 Y200 F3000 ; present print
+      M84 X Y E ; disable motors
+    default_print: 0.20mm DRAFT @0.30 nozzle i310

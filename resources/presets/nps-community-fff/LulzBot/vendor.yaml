@@ -1,0 +1,90 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: LulzBot
+name: LulzBot
+version: 1.0.0
+features:
+  printer:
+    supports_05_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Mini Aero
+  base_model: Mini Aero
+  printer_configs_order:
+  - mini_aero
+- label: Taz6 Aero
+  base_model: Taz6 Aero
+  printer_configs_order:
+  - taz6_aero
+---
+kind: printer
+technology: FFF
+name: Mini Aero
+id: MINI_AERO
+model:
+  base_model: Mini Aero
+  model: MINI_AERO
+tool_count: 1
+features:
+  supports_05_nozzle:
+    default: true
+visual:
+  thumbnail: MINI_AERO_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Taz6 Aero
+id: TAZ6_AERO
+model:
+  base_model: Taz6 Aero
+  model: TAZ6_AERO
+tool_count: 1
+features:
+  supports_05_nozzle:
+    default: true
+visual:
+  thumbnail: TAZ6_AERO_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+condition: printer.supports_05_nozzle
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: mini_aero
+name: Mini Aero
+printer: MINI_AERO
+legacy_printer_model:
+- MINI_AERO
+tools:
+- tool: '0.5'
+sheet: default
+---
+kind: printer_config
+id: taz6_aero
+name: Taz6 Aero
+printer: TAZ6_AERO
+legacy_printer_model:
+- TAZ6_AERO
+tools:
+- tool: '0.5'
+sheet: default

@@ -1,0 +1,30 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: printer
+id: '*Print4Taste MC2.0*'
+condition: printer.model == "MC2.0"
+variants:
+- condition: tool.nozzle_diameter == 1
+  name: mycusini 2.0
+  id: fW0F/koHXpy1PHj1txLCCg
+  values:
+    bed_shape:
+    - 5x2.5
+    - 105x2.5
+    - 105x112.5
+    - 5x112.5
+    color_change_gcode: ''
+    end_gcode: |-
+      M83 ;Relative mode to retract
+      G1 F2400 E-0.1 ;Retract
+      M84 ;Back to absolute mode after retract
+      G0 F2400 X90 Y55 Z45 ;Park
+    max_print_height: 45.0
+    pause_print_gcode: ''
+    start_gcode: |-
+      G1 F2400 E-0.3 ;Retract
+      G0 F2400 X100 Y55 Z20.7 ;Full coordinates to prevent ramming down
+      G0 F2400 X100 Y40 Z0.5 ;Start purge line
+      G0 F570 X100 Y10 Z0.5 E0.025 ;Purge slightly more, should make a line only a few mm long
+    extruder_clearance_height: 45.0
+    extruder_clearance_radius: 40.0
+    default_print: 0.50mm SOLID @MC2.0

@@ -1,0 +1,261 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: Anycubic
+name: Anycubic
+version: 2.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+    supports_06_nozzle:
+      default: false
+      user_editable: false
+    supports_08_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: KOSSEL
+  base_model: KOSSEL
+  printer_configs_order:
+  - aklp
+  - ak
+- label: MEGA
+  base_model: MEGA
+  printer_configs_order:
+  - mega0
+  - i3mega
+  - i3megas
+- label: 4Max
+  base_model: 4Max
+  printer_configs_order:
+  - 4maxpro20
+- label: PREDATOR
+  base_model: PREDATOR
+  printer_configs_order:
+  - predator
+---
+kind: printer
+technology: FFF
+name: Anycubic Kossel Linear Plus
+id: AKLP
+model:
+  base_model: KOSSEL
+  model: AKLP
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: AKLP_Bed.stl
+  bed_texture: AK.svg
+  thumbnail: AKLP_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic Kossel Pulley (Linear)
+id: AK
+model:
+  base_model: KOSSEL
+  model: AK
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: AK_Bed.stl
+  bed_texture: AK.svg
+  thumbnail: AK_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic Mega Zero
+id: MEGA0
+model:
+  base_model: MEGA
+  model: MEGA0
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: mega0_bed.stl
+  bed_texture: mega0.svg
+  thumbnail: MEGA0_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic i3 Mega
+id: I3MEGA
+model:
+  base_model: MEGA
+  model: I3MEGA
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: i3megas_bed.stl
+  bed_texture: i3megas.svg
+  thumbnail: I3MEGA_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic i3 Mega S
+id: I3MEGAS
+model:
+  base_model: MEGA
+  model: I3MEGAS
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: i3megas_bed.stl
+  bed_texture: i3megas.svg
+  thumbnail: I3MEGAS_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic 4Max Pro 2.0
+id: 4MAXPRO20
+model:
+  base_model: 4Max
+  model: 4MAXPRO20
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  bed_model: 4MAXPRO20_bed.stl
+  bed_texture: 4MAXPRO20_texture.svg
+  thumbnail: 4MAXPRO20_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: Anycubic Predator
+id: PREDATOR
+model:
+  base_model: PREDATOR
+  model: PREDATOR
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+  supports_06_nozzle:
+    default: true
+  supports_08_nozzle:
+    default: true
+visual:
+  thumbnail: PREDATOR_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+condition: printer.supports_06_nozzle
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+condition: printer.supports_08_nozzle
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: aklp
+name: Anycubic Kossel Linear Plus
+printer: AKLP
+legacy_printer_model:
+- AKLP
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: ak
+name: Anycubic Kossel Pulley (Linear)
+printer: AK
+legacy_printer_model:
+- AK
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: mega0
+name: Anycubic Mega Zero
+printer: MEGA0
+legacy_printer_model:
+- MEGA0
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i3mega
+name: Anycubic i3 Mega
+printer: I3MEGA
+legacy_printer_model:
+- I3MEGA
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: i3megas
+name: Anycubic i3 Mega S
+printer: I3MEGAS
+legacy_printer_model:
+- I3MEGAS
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: 4maxpro20
+name: Anycubic 4Max Pro 2.0
+printer: 4MAXPRO20
+legacy_printer_model:
+- 4MAXPRO20
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: predator
+name: Anycubic Predator
+printer: PREDATOR
+legacy_printer_model:
+- PREDATOR
+tools:
+- tool: '0.4'
+sheet: default

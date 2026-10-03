@@ -1,0 +1,112 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: vendor
+id: INAT
+name: INAT
+version: 1.1.0
+features:
+  printer:
+    supports_04_nozzle:
+      default: false
+      user_editable: false
+  tool:
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+  sheet: {}
+  feeder: {}
+printer_families:
+- label: Proton
+  base_model: Proton
+  printer_configs_order:
+  - proton_x_rail
+  - proton_x_rod
+  - proton_xe750
+---
+kind: printer
+technology: FFF
+name: INAT Proton X Rail
+id: PROTON_X_RAIL
+model:
+  base_model: Proton
+  model: PROTON_X_RAIL
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  thumbnail: PROTON_X_RAIL_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: INAT Proton X Rod
+id: PROTON_X_ROD
+model:
+  base_model: Proton
+  model: PROTON_X_ROD
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  thumbnail: PROTON_X_ROD_thumbnail.png
+---
+kind: printer
+technology: FFF
+name: INAT Proton XE-750
+id: PROTON_XE750
+model:
+  base_model: Proton
+  model: PROTON_XE750
+tool_count: 1
+features:
+  supports_04_nozzle:
+    default: true
+visual:
+  thumbnail: PROTON_XE750_thumbnail.png
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+condition: printer.supports_04_nozzle
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: sheet
+id: default
+name: Default
+type: default
+---
+kind: printer_config
+id: proton_x_rail
+name: INAT Proton X Rail
+printer: PROTON_X_RAIL
+legacy_printer_model:
+- PROTON_X_RAIL
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: proton_x_rod
+name: INAT Proton X Rod
+printer: PROTON_X_ROD
+legacy_printer_model:
+- PROTON_X_ROD
+tools:
+- tool: '0.4'
+sheet: default
+---
+kind: printer_config
+id: proton_xe750
+name: INAT Proton XE-750
+printer: PROTON_XE750
+legacy_printer_model:
+- PROTON_XE750
+tools:
+- tool: '0.4'
+sheet: default

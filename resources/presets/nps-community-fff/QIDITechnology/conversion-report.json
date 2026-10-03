@@ -1,0 +1,56 @@
+{
+ "vendor": "QIDITechnology",
+ "counts": {
+  "printer_models": 6,
+  "printer": 24,
+  "print": 78,
+  "filament": 410
+ },
+ "dropped_keys": {
+  "printer": {
+   "auxiliary_fan (no existe en 3.0)": 24,
+   "bed_exclude_area (no existe en 3.0)": 24,
+   "chamber_fan (no existe en 3.0)": 24,
+   "extruder_colour (en 3.0 pertenece a Project)": 24,
+   "print_host (no existe en 3.0)": 24,
+   "printhost_apikey (no existe en 3.0)": 24,
+   "printhost_cafile (no existe en 3.0)": 24,
+   "wipe_device (no existe en 3.0)": 24,
+   "wipe_distance (no existe en 3.0)": 24,
+   "extruders_count (no existe en 3.0)": 4
+  },
+  "print": {
+   "bottom_solid_infill_flow_ratio (no existe en 3.0)": 78,
+   "detect_narrow_internal_solid_infill (no existe en 3.0)": 78,
+   "elefant_foot_compensation_layers (no existe en 3.0)": 78,
+   "first_layer_travel_speed (no existe en 3.0)": 78,
+   "max_bridge_length (no existe en 3.0)": 78,
+   "only_one_wall_first_layer (no existe en 3.0)": 78,
+   "seam_gap (no existe en 3.0)": 78,
+   "slow_down_layers (no existe en 3.0)": 78,
+   "support_material_auto (no existe en 3.0)": 78,
+   "top_area_threshold (no existe en 3.0)": 78,
+   "top_one_wall_type (no existe en 3.0)": 78,
+   "top_solid_infill_flow_ratio (no existe en 3.0)": 78,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 78,
+   "wipe_tower_x (no existe en 3.0)": 78,
+   "wipe_tower_y (no existe en 3.0)": 78,
+   "xy_contour_compensation (no existe en 3.0)": 78,
+   "xy_hole_compensation (no existe en 3.0)": 78
+  },
+  "filament": {
+   "disable_rapid_cooling_fan_first_layers (no existe en 3.0)": 410,
+   "enable_advance_pressure (no existe en 3.0)": 410,
+   "enable_auxiliary_fan (no existe en 3.0)": 410,
+   "enable_auxiliary_fan_unseal (no existe en 3.0)": 410,
+   "enable_volume_fan (no existe en 3.0)": 410,
+   "filament_load_time (no existe en 3.0)": 410,
+   "filament_shrink (no existe en 3.0)": 410,
+   "filament_unload_time (no existe en 3.0)": 410,
+   "filament_wipe_distance (no existe en 3.0)": 410,
+   "seal_print (no existe en 3.0)": 410
+  }
+ },
+ "skipped_presets": [],
+ "notes": []
+}

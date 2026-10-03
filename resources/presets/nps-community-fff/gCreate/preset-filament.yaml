@@ -1,0 +1,479 @@
+# Generado por tools/presets/convert.py: no editar a mano.
+kind: filament
+id: dAFFR4vyVSCUOfZ6mILMMg
+name: Prusament PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 60
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 24.99
+  first_layer_bed_temperature: 50
+  first_layer_temperature: 215
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 205
+  filament_vendor: Prusa Polymers
+---
+kind: filament
+id: Usvq3No6XB+rg8m4XLj3kg
+name: Prusament PETG @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 15
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: PETG
+  filament_density: 1.27
+  filament_cost: 24.99
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 245
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 245
+  filament_vendor: Prusa Polymers
+---
+kind: filament
+id: vVUZL0kgWjeR9Xzppbc2Hg
+name: Generic ABS @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 15
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: ABS
+  filament_density: 1.27
+  filament_cost: 30.0
+  first_layer_bed_temperature: 80
+  first_layer_temperature: 235
+  fan_always_on: false
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 235
+  filament_vendor: Generic
+---
+kind: filament
+id: 298zrWG6UzyU/z2OeQtjkQ
+name: Generic PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 60
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 200
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 200
+  filament_vendor: Generic
+---
+kind: filament
+id: Uq3+xyqfX/yaZDUw7+vrvg
+name: Generic PLA no Heated Bed @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 0
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 0
+  first_layer_temperature: 205
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 205
+  filament_vendor: Generic
+---
+kind: filament
+id: RtKePj7YWeyeaoTlyPanCA
+name: Generic PETG @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 15
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: PETG
+  filament_density: 1.27
+  filament_cost: 30.0
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 235
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 230
+  filament_vendor: Generic
+---
+kind: filament
+id: yobvPencVG+wMJ0JbIQNgA
+name: Atomic PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 60
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 205
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 215
+  filament_vendor: Atomic Filament
+---
+kind: filament
+id: LOlutCCvVdaC48XA6IytGw
+name: Push Plastic PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 60
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 200
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 200
+  filament_vendor: Push Plastic
+---
+kind: filament
+id: YWsKUQYjXi64xWeONF8qTw
+name: HT PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 70
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 200
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 250
+  filament_vendor: ProtoPasta
+---
+kind: filament
+id: HL85klbXXoaqZG6XBlXPWw
+name: Generic HIPS @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 100
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 15
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: HIPS
+  filament_density: 1.04
+  filament_cost: 30.0
+  first_layer_bed_temperature: 100
+  first_layer_temperature: 235
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 230
+  filament_vendor: Generic
+---
+kind: filament
+id: iLiY1UyRU8qRiN7h9PU4hQ
+name: Generic TPU 90A @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: TPU
+  filament_density: 1.2
+  filament_cost: 25.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 215
+  temperature: 215
+  bed_temperature: 60
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 50
+  min_fan_speed: 35
+  bridge_fan_speed: 60
+  filament_vendor: Generic
+---
+kind: filament
+id: wM+0aW10XzKqR7+69KRFug
+name: Generic CF PETG @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 70
+  disable_fan_first_layers: 3
+  fan_below_layer_time: 15
+  filament_colour: '#FF8000'
+  filament_max_volumetric_speed: 8.0
+  filament_type: Carbon Fiber
+  filament_density: 1.27
+  filament_cost: 30.0
+  first_layer_bed_temperature: 70
+  first_layer_temperature: 240
+  fan_always_on: true
+  max_fan_speed: 50
+  min_fan_speed: 20
+  bridge_fan_speed: 50
+  temperature: 240
+  filament_vendor: Generic
+---
+kind: filament
+id: JjYvxWGfWXuE8eSoZu4fJA
+name: Generic CF Nylon @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: Carbon Fiber
+  temperature: 250
+  bed_temperature: 65
+  bridge_fan_speed: 50
+  first_layer_temperature: 250
+  first_layer_bed_temperature: 65
+  filament_density: 1.06
+  filament_vendor: Generic
+---
+kind: filament
+id: FykrQSm2UHOzzqX42o72jg
+name: Generic CF PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: false
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  filament_type: Carbon Fiber
+  filament_vendor: Generic
+---
+kind: filament
+id: +sAjfE77UL6gMpi6JmvgBQ
+name: ColorFabb Woodfill PLA @GCREATE
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 0.94
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 60
+  fan_below_layer_time: 15
+  filament_colour: '#FF3232'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PLA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 200
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 40
+  bridge_fan_speed: 80
+  temperature: 200
+  filament_vendor: ColorFabb
+---
+kind: filament
+id: pSi+ttMyXxezfBfqeyKTZQ
+name: Generic PVA @GCREATE - PLA and PVA Support
+condition: (tool.nozzle_diameter == 0.3 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.4 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.5 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2DUAL|GMAX2DUAL2IN1|GMAX2PRO)$/) or (tool.nozzle_diameter == 0.8 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/) or (tool.nozzle_diameter == 1 and printer.model =~ /^(GMAX15P|GMAX2|GMAX2PRO)$/)
+values:
+  cooling: true
+  extrusion_multiplier: 1.0
+  filament_diameter: 1.75
+  filament_notes: ''
+  min_print_speed: 15.0
+  slowdown_below_layer_time: 10
+  bed_temperature: 0
+  fan_below_layer_time: 15
+  filament_colour: '#F5F2C4'
+  filament_max_volumetric_speed: 0.0
+  filament_type: PVA
+  filament_density: 1.24
+  filament_cost: 20.0
+  first_layer_bed_temperature: 60
+  first_layer_temperature: 195
+  filament_cooling_moves: 0
+  filament_loading_speed: 30.0
+  filament_loading_speed_start: 30.0
+  filament_ramming_parameters: '0'
+  filament_unloading_speed: 30.0
+  filament_unloading_speed_start: 30.0
+  fan_always_on: true
+  disable_fan_first_layers: 1
+  max_fan_speed: 80
+  min_fan_speed: 50
+  bridge_fan_speed: 75
+  temperature: 195
+  filament_vendor: Generic
+  end_filament_gcode: "; Filament-specific end gcode \n;END gcode for filament\n"
+  filament_cooling_final_speed: 3.4
+  filament_cooling_initial_speed: 2.2
+  filament_minimal_purge_on_wipe_tower: 7.0
+  filament_soluble: true
+  filament_toolchange_delay: 0.0
+  start_filament_gcode: |
+    ; Filament gcode

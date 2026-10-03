@@ -1,0 +1,71 @@
+{
+ "vendor": "Sovol",
+ "counts": {
+  "printer_models": 8,
+  "printer": 32,
+  "print": 118,
+  "filament": 12
+ },
+ "dropped_keys": {
+  "printer": {
+   "octoprint_apikey (no existe en 3.0)": 32,
+   "octoprint_host (no existe en 3.0)": 32,
+   "serial_port (no existe en 3.0)": 32,
+   "serial_speed (no existe en 3.0)": 32,
+   "extruder_colour (en 3.0 pertenece a Project)": 12
+  },
+  "print": {
+   "clip_multipart_objects (no existe en 3.0)": 118,
+   "external_fill_pattern (no existe en 3.0)": 118,
+   "infill_only_where_needed (no existe en 3.0)": 118,
+   "wipe_tower_rotation_angle (no existe en 3.0)": 118,
+   "wipe_tower_x (no existe en 3.0)": 118,
+   "wipe_tower_y (no existe en 3.0)": 118,
+   "dynamic_overhang_speeds[0] (no existe en 3.0)": 24
+  },
+  "filament": {
+   "filament_load_time (no existe en 3.0)": 12,
+   "filament_unload_time (no existe en 3.0)": 12
+  }
+ },
+ "skipped_presets": [
+  "printer:SV04 Copy Mode (duplica SV04 0.4 de 'SV04')",
+  "printer:SV04 Copy Mode 0.3 nozzle (duplica SV04 0.3 de 'SV04 0.3 nozzle')",
+  "printer:SV04 Copy Mode 0.6 nozzle (duplica SV04 0.6 de 'SV04 0.6 nozzle')",
+  "printer:SV04 Copy Mode 0.8 nozzle (duplica SV04 0.8 de 'SV04 0.8 nozzle')",
+  "printer:SV04 Dual Mode (duplica SV04 0.4 de 'SV04')",
+  "printer:SV04 Dual Mode 0.3 nozzle (duplica SV04 0.3 de 'SV04 0.3 nozzle')",
+  "printer:SV04 Dual Mode 0.6 nozzle (duplica SV04 0.6 de 'SV04 0.6 nozzle')",
+  "printer:SV04 Dual Mode 0.8 nozzle (duplica SV04 0.8 de 'SV04 0.8 nozzle')",
+  "printer:SV04 Mirror Mode (duplica SV04 0.4 de 'SV04')",
+  "printer:SV04 Mirror Mode 0.3 nozzle (duplica SV04 0.3 de 'SV04 0.3 nozzle')",
+  "printer:SV04 Mirror Mode 0.6 nozzle (duplica SV04 0.6 de 'SV04 0.6 nozzle')",
+  "printer:SV04 Mirror Mode 0.8 nozzle (duplica SV04 0.8 de 'SV04 0.8 nozzle')",
+  "printer:SV04 Single Mode 01 (duplica SV04 0.4 de 'SV04')",
+  "printer:SV04 Single Mode 01 0.3 nozzle (duplica SV04 0.3 de 'SV04 0.3 nozzle')",
+  "printer:SV04 Single Mode 01 0.6 nozzle (duplica SV04 0.6 de 'SV04 0.6 nozzle')",
+  "printer:SV04 Single Mode 01 0.8 nozzle (duplica SV04 0.8 de 'SV04 0.8 nozzle')",
+  "printer:SV04 Single Mode 02 (duplica SV04 0.4 de 'SV04')",
+  "printer:SV04 Single Mode 02 0.3 nozzle (duplica SV04 0.3 de 'SV04 0.3 nozzle')",
+  "printer:SV04 Single Mode 02 0.6 nozzle (duplica SV04 0.6 de 'SV04 0.6 nozzle')",
+  "printer:SV04 Single Mode 02 0.8 nozzle (duplica SV04 0.8 de 'SV04 0.8 nozzle')",
+  "printer:SV01_BLTouch (duplica SV01 0.4 de 'SV01')",
+  "printer:SV02_BLTouch (duplica SV02 0.4 de 'SV02')",
+  "printer:SV03_BLTouch (duplica SV03 0.4 de 'SV03')",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV01 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV01 (no es compatible con ninguna impresora del paquete)",
+  "print:0.05mm ULTRADETAIL @SV02 (no es compatible con ninguna impresora del paquete)",
+  "print:0.07mm ULTRADETAIL @SV02 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV02 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV02 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV03 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV03 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV04 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV04 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV05 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV05 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE FULL @0.3 nozzle SV06 (no es compatible con ninguna impresora del paquete)",
+  "print:0.15mm SOLUBLE INTERFACE @0.3 nozzle SV06 (no es compatible con ninguna impresora del paquete)"
+ ],
+ "notes": []
+}
