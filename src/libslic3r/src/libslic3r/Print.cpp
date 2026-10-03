@@ -678,8 +678,15 @@ DONE:;
         if (total_copies_count > 1 && !m_config.get<bool>("complete_objects")) {
             errors.push_back(Error{ErrorCode::SpiralVaseMultipleObjects, {"spiral_vase"}});
         }
-        ASSERT(m_objects.size() == 1);
-        if (m_objects.front()->all_regions().size() > 1) {
+        // The print may be empty (validate() no longer returns early for an empty print) and
+        // sequential printing allows several objects, so do not assume exactly one object:
+        // m_objects.front() on an empty print crashed when enabling vase mode (GH #15868).
+        if (std::any_of(
+                m_objects.begin(),
+                m_objects.end(),
+                [](const PrintObject* object) { return object->all_regions().size() > 1; }
+            ))
+        {
             errors.push_back(Error{ErrorCode::SpiralVaseMultipleMaterials, {"spiral_vase"}});
         }
     }

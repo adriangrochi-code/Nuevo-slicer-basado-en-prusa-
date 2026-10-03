@@ -630,6 +630,29 @@ TEST_CASE_METHOD(
     );
 }
 
+TEST_CASE("Validate an empty print with spiral vase enabled", "[PrintApply]") {
+    // GH #15868: validate() dereferenced m_objects.front() on an empty print in vase mode.
+    Print print{};
+    Domain::Model model;
+    TestConfig config{1};
+    config.print.items.opt("spiral_vase").set(true);
+
+    Domain::Bed bed{};
+    Domain::BedInstance bed_instance{bed};
+    HwPrinterConfig hw_config{create_dummy_hw_config(config.tool.size())};
+    auto preset_metadata = create_dummy_selected_preset_metadata(hw_config);
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
+    print.update(
+        model,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    );
+    CHECK_NOTHROW(print.validate());
+}
+
 TEST_CASE("Validate rejects zero layer height instead of hanging", "[PrintApply]") {
     // GH #15899: layer_height = 0 made generate_object_layers() loop forever.
     using Biz::Slicing::ApplyStatus::Changed;
