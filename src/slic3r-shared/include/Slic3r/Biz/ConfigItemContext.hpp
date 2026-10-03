@@ -11,7 +11,8 @@ struct ConfigItemContext
 
     inline bool is_dirty() const
     {
-        if (config_item->def().category == Domain::ConfigItemDef::Category::Hidden)
+        if (config_item == nullptr
+            || config_item->def().category == Domain::ConfigItemDef::Category::Hidden)
             return false;
         return config_item && original_config_item ?
             config_item->value() != original_config_item->value() :
