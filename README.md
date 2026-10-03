@@ -94,7 +94,8 @@ relativo, sin modo vaso, sin torre de purga y con Z-hop.
 - cama de 300×225×380, boquilla de 0.4, Bowden con retracción de 5 mm;
 - BL-Touch con `M420 S1`, para usar la malla guardada (cámbialo por `G29` si no la tienes);
 - PLA a 205/60 °C, 100 mm/s como máximo, caudal de 10 mm³/s;
-- límites de Z enviados con `M203 Z10` y `M201 Z250`, que NPS usa en su limitador;
+- límites de Z del firmware de serie (`M203 Z5`, `M201 Z100`), que NPS usa en su
+  limitador; el perfil no envía `M201`/`M203`, así que se respetan los de tu máquina;
 - valores por defecto de la onda: 0.5 mm de amplitud y 20 mm de longitud.
 
 ```bash
@@ -102,9 +103,9 @@ nps slice pieza.stl -o pieza.gcode --printer cr5proh
 nps slice pieza.stl -o pieza.gcode --printer cr5proh -p mi_filamento.ini   # tus ajustes encima
 ```
 
-Compruébalo antes de imprimir. Los límites de firmware de tu máquina pueden ser
-distintos: consúltalos con `M503`. Si subes los de Z (con `M203`/`M201` en el
-G-code inicial), pasa los mismos valores a `--z-max-speed`/`--z-max-accel`.
+Si tu firmware tiene otros límites (consúltalos con `M503`), pasa los de Z con
+`--z-max-speed`/`--z-max-accel`. Subirlos acorta mucho las impresiones no
+planas, pero compruébalo antes: el Z de husillo puede perder pasos.
 
 ### Prueba de resistencia en Z (G-code listo en `examples/cr5proh/`)
 
@@ -114,9 +115,11 @@ de 20×5×30 mm, así que se rompe entre capas. Se genera con
 
 | fichero | capas | tiempo de movimiento estimado |
 |---|---|---|
-| `probeta_planar.gcode` | planas (referencia) | 38.8 min |
-| `probeta_crestas_l15.gcode` | crestas λ=15 mm, A=0.5 mm | 42.3 min (+9 %) |
-| `probeta_crestas_l10.gcode` | crestas λ=10 mm, A=0.5 mm | 52.2 min (+35 %) |
+| `probeta_planar.gcode` | planas (referencia) | 40.7 min |
+| `probeta_crestas_l20.gcode` | crestas λ=20 mm, A=0.5 mm | 50.7 min (+25 %) |
+| `probeta_crestas_l15.gcode` | crestas λ=15 mm, A=0.5 mm | 63.3 min (+54 %) |
+
+Con Z a 5 mm/s y 100 mm/s², la onda de λ=10 mm costaría +115 %, así que no se incluye.
 
 ![capas de la probeta](docs/img/cr5_probeta_capas.png)
 

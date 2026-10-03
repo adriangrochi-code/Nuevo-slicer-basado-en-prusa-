@@ -18,7 +18,7 @@ PRINTERS = {
     "cr5proh": dict(
         profile=PROFILES / "cr5proh.ini", center=(150.0, 112.5),
         max_feed=100.0, max_flow=10.0,       # 100 mm/s nominales, hotend Creality estándar
-        z_max_speed=10.0, z_max_accel=250.0,  # deben coincidir con M203/M201 del perfil
+        z_max_speed=5.0, z_max_accel=100.0,   # firmware de serie (M503): M203 Z5, M201 Z100
         amplitude=0.5, wavelength=20.0,       # onda suave: el Z por husillo es lento
     ),
 }
