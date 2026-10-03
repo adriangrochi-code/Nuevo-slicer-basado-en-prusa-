@@ -154,9 +154,10 @@ namespace ImGuiPureWrap
 
     const ImVec4 COL_GREY_DARK         = { 0.33f, 0.33f, 0.33f, 1.0f };
     const ImVec4 COL_GREY_LIGHT        = { 0.4f, 0.4f, 0.4f, 1.0f };
-    const ImVec4 COL_ORANGE_DARK       = { 0.67f, 0.36f, 0.19f, 1.0f };
-    const ImVec4 COL_ORANGE_LIGHT      = { 0.923f, 0.504f, 0.264f, 1.0f };
-    const ImVec4 COL_WINDOW_BACKGROUND = { 0.106f, 0.106f, 0.106f, 0.92f };
+    // Accent colors (Tisma purple; the names are kept from PrusaSlicer).
+    const ImVec4 COL_ORANGE_DARK       = { 0.357f, 0.235f, 0.769f, 1.0f };
+    const ImVec4 COL_ORANGE_LIGHT      = { 0.518f, 0.400f, 0.878f, 1.0f };
+    const ImVec4 COL_WINDOW_BACKGROUND = { 0.078f, 0.078f, 0.090f, 0.92f };
     const ImVec4 COL_BUTTON_BACKGROUND = COL_ORANGE_DARK;
     const ImVec4 COL_BUTTON_HOVERED    = COL_ORANGE_LIGHT;
     const ImVec4 COL_BUTTON_ACTIVE     = COL_BUTTON_HOVERED;

@@ -133,6 +133,8 @@ public:
 	static const ColorRGBA LIGHT_GRAY()  { return { 0.75f, 0.75f, 0.75f, 1.0f }; }
 	static const ColorRGBA MAGENTA()     { return { 1.0f, 0.0f, 1.0f, 1.0f }; }
 	static const ColorRGBA ORANGE()      { return { 0.923f, 0.504f, 0.264f, 1.0f }; }
+	// Tisma purple, highlights of the user interface.
+	static const ColorRGBA BRAND()       { return { 0.518f, 0.400f, 0.878f, 1.0f }; }
 	static const ColorRGBA RED()         { return { 1.0f, 0.0f, 0.0f, 1.0f }; }
 	static const ColorRGBA REDISH()      { return { 1.0f, 0.5f, 0.5f, 1.0f }; }
 	static const ColorRGBA YELLOW()      { return { 1.0f, 1.0f, 0.0f, 1.0f }; }

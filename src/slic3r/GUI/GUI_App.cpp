@@ -186,7 +186,7 @@ public:
             memDC.SelectObject(bitmap);
 
             memDC.SetFont(m_action_font);
-            memDC.SetTextForeground(wxColour(237, 107, 33));
+            memDC.SetTextForeground(wxColour(91, 60, 196));
             memDC.DrawText(text, int(m_scale * 60), m_action_line_y_position);
 
             memDC.SelectObject(wxNullBitmap);
@@ -211,9 +211,9 @@ public:
         wxImage image(width, height);
         unsigned char* imgdata_ = image.GetData();
         for (int i = 0; i < width * height; ++i) {
-            *imgdata_++ = 51;
-            *imgdata_++ = 51;
-            *imgdata_++ = 51;
+            *imgdata_++ = 242;
+            *imgdata_++ = 242;
+            *imgdata_++ = 244;
         }
 
         wxBitmap new_bmp(image);
@@ -255,7 +255,7 @@ public:
         memDc.DrawBitmap(logo_bmp, margin, margin, true);
 
         // draw the (white) labels inside of our black box (at the left of the splashscreen)
-        memDc.SetTextForeground(wxColour(255, 255, 255));
+        memDc.SetTextForeground(wxColour(20, 20, 20));
 
         memDc.SetFont(m_constant_text.title_font);
         memDc.DrawLabel(m_constant_text.title,   banner_rect, wxALIGN_TOP | wxALIGN_LEFT);
@@ -304,8 +304,8 @@ private:
 
             // credits infornation
             credits = "\n" + title + " " +
-                _L("is based on Slic3r by Alessandro Ranellucci and the RepRap community.") + "\n\n" +
-                _L("Developed by Prusa Research.") + "\n\n" +
+                _L("is based on PrusaSlicer by Prusa Research and on Slic3r by Alessandro Ranellucci and the RepRap community.") + "\n\n" +
+                _L("Customized for Tisma.") + "\n\n" +
                 _L("Licensed under GNU AGPLv3.") + "\n\n\n\n\n\n\n";
 
             title_font = version_font = credits_font = init_font;
@@ -1746,7 +1746,7 @@ const wxColour GUI_App::get_label_default_clr_system()
 
 const wxColour GUI_App::get_label_default_clr_modified()
 {
-    return dark_mode() ? wxColour(253, 111, 40) : wxColour(252, 77, 1);
+    return dark_mode() ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
 }
 
 const std::vector<std::string> GUI_App::get_mode_default_palette()
@@ -1765,9 +1765,9 @@ void GUI_App::init_ui_colours()
     m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250): wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230): wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_default       = is_dark_mode ? wxColour(58, 58, 58)   : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
-    m_color_hovered_btn_label       = is_dark_mode ? wxColour(253, 111, 40) : wxColour(252, 77, 1);
-    m_color_default_btn_label       = is_dark_mode ? wxColour(255, 181, 100): wxColour(203, 61, 0);
-    m_color_selected_btn_bg         = is_dark_mode ? wxColour(95, 73, 62)   : wxColour(228, 220, 216);
+    m_color_hovered_btn_label       = is_dark_mode ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
+    m_color_default_btn_label       = is_dark_mode ? wxColour(201, 188, 242): wxColour(69, 39, 168);
+    m_color_selected_btn_bg         = is_dark_mode ? wxColour(67, 56, 104)  : wxColour(226, 220, 248);
 //#else
 //    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
 //#endif

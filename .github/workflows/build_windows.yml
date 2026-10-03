@@ -10,7 +10,8 @@ on:
 
 concurrency:
   group: windows-${{ github.ref }}
-  cancel-in-progress: true
+  # Queue instead of cancelling, so that a running build finishes and caches the dependencies.
+  cancel-in-progress: false
 
 jobs:
   build_win:

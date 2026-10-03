@@ -101,16 +101,16 @@ extern std::vector<GLuint> s_th_tex_id;
 
 static constexpr const float TRACKBALLSIZE = 0.8f;
 
-// Scene background gradients (top, bottom), palette of PrusaSlicer 3.0.
-static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR  = { 0.620f, 0.620f, 0.620f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.750f, 0.750f, 0.750f, 1.0f };
-static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.550f, 0.550f, 1.0f };
-static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.950f, 0.700f, 0.700f, 1.0f };
+// Scene background gradients (top, bottom), Tisma palette.
+static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR  = { 0.800f, 0.800f, 0.840f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.949f, 0.949f, 0.957f, 1.0f };
+static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.560f, 0.600f, 1.0f };
+static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.960f, 0.760f, 0.790f, 1.0f };
 // Dark mode.
-static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.350f, 0.350f, 0.350f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.230f, 0.230f, 0.230f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.700f, 0.200f, 0.200f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.450f, 0.150f, 0.150f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.200f, 0.190f, 0.250f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.090f, 0.090f, 0.110f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.550f, 0.180f, 0.220f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.300f, 0.100f, 0.120f, 1.0f };
 
 #define SHOW_IMGUI_DEMO_WINDOW
 #ifdef SHOW_IMGUI_DEMO_WINDOW

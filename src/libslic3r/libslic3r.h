@@ -17,13 +17,15 @@
 #include "libslic3r_version.h"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
-#define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
+// Own data directory, separate from an installed PrusaSlicer. SLIC3R_APP_KEY stays "PrusaSlicer":
+// it names the translation catalogs and the 3MF generator, read by other slicers.
+#define SLIC3R_APP_FULL_NAME "TismaSlicer"
 // #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-alpha"
 // #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-beta"
 
 
 
-#define GCODEVIEWER_APP_NAME "PrusaSlicer G-code Viewer"
+#define GCODEVIEWER_APP_NAME "Tisma G-code Viewer"
 #define GCODEVIEWER_APP_KEY  "PrusaSlicerGcodeViewer"
 
 // this needs to be included early for MSVC (listing it in Build.PL is not enough)

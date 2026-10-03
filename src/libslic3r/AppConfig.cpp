@@ -228,9 +228,9 @@ void AppConfig::set_defaults()
     if (get("use_legacy_3DConnexion").empty())
         set("use_legacy_3DConnexion", "0");
 
-    // Dark interface by default, as in PrusaSlicer 3.0.
+    // Light interface by default (Tisma palette).
     if (get("dark_color_mode").empty())
-        set("dark_color_mode", "1");
+        set("dark_color_mode", "0");
 
     if (get("sys_menu_enabled").empty())
         set("sys_menu_enabled", "1");
