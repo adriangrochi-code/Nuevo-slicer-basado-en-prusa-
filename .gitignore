@@ -6,3 +6,4 @@ dist/
 out/
 *.gcode
 !examples/*.gcode
+!examples/cr5proh/*.gcode

@@ -46,7 +46,8 @@ forma.
 
 | modo | forma de capa | uso | impresora |
 |---|---|---|---|
-| `wave` (por defecto) | `A·sin(kx)·sin(ky)` (huevera) | resistencia homogénea entre capas | 3 ejes, con pendiente ≤ `--max-slope` |
+| `wave` (por defecto) | `A·sin(kx)·sin(ky)` (huevera) | resistencia homogénea entre capas, piezas anchas | 3 ejes, con pendiente ≤ `--max-slope` |
+| `wave --wave-pattern ridges` | `A·sin(k·u)` (crestas) | paredes y probetas estrechas | 3 ejes |
 | `conical` | cono `r·tan(θ)` | voladizos sin soportes | mejor en 4/5 ejes; en 3 ejes sólo con ángulos pequeños |
 | `planar` | plano | referencia / depuración | cualquiera |
 
@@ -57,6 +58,15 @@ Antes de cortar, el programa comprueba dos cosas y se detiene si alguna falla
   `--ramp`);
 - que la pendiente de las capas no supere la que tolera tu boquilla
   (`--max-slope`, 20° por defecto), para evitar colisiones en impresoras de 3 ejes.
+
+### Límites del eje Z (importante en impresoras de 3 ejes)
+
+En una capa curva el eje Z se mueve todo el tiempo. Su velocidad es
+`v_z = v_xy · pendiente` y su aceleración `a_z ≈ v_xy² · |z''|`. En máquinas con Z
+por husillo (Creality y similares) son límites duros: si se superan, el firmware
+frena el movimiento entero o el motor pierde pasos. Con `--z-max-speed` y
+`--z-max-accel`, NPS reduce F tramo a tramo para respetarlos, y el tiempo
+estimado ya lo incluye. **Ondas más largas y más bajas cuestan menos tiempo.**
 
 ## Uso
 
@@ -77,16 +87,59 @@ capas planas iniciales), `--center X,Y` (centro de la cama) y `--workdir`
 la transformación necesita: sin arcos G2/G3, G-code de texto (no binario), E
 relativo, sin modo vaso, sin torre de purga y con Z-hop.
 
-### Resultados de referencia (PrusaSlicer 2.7.2, perfil por defecto)
+## Creality CR-5 Pro H
+
+`--printer cr5proh` carga `nps/profiles/cr5proh.ini`:
+
+- cama de 300×225×380, boquilla de 0.4, Bowden con retracción de 5 mm;
+- BL-Touch con `M420 S1`, para usar la malla guardada (cámbialo por `G29` si no la tienes);
+- PLA a 205/60 °C, 100 mm/s como máximo, caudal de 10 mm³/s;
+- límites de Z enviados con `M203 Z10` y `M201 Z250`, que NPS usa en su limitador;
+- valores por defecto de la onda: 0.5 mm de amplitud y 20 mm de longitud.
+
+```bash
+nps slice pieza.stl -o pieza.gcode --printer cr5proh
+nps slice pieza.stl -o pieza.gcode --printer cr5proh -p mi_filamento.ini   # tus ajustes encima
+```
+
+Compruébalo antes de imprimir. Los límites de firmware de tu máquina pueden ser
+distintos: consúltalos con `M503`. Si subes los de Z (con `M203`/`M201` en el
+G-code inicial), pasa los mismos valores a `--z-max-speed`/`--z-max-accel`.
+
+### Prueba de resistencia en Z (G-code listo en `examples/cr5proh/`)
+
+Probeta "hueso de perro" impresa en vertical: mordazas de 30 mm y zona de ensayo
+de 20×5×30 mm, así que se rompe entre capas. Se genera con
+`examples/make_test_models.py` → `probeta_traccion_z.stl`.
+
+| fichero | capas | tiempo de movimiento estimado |
+|---|---|---|
+| `probeta_planar.gcode` | planas (referencia) | 38.8 min |
+| `probeta_crestas_l15.gcode` | crestas λ=15 mm, A=0.5 mm | 42.3 min (+9 %) |
+| `probeta_crestas_l10.gcode` | crestas λ=10 mm, A=0.5 mm | 52.2 min (+35 %) |
+
+![capas de la probeta](docs/img/cr5_probeta_capas.png)
+
+Protocolo sugerido:
+
+1. Imprime primero un cubo (`--printer cr5proh`) y vigila la primera capa
+   ondulada a ~5 mm de altura: no debe haber roces ni saltos de Z.
+2. Imprime al menos 3 probetas de cada tipo con el mismo filamento y el mismo día.
+3. Tracciona en Z (máquina de ensayos o un montaje con cubo y báscula colgante)
+   y anota la carga de rotura y dónde rompe.
+4. Las crestas ganan si rompen con más carga **y** la grieta sigue la onda en vez
+   de un plano limpio.
+
+### Resultados de referencia (PrusaSlicer 2.7.2, perfil por defecto, sin límites de Z)
 
 | modelo | J (rango de espesor) | tiempo de movimiento planar → NPS (`--fast-infill 15`) |
 |---|---|---|
-| cubo 20 mm | 0.81 – 1.32 | 12.5 → 10.0 min |
+| cubo 20 mm | 0.81 – 1.32 | 12.6 → 10.0 min |
 | probeta vertical 10×4×60 | 0.87 – 1.18 | 21.0 → 16.7 min |
 
 Los tiempos son estimaciones cinemáticas que no tienen en cuenta las
 aceleraciones. Los modelos de prueba se generan con
-`python examples/make_test_models.py`.
+`PYTHONPATH=. python examples/make_test_models.py`.
 
 ## Estado y hoja de ruta
 

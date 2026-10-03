@@ -28,7 +28,8 @@ _WORD = re.compile(r"([A-Za-z])\s*([-+]?(?:\d+\.?\d*|\.\d+))")
 
 @dataclass
 class GcodeOptions:
-    seg_len: float = 0.5                 # mm, longitud máxima de segmento en XY
+    seg_len: float = 0.5                 # mm, resolución de muestreo en XY
+    z_tol: float = 0.01                  # mm, error de Z admitido al fusionar tramos
     filament_diameter: float = 1.75
     max_flow: float | None = None        # mm³/s, límite del hotend
     max_feed: float | None = None        # mm/min
@@ -36,6 +37,8 @@ class GcodeOptions:
     keep_flow_constant: bool = True
     fast_infill_flow: float | None = None  # mm³/s objetivo para el relleno
     fast_types: tuple[str, ...] = ("Internal infill", "Solid infill")
+    z_max_speed: float | None = None     # mm/s, límite de firmware del eje Z (M203)
+    z_max_accel: float | None = None     # mm/s², límite de firmware del eje Z (M201)
     top_slice_z: float | None = None     # por encima: sólo se desplaza (gcode final)
     top_lift: float = 0.0
 
@@ -46,19 +49,20 @@ class Stats:
     lines_out: int = 0
     e_in: float = 0.0
     e_out: float = 0.0
-    time_in: float = 0.0   # s, sólo movimientos (sin aceleraciones)
+    time_in: float = 0.0   # s, cinemática sin aceleraciones (Z de entrada con su límite)
     time_out: float = 0.0
     j_min: float = math.inf
     j_max: float = 0.0
     z_max: float = 0.0
     flow_limited: int = 0
+    z_limited: int = 0
 
     def summary(self) -> str:
         return (f"movimientos: {self.moves_in} -> {self.lines_out} líneas | "
                 f"E: {self.e_in:.1f} -> {self.e_out:.1f} mm | "
                 f"tiempo de movimiento: {self.time_in / 60:.1f} -> {self.time_out / 60:.1f} min | "
                 f"J: [{self.j_min:.2f}, {self.j_max:.2f}] | Z máx: {self.z_max:.2f} mm | "
-                f"segmentos limitados por caudal: {self.flow_limited}")
+                f"segmentos limitados por caudal: {self.flow_limited} | por eje Z: {self.z_limited}")
 
 
 def parse(line: str) -> tuple[str, dict[str, float], str]:
@@ -106,7 +110,7 @@ class GcodeTransformer:
         return f" E{_fmt(de, 5)}"
 
     def _f_word(self, f: float) -> str:
-        f = round(f)
+        f = math.floor(f + 1e-6)   # hacia abajo: los límites de caudal/Z son estrictos
         if f == self.out_feed:
             return ""
         self.out_feed = f
@@ -122,6 +126,57 @@ class GcodeTransformer:
         code, sep, comment = line.partition(";")
         code = re.sub(r"E\s*[-+]?(?:\d+\.?\d*|\.\d+)", f"E{_fmt(self.e_out_abs, 5)}", code, count=1)
         return code + sep + comment
+
+    def _breakpoints(self, t, zr, J) -> list[int]:
+        """Fusiona tramos mientras Z sea lineal (±z_tol) y J casi constante."""
+        n = len(t) - 1
+        cuts, a = [0], 0
+        while a < n:
+            b = a + 1
+            while b < n:
+                c = b + 1
+                lin = zr[a] + (zr[c] - zr[a]) * (t[a:c + 1] - t[a]) / (t[c] - t[a])
+                if np.max(np.abs(zr[a:c + 1] - lin)) > self.o.z_tol:
+                    break
+                if J is not None and np.ptp(J[a:c]) > 0.01 * J[a:c].mean():
+                    break
+                b = c
+            cuts.append(b)
+            a = b
+        return cuts
+
+    def _z_curvature(self, xs, ys, zs_slice, ux, uy, lxy, h: float = 1.0):
+        """|d²z/ds²| de la trayectoria real en el punto medio de cada segmento."""
+        ux, uy = ux / lxy, uy / lxy
+        xm, ym = (xs[:-1] + xs[1:]) / 2, (ys[:-1] + ys[1:]) / 2
+        zm = (zs_slice[:-1] + zs_slice[1:]) / 2
+        z0 = self._real_z(xm, ym, zm)
+        zp = self._real_z(xm + h * ux, ym + h * uy, zm)
+        zn = self._real_z(xm - h * ux, ym - h * uy, zm)
+        return np.abs(zp - 2 * z0 + zn) / (h * h)
+
+    def _z_limit(self, f: float, seg_xy: float, seg3: float, dz: float, curv: float) -> float:
+        """Limita F (mm/min, a lo largo de la trayectoria 3D) por velocidad y aceleración de Z.
+
+        En una capa curva Z oscila: v_z = v_xy·|pendiente| y a_z ≈ v_xy²·|z''|.
+        Con husillos (CR-5 y similares) son límites duros: si no se respetan,
+        el firmware ralentiza el movimiento entero o el motor pierde pasos.
+        """
+        caps = []
+        ratio = seg3 / seg_xy if seg_xy > 0 else 1.0
+        if self.o.z_max_speed and abs(dz) > 1e-9:
+            if seg_xy > 0:
+                caps.append(self.o.z_max_speed * seg_xy / abs(dz) * ratio * 60.0)
+            else:
+                caps.append(self.o.z_max_speed * 60.0)
+        if self.o.z_max_accel and curv > 1e-9 and seg_xy > 0:
+            caps.append(math.sqrt(self.o.z_max_accel / curv) * ratio * 60.0)
+        # 2 % de margen: las coordenadas se redondean a 3 decimales al escribirlas
+        cap = 0.98 * min(caps) if caps else math.inf
+        if cap < f:
+            self.stats.z_limited += 1
+            return cap
+        return f
 
     # -- proceso ------------------------------------------------------------
     def process(self, lines: Iterable[str]) -> Iterator[str]:
@@ -177,8 +232,17 @@ class GcodeTransformer:
         if not any(k in p for k in "XYZ"):
             # retracción / cambio de F puro: se conserva el E sin escalar
             return [self._passthrough(line, p, de)]
-        if start[0] is None or start[1] is None or self.pos[0] is None or self.pos[1] is None:
+        if self.pos[0] is None or self.pos[1] is None:
             return [self._passthrough(line, p, de)]
+        if start[0] is None or start[1] is None:
+            # origen desconocido (primer movimiento): sólo se transforma el destino
+            x1, y1, z1 = self.pos
+            z = float(self._real_z(x1, y1, z1)[0])
+            words = f"G1 X{_fmt(x1, 3)} Y{_fmt(y1, 3)} Z{_fmt(z, 3)}"
+            if de:
+                words += self._e_word(de)
+            words += self._f_word(self.feed)
+            return [words + (f" ;{comment}" if comment else "")]
 
         self.stats.moves_in += 1
         self.stats.e_in += max(de, 0.0)
@@ -191,8 +255,12 @@ class GcodeTransformer:
         zs_slice = z0 + (z1 - z0) * t
         zr = self._real_z(xs, ys, zs_slice)
         self.stats.z_max = max(self.stats.z_max, float(zr.max()))
-        if lxy > 0:
-            self.stats.time_in += lxy / self.feed * 60.0
+        l_in = math.hypot(lxy, z1 - z0)
+        if l_in > 0:
+            f_in = self.feed
+            if self.o.z_max_speed and lxy == 0:
+                f_in = min(f_in, self.o.z_max_speed * 60.0)
+            self.stats.time_in += l_in / f_in * 60.0
 
         extruding = de > 0 and lxy > 0
         if extruding:
@@ -202,16 +270,20 @@ class GcodeTransformer:
             self.stats.j_min = min(self.stats.j_min, float(J.min()))
             self.stats.j_max = max(self.stats.j_max, float(J.max()))
 
+        curv = self._z_curvature(xs, ys, zs_slice, x1 - x0, y1 - y0, lxy) if lxy > 0 else None
+
         out = []
         cmt = f" ;{comment}" if comment else ""
-        for i in range(1, n + 1):
-            seg_xy = lxy / n
-            seg3 = math.sqrt(seg_xy ** 2 + (zr[i] - zr[i - 1]) ** 2)
-            words = f"G1 X{_fmt(xs[i], 3)} Y{_fmt(ys[i], 3)} Z{_fmt(zr[i], 3)}"
+        cuts = self._breakpoints(t, zr, J if extruding else None)
+        for k, (a, b) in enumerate(zip(cuts[:-1], cuts[1:])):
+            frac = (b - a) / n
+            seg_xy = lxy * frac
+            seg3 = math.sqrt(seg_xy ** 2 + (zr[b] - zr[a]) ** 2)
+            words = f"G1 X{_fmt(xs[b], 3)} Y{_fmt(ys[b], 3)} Z{_fmt(zr[b], 3)}"
             f = self.feed
             if extruding:
-                j = float(J[i - 1])
-                e_seg = de / n * j
+                j = float(J[a:b].mean())
+                e_seg = de * frac * j
                 if self.o.keep_flow_constant and seg_xy > 0:
                     f = self.feed * (seg3 / seg_xy) / j
                 if (self.o.fast_infill_flow and self.feature in self.o.fast_types
@@ -229,11 +301,13 @@ class GcodeTransformer:
                 self.stats.e_out += e_seg
                 words += self._e_word(e_seg)
             elif de != 0:
-                words += self._e_word(de / n)   # wipe con retracción: sin escalar
+                words += self._e_word(de * frac)   # wipe con retracción: sin escalar
+            f = self._z_limit(f, seg_xy, seg3, zr[b] - zr[a],
+                              float(curv[a:b].max()) if curv is not None else 0.0)
             if seg3 > 0:
                 self.stats.time_out += seg3 / f * 60.0
             words += self._f_word(f)
-            out.append(words + (cmt if i == 1 else ""))
+            out.append(words + (cmt if k == 0 else ""))
         return out
 
 

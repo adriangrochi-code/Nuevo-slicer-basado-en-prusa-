@@ -77,27 +77,49 @@ class Field:
 
 @dataclass
 class WaveField(Field):
-    """Capas onduladas (huevera): las capas encajan entre sí.
+    """Capas onduladas: las capas encajan entre sí.
 
     El encaje mecánico entre capas sucesivas convierte parte de la carga en Z
     (que en planar sólo resiste la adhesión entre capas) en cortadura a través
     de los filamentos -> resistencia más homogénea en X/Y/Z.
+
+    pattern="egg":    A·sin(kx)·sin(ky)  (huevera, piezas anchas en X e Y)
+    pattern="ridges": A·sin(k·u), u en la dirección ``angle_deg``
+                      (crestas, para piezas estrechas o paredes)
     """
 
-    amplitude: float = 0.8   # mm
+    amplitude: float = 0.8    # mm
     wavelength: float = 16.0  # mm
+    pattern: str = "egg"
+    angle_deg: float = 0.0    # ridges: dirección de la onda (0° = a lo largo de X)
     cx: float = 0.0
     cy: float = 0.0
     name = "wave"
 
-    def g(self, x, y):
+    def __post_init__(self):
+        if self.pattern not in ("egg", "ridges"):
+            raise ValueError(f"patrón de onda desconocido: {self.pattern}")
+
+    def _uv(self, x, y):
         k = 2.0 * np.pi / self.wavelength
-        return self.amplitude * np.sin(k * (np.asarray(x) - self.cx)) * np.sin(k * (np.asarray(y) - self.cy))
+        dx, dy = np.asarray(x) - self.cx, np.asarray(y) - self.cy
+        if self.pattern == "ridges":
+            a = np.radians(self.angle_deg)
+            return k, k * (dx * np.cos(a) + dy * np.sin(a)), None
+        return k, k * dx, k * dy
+
+    def g(self, x, y):
+        _, u, v = self._uv(x, y)
+        if v is None:
+            return self.amplitude * np.sin(u)
+        return self.amplitude * np.sin(u) * np.sin(v)
 
     def grad(self, x, y):
-        k = 2.0 * np.pi / self.wavelength
-        u, v = k * (np.asarray(x) - self.cx), k * (np.asarray(y) - self.cy)
+        k, u, v = self._uv(x, y)
         a = self.amplitude * k
+        if v is None:
+            t = np.radians(self.angle_deg)
+            return a * np.cos(u) * np.cos(t), a * np.cos(u) * np.sin(t)
         return a * np.cos(u) * np.sin(v), a * np.sin(u) * np.cos(v)
 
     def nominal_slope_deg(self) -> float:

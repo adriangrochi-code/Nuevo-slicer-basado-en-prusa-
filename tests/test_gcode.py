@@ -39,8 +39,23 @@ def test_planar_field_is_identity():
     pts, e = _positions(out)
     assert np.isclose(e, 2.0)
     assert np.allclose(pts[-1], [0, 10, 4.8])
-    # los segmentos de 10 mm se trocean a 1 mm
-    assert sum(1 for l in out if "E0.1" in l) == 20
+    # en plano no hay curvatura: no se trocea nada
+    assert sum(1 for l in out if l.startswith("G1 X") and " E1" in l) == 2
+    assert len(out) == len(PLANAR)
+
+
+def test_curved_moves_follow_surface_within_tolerance():
+    d = Deformation(WaveField(amplitude=0.8, wavelength=16, cx=0, cy=0), Ramp())
+    tr = GcodeTransformer(d, GcodeOptions(seg_len=0.25, z_tol=0.01))
+    out = list(tr.process(["G90", "M83", "G1 X0 Y4 Z10 F3000", "G1 X40 Y4 E2"]))
+    pts, _ = _positions(out)
+    assert 10 < len(pts) < 160          # trocea, pero menos que el muestreo fino
+    # entre puntos consecutivos la recta no se separa de la superficie más de z_tol
+    for (xa, ya, za), (xb, yb, zb) in zip(pts[:-1], pts[1:]):
+        xm = np.linspace(xa, xb, 7)
+        ym = np.linspace(ya, yb, 7)
+        zsurf = d.to_real_z(xm, ym, np.full(7, 10.0))
+        assert np.max(np.abs(np.linspace(za, zb, 7) - zsurf)) < 0.01 + 2e-3
 
 
 def test_extrusion_scaled_by_jacobian():
@@ -87,3 +102,34 @@ def test_detect_xy_offset():
     verts = np.array([[0, 0, 0], [10, 10, 10.0], [0, 10, 10], [10, 0, 10]])
     lines = ["M83"] + [f"G1 X{x + 3} Y{y - 2} Z8 E0.1" for x, y in ((0, 0), (10, 10), (0, 10), (10, 0))]
     assert np.allclose(detect_xy_offset(lines, verts), (3, -2))
+
+
+def _max_z_kinematics(out):
+    """v_z máx (mm/s) del G-code de salida."""
+    x = y = z = None
+    f = 0.0
+    vz = 0.0
+    for line in out:
+        c, p, _ = parse(line)
+        if c != "G1":
+            continue
+        f = p.get("F", f)
+        nx, ny, nz = p.get("X", x), p.get("Y", y), p.get("Z", z)
+        if None not in (x, nx, z, nz):
+            l3 = np.sqrt((nx - x) ** 2 + (ny - y) ** 2 + (nz - z) ** 2)
+            if l3 > 0:
+                vz = max(vz, abs(nz - z) / l3 * f / 60)
+        x, y, z = nx, ny, nz
+    return vz
+
+
+def test_z_speed_limit_respected():
+    lines = ["G90", "M83", "G1 X100 Y100 Z10 F3000", ";TYPE:Perimeter",
+             "G1 X160 Y130 E3 F6000"]
+    d = Deformation(WaveField(amplitude=0.8, wavelength=16, cx=0, cy=0), Ramp())
+    free = list(GcodeTransformer(d, GcodeOptions()).process(lines))
+    lim = GcodeTransformer(d, GcodeOptions(z_max_speed=5, z_max_accel=100))
+    out = list(lim.process(lines))
+    assert _max_z_kinematics(free) > 5
+    assert _max_z_kinematics(out) <= 5 + 1e-3
+    assert lim.stats.z_limited > 0

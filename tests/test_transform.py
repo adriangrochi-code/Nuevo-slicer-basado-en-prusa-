@@ -45,3 +45,13 @@ def test_validate_flags_steep_slope():
     d = Deformation(WaveField(amplitude=2.0, wavelength=8), Ramp(z_ramp=20))
     verts = np.array([[0, 0, 0], [20, 20, 40.0]])
     assert any("Pendiente" in p for p in d.validate(verts, max_slope_deg=20))
+
+
+def test_ridges_gradient_matches_numeric():
+    f = WaveField(amplitude=0.5, wavelength=10, pattern="ridges", angle_deg=30, cx=1, cy=2)
+    x, y, h = np.linspace(-5, 5, 9), np.linspace(3, -4, 9), 1e-6
+    gx, gy = f.grad(x, y)
+    assert np.allclose(gx, (f.g(x + h, y) - f.g(x - h, y)) / (2 * h), atol=1e-6)
+    assert np.allclose(gy, (f.g(x, y + h) - f.g(x, y - h)) / (2 * h), atol=1e-6)
+    assert np.isclose(f.max_slope_deg(np.linspace(0, 20, 400), np.zeros(400)),
+                      f.nominal_slope_deg(), atol=0.1)
