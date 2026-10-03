@@ -717,6 +717,25 @@ DONE:;
         return profile;
     };
 
+    // A non-positive layer height would make every layer generation below loop forever
+    // (GH #15899), so report it and skip the checks that need the object layers.
+    bool invalid_layer_height = false;
+    for (const PrintObject* print_object : m_objects) {
+        const SlicingParameters& sp = print_object->slicing_parameters();
+        if (!(sp.layer_height > 0.) || !(sp.first_print_layer_height > 0.)) {
+            errors.push_back(
+                Error{
+                    ErrorCode::InvalidLayerHeight,
+                    {"layer_height", "first_layer_height"},
+                    print_object->model_object()->id()
+                }
+            );
+            invalid_layer_height = true;
+        }
+    }
+    if (invalid_layer_height)
+        return result;
+
     // Checks that the print does not exceed the max print height
     for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++print_object_idx) {
         const PrintObject& print_object = *m_objects[print_object_idx];

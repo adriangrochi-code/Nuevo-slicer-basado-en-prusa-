@@ -385,6 +385,12 @@ generate_object_layers(const GenerateLayersParams& params, const ZHeightPairs& l
                 );
             }
         }
+        if (!(height > 0.)) {
+            // A non-positive layer height would never advance print_z and the loop would
+            // allocate layers until running out of memory (GH #15899). Print::validate()
+            // reports this as an error; stop here so that other callers cannot hang either.
+            break;
+        }
         slice_z = print_z + 0.5 * height;
         if (slice_z >= params.object_print_z_height) {
             break;

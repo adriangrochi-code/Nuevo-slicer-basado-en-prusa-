@@ -58,6 +58,8 @@ std::string to_display_string(Biz::Slicing::ErrorCode code)
         );
     case ErrorCode::ObjectExceedsHeight:
         return _u8L("The object exceeds the maximum build volume height.");
+    case ErrorCode::InvalidLayerHeight:
+        return _u8L("Layer height and first layer height must be greater than zero.");
     case ErrorCode::LayerExceedsHeight:
         return _u8L(
             "While the object itself fits the build volume, its last layer exceeds the maximum "

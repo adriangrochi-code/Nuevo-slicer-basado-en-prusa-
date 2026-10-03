@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 
@@ -626,6 +628,41 @@ TEST_CASE_METHOD(
         [](TestConfig& c) { c.filament.at(0).items.opt("pressure_advance_value").set(0.05); },
         {psWipeTower, psGCodeExport}
     );
+}
+
+TEST_CASE("Validate rejects zero layer height instead of hanging", "[PrintApply]") {
+    // GH #15899: layer_height = 0 made generate_object_layers() loop forever.
+    using Biz::Slicing::ApplyStatus::Changed;
+    using Biz::Slicing::ErrorCode;
+
+    Print print{};
+    Domain::Model model;
+    TestConfig config{1};
+    Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
+
+    Domain::Bed bed{};
+    Domain::BedInstance bed_instance{bed};
+    bed_instance.model_instances = {model.objects.front()->instances.front()};
+    HwPrinterConfig hw_config{create_dummy_hw_config(config.tool.size())};
+    auto preset_metadata = create_dummy_selected_preset_metadata(hw_config);
+    auto metadata = Biz::Slicing::build_gcode_metadata({}, preset_metadata, config);
+
+    config.print.items.opt("layer_height").set(0.);
+
+    auto status{print.update(
+        model,
+        config,
+        bed_instance,
+        preset_metadata,
+        Biz::Slicing::build_metadata_serializer(metadata, preset_metadata, config)
+    )};
+    REQUIRE(std::holds_alternative<Changed>(status));
+
+    const auto result{print.validate()};
+    REQUIRE(std::ranges::any_of(
+        result.errors,
+        [](const auto& error) { return error.code == ErrorCode::InvalidLayerHeight; }
+    ));
 }
 
 TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {

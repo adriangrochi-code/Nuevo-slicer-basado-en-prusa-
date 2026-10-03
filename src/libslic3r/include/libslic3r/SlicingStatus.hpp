@@ -59,6 +59,7 @@ enum class ErrorCode
     ShrinkageCompensationExceedsHeight, // format(_u8L("While the object %1% itself fits the build volume, it exceeds the maximum build volume height because of material shrinkage compensation."), print_object.model_object()->name)
     ObjectExceedsHeight, // format(_u8L("The object %1% exceeds the maximum build volume height."), print_object.model_object()->name)
     LayerExceedsHeight, // format(_u8L("While the object %1% itself fits the build volume, its last layer exceeds the maximum build volume height."), print_object.model_object()->name) + " " + _u8L("You might want to reduce the size of your model or change current print settings and retry.")
+    InvalidLayerHeight, // _u8L("Layer height and first layer height must be greater than zero.")
     VariableLayerHeightAndOrganicSupports, // _u8L("Variable layer height is not supported with Organic supports.")
     WipeTowerDifferentExtruderDiameters, // _u8L("The wipe tower is only supported if all extruders use filaments of the same diameter.")
     WipeTowerGCodeFlavor, // _u8L("The Wipe Tower is currently only supported for the Marlin, PrusaBuddy, Klipper, RepRap/Sprinter, RepRapFirmware and Repetier G-code flavors.")
