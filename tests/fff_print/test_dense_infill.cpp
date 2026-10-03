@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <cmath>
 #include <map>
 
 #include "test_data.hpp"
@@ -30,8 +31,9 @@ static std::map<double, double> infill_per_layer(bool dense)
     parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.raw().rfind(";TYPE:", 0) == 0)
             type = line.raw().substr(6);
-        else if (line.extruding(self) && line.dist_XY(self) > 0 && type == "Internal infill")
-            out[self.z()] += line.dist_E(self);
+        // Relative E.
+        else if (line.cmd_is("G1") && line.has_e() && line.e() > 0 && line.dist_XY(self) > 0 && type == "Internal infill")
+            out[std::round(self.z() * 100.) / 100.] += line.e();
     });
     return out;
 }

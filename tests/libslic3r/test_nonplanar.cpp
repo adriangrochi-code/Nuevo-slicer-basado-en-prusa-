@@ -90,7 +90,8 @@ TEST_CASE("Non-planar mesh subdivision is watertight and bounded", "[NonPlanar]"
     for (const auto &[edge, count] : edges)
         REQUIRE(count == 2);
     REQUIRE(max_len <= 1.5 + 1e-5);
-    REQUIRE(its_volume(its) == Approx(volume_before).epsilon(1e-5));
+    // Single precision vertices: the splitting points are rounded.
+    REQUIRE(its_volume(its) == Approx(volume_before).epsilon(1e-4));
 }
 
 static std::vector<Vec3d> extrusion_points(const std::string &gcode, double *e_total = nullptr)

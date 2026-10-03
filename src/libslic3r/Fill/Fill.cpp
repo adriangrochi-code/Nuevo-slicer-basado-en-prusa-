@@ -357,7 +357,10 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                 if (surface.is_solid())
                     polygons_append(upper_solid, to_polygons(surface.expolygon));
         if (! upper_solid.empty()) {
-            upper_solid = union_(upper_solid);
+            // Skip the narrow solid rings of the vertical shells, only surfaces need support.
+            upper_solid = opening(union_(upper_solid), float(scale_(1.)));
+        }
+        if (! upper_solid.empty()) {
             for (size_t i = 0, num_fills = surface_fills.size(); i < num_fills; ++ i) {
                 SurfaceFill &fill = surface_fills[i];
                 if (fill.surface.surface_type != stInternal || fill.params.bridge || fill.expolygons.empty())
