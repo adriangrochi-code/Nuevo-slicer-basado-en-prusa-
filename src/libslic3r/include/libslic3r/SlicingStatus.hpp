@@ -134,6 +134,7 @@ enum class WarningCode
     BedTempsChanged,
     FilamentShrinkageDiffer,
     WipeTowerNozzleDiameterDiffer,
+    WipeTowerPressureAdvanceDiffer,
     SupportNozzleDiameterDiffer,
     SupportsTurnedOff,
     StabilityIssues, // _u8L("Detected print stability issues:\n%1%")
