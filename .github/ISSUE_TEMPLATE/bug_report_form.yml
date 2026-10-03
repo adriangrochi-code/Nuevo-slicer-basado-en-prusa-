@@ -1,0 +1,62 @@
+name: 🐞 Bug Report
+description: Found a reproducible bug in PrusaSlicer? Report it here.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Before filing, please read the [issue tracker policy](https://github.com/prusa3d/PrusaSlicer#issue-tracker-policy), maybe you will find, that you would rather start a [discussion](https://github.com/prusa3d/PrusaSlicer/discussions) than fill in a bug report. Also, make sure that the bug report does not **already exist** (either open or closed) by using the search bar in the [issue tracker](https://github.com/prusa3d/PrusaSlicer/issues?q=is%3Aissue). If it does, comment there even if it's closed. We can **reopen it based on your comment**.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Description of the bug
+      description: Please provide a **detailed description** and a **screenshot** if possible. Even if you think the description is clear, still provide the screenshot.
+      placeholder: |
+        Description and screenshots
+    validations:
+      required: true
+  - type: textarea
+    id: to_reproduce
+    attributes:
+      label: Zipped project file & How to reproduce
+      description: "Save your project as 3mf then **ZIP** it and then upload the **ZIP** archive containing the project file. You **cannot** upload the 3mf file as is - **you need to ZIP it**."
+      placeholder: |
+        Steps to reproduce the issue and the zipped 3mf file
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version of PrusaSlicer
+      description: What version of PrusaSlicer are you running?
+      placeholder: "e.g.: 3.0.0-beta1"
+    validations:
+      required: true
+  - type: dropdown
+    id: os_type
+    attributes:
+      label: Operating system
+      description: What operating system are you on?
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system version
+      description: On macOS and Windows a version number will suffice, on Linux, please also provide the name of the distribution you are on.
+      placeholder: "e.g.: 11"
+    validations:
+      required: true
+  - type: input
+    id: printer
+    attributes:
+      label: Printer model
+      description: Please, fill this in even if it seems irrelevant.
+      placeholder: "e.g.: Prusa CORE One"
+    validations:
+      required: true
