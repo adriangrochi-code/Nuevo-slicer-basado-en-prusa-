@@ -41,34 +41,53 @@ void populate_local_bundle(const BundlePaths& bundle_paths)
                     repo_entry.path().filename().string(),
                     dest_path.filename().string()
                 );
-                if (fs::exists(dest_path)) {
-                    // clean up the old directory
-                    fs::remove_all(dest_path);
-                }
-                fs::create_directories(dest_path);
-                // Do not use fs::copy() here: it replicates the permissions of
-                // the source tree onto the copy. When the bundled presets are
-                // installed on a read-only medium -- such as the Nix store, where
-                // every directory is r-xr-xr-x -- fs::copy creates the destination
-                // directories read-only and then aborts with EACCES on the first
-                // file it tries to write into them, which nothing catches. Copy
-                // by hand instead, so the user's own copy stays writable.
-                for (const auto& copied : fs::recursive_directory_iterator(src_path)) {
-                    const fs::path target = dest_path / fs::relative(copied.path(), src_path);
-                    if (copied.is_directory()) {
-                        fs::create_directories(target);
-                        continue;
+                // Copy into a temporary directory and rename it at the end, so that an
+                // interrupted copy never leaves a partial vendor directory behind: the
+                // vendor.yaml check above would then never retry it (GH #15693).
+                const fs::path tmp_path{dest_path.string() + ".partial"};
+                try {
+                    if (fs::exists(tmp_path))
+                        fs::remove_all(tmp_path);
+                    if (fs::exists(dest_path))
+                        // clean up the old directory
+                        fs::remove_all(dest_path);
+                    fs::create_directories(tmp_path);
+                    // Do not use fs::copy() here: it replicates the permissions of
+                    // the source tree onto the copy. When the bundled presets are
+                    // installed on a read-only medium -- such as the Nix store, where
+                    // every directory is r-xr-xr-x -- fs::copy creates the destination
+                    // directories read-only and then aborts with EACCES on the first
+                    // file it tries to write into them, which nothing catches. Copy
+                    // by hand instead, so the user's own copy stays writable.
+                    for (const auto& copied : fs::recursive_directory_iterator(src_path)) {
+                        const fs::path target = tmp_path / fs::relative(copied.path(), src_path);
+                        if (copied.is_directory()) {
+                            fs::create_directories(target);
+                            continue;
+                        }
+                        fs::create_directories(target.parent_path());
+                        fs::copy_file(copied.path(), target, fs::copy_options::overwrite_existing);
+                        fs::permissions(target, fs::add_perms | fs::owner_write);
                     }
-                    fs::create_directories(target.parent_path());
-                    fs::copy_file(copied.path(), target, fs::copy_options::overwrite_existing);
-                    fs::permissions(target, fs::add_perms | fs::owner_write);
+                    fs::copy_file(
+                        src_path.string() + ".idx",
+                        dest_path.string() + ".idx",
+                        fs::copy_options::overwrite_existing
+                    );
+                    fs::permissions(dest_path.string() + ".idx", fs::add_perms | fs::owner_write);
+                    fs::rename(tmp_path, dest_path);
+                } catch (const fs::filesystem_error& e) {
+                    // E.g. a path longer than MAX_PATH on Windows. Without a local copy,
+                    // load_bundle() falls back to the presets bundled with the application.
+                    SPDLOG_ERROR(
+                        "Populating vendor {} failed, the bundled presets will be used instead: {}",
+                        dest_path.string(),
+                        e.what()
+                    );
+                    boost::system::error_code ec;
+                    fs::remove_all(tmp_path, ec);
+                    fs::remove_all(dest_path, ec);
                 }
-                fs::copy_file(
-                    src_path.string() + ".idx",
-                    dest_path.string() + ".idx",
-                    fs::copy_options::overwrite_existing
-                );
-                fs::permissions(dest_path.string() + ".idx", fs::add_perms | fs::owner_write);
             }
         }
     }
@@ -95,6 +114,10 @@ Domain::Preset::Bundle load_bundle(const BundlePaths& bundle_paths)
             }
             for (const auto& vendor_dir : fs::directory_iterator(repo_dir)) {
                 if (!vendor_dir.is_directory() || !fs::exists(vendor_dir.path() / fs::path{"vendor.yaml"})) {
+                    continue;
+                }
+                if (vendor_dir.path().extension() == ".partial") {
+                    // Leftover of an interrupted populate_local_bundle(), not a vendor.
                     continue;
                 }
                 repo_vendor_pairs.insert(std::make_pair(
