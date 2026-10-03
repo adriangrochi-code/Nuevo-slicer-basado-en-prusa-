@@ -348,6 +348,45 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		}
     }
 
+    // Dense infill: the sparse infill just below solid surfaces is printed denser, only where these
+    // surfaces need support, so that the rest of the sparse infill can be very light.
+    if (const Layer *upper = layer.upper_layer; upper != nullptr) {
+        Polygons upper_solid;
+        for (const LayerRegion *upper_region : upper->regions())
+            for (const Surface &surface : upper_region->fill_surfaces())
+                if (surface.is_solid())
+                    polygons_append(upper_solid, to_polygons(surface.expolygon));
+        if (! upper_solid.empty()) {
+            upper_solid = union_(upper_solid);
+            for (size_t i = 0, num_fills = surface_fills.size(); i < num_fills; ++ i) {
+                SurfaceFill &fill = surface_fills[i];
+                if (fill.surface.surface_type != stInternal || fill.params.bridge || fill.expolygons.empty())
+                    continue;
+                const PrintRegionConfig &region_config = layer.regions()[fill.region_id]->region().config();
+                const float dense_density = float(region_config.infill_dense_density.value);
+                if (! region_config.infill_dense || dense_density <= fill.params.density)
+                    continue;
+                // Support the solid surfaces above with a margin, so that their edges are anchored.
+                const float margin = float(scale_(1.));
+                ExPolygons dense = opening_ex(intersection_ex(fill.expolygons, expand(upper_solid, margin)),
+                                              float(fill.params.flow.scaled_spacing()));
+                if (dense.empty())
+                    continue;
+                fill.expolygons = diff_ex(fill.expolygons, dense);
+                SurfaceFill dense_fill(fill.params);
+                dense_fill.region_id      = fill.region_id;
+                dense_fill.surface        = fill.surface;
+                dense_fill.params.density = dense_density;
+                // Lightning and the adaptive patterns need their generators, rectilinear is the most
+                // material efficient support for the bridges above.
+                dense_fill.params.pattern = ipRectilinear;
+                dense_fill.params.idx     = surface_fills.size();
+                dense_fill.expolygons     = std::move(dense);
+                surface_fills.emplace_back(std::move(dense_fill));
+            }
+        }
+    }
+
     // Use ipEnsuring pattern for all internal Solids.
     {
         for (size_t surface_fill_id = 0; surface_fill_id < surface_fills.size(); ++surface_fill_id)

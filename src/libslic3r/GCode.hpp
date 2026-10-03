@@ -41,6 +41,7 @@
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/GCode/Travels.hpp"
+#include "libslic3r/NonPlanar.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
 
@@ -452,6 +453,9 @@ private:
     std::unique_ptr<SpiralVase>         m_spiral_vase;
     std::unique_ptr<GCodeFindReplace>   m_find_replace;
     std::unique_ptr<PressureEqualizer>  m_pressure_equalizer;
+    // Non-planar layers: transforms the planar G-code of each layer back to curved layers.
+    std::unique_ptr<NonPlanar::Deformation> m_nonplanar_deformation;
+    std::unique_ptr<NonPlanar::GCodeFilter> m_nonplanar;
     std::unique_ptr<GCode::WipeTowerIntegration> m_wipe_tower;
 
     // Current fan speed set by dynamic fan speed control.

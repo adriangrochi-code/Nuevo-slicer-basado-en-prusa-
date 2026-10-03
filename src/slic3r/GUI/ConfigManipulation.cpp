@@ -282,8 +282,26 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 
 void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 {
+    {
+        // Non-planar layers.
+        const auto mode     = config->option<ConfigOptionEnum<NonPlanarMode>>("nonplanar_mode")->value;
+        const bool nonplanar = mode != NonPlanarMode::Disabled;
+        const bool wave      = mode == NonPlanarMode::Wave;
+        const auto pattern   = config->option<ConfigOptionEnum<NonPlanarPattern>>("nonplanar_pattern")->value;
+        for (auto el : { "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top",
+                         "nonplanar_flow_policy", "nonplanar_segment_length" })
+            toggle_field(el, nonplanar);
+        for (auto el : { "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength" })
+            toggle_field(el, wave);
+        toggle_field("nonplanar_angle", wave && pattern != NonPlanarPattern::Egg);
+        toggle_field("nonplanar_twist", wave && pattern == NonPlanarPattern::Twisted);
+        toggle_field("nonplanar_cone_angle", mode == NonPlanarMode::Conical);
+        toggle_field("nonplanar_uniform_flow", nonplanar &&
+            config->option<ConfigOptionEnum<NonPlanarFlowPolicy>>("nonplanar_flow_policy")->value == NonPlanarFlowPolicy::Uniform);
+    }
+
     bool have_perimeters = config->opt_int("perimeters") > 0;
-    for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "thin_walls", "overhangs",
+    for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "overhang_arcs", "thin_walls", "overhangs",
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
                     "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds"})
         toggle_field(el, have_perimeters);
@@ -296,9 +314,10 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     const bool has_automatic_infill_combination = config->option<ConfigOptionBool>("automatic_infill_combination")->value;
     // infill_extruder uses the same logic as in Print::extruders()
     for (auto el : { "fill_pattern","solid_infill_every_layers", "solid_infill_below_area", "infill_extruder",
-                    "infill_anchor_max", "automatic_infill_combination" }) {
+                    "infill_anchor_max", "automatic_infill_combination", "infill_dense" }) {
         toggle_field(el, have_infill);
     }
+    toggle_field("infill_dense_density", have_infill && config->opt_bool("infill_dense"));
 
     toggle_field("infill_every_layers", have_infill && !has_automatic_infill_combination);
     toggle_field("automatic_infill_combination_max_layer_height", have_infill && has_automatic_infill_combination);

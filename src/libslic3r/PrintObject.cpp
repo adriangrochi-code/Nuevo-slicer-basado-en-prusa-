@@ -727,6 +727,7 @@ bool PrintObject::invalidate_state_by_config_options(
                opt_key == "perimeters"
             || opt_key == "extra_perimeters"
             || opt_key == "extra_perimeters_on_overhangs"
+            || opt_key == "overhang_arcs"
             || opt_key == "first_layer_extrusion_width"
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"
@@ -852,6 +853,8 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "fill_angle"
             || opt_key == "infill_anchor"
             || opt_key == "infill_anchor_max"
+            || opt_key == "infill_dense"
+            || opt_key == "infill_dense_density"
             || opt_key == "top_infill_extrusion_width"
             || opt_key == "first_layer_extrusion_width") {
             steps.emplace_back(posInfill);

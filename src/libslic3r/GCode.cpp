@@ -1055,6 +1055,26 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     if (print.config().spiral_vase.value)
         m_spiral_vase = make_unique<SpiralVase>(print.config());
 
+    m_nonplanar.reset();
+    m_nonplanar_deformation.reset();
+    if (NonPlanar::enabled(print.config()) && ! print.objects().empty() && ! print.objects().front()->instances().empty()) {
+        // Print::validate() allows a single object instance only.
+        const PrintObject &object = *print.objects().front();
+        BoundingBoxf3 bbox;
+        for (const ModelVolume *model_volume : object.model_object()->volumes)
+            if (model_volume->is_model_part())
+                bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
+        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox));
+        NonPlanar::GCodeFilterParams params = NonPlanar::make_filter_params(print.config());
+        // G-code coordinates of the object origin and of the object bottom.
+        params.origin = unscaled<double>(object.instances().front().shift);
+        params.z_base = print.config().z_offset.value + object.slicing_parameters().object_print_z_min;
+        const double margin = m_nonplanar_deformation->max_offset(bbox);
+        params.top_slice_z = bbox.max.z() + margin + object.slicing_parameters().layer_height + EPSILON;
+        params.top_lift    = margin;
+        m_nonplanar = make_unique<NonPlanar::GCodeFilter>(*m_nonplanar_deformation, params);
+    }
+
     if (print.config().max_volumetric_extrusion_rate_slope_positive.value > 0 ||
         print.config().max_volumetric_extrusion_rate_slope_negative.value > 0)
         m_pressure_equalizer = make_unique<PressureEqualizer>(print.config());
@@ -1627,7 +1647,14 @@ void GCodeGenerator::process_layers(
     if (m_pressure_equalizer)
         pipeline_to_layerresult = pipeline_to_layerresult & pressure_equalizer;
 
+    const auto nonplanar = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [nonplanar = this->m_nonplanar.get()](std::string s) -> std::string {
+            return nonplanar->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 
@@ -1720,7 +1747,14 @@ void GCodeGenerator::process_layers(
     if (m_pressure_equalizer)
         pipeline_to_layerresult = pipeline_to_layerresult & pressure_equalizer;
 
+    const auto nonplanar = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [nonplanar = this->m_nonplanar.get()](std::string s) -> std::string {
+            return nonplanar->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 

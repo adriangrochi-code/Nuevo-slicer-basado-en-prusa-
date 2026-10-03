@@ -180,6 +180,11 @@ enum class LabelObjectsStyle {
     Disabled, Octoprint, Firmware
 };
 
+// Non-planar layers (see NonPlanar.hpp).
+enum class NonPlanarMode { Disabled, Wave, Conical };
+enum class NonPlanarPattern { Egg, Ridges, Twisted };
+enum class NonPlanarFlowPolicy { Preserve, Uniform, Off };
+
 enum class PerimeterGeneratorType
 {
     // Classic perimeter generator using Clipper offsets with constant extrusion width.
@@ -307,6 +312,9 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(LabelObjectsStyle)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(GCodeThumbnailsFormat)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(ForwardCompatibilitySubstitutionRule)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarMode)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarPattern)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarFlowPolicy)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOnePerimeterType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(EnsureVerticalShellThickness)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(CoolingSlowdownLogicType)
@@ -757,8 +765,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 external_perimeters_first))
     ((ConfigOptionBool,                 extra_perimeters))
     ((ConfigOptionBool,                 extra_perimeters_on_overhangs))
+    ((ConfigOptionBool,                 overhang_arcs))
     ((ConfigOptionFloat,                fill_angle))
     ((ConfigOptionPercent,              fill_density))
+    ((ConfigOptionBool,                 infill_dense))
+    ((ConfigOptionPercent,              infill_dense_density))
     ((ConfigOptionEnum<InfillPattern>,  fill_pattern))
     ((ConfigOptionEnum<FuzzySkinType>,  fuzzy_skin))
     ((ConfigOptionFloat,                fuzzy_skin_thickness))
@@ -1031,6 +1042,20 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionInts,               slowdown_below_layer_time))
     ((ConfigOptionFloat,              solid_infill_acceleration))
     ((ConfigOptionBool,               spiral_vase))
+    ((ConfigOptionEnum<NonPlanarMode>,       nonplanar_mode))
+    ((ConfigOptionEnum<NonPlanarPattern>,    nonplanar_pattern))
+    ((ConfigOptionFloat,              nonplanar_amplitude))
+    ((ConfigOptionFloat,              nonplanar_wavelength))
+    ((ConfigOptionFloat,              nonplanar_angle))
+    ((ConfigOptionFloat,              nonplanar_twist))
+    ((ConfigOptionFloat,              nonplanar_cone_angle))
+    ((ConfigOptionFloat,              nonplanar_flat_below))
+    ((ConfigOptionFloat,              nonplanar_ramp_height))
+    ((ConfigOptionBool,               nonplanar_flat_top))
+    ((ConfigOptionFloat,              nonplanar_max_slope))
+    ((ConfigOptionFloat,              nonplanar_segment_length))
+    ((ConfigOptionEnum<NonPlanarFlowPolicy>, nonplanar_flow_policy))
+    ((ConfigOptionFloat,              nonplanar_uniform_flow))
     ((ConfigOptionInt,                standby_temperature_delta))
     ((ConfigOptionInts,               temperature))
     ((ConfigOptionInt,                threads))

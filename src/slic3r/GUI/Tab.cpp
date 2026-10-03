@@ -1466,6 +1466,7 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Quality (slower slicing)"));
         optgroup->append_single_option_line("extra_perimeters", category_path + "extra-perimeters-if-needed");
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
+        optgroup->append_single_option_line("overhang_arcs");
         optgroup->append_single_option_line("ensure_vertical_shell_thickness", category_path + "ensure-vertical-shell-thickness");
         optgroup->append_single_option_line("avoid_crossing_curled_overhangs", category_path + "avoid-crossing-curled-overhangs");
         optgroup->append_single_option_line("avoid_crossing_perimeters", category_path + "avoid-crossing-perimeters");
@@ -1510,6 +1511,8 @@ void TabPrint::build()
         optgroup->append_single_option_line("fill_pattern", category_path + "fill-pattern");
         optgroup->append_single_option_line("infill_anchor", category_path + "fill-pattern");
         optgroup->append_single_option_line("infill_anchor_max", category_path + "fill-pattern");
+        optgroup->append_single_option_line("infill_dense");
+        optgroup->append_single_option_line("infill_dense_density");
         optgroup->append_single_option_line("top_fill_pattern", category_path + "top-fill-pattern");
         optgroup->append_single_option_line("bottom_fill_pattern", category_path + "bottom-fill-pattern");
 
@@ -1645,6 +1648,31 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Pressure equalizer (experimental)"));
         optgroup->append_single_option_line("max_volumetric_extrusion_rate_slope_positive", "pressure-equlizer_331504");
         optgroup->append_single_option_line("max_volumetric_extrusion_rate_slope_negative", "pressure-equlizer_331504");
+
+    page = add_options_page(L("Non-planar"), "layers");
+        optgroup = page->new_optgroup(L("Non-planar layers"));
+        optgroup->append_single_option_line("nonplanar_mode");
+        optgroup->append_single_option_line("nonplanar_max_slope");
+
+        optgroup = page->new_optgroup(L("Wave"));
+        optgroup->append_single_option_line("nonplanar_pattern");
+        optgroup->append_single_option_line("nonplanar_amplitude");
+        optgroup->append_single_option_line("nonplanar_wavelength");
+        optgroup->append_single_option_line("nonplanar_angle");
+        optgroup->append_single_option_line("nonplanar_twist");
+
+        optgroup = page->new_optgroup(L("Conical"));
+        optgroup->append_single_option_line("nonplanar_cone_angle");
+
+        optgroup = page->new_optgroup(L("Transition"));
+        optgroup->append_single_option_line("nonplanar_flat_below");
+        optgroup->append_single_option_line("nonplanar_ramp_height");
+        optgroup->append_single_option_line("nonplanar_flat_top");
+
+        optgroup = page->new_optgroup(L("G-code"));
+        optgroup->append_single_option_line("nonplanar_flow_policy");
+        optgroup->append_single_option_line("nonplanar_uniform_flow");
+        optgroup->append_single_option_line("nonplanar_segment_length");
 
     page = add_options_page(L("Multiple Extruders"), "funnel");
         optgroup = page->new_optgroup(L("Extruders"));

@@ -1,6 +1,7 @@
 get_filename_component(_TEST_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 add_executable(${_TEST_NAME}_tests 
 	${_TEST_NAME}_tests.cpp
+	test_arc_overhangs.cpp
 	test_avoid_crossing_perimeters.cpp
 	test_bridges.cpp
 	test_cooling.cpp
@@ -8,6 +9,7 @@ add_executable(${_TEST_NAME}_tests
 	test_custom_gcode.cpp
 	test_data.cpp
 	test_data.hpp
+	test_dense_infill.cpp
 	test_extrusion_entity.cpp
 	test_fill.cpp
 	test_flow.cpp
@@ -29,6 +31,7 @@ add_executable(${_TEST_NAME}_tests
     test_layers.cpp
 	test_model.cpp
 	test_multi.cpp
+	test_nonplanar_print.cpp
 	test_perimeters.cpp
 	test_print.cpp
 	test_printgcode.cpp

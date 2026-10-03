@@ -228,6 +228,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/ASCIIFolding.cpp
     Utils/ASCIIFolding.hpp
     Utils/Serial.cpp
+    Utils/USBPrinter.cpp
+    Utils/USBPrinter.hpp
     Utils/Serial.hpp
     GUI/ConfigWizard.cpp
     GUI/ConfigWizard.hpp
@@ -239,6 +241,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdateDialogs.cpp
     GUI/UpdateDialogs.hpp
     GUI/FirmwareDialog.cpp
+    GUI/USBPrintDialog.cpp
+    GUI/USBPrintDialog.hpp
     GUI/FirmwareDialog.hpp
     GUI/PrintHostDialogs.cpp
     GUI/PrintHostDialogs.hpp

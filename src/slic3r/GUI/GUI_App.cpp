@@ -84,6 +84,7 @@
 #include "slic3r/Config/Snapshot.hpp"
 #include "ConfigSnapshotDialog.hpp"
 #include "FirmwareDialog.hpp"
+#include "USBPrintDialog.hpp"
 #include "slic3r/GUI/Preferences.hpp" // IWYU pragma: keep
 #include "Tab.hpp"
 #include "SysInfoDialog.hpp"
@@ -2744,6 +2745,7 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
     if (is_editor()) {
         local_menu->AppendSeparator();
         local_menu->Append(config_id_base + ConfigMenuFlashFirmware, _L("Flash Printer &Firmware"), _L("Upload a firmware image into an Arduino based printer"));
+        local_menu->Append(config_id_base + ConfigMenuUSBPrint, _L("Print via &USB") + dots, _L("Print a G-code file on a printer connected by USB (serial port)"));
         // TODO: for when we're able to flash dictionaries
         // local_menu->Append(config_id_base + FirmwareMenuDict,  _L("Flash Language File"),    _L("Upload a language dictionary file into a Prusa printer"));
     }
@@ -2846,6 +2848,9 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
         }
         case ConfigMenuFlashFirmware:
             FirmwareDialog::run(mainframe);
+            break;
+        case ConfigMenuUSBPrint:
+            USBPrintDialog::run(mainframe);
             break;
         case ConfigMenuWifiConfigFile:
         {

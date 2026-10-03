@@ -288,6 +288,8 @@ set(SLIC3R_SOURCES
     CustomParametersHandling.cpp
     CustomParametersHandling.hpp
     MultiPoint.cpp
+    NonPlanar.cpp
+    NonPlanar.hpp
     MultiPoint.hpp
     MutablePriorityQueue.hpp
     NormalUtils.cpp

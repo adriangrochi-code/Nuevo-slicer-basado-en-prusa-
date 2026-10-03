@@ -22,6 +22,7 @@
 ///|/
 #include "Exception.hpp"
 #include "Print.hpp"
+#include "NonPlanar.hpp"
 #include "BoundingBox.hpp"
 #include "Brim.hpp"
 #include "ClipperUtils.hpp"
@@ -83,6 +84,10 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
     // or they are only notes not influencing the generated G-code.
     static std::unordered_set<std::string> steps_gcode = {
         "autoemit_temperature_commands",
+        "nonplanar_flow_policy",
+        "nonplanar_max_slope",
+        "nonplanar_segment_length",
+        "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
         "avoid_crossing_perimeters_max_detour",
         "bed_shape",
@@ -222,6 +227,17 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             // In Spiral Vase mode, holes are closed and only the largest area contour is kept at each layer.
             // Therefore toggling the Spiral Vase on / off requires complete reslicing.
             || opt_key == "spiral_vase"
+            // Non-planar layers deform the mesh before slicing.
+            || opt_key == "nonplanar_mode"
+            || opt_key == "nonplanar_pattern"
+            || opt_key == "nonplanar_amplitude"
+            || opt_key == "nonplanar_wavelength"
+            || opt_key == "nonplanar_angle"
+            || opt_key == "nonplanar_twist"
+            || opt_key == "nonplanar_cone_angle"
+            || opt_key == "nonplanar_flat_below"
+            || opt_key == "nonplanar_ramp_height"
+            || opt_key == "nonplanar_flat_top"
             || opt_key == "filament_shrinkage_compensation_xy"
             || opt_key == "filament_shrinkage_compensation_z"
             || opt_key == "prefer_clockwise_movements") {
@@ -480,6 +496,40 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 
     if (extruders.empty())
         return _u8L("The supplied settings will cause an empty print.");
+
+    if (NonPlanar::enabled(m_config)) {
+        size_t total_copies_count = 0;
+        for (const PrintObject *object : m_objects)
+            total_copies_count += object->instances().size();
+        if (total_copies_count > 1)
+            return _u8L("Non-planar layers can only be used with a single object instance.");
+        if (m_config.spiral_vase)
+            return _u8L("Non-planar layers cannot be combined with the Spiral Vase mode.");
+        if (m_config.arc_fitting != ArcFittingType::Disabled)
+            return _u8L("Non-planar layers require Arc fitting to be disabled.");
+        if (! m_config.use_relative_e_distances)
+            return _u8L("Non-planar layers require relative extruder distances (use_relative_e_distances).");
+        if (m_config.wipe_tower && extruders.size() > 1)
+            return _u8L("Non-planar layers cannot be combined with the wipe tower.");
+        const PrintObject &object = *m_objects.front();
+        BoundingBoxf3 bbox;
+        for (const ModelVolume *model_volume : object.model_object()->volumes)
+            if (model_volume->is_model_part())
+                bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox);
+        const NonPlanar::Deformation::Check check = deformation.check(bbox);
+        if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
+            return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
+                               "nominal one (allowed %3% %% to %4% %%). Increase the transition height or reduce the "
+                               "wave amplitude / cone angle."),
+                          int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
+                          int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
+        if (check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
+            return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the maximum layer "
+                               "slope of %2%° the nozzle can print without colliding with the part. Use a longer "
+                               "wavelength or a smaller amplitude / cone angle."),
+                          int(std::round(check.max_slope_deg)), int(std::round(m_config.nonplanar_max_slope.value)));
+    }
 
     if (m_config.avoid_crossing_perimeters && m_config.avoid_crossing_curled_overhangs) {
         return _u8L("Avoid crossing perimeters option and avoid crossing curled overhangs option cannot be both enabled together.");

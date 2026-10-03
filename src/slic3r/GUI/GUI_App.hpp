@@ -104,6 +104,7 @@ enum ConfigMenuIDs {
     ConfigMenuModeExpert,
     ConfigMenuLanguage,
     ConfigMenuFlashFirmware,
+    ConfigMenuUSBPrint,
     ConfigMenuCnt,
     ConfigMenuWifiConfigFile
 };

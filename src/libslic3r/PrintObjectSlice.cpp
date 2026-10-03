@@ -38,6 +38,7 @@
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
@@ -70,12 +71,27 @@ LayerPtrs new_layers(
     return out;
 }
 
+// Non-planar layers: deformation of this object (in object coordinates), if enabled.
+static std::optional<NonPlanar::Deformation> nonplanar_deformation(
+    const PrintConfig &print_config, const Transform3d &object_trafo, const ModelVolumePtrs &model_volumes)
+{
+    if (! NonPlanar::enabled(print_config))
+        return std::nullopt;
+    BoundingBoxf3 bbox;
+    for (const ModelVolume *model_volume : model_volumes)
+        if (model_volume->is_model_part())
+            bbox.merge(model_volume->mesh().transformed_bounding_box(object_trafo * model_volume->get_matrix()));
+    return NonPlanar::make_deformation(print_config, bbox);
+}
+
 // Slice single triangle mesh.
 static std::vector<ExPolygons> slice_volume(
     const ModelVolume             &volume,
     const std::vector<float>      &zs, 
     const MeshSlicingParamsEx     &params,
-    const std::function<void()>   &throw_on_cancel_callback)
+    const std::function<void()>   &throw_on_cancel_callback,
+    const NonPlanar::Deformation  *deformation = nullptr,
+    double                         nonplanar_max_edge = 0.)
 {
     std::vector<ExPolygons> layers;
     if (! zs.empty()) {
@@ -85,6 +101,12 @@ static std::vector<ExPolygons> slice_volume(
             params2.trafo = params2.trafo * volume.get_matrix();
             if (params2.trafo.rotation().determinant() < 0.)
                 its_flip_triangles(its);
+            if (deformation != nullptr) {
+                // Move the mesh to the slice space of the non-planar layers, see NonPlanar.hpp.
+                its_transform(its, params2.trafo);
+                params2.trafo = Transform3d::Identity();
+                NonPlanar::deform_mesh(its, *deformation, nonplanar_max_edge);
+            }
             layers = slice_mesh_ex(its, zs, params2, throw_on_cancel_callback);
             throw_on_cancel_callback();
         }
@@ -99,13 +121,15 @@ static std::vector<ExPolygons> slice_volume(
     const std::vector<float>                    &z,
     const std::vector<t_layer_height_range>     &ranges,
     const MeshSlicingParamsEx                   &params,
-    const std::function<void()>                 &throw_on_cancel_callback)
+    const std::function<void()>                 &throw_on_cancel_callback,
+    const NonPlanar::Deformation                *deformation = nullptr,
+    double                                       nonplanar_max_edge = 0.)
 {
     std::vector<ExPolygons> out;
     if (! z.empty() && ! ranges.empty()) {
         if (ranges.size() == 1 && z.front() >= ranges.front().first && z.back() < ranges.front().second) {
             // All layers fit into a single range.
-            out = slice_volume(volume, z, params, throw_on_cancel_callback);
+            out = slice_volume(volume, z, params, throw_on_cancel_callback, deformation, nonplanar_max_edge);
         } else {
             std::vector<float>                     z_filtered;
             std::vector<std::pair<size_t, size_t>> n_filtered;
@@ -121,7 +145,7 @@ static std::vector<ExPolygons> slice_volume(
                     n_filtered.emplace_back(std::make_pair(first, i));
             }
             if (! n_filtered.empty()) {
-                std::vector<ExPolygons> layers = slice_volume(volume, z_filtered, params, throw_on_cancel_callback);
+                std::vector<ExPolygons> layers = slice_volume(volume, z_filtered, params, throw_on_cancel_callback, deformation, nonplanar_max_edge);
                 out.assign(z.size(), ExPolygons());
                 i = 0;
                 for (const std::pair<size_t, size_t> &span : n_filtered)
@@ -181,6 +205,10 @@ static std::vector<VolumeSlices> slice_volumes_inner(
 
     params_base.mode_below     = params_base.mode;
 
+    const std::optional<NonPlanar::Deformation> deformation = nonplanar_deformation(print_config, object_trafo, model_volumes);
+    const NonPlanar::Deformation *deformation_ptr = deformation ? &*deformation : nullptr;
+    const double nonplanar_max_edge = NonPlanar::mesh_max_edge(print_config);
+
     const size_t num_extruders = print_config.nozzle_diameter.size();
     const bool   is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const ModelVolume *mv) { return mv->is_mm_painted(); });
     const auto   extra_offset  = is_mm_painted ? 0.f : std::max(0.f, float(print_object_config.xy_size_compensation.value));
@@ -205,7 +233,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                     }
                     out.push_back({
                         model_volume->id(), 
-                        slice_volume(*model_volume, zs, params, throw_on_cancel_callback)
+                        slice_volume(*model_volume, zs, params, throw_on_cancel_callback, deformation_ptr, nonplanar_max_edge)
                     });
                 }
             } else {
@@ -217,7 +245,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                 if (! slicing_ranges.empty())
                     out.push_back({ 
                         model_volume->id(), 
-                        slice_volume(*model_volume, zs, slicing_ranges, params, throw_on_cancel_callback)
+                        slice_volume(*model_volume, zs, slicing_ranges, params, throw_on_cancel_callback, deformation_ptr, nonplanar_max_edge)
                     });
             }
             if (! out.empty() && out.back().slices.empty())
@@ -535,7 +563,18 @@ void PrintObject::slice()
     m_print->throw_if_canceled();
     m_typed_slices = false;
     this->clear_layers();
-    m_layers = new_layers(this, generate_object_layers(m_slicing_params, layer_height_profile));
+    SlicingParameters slicing_params = m_slicing_params;
+    if (const std::optional<NonPlanar::Deformation> deformation =
+            nonplanar_deformation(m_print->config(), this->trafo_centered(), this->model_object()->volumes)) {
+        // The deformed mesh may reach above the object height in slice space: slice up to there,
+        // the empty layers on top are removed after slicing.
+        BoundingBoxf3 bbox;
+        for (const ModelVolume *model_volume : this->model_object()->volumes)
+            if (model_volume->is_model_part())
+                bbox.merge(model_volume->mesh().transformed_bounding_box(this->trafo_centered() * model_volume->get_matrix()));
+        slicing_params.object_print_z_max += deformation->max_offset(bbox) + slicing_params.layer_height;
+    }
+    m_layers = new_layers(this, generate_object_layers(slicing_params, layer_height_profile));
     this->slice_volumes();
     m_print->throw_if_canceled();
 #if 0

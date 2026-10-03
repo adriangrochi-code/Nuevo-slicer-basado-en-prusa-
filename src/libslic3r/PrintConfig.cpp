@@ -273,6 +273,27 @@ static t_config_enum_values s_keys_map_PerimeterGeneratorType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PerimeterGeneratorType)
 
+static t_config_enum_values s_keys_map_NonPlanarMode {
+    { "disabled", int(NonPlanarMode::Disabled) },
+    { "wave",     int(NonPlanarMode::Wave) },
+    { "conical",  int(NonPlanarMode::Conical) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
+
+static t_config_enum_values s_keys_map_NonPlanarPattern {
+    { "egg",     int(NonPlanarPattern::Egg) },
+    { "ridges",  int(NonPlanarPattern::Ridges) },
+    { "twisted", int(NonPlanarPattern::Twisted) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarPattern)
+
+static t_config_enum_values s_keys_map_NonPlanarFlowPolicy {
+    { "preserve", int(NonPlanarFlowPolicy::Preserve) },
+    { "uniform",  int(NonPlanarFlowPolicy::Uniform) },
+    { "off",      int(NonPlanarFlowPolicy::Off) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarFlowPolicy)
+
 
 static t_config_enum_values s_keys_map_TopOnePerimeterType {
     { "none",    int(TopOnePerimeterType::None) },
@@ -1182,6 +1203,14 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("overhang_arcs", coBool);
+    def->label = L("Arc overhangs (Experimental)");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Print overhangs that cannot be anchored as concentric arcs growing from the supported "
+                    "edge, each arc resting on the previous one. Steep overhangs print without support material.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("extruder", coInt);
     def->label = L("Extruder");
     def->category = L("Extruders");
@@ -1612,6 +1641,25 @@ void PrintConfigDef::init_fff_params()
     def->max = 360;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(45));
+
+    def = this->add("infill_dense", coBool);
+    def->label = L("Dense infill under top surfaces");
+    def->category = L("Infill");
+    def->tooltip = L("Print the sparse infill layer just below solid top surfaces with a higher density, only "
+                    "where these surfaces need support. This allows a much lower sparse infill density "
+                    "(less material and time) without sagging top surfaces.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("infill_dense_density", coPercent);
+    def->label = L("Dense infill density");
+    def->category = L("Infill");
+    def->tooltip = L("Density of the infill layer printed below solid top surfaces when \"Dense infill under top surfaces\" is enabled.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionPercent(40));
 
     def = this->add("fill_density", coPercent);
     def->gui_flags = "show_value";
@@ -3151,6 +3199,150 @@ void PrintConfigDef::init_fff_params()
                    "any number of bottom solid layers as well as skirt/brim loops. "
                    "It won't work when printing more than one single object.");
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("nonplanar_mode", coEnum);
+    def->label = L("Non-planar layers");
+    def->category = L("Non-planar");
+    def->tooltip = L("Print curved layers instead of flat ones. The object is deformed, sliced as usual and "
+                   "the G-code is transformed back, so all perimeters, infill and supports follow the "
+                   "curved layers. Wave: interlocking layers for a more homogeneous strength between layers. "
+                   "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers).");
+    def->set_enum<NonPlanarMode>({
+        { "disabled", L("Disabled") },
+        { "wave",     L("Wave") },
+        { "conical",  L("Conical") }
+    });
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Disabled));
+
+    def = this->add("nonplanar_pattern", coEnum);
+    def->label = L("Wave pattern");
+    def->category = L("Non-planar");
+    def->tooltip = L("Egg crate: waves in X and Y, for wide parts. Ridges: waves in one direction, for walls and "
+                   "thin parts. Twisted: ridges whose direction rotates with the height, so that the layers "
+                   "interlock in every direction.");
+    def->set_enum<NonPlanarPattern>({
+        { "egg",     L("Egg crate") },
+        { "ridges",  L("Ridges") },
+        { "twisted", L("Twisted ridges") }
+    });
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionEnum<NonPlanarPattern>(NonPlanarPattern::Egg));
+
+    def = this->add("nonplanar_amplitude", coFloat);
+    def->label = L("Wave amplitude");
+    def->category = L("Non-planar");
+    def->tooltip = L("Height of the waves.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.6));
+
+    def = this->add("nonplanar_wavelength", coFloat);
+    def->label = L("Wavelength");
+    def->category = L("Non-planar");
+    def->tooltip = L("Length of one wave. Longer waves are gentler on a slow Z axis.");
+    def->sidetext = L("mm");
+    def->min = 1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(16));
+
+    def = this->add("nonplanar_angle", coFloat);
+    def->label = L("Ridge direction");
+    def->category = L("Non-planar");
+    def->tooltip = L("Direction of the ridges, 0 = along X.");
+    def->sidetext = L("°");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("nonplanar_twist", coFloat);
+    def->label = L("Twist");
+    def->category = L("Non-planar");
+    def->tooltip = L("Twisted ridges: rotation of the ridge direction per millimeter of height.");
+    def->sidetext = L("°/mm");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(3));
+
+    def = this->add("nonplanar_cone_angle", coFloat);
+    def->label = L("Cone angle");
+    def->category = L("Non-planar");
+    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards.");
+    def->sidetext = L("°");
+    def->min = -60;
+    def->max = 60;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(15));
+
+    def = this->add("nonplanar_flat_below", coFloat);
+    def->label = L("Flat below");
+    def->category = L("Non-planar");
+    def->tooltip = L("Layers below this height stay flat, so that the first layer sticks to the bed.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.6));
+
+    def = this->add("nonplanar_ramp_height", coFloat);
+    def->label = L("Transition height");
+    def->category = L("Non-planar");
+    def->tooltip = L("Height over which the layers change from flat to curved. A short transition makes some "
+                   "layers too thick or too thin.");
+    def->sidetext = L("mm");
+    def->min = 0.1;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(5));
+
+    def = this->add("nonplanar_flat_top", coBool);
+    def->label = L("Flat top");
+    def->category = L("Non-planar");
+    def->tooltip = L("Go back to flat layers at the top of the object.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("nonplanar_max_slope", coFloat);
+    def->label = L("Maximum layer slope");
+    def->category = L("Non-planar");
+    def->tooltip = L("Steepest layer slope the nozzle can print without the nozzle body hitting the part "
+                   "(3 axis printers). Slicing fails if the layers are steeper.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(20));
+
+    def = this->add("nonplanar_segment_length", coFloat);
+    def->label = L("Segment length");
+    def->category = L("Non-planar");
+    def->tooltip = L("Moves are sampled every this length to follow the curved layers. Straight parts are "
+                   "merged again, so this does not inflate the G-code where the layers are flat.");
+    def->sidetext = L("mm");
+    def->min = 0.05;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.5));
+
+    def = this->add("nonplanar_flow_policy", coEnum);
+    def->label = L("Flow");
+    def->category = L("Non-planar");
+    def->tooltip = L("Preserve: keep the volumetric flow PrusaSlicer planned, adjusting the speed to the curved "
+                   "path and layer thickness. Uniform: print everything except external perimeters, overhangs, "
+                   "bridges and gap fill at the same volumetric flow, for an even bonding between lines. "
+                   "Off: keep the speeds unchanged.");
+    def->set_enum<NonPlanarFlowPolicy>({
+        { "preserve", L("Preserve") },
+        { "uniform",  L("Uniform") },
+        { "off",      L("Off") }
+    });
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionEnum<NonPlanarFlowPolicy>(NonPlanarFlowPolicy::Preserve));
+
+    def = this->add("nonplanar_uniform_flow", coFloat);
+    def->label = L("Uniform flow");
+    def->category = L("Non-planar");
+    def->tooltip = L("Volumetric flow of the uniform flow policy. 0 = 80 % of the maximum volumetric speed.");
+    def->sidetext = L("mm³/s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("standby_temperature_delta", coInt);
     def->label = L("Temperature variation");
