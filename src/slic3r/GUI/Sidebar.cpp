@@ -20,6 +20,9 @@
 #include "Sidebar.hpp"
 #include "FrequentlyChangedParameters.hpp"
 #include "QuickSettings.hpp"
+#include "TismaTheme.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -338,7 +341,7 @@ void Sidebar::show_preset_comboboxes()
 
 #ifdef _WIN32
 using wxRichToolTipPopup = wxCustomBackgroundWindow<wxPopupTransientWindow>;
-static wxRichToolTipPopup* get_rtt_popup(wxButton* btn)
+static wxRichToolTipPopup* get_rtt_popup(wxWindow* btn)
 {
     auto children = btn->GetChildren();
     for (auto child : children)
@@ -365,7 +368,7 @@ static bool found_and_dismiss_shown_dropdown(wxWindow* win)
     return false;
 }
 
-static void show_rich_tip(const wxString& tooltip, wxButton* btn)
+static void show_rich_tip(const wxString& tooltip, wxWindow* btn)
 {   
     if (tooltip.IsEmpty())
         return;
@@ -399,7 +402,7 @@ static void show_rich_tip(const wxString& tooltip, wxButton* btn)
     }
 }
 
-static void hide_rich_tip(wxButton* btn)
+static void hide_rich_tip(wxWindow* btn)
 {
     if (wxRichToolTipPopup* popup = get_rtt_popup(btn))
         popup->Dismiss();
@@ -451,8 +454,10 @@ Sidebar::Sidebar(Plater *parent)
     const int margin_5 = int(0.5 * wxGetApp().em_unit());// 5;
 
     auto init_combo = [this, margin_5](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
-        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label + ":");
-        text->SetFont(wxGetApp().small_font());
+        // Caption in the PrusaSlicer 3.0 style: small, upper case, muted.
+        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label.Upper());
+        text->SetFont(wxGetApp().small_font().Bold());
+        m_preset_captions.push_back(text);
         *combo = new PlaterPresetComboBox(m_presets_panel, preset_type);
 
         auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -465,7 +470,7 @@ Sidebar::Sidebar(Plater *parent)
         auto *sizer_filaments = this->m_filaments_sizer;
         // Hide controls, which will be shown/hidden in respect to the printer technology
         text->Show(preset_type == Preset::TYPE_PRINTER);
-        sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT, 4);
+        sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
         if (! filament) {
             combo_and_btn_sizer->ShowItems(preset_type == Preset::TYPE_PRINTER);
             sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND | 
@@ -667,10 +672,18 @@ Sidebar::Sidebar(Plater *parent)
         wxGetApp().UpdateDarkUI((*btn), true);
     };
 
-    init_btn(&m_btn_export_gcode, _L("Export G-code") + dots , scaled_height);
-    init_btn(&m_btn_reslice     , _L("Slice now")            , scaled_height);
+    // Action buttons in the Tisma style: filled accent button to slice, outlined button to export.
+    auto init_action_btn = [this, scaled_height](::Button **btn, wxString label) {
+        *btn = new ::Button(this, label);
+        (*btn)->SetFont(wxGetApp().bold_font());
+        (*btn)->SetCornerRadius(int(0.6 * wxGetApp().em_unit()));
+        (*btn)->SetMinSize(wxSize(-1, scaled_height));
+    };
+    init_action_btn(&m_btn_export_gcode, _L("Export G-code") + dots);
+    init_action_btn(&m_btn_reslice     , _L("Slice now"));
     init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
 
+    apply_tisma_theme();
     enable_buttons(false);
 
     m_btns_sizer = new wxBoxSizer(wxVERTICAL);
@@ -1080,16 +1093,54 @@ void Sidebar::msw_rescale()
     m_scrolled_panel->Layout();
 }
 
+void Sidebar::apply_tisma_theme()
+{
+    const bool dark = wxGetApp().dark_mode();
+    for (wxWindow* win : std::vector<wxWindow*>{ this, m_scrolled_panel, m_presets_panel })
+        if (win)
+            win->SetBackgroundColour(TismaTheme::panel_bg(dark));
+    for (wxStaticText* caption : m_preset_captions)
+        caption->SetForegroundColour(TismaTheme::text_muted(dark));
+
+    // Slice: filled accent button.
+    m_btn_reslice->SetBackgroundColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_pressed(),    StateColor::Pressed),
+        std::pair<wxColour, int>(TismaTheme::accent_hover(),      StateColor::Hovered),
+        std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+    m_btn_reslice->SetBorderColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+    m_btn_reslice->SetTextColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+        std::pair<wxColour, int>(*wxWHITE,                        StateColor::Normal)));
+
+    // Export: outlined button.
+    m_btn_export_gcode->SetBackgroundColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::card_bg(dark),       StateColor::Hovered),
+        std::pair<wxColour, int>(TismaTheme::panel_bg(dark),      StateColor::Normal)));
+    m_btn_export_gcode->SetBorderColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::separator(dark),     StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+    m_btn_export_gcode->SetTextColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+    m_btn_reslice->Refresh();
+    m_btn_export_gcode->Refresh();
+}
+
 void Sidebar::sys_color_changed()
 {
+    apply_tisma_theme();
+
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
 
-    for (wxWindow* win : std::vector<wxWindow*>{ this, m_sliced_info->GetStaticBox(), m_object_info->GetStaticBox(), m_btn_reslice, m_btn_export_gcode })
+    for (wxWindow* win : std::vector<wxWindow*>{ this, m_sliced_info->GetStaticBox(), m_object_info->GetStaticBox() })
         wxGetApp().UpdateDarkUI(win);
     for (wxWindow* win : std::vector<wxWindow*>{ m_scrolled_panel, m_presets_panel })
         wxGetApp().UpdateAllStaticTextDarkUI(win);
-    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode, m_btn_connect_gcode })
+    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_connect_gcode })
         wxGetApp().UpdateDarkUI(btn, true);
     if (m_btn_full_spectrum) {
         wxGetApp().UpdateDarkUI(m_btn_full_spectrum, true);
@@ -1597,8 +1648,8 @@ void Sidebar::set_btn_label(const ActionButtonType btn_type, const wxString& lab
 {
     switch (btn_type)
     {
-    case ActionButtonType::Reslice:   m_btn_reslice->SetLabelText(label);        break;
-    case ActionButtonType::Export:    m_btn_export_gcode->SetLabelText(label);   break;
+    case ActionButtonType::Reslice:   m_btn_reslice->SetLabel(label);            break;
+    case ActionButtonType::Export:    m_btn_export_gcode->SetLabel(label);       break;
     case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/ break;
     case ActionButtonType::Connect: /*m_btn_connect_gcode->SetLabelText(label);*/ break;
     }

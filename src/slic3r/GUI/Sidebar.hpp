@@ -34,6 +34,9 @@ class wxScrolledWindow;
 class ScalableButton;
 class ModeSizer;
 
+class Button;
+class wxStaticText;
+
 namespace Slic3r {
 
 namespace GUI {
@@ -85,8 +88,8 @@ class Sidebar : public wxPanel
     wxBoxSizer*     m_autoslicing_btns_sizer    { nullptr };
 
 
-    wxButton*       m_btn_export_gcode          { nullptr };
-    wxButton*       m_btn_reslice               { nullptr };
+    ::Button*       m_btn_export_gcode          { nullptr };
+    ::Button*       m_btn_reslice               { nullptr };
     wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
@@ -114,6 +117,9 @@ class Sidebar : public wxPanel
     void init_workflow_combo(int margin_5);
 
     void show_preset_comboboxes();
+    // Tisma colors of the panel and of the action buttons.
+    void apply_tisma_theme();
+    std::vector<wxStaticText*> m_preset_captions;
     void on_select_preset(wxCommandEvent& evt);
 
 public:

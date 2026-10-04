@@ -28,6 +28,7 @@
 #include "GUI_App.hpp"
 #include "I18N.hpp"
 #include "OptionsGroup.hpp"
+#include "TismaTheme.hpp"
 #include "Plater.hpp"
 #include "Tab.hpp"
 #include "wxExtensions.hpp"
@@ -118,9 +119,9 @@ QuickSettings::QuickSettings(wxWindow* parent) : m_parent(parent)
     m_sizer = new wxBoxSizer(wxVERTICAL);
 
     auto header = new wxBoxSizer(wxHORIZONTAL);
-    m_title = new wxStaticText(parent, wxID_ANY, _L("Quick settings"));
-    m_title->SetFont(wxGetApp().bold_font());
-    wxGetApp().UpdateDarkUI(m_title);
+    m_title = new wxStaticText(parent, wxID_ANY, _L("Quick settings").Upper());
+    m_title->SetFont(wxGetApp().small_font().Bold());
+    m_title->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
     header->Add(m_title, 1, wxALIGN_CENTER_VERTICAL);
 
     m_edit_btn = new ScalableButton(parent, wxID_ANY, "edit");
@@ -159,8 +160,19 @@ void QuickSettings::rebuild()
             it->second.push_back(key);
     }
 
+    const bool dark = wxGetApp().dark_mode();
+    const int  em   = wxGetApp().em_unit();
     for (const auto& [cat, keys] : groups) {
-        auto og = std::make_shared<ConfigOptionsGroup>(m_parent, _(cat), config);
+        // Flat section (no frame) with a separator and a bold header, as in PrusaSlicer 3.0.
+        auto line = new wxPanel(m_parent, wxID_ANY, wxDefaultPosition, wxSize(-1, 1));
+        line->SetBackgroundColour(TismaTheme::separator(dark));
+        m_groups_sizer->Add(line, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.5 * em));
+        auto header = new wxStaticText(m_parent, wxID_ANY, _(cat));
+        header->SetFont(wxGetApp().bold_font());
+        header->SetForegroundColour(TismaTheme::accent_text(dark));
+        m_groups_sizer->Add(header, 0, wxLEFT | wxBOTTOM, int(0.2 * em));
+
+        auto og = std::make_shared<ConfigOptionsGroup>(m_parent, "", config);
         og->label_width = 18;
         og->sidetext_width = 6;
         og->on_change = [this](const t_config_option_key& opt_key, const boost::any&) { on_change(opt_key); };
@@ -173,7 +185,7 @@ void QuickSettings::rebuild()
         }
         og->activate();
         og->reload_config();
-        m_groups_sizer->Add(og->sizer, 0, wxEXPAND | wxBOTTOM, int(0.5 * wxGetApp().em_unit()));
+        m_groups_sizer->Add(og->sizer, 0, wxEXPAND | wxBOTTOM, int(0.3 * em));
         m_groups.push_back(og);
     }
 
@@ -224,7 +236,8 @@ void QuickSettings::msw_rescale()
 void QuickSettings::sys_color_changed()
 {
     m_edit_btn->sys_color_changed();
-    wxGetApp().UpdateDarkUI(m_title);
+    m_title->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
+    rebuild();
     for (const auto& og : m_groups)
         og->sys_color_changed();
 }
