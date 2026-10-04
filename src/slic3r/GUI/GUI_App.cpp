@@ -186,7 +186,7 @@ public:
             memDC.SelectObject(bitmap);
 
             memDC.SetFont(m_action_font);
-            memDC.SetTextForeground(wxColour(91, 60, 196));
+            memDC.SetTextForeground(wxColour(122, 36, 201));
             memDC.DrawText(text, int(m_scale * 60), m_action_line_y_position);
 
             memDC.SelectObject(wxNullBitmap);
@@ -1746,7 +1746,7 @@ const wxColour GUI_App::get_label_default_clr_system()
 
 const wxColour GUI_App::get_label_default_clr_modified()
 {
-    return dark_mode() ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
+    return dark_mode() ? wxColour(176, 122, 238) : wxColour(122, 36, 201);
 }
 
 const std::vector<std::string> GUI_App::get_mode_default_palette()
@@ -1765,9 +1765,9 @@ void GUI_App::init_ui_colours()
     m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250): wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230): wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_default       = is_dark_mode ? wxColour(58, 58, 58)   : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
-    m_color_hovered_btn_label       = is_dark_mode ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
-    m_color_default_btn_label       = is_dark_mode ? wxColour(201, 188, 242): wxColour(69, 39, 168);
-    m_color_selected_btn_bg         = is_dark_mode ? wxColour(67, 56, 104)  : wxColour(226, 220, 248);
+    m_color_hovered_btn_label       = is_dark_mode ? wxColour(176, 122, 238) : wxColour(122, 36, 201);
+    m_color_default_btn_label       = is_dark_mode ? wxColour(217, 189, 245): wxColour(91, 15, 167);
+    m_color_selected_btn_bg         = is_dark_mode ? wxColour(74, 46, 102)  : wxColour(238, 224, 251);
 //#else
 //    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
 //#endif
