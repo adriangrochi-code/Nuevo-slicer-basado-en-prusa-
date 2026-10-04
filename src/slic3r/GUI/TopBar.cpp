@@ -368,7 +368,7 @@ void TopBarItemsCtrl::update_btns_width()
 
     if (m_settings_btn)
         m_btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
-    else {
+    else if (m_page_btns_shown) {
         for (const Button* btn : m_pageButtons)
             m_btns_width += btn->GetSize().GetWidth() + m_btn_margin;
     }
@@ -570,6 +570,7 @@ bool TopBarItemsCtrl::InsertPage(size_t n, const wxString& text, bool bSelect/* 
         }
     });
 
+    btn->Show(m_page_btns_shown);
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_buttons_sizer->Insert(n, new wxSizerItem(btn, 0, wxALIGN_CENTER_VERTICAL));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
@@ -629,6 +630,16 @@ void TopBarItemsCtrl::ShowJustMode()
     m_account_btn->Hide();
     update_btns_width();
     UpdateSearchSizeAndPosition();
+}
+
+void TopBarItemsCtrl::ShowPageButtons(bool show)
+{
+    m_page_btns_shown = show;
+    for (Button* btn : m_pageButtons)
+        btn->Show(show);
+    update_btns_width();
+    UpdateSearchSizeAndPosition();
+    m_sizer->Layout();
 }
 
 void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)

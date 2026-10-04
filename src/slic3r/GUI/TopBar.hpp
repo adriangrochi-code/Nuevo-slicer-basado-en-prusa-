@@ -71,6 +71,7 @@ class TopBarItemsCtrl : public wxControl
 
     int             m_btns_width            { 0 };
     bool            m_collapsed_btns        { false };
+    bool            m_page_btns_shown       { true };
 
     std::function<void()> m_cb_settings_btn { nullptr };
 
@@ -101,6 +102,8 @@ public:
     void TriggerSearch();
     void ShowFull();
     void ShowJustMode();
+    // Pages are selected from the navigation column of Tisma: hide their buttons.
+    void ShowPageButtons(bool show);
     void SetSettingsButtonTooltip(const wxString& tooltip);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);

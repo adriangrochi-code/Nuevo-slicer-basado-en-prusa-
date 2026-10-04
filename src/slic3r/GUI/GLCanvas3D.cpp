@@ -107,8 +107,8 @@ static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.949f, 0.949f, 0.957f
 static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.560f, 0.600f, 1.0f };
 static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.960f, 0.760f, 0.790f, 1.0f };
 // Dark mode.
-static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.200f, 0.190f, 0.250f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.090f, 0.090f, 0.110f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.235f, 0.235f, 0.255f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.130f, 0.130f, 0.145f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.550f, 0.180f, 0.220f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.300f, 0.100f, 0.120f, 1.0f };
 
@@ -6842,9 +6842,10 @@ void GLCanvas3D::_render_view_toolbar() const
     GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
 
     const Size cnv_size = get_canvas_size();
-    // places the toolbar on the bottom-left corner of the 3d scene
-    const float top = -0.5f * (float)cnv_size.get_height() + view_toolbar.get_height();
-    const float left = -0.5f * (float)cnv_size.get_width();
+    // places the toolbar (3D editor / preview switch) on the top-left corner of the 3d scene, as in PrusaSlicer 3.0
+    const float margin = 8.0f * wxGetApp().imgui()->get_style_scaling();
+    const float top = 0.5f * (float)cnv_size.get_height() - margin;
+    const float left = -0.5f * (float)cnv_size.get_width() + margin;
     view_toolbar.set_position(top, left);
     view_toolbar.render(*this);
 }

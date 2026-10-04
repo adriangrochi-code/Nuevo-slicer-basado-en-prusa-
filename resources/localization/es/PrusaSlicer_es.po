@@ -31514,3 +31514,12 @@ msgstr "Longitud de onda"
 
 msgid "is based on PrusaSlicer by Prusa Research and on Slic3r by Alessandro Ranellucci and the RepRap community."
 msgstr "está basado en PrusaSlicer de Prusa Research y en Slic3r de Alessandro Ranellucci y la comunidad RepRap."
+
+msgid "Process"
+msgstr "Proceso"
+
+msgid "Device"
+msgstr "Dispositivo"
+
+msgid "Prepare"
+msgstr "Preparar"

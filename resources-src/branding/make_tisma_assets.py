@@ -146,7 +146,16 @@ def render(svg, png, width, height=None):
         os.unlink(path)
 
 
+def toolbar_background_svg():
+    """Background of the floating toolbars of the 3D scene (9-slice with 16 px borders): dark rounded panel."""
+    return '''<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="1" y="1" width="126" height="126" rx="14" ry="14" fill="#1C1C21" fill-opacity="0.94" stroke="#34343C" stroke-width="2"/>
+</svg>
+'''
+
+
 def main():
+    render(toolbar_background_svg(), os.path.join(ICONS, 'toolbar_background.png'), 128, 128)
     for name, kwargs in (('PrusaSlicer', {}), ('PrusaSlicer-gcodeviewer', {'badge': True})):
         svg = logo_svg(**kwargs)
         with open(os.path.join(ICONS, name + '.svg'), 'w') as f:

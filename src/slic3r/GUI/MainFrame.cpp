@@ -59,6 +59,8 @@
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
 #include "TopBar.hpp"
+#include "NavRail.hpp"
+#include "USBPrintDialog.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GalleryDialog.hpp"
@@ -356,6 +358,13 @@ void MainFrame::update_layout()
             m_plater_page = nullptr;
         }
 
+        if (m_rail_sizer) {
+            // Deleting the sizer releases the windows it holds, so that they can be added to another sizer.
+            m_main_sizer->Remove(m_rail_sizer);
+            m_rail_sizer = nullptr;
+        }
+        if (m_nav_rail)
+            m_nav_rail->Hide();
         clean_sizer(m_main_sizer);
         clean_sizer(m_settings_dialog.GetSizer());
 
@@ -412,7 +421,14 @@ void MainFrame::update_layout()
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
 
-        m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
+        if (m_nav_rail) {
+            m_rail_sizer = new wxBoxSizer(wxHORIZONTAL);
+            m_rail_sizer->Add(m_nav_rail, 0, wxEXPAND);
+            m_rail_sizer->Add(m_tabpanel, 1, wxEXPAND);
+            m_main_sizer->Add(m_rail_sizer, 1, wxEXPAND | wxTOP, 1);
+            m_nav_rail->Show();
+        } else
+            m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
         m_tabpanel->ShowFull();
         m_tmp_top_bar->Hide();
@@ -695,6 +711,9 @@ void MainFrame::init_tabpanel()
         on_tab_change_rename_reload_item(e.GetSelection());
 #endif // !__APPLE__
 
+        if (m_nav_rail)
+            m_nav_rail->update_selection();
+
         wxWindow* panel = m_tabpanel->GetCurrentPage();
         Tab* tab = dynamic_cast<Tab*>(panel);
 
@@ -722,8 +741,10 @@ void MainFrame::init_tabpanel()
     m_plater->Hide();
 
 
-    if (wxGetApp().is_editor())
+    if (wxGetApp().is_editor()) {
         create_preset_tabs();
+        create_nav_rail();
+    }
 
     if (m_plater) {
         // load initial config
@@ -796,6 +817,65 @@ void MainFrame::register_win32_callbacks()
     }
 }
 #endif // _WIN32
+
+void MainFrame::create_nav_rail()
+{
+    m_nav_rail = new NavRail(this);
+    m_nav_rail->Hide();
+
+    auto is_fff = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
+    auto current_page = [this]() -> wxWindow* { return m_tabpanel ? m_tabpanel->GetCurrentPage() : nullptr; };
+    auto tab_item = [this, current_page](const wxString& label, const std::string& icon, std::function<Preset::Type()> type) {
+        NavRail::Item item;
+        item.label    = label;
+        item.icon     = icon;
+        item.on_click = [this, type]() { select_tab(wxGetApp().get_tab(type())); };
+        item.is_selected = [current_page, type]() { Tab* tab = wxGetApp().get_tab(type()); return tab != nullptr && current_page() == tab; };
+        return item;
+    };
+
+    NavRail::Item plater;
+    plater.label       = _L("Prepare");
+    plater.tooltip     = _L("Plater");
+    plater.icon        = "plater";
+    plater.on_click    = [this]() { select_tab(size_t(0)); };
+    plater.is_selected = [this, current_page]() { return current_page() == m_plater; };
+    m_nav_rail->add_item(plater);
+
+    m_nav_rail->add_item(tab_item(_L("Process"),  "cog",     [is_fff]() { return is_fff() ? Preset::TYPE_PRINT    : Preset::TYPE_SLA_PRINT; }));
+    m_nav_rail->add_item(tab_item(_L("Filament"), "spool",   [is_fff]() { return is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL; }));
+    m_nav_rail->add_item(tab_item(_L("Printer"),  "printer", []()       { return Preset::TYPE_PRINTER; }));
+
+    NavRail::Item usb;
+    usb.label    = _L("Device");
+    usb.tooltip  = _L("Print via USB");
+    usb.icon     = "plug";
+    usb.on_click = [this]() { USBPrintDialog::run(this); };
+    m_nav_rail->add_item(usb);
+
+    if (m_printables_webview) {
+        NavRail::Item printables;
+        printables.label       = "Printables";
+        printables.icon        = "open_browser";
+        printables.on_click    = [this]() {
+            if (int page = m_tabpanel->FindPage(m_printables_webview); page != wxNOT_FOUND)
+                m_tabpanel->SetSelection(page);
+        };
+        printables.is_selected = [this, current_page]() { return current_page() == m_printables_webview; };
+        m_nav_rail->add_item(printables);
+    }
+
+    NavRail::Item prefs;
+    prefs.label    = _L("Settings");
+    prefs.tooltip  = _L("Preferences");
+    prefs.icon     = "settings";
+    prefs.bottom   = true;
+    prefs.on_click = []() { wxGetApp().open_preferences(); };
+    m_nav_rail->add_item(prefs);
+
+    // The pages are selected from the navigation column.
+    m_tabpanel->GetTopBarItemsCtrl()->ShowPageButtons(false);
+}
 
 void MainFrame::create_preset_tabs()
 {
