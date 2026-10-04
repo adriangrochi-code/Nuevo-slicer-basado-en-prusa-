@@ -40,6 +40,7 @@ namespace GUI {
 
 class ConfigOptionsGroup;
 class FreqChangedParams;
+class QuickSettings;
 class ObjectInfo;
 class SlicedInfo;
 class ObjectManipulation;
@@ -96,6 +97,7 @@ class Sidebar : public wxPanel
 
     wxButton*                           m_btn_full_spectrum { nullptr };
     std::unique_ptr<FreqChangedParams>  m_frequently_changed_parameters;
+    std::unique_ptr<QuickSettings>      m_quick_settings;
     std::unique_ptr<ObjectManipulation> m_object_manipulation;
     std::unique_ptr<ObjectSettings>     m_object_settings;
     std::unique_ptr<ObjectLayers>       m_object_layers;
@@ -129,6 +131,7 @@ public:
 
     ConfigOptionsGroup*     og_freq_chng_params(const bool is_fff);
     wxButton*               get_wiping_dialog_button();
+    QuickSettings*          quick_settings();
 
     void show_info_sizer();
     void show_sliced_info_sizer(const bool show);

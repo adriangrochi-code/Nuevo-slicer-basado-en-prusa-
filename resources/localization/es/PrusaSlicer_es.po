@@ -31326,3 +31326,191 @@ msgstr "error de zlib %d"
 #: ../src/richtext/richtextbulletspage.cpp:288
 msgid "~"
 msgstr "~"
+
+# Tisma Slicer
+
+msgid "A print is in progress. Closing this window stops it. Close anyway?"
+msgstr "Hay una impresión en curso. Cerrar esta ventana la detiene. ¿Cerrar de todos modos?"
+
+msgid "A print is in progress. Disconnecting stops it. Disconnect anyway?"
+msgstr "Hay una impresión en curso. Desconectar la detiene. ¿Desconectar de todos modos?"
+
+msgid "Arc overhangs (Experimental)"
+msgstr "Voladizos en arco (experimental)"
+
+msgid "Baud rate"
+msgstr "Velocidad (baudios)"
+
+msgid "Cancel print"
+msgstr "Cancelar impresión"
+
+msgid "Cancel the print?"
+msgstr "¿Cancelar la impresión?"
+
+msgid "Cannot read %1%"
+msgstr "No se puede leer %1%"
+
+msgid "Choose the settings shown here"
+msgstr "Elegir los ajustes que se muestran aquí"
+
+msgid "Cone angle"
+msgstr "Ángulo del cono"
+
+msgid "Conical"
+msgstr "Cónica"
+
+msgid "Conical layers: slope of the cone. Positive values rise outwards."
+msgstr "Capas cónicas: pendiente del cono. Los valores positivos suben hacia afuera."
+
+msgid "Connect"
+msgstr "Conectar"
+
+msgid "Connecting"
+msgstr "Conectando"
+
+msgid "Connecting to %1% at %2% baud..."
+msgstr "Conectando a %1% a %2% baudios..."
+
+msgid "Customized for Tisma."
+msgstr "Personalizado para Tisma."
+
+msgid "Dense infill density"
+msgstr "Densidad del relleno denso"
+
+msgid "Dense infill under top surfaces"
+msgstr "Relleno denso bajo superficies superiores"
+
+msgid "Density of the infill layer printed below solid top surfaces when \"Dense infill under top surfaces\" is enabled."
+msgstr "Densidad de la capa de relleno que se imprime bajo las superficies sólidas superiores cuando está activado \"Relleno denso bajo superficies superiores\"."
+
+msgid "Direction of the ridges, 0 = along X."
+msgstr "Dirección de las crestas, 0 = a lo largo de X."
+
+msgid "Disconnect"
+msgstr "Desconectar"
+
+msgid "Disconnected"
+msgstr "Desconectado"
+
+msgid "Egg crate"
+msgstr "Huevera"
+
+msgid "Flat below"
+msgstr "Plano por debajo de"
+
+msgid "Flat top"
+msgstr "Superficie superior plana"
+
+msgid "G-code to print"
+msgstr "G-code a imprimir"
+
+msgid "Go back to flat layers at the top of the object."
+msgstr "Volver a capas planas en la parte superior del objeto."
+
+msgid "Height of the waves."
+msgstr "Altura de las ondas."
+
+msgid "Hotend %1% / %2% °C    Bed %3% / %4% °C"
+msgstr "Hotend %1% / %2% °C    Cama %3% / %4% °C"
+
+msgid "Layers below this height stay flat, so that the first layer sticks to the bed."
+msgstr "Las capas por debajo de esta altura quedan planas para que la primera capa se adhiera a la cama."
+
+msgid "Length of one wave. Longer waves are gentler on a slow Z axis."
+msgstr "Longitud de una onda. Las ondas largas exigen menos a un eje Z lento."
+
+msgid "Maximum layer slope"
+msgstr "Pendiente máxima de capa"
+
+msgid "Non-planar"
+msgstr "No planar"
+
+msgid "Non-planar layers"
+msgstr "Capas no planares"
+
+msgid "Off"
+msgstr "Desactivado"
+
+msgid "Paused"
+msgstr "En pausa"
+
+msgid "Port"
+msgstr "Puerto"
+
+msgid "Preserve"
+msgstr "Conservar"
+
+msgid "Print a G-code file on a printer connected by USB (serial port)"
+msgstr "Imprimir un archivo G-code en una impresora conectada por USB (puerto serie)"
+
+msgid "Print via &USB"
+msgstr "Imprimir por &USB"
+
+msgid "Print via USB"
+msgstr "Imprimir por USB"
+
+msgid "Quick settings"
+msgstr "Ajustes rápidos"
+
+msgid "Reset to defaults"
+msgstr "Restablecer predeterminados"
+
+msgid "Resume"
+msgstr "Reanudar"
+
+msgid "Ridge direction"
+msgstr "Dirección de las crestas"
+
+msgid "Ridges"
+msgstr "Crestas"
+
+msgid "Segment length"
+msgstr "Longitud de segmento"
+
+msgid "Select the print settings to show in the sidebar."
+msgstr "Selecciona los ajustes de impresión que se muestran en la barra lateral."
+
+msgid "Send"
+msgstr "Enviar"
+
+msgid "Start print"
+msgstr "Iniciar impresión"
+
+msgid "Transition"
+msgstr "Transición"
+
+msgid "Transition height"
+msgstr "Altura de transición"
+
+msgid "Twist"
+msgstr "Giro"
+
+msgid "Twisted ridges"
+msgstr "Crestas giradas"
+
+msgid "Twisted ridges: rotation of the ridge direction per millimeter of height."
+msgstr "Crestas giradas: rotación de la dirección de las crestas por milímetro de altura."
+
+msgid "Uniform"
+msgstr "Uniforme"
+
+msgid "Uniform flow"
+msgstr "Caudal uniforme"
+
+msgid "Volumetric flow of the uniform flow policy. 0 = 80 % of the maximum volumetric speed."
+msgstr "Caudal volumétrico de la política de caudal uniforme. 0 = 80 % de la velocidad volumétrica máxima."
+
+msgid "Wave"
+msgstr "Onda"
+
+msgid "Wave amplitude"
+msgstr "Amplitud de onda"
+
+msgid "Wave pattern"
+msgstr "Patrón de onda"
+
+msgid "Wavelength"
+msgstr "Longitud de onda"
+
+msgid "is based on PrusaSlicer by Prusa Research and on Slic3r by Alessandro Ranellucci and the RepRap community."
+msgstr "está basado en PrusaSlicer de Prusa Research y en Slic3r de Alessandro Ranellucci y la comunidad RepRap."

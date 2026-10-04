@@ -21,6 +21,7 @@
 #include "slic3r/GUI/BedShapeDialog.hpp"
 #include "slic3r/Utils/Serial.hpp"
 #include "Tab.hpp"
+#include "QuickSettings.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Utils.hpp"
@@ -1119,6 +1120,10 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         og_freq_chng_params->set_value("brim", val);
     }
 
+    if (m_type == Preset::TYPE_PRINT)
+        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+            quick_settings->update_value(opt_key);
+
     if (opt_key == "wipe_tower" || opt_key == "single_extruder_multi_material" || opt_key == "extruders_count" )
         update_wiping_button_visibility();
 
@@ -1405,6 +1410,10 @@ void Tab::update_frequently_changed_parameters()
 
     const boost::any val = og_freq_chng_params->get_config_value(*m_config, updated_value_key);
     og_freq_chng_params->set_value(updated_value_key, val);
+
+    if (m_type == Preset::TYPE_PRINT)
+        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+            quick_settings->reload_config();
 
     if (is_fff)
     {

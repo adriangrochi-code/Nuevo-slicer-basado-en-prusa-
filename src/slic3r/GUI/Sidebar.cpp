@@ -19,6 +19,7 @@
 ///|/
 #include "Sidebar.hpp"
 #include "FrequentlyChangedParameters.hpp"
+#include "QuickSettings.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -324,6 +325,7 @@ void Sidebar::show_preset_comboboxes()
         m_presets_sizer->Show(i, showSLA);
 
     m_frequently_changed_parameters->Show(!showSLA);
+    m_quick_settings->Show(!showSLA);
 
     const Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
     bool is_prusa_slx = showSLA && tab->is_prusa_printer() && tab->printer_model() == "SLX";
@@ -570,6 +572,14 @@ Sidebar::Sidebar(Plater *parent)
     // Frequently changed parameters
     m_frequently_changed_parameters = std::make_unique<FreqChangedParams>(m_scrolled_panel);
     params_sizer->Add(m_frequently_changed_parameters->get_sizer(), 0, wxEXPAND | wxTOP | wxBOTTOM
+#ifdef __WXGTK3__
+        | wxRIGHT
+#endif // __WXGTK3__
+        , wxOSX ? 1 : margin_5);
+
+    // Favorite print settings (Tisma)
+    m_quick_settings = std::make_unique<QuickSettings>(m_scrolled_panel);
+    params_sizer->Add(m_quick_settings->get_sizer(), 0, wxEXPAND | wxBOTTOM
 #ifdef __WXGTK3__
         | wxRIGHT
 #endif // __WXGTK3__
@@ -1054,6 +1064,7 @@ void Sidebar::msw_rescale()
         combo->msw_rescale();
 
     m_frequently_changed_parameters->msw_rescale();
+    m_quick_settings->msw_rescale();
     m_object_list                  ->msw_rescale();
     m_object_manipulation          ->msw_rescale();
     m_object_layers                ->msw_rescale();
@@ -1097,6 +1108,7 @@ void Sidebar::sys_color_changed()
         combo->sys_color_changed();
 
     m_object_list        ->sys_color_changed();
+    m_quick_settings     ->sys_color_changed();
     m_object_manipulation->sys_color_changed();
     m_object_layers      ->sys_color_changed();
 
@@ -1131,6 +1143,11 @@ ObjectLayers* Sidebar::obj_layers()
 ConfigOptionsGroup* Sidebar::og_freq_chng_params(const bool is_fff)
 {
     return m_frequently_changed_parameters->get_og(is_fff);
+}
+
+QuickSettings* Sidebar::quick_settings()
+{
+    return m_quick_settings.get();
 }
 
 wxButton* Sidebar::get_wiping_dialog_button()

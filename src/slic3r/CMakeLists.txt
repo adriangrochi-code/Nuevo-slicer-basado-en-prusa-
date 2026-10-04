@@ -139,6 +139,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdatesUIManager.hpp
     GUI/FrequentlyChangedParameters.cpp
     GUI/FrequentlyChangedParameters.hpp
+    GUI/QuickSettings.cpp
+    GUI/QuickSettings.hpp
     GUI/Sidebar.cpp
     GUI/Sidebar.hpp
     GUI/Plater.cpp
