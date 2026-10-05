@@ -43,6 +43,8 @@ private:
     void        on_click(wxMouseEvent&);
     void        load_bitmaps();
     int         item_height() const;
+    bool        compact() const;
+    void        update_min_height();
     wxRect      item_rect(size_t idx) const;
     int         hit_test(const wxPoint& pt) const;
 

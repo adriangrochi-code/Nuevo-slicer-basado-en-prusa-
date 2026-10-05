@@ -31640,3 +31640,9 @@ msgstr "Velocidad de perímetro"
 
 msgid "Cornering (jerk / square corner velocity)"
 msgstr "Esquinas (jerk / square corner velocity)"
+
+msgid "Calibration test: %1% from %2% to %3% every %4% mm."
+msgstr "Prueba de calibración: %1% de %2% a %3% cada %4% mm."
+
+msgid "Disable the test"
+msgstr "Desactivar"

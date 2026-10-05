@@ -1772,6 +1772,9 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
     update((unsigned int)UpdateParams::FORCE_BACKGROUND_PROCESSING_UPDATE);
 
+    // A project may contain a calibration test.
+    q->update_calibration_notification();
+
     return obj_idxs;
 }
 
@@ -2171,6 +2174,7 @@ void Plater::priv::reset()
 
     // A new project is not a calibration test.
     wxGetApp().preset_bundle->project_config.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+    q->update_calibration_notification();
 
 	clear_warnings();
 
@@ -5542,6 +5546,38 @@ void Plater::load_calibration(const Model& model, const DynamicPrintConfig& cali
     }
     update_project_dirty_from_presets();
     p->schedule_background_process();
+    update_calibration_notification();
+}
+
+void Plater::update_calibration_notification()
+{
+    NotificationManager* nm = get_notification_manager();
+    if (nm == nullptr)
+        return;
+    nm->close_notification_of_type(NotificationType::CalibrationActive);
+
+    const DynamicPrintConfig& project = wxGetApp().preset_bundle->project_config;
+    const auto* mode = project.option<ConfigOptionEnum<CalibMode>>("calib_mode");
+    if (mode == nullptr || mode->value == CalibMode::Disabled)
+        return;
+
+    const ConfigOptionDef* def = project.def()->get("calib_mode");
+    std::string name;
+    for (size_t i = 0; def && i < def->enum_def->values().size(); ++i)
+        if (def->enum_def->value(i) == mode->serialize())
+            name = _u8L(def->enum_def->label(i));
+    // Short text, so that the "Disable" link is visible without expanding the notification.
+    const std::string text = format(_u8L("Calibration test: %1% from %2% to %3% every %4% mm."),
+                                    name, project.opt_float("calib_start"), project.opt_float("calib_end"),
+                                    project.opt_float("calib_band_height"));
+    nm->push_notification(NotificationType::CalibrationActive, NotificationManager::NotificationLevel::WarningNotificationLevel,
+        text, _u8L("Disable the test"),
+        [this](wxEvtHandler*) {
+            wxGetApp().preset_bundle->project_config.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+            update_project_dirty_from_presets();
+            p->schedule_background_process();
+            return true; // close the notification
+        });
 }
 void Plater::reset_with_confirm()
 {

@@ -115,6 +115,8 @@ public:
     // Tisma calibration suite: replaces the objects by the calibration model and sets the calibration test
     // of the project (calib_* options).
     void load_calibration(const Model& model, const DynamicPrintConfig& calib_config);
+    // Shows or hides the notification of an active calibration test (calib_mode of the project config).
+    void update_calibration_notification();
     void load_project();
     void load_project(const wxString& filename);
     void add_model(bool imperial_units = false);
