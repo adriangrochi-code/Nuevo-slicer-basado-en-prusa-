@@ -351,6 +351,25 @@ bool cad_retessellate_volume(ModelVolume &volume, double linear_deflection, doub
     new_source->angular_deflection = angular_deflection;
     new_source->face_ids           = std::move(new_ids);
 
+    // Supports and loads of the structural analysis on this volume follow their B-Rep faces.
+    if (ModelObject *object = volume.get_object()) {
+        const auto it = std::find(object->volumes.begin(), object->volumes.end(), &volume);
+        const int  volume_idx = int(it - object->volumes.begin());
+        auto remap_region = [&](EngineeringRegion &region) {
+            if (region.volume != volume_idx || region.cad_faces.empty())
+                return;
+            region.triangles.clear();
+            for (size_t i = 0; i < new_source->face_ids.size(); ++ i)
+                if (std::find(region.cad_faces.begin(), region.cad_faces.end(), new_source->face_ids[i]) != region.cad_faces.end())
+                    region.triangles.push_back(int(i));
+        };
+        for (EngineeringRegion &region : object->engineering.fixtures)
+            remap_region(region);
+        for (EngineeringLoad &load : object->engineering.loads)
+            if (load.type == EngineeringLoad::Type::Faces)
+                remap_region(load.faces);
+    }
+
     volume.set_mesh(std::move(new_mesh));
     volume.calculate_convex_hull();
     volume.cad_source = std::move(new_source);

@@ -103,6 +103,45 @@ const std::string CUT_INFORMATION_FILE = "Metadata/Prusa_Slicer_cut_information.
 // Other slicers ignore these entries.
 const std::string TISMA_CAD_FILE = "Metadata/Tisma_cad.xml";
 const std::string TISMA_CAD_STEP_DIR = "Metadata/Tisma_CAD/";
+// Tisma: working conditions of the objects for the structural analysis (phase 5).
+const std::string TISMA_ENGINEERING_FILE = "Metadata/Tisma_engineering.xml";
+
+static std::string tisma_ints_to_string(const std::vector<int> &v)
+{
+    std::string out;
+    for (int i : v) {
+        if (! out.empty())
+            out += ' ';
+        out += std::to_string(i);
+    }
+    return out;
+}
+
+static std::vector<int> tisma_ints_from_string(const std::string &s)
+{
+    std::vector<int> out;
+    std::istringstream in(s);
+    int i;
+    while (in >> i)
+        out.push_back(i);
+    return out;
+}
+
+static std::string tisma_vec_to_string(const Slic3r::Vec3d &v)
+{
+    return Slic3r::float_to_string_decimal_point(v.x()) + " " + Slic3r::float_to_string_decimal_point(v.y()) + " " +
+           Slic3r::float_to_string_decimal_point(v.z());
+}
+
+static Slic3r::Vec3d tisma_vec_from_string(const std::string &s)
+{
+    std::vector<std::string> parts;
+    boost::split(parts, s, boost::is_any_of(" "), boost::token_compress_on);
+    Slic3r::Vec3d v = Slic3r::Vec3d::Zero();
+    for (size_t i = 0; i < 3 && i < parts.size(); ++ i)
+        v[i] = Slic3r::string_to_double_decimal_point(parts[i]);
+    return v;
+}
 
 static constexpr const char *RELATIONSHIP_TAG = "Relationship";
 
@@ -539,6 +578,7 @@ namespace Slic3r {
         };
         std::map<int, std::vector<CadVolumeInfo>> m_cad_volume_infos;
         std::map<std::string, std::string>        m_cad_step_data;
+        std::map<int, EngineeringSetup>           m_engineering;
         IdToLayerHeightsProfileMap m_layer_heights_profiles;
         IdToLayerConfigRangesMap m_layer_config_ranges;
         IdToSlaSupportPointsMap m_sla_support_points;
@@ -580,6 +620,7 @@ namespace Slic3r {
         void _extract_tisma_cad_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_tisma_cad_step_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, const std::string& name);
         void _apply_tisma_cad(ModelObject& object, int object_id);
+        void _extract_tisma_engineering_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_layer_heights_profile_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions);
         void _extract_sla_support_points_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
@@ -719,6 +760,7 @@ namespace Slic3r {
         m_objects_metadata.clear();
         m_cad_volume_infos.clear();
         m_cad_step_data.clear();
+        m_engineering.clear();
         m_layer_heights_profiles.clear();
         m_layer_config_ranges.clear();
         m_sla_support_points.clear();
@@ -848,6 +890,9 @@ namespace Slic3r {
                 }
                 else if (boost::algorithm::istarts_with(name, TISMA_CAD_STEP_DIR)) {
                     _extract_tisma_cad_step_from_archive(archive, stat, name);
+                }
+                else if (boost::algorithm::iequals(name, TISMA_ENGINEERING_FILE)) {
+                    _extract_tisma_engineering_from_archive(archive, stat);
                 }
                 else if (boost::algorithm::iequals(name, LAYER_CONFIG_RANGES_FILE)) {
                     // extract slic3r layer config ranges file
@@ -1041,6 +1086,8 @@ namespace Slic3r {
             }
 
             _apply_tisma_cad(*model_object, object.second + 1);
+            if (auto it = m_engineering.find(object.second + 1); it != m_engineering.end())
+                model_object->engineering = std::move(it->second);
         }
 
         // If instances contain a single volume, the volume offset should be 0,0,0
@@ -1316,6 +1363,63 @@ namespace Slic3r {
         if (boost::algorithm::iends_with(key, ".step"))
             key.erase(key.size() - 5);
         m_cad_step_data[key] = std::move(data);
+    }
+
+    void _3MF_Importer::_extract_tisma_engineering_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat)
+    {
+        if (stat.m_uncomp_size == 0)
+            return;
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        if (mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0) == 0) {
+            add_error("Error while reading engineering data to buffer");
+            return;
+        }
+        auto read_region = [](const pt::ptree& t) {
+            EngineeringRegion r;
+            r.volume    = t.get<int>("<xmlattr>.volume", 0);
+            r.triangles = tisma_ints_from_string(t.get<std::string>("<xmlattr>.triangles", ""));
+            r.cad_faces = tisma_ints_from_string(t.get<std::string>("<xmlattr>.cad_faces", ""));
+            return r;
+        };
+        try {
+            std::istringstream iss(buffer);
+            pt::ptree tree;
+            pt::read_xml(iss, tree);
+            for (const auto& item : tree.get_child("tisma_engineering")) {
+                if (item.first != "object")
+                    continue;
+                const pt::ptree& o = item.second;
+                const int object_id = o.get<int>("<xmlattr>.id", -1);
+                if (object_id <= 0)
+                    continue;
+                EngineeringSetup setup;
+                setup.material      = o.get<std::string>("<xmlattr>.material", "");
+                setup.temperature   = string_to_double_decimal_point(o.get<std::string>("<xmlattr>.temperature", "23"));
+                setup.safety_factor = string_to_double_decimal_point(o.get<std::string>("<xmlattr>.safety_factor", "2"));
+                for (const auto& child : o) {
+                    if (child.first == "fixture")
+                        setup.fixtures.emplace_back(read_region(child.second));
+                    else if (child.first == "load") {
+                        const pt::ptree& l = child.second;
+                        EngineeringLoad load;
+                        load.type   = l.get<std::string>("<xmlattr>.type", "point") == "faces" ? EngineeringLoad::Type::Faces : EngineeringLoad::Type::Point;
+                        load.name   = l.get<std::string>("<xmlattr>.name", "");
+                        load.volume = l.get<int>("<xmlattr>.volume", 0);
+                        load.point  = tisma_vec_from_string(l.get<std::string>("<xmlattr>.point", "0 0 0"));
+                        load.radius = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.radius", "0"));
+                        load.force  = tisma_vec_from_string(l.get<std::string>("<xmlattr>.force", "0 0 0"));
+                        load.max_displacement         = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement", "0"));
+                        load.max_displacement_percent = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement_percent", "0"));
+                        load.faces  = read_region(l);
+                        setup.loads.emplace_back(std::move(load));
+                    }
+                }
+                m_engineering[object_id] = std::move(setup);
+            }
+        } catch (const std::exception& ex) {
+            BOOST_LOG_TRIVIAL(warning) << "Invalid engineering data in 3MF: " << ex.what();
+            m_engineering.clear();
+        }
     }
 
     void _3MF_Importer::_apply_tisma_cad(ModelObject& object, int object_id)
@@ -2936,6 +3040,7 @@ namespace Slic3r {
         bool _add_build_to_model_stream(std::stringstream& stream, const BuildItemsList& build_items);
         bool _add_cut_information_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_tisma_cad_files_to_archive(mz_zip_archive& archive, const Model& model);
+        bool _add_tisma_engineering_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model);
@@ -3011,6 +3116,13 @@ namespace Slic3r {
 
         // Tisma: STEP files of the volumes imported from CAD and the face of every triangle ("Metadata/Tisma_cad.xml").
         if (!_add_tisma_cad_files_to_archive(archive, model)) {
+            close_zip_writer(&archive);
+            boost::filesystem::remove(filename);
+            return false;
+        }
+
+        // Tisma: supports, loads, temperature and material of the structural analysis ("Metadata/Tisma_engineering.xml").
+        if (!_add_tisma_engineering_file_to_archive(archive, model)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3614,6 +3726,58 @@ namespace Slic3r {
             }
         }
 
+        return true;
+    }
+
+    bool _3MF_Exporter::_add_tisma_engineering_file_to_archive(mz_zip_archive& archive, const Model& model)
+    {
+        pt::ptree tree;
+        pt::ptree& root = tree.add("tisma_engineering", "");
+        root.put("<xmlattr>.version", 1);
+        auto put_region = [](pt::ptree& t, const EngineeringRegion& r) {
+            t.put("<xmlattr>.volume", r.volume);
+            t.put("<xmlattr>.triangles", tisma_ints_to_string(r.triangles));
+            if (! r.cad_faces.empty())
+                t.put("<xmlattr>.cad_faces", tisma_ints_to_string(r.cad_faces));
+        };
+        bool any = false;
+        int object_id = 0;
+        for (const ModelObject* object : model.objects) {
+            ++ object_id;
+            const EngineeringSetup& setup = object->engineering;
+            if (setup.empty())
+                continue;
+            any = true;
+            pt::ptree& o = root.add("object", "");
+            o.put("<xmlattr>.id", object_id);
+            o.put("<xmlattr>.material", setup.material);
+            o.put("<xmlattr>.temperature", float_to_string_decimal_point(setup.temperature));
+            o.put("<xmlattr>.safety_factor", float_to_string_decimal_point(setup.safety_factor));
+            for (const EngineeringRegion& r : setup.fixtures)
+                put_region(o.add("fixture", ""), r);
+            for (const EngineeringLoad& load : setup.loads) {
+                pt::ptree& l = o.add("load", "");
+                l.put("<xmlattr>.type", load.type == EngineeringLoad::Type::Faces ? "faces" : "point");
+                l.put("<xmlattr>.name", load.name);
+                l.put("<xmlattr>.point", tisma_vec_to_string(load.point));
+                l.put("<xmlattr>.radius", float_to_string_decimal_point(load.radius));
+                l.put("<xmlattr>.force", tisma_vec_to_string(load.force));
+                l.put("<xmlattr>.max_displacement", float_to_string_decimal_point(load.max_displacement));
+                l.put("<xmlattr>.max_displacement_percent", float_to_string_decimal_point(load.max_displacement_percent));
+                put_region(l, load.faces);
+                l.put("<xmlattr>.volume", load.type == EngineeringLoad::Type::Faces ? load.faces.volume : load.volume);
+            }
+        }
+        if (! any)
+            return true;
+        std::ostringstream oss;
+        pt::write_xml(oss, tree);
+        std::string out = oss.str();
+        boost::replace_all(out, "><", ">\n<");
+        if (!mz_zip_writer_add_mem(&archive, TISMA_ENGINEERING_FILE.c_str(), (const void*)out.data(), out.length(), MZ_DEFAULT_COMPRESSION)) {
+            add_error("Unable to add engineering file to archive");
+            return false;
+        }
         return true;
     }
 

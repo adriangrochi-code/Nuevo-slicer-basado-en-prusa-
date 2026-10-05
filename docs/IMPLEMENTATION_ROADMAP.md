@@ -58,6 +58,16 @@ Sustituye a `doc/TismaRoadmap.md` como plan de referencia (aquel queda como hist
 - **Falta**: campo de densidad/orientación desde tensiones; generación de modificadores internos; validación FEA de la pieza laminada; iteración.
 - **Módulos**: `PrintObject` (paso nuevo), `Fill/` (v2). **Nuevos**: `src/libtisma_structures/`.
 - **Dependencias**: `libtisma_fea`. **Riesgos**: 3, 4, 14. **Pruebas**: viga con carga conocida → más densidad en la zona de máximo momento; masa y rigidez comparadas con relleno uniforme; probetas físicas. **Complejidad**: 4.
+- **Objetivo pedido por el usuario (2026-10-05)**: «relleno mínimo necesario». Cada carga lleva un límite de
+  deformación (mm o % del tamaño de la pieza, ya disponible en la Fase 5) además del factor de seguridad. El
+  optimizador busca el relleno más ligero que cumpla ambos, para la mejor relación peso-resistencia.
+  1. Modelo del material con relleno: paredes y techos como capa maciza; el interior con propiedades
+     homogeneizadas según patrón y densidad (E_ef = E·(a·ρ + (1−a)·ρ²), coeficientes por patrón, a calibrar con
+     probetas impresas).
+  2. Versión 1: densidad uniforme mínima por bisección (y número de paredes) que cumple los límites.
+  3. Versión 2: densidad por zonas siguiendo las tensiones (modificadores internos), menos material donde no trabaja.
+  4. Validación con un segundo análisis de la estructura real laminada; resultado: peso, rigidez y factor de
+     seguridad frente al relleno uniforme.
 
 ### Lattice 3D
 - **Existe**: panal 3D y gyroid (2.5D, no lattice de barras).
@@ -176,7 +186,7 @@ Decisiones y límites:
 | Tarea | Estado |
 |---|---|
 | 5a. Núcleo en `src/libtisma_fea/`: tabla de 17 materiales con su variación con la temperatura, voxelizado, elementos hexaédricos con material transversalmente isótropo, gradiente conjugado sin matriz ensamblada (TBB), veredicto y materiales alternativos | Hecho, validado con soluciones analíticas (ver `docs/FEA.md`) |
-| 5b. Configuración de ingeniería por objeto guardada en el proyecto | En curso |
+| 5b. Configuración de ingeniería por objeto (`libslic3r/Engineering.hpp`): material, temperatura, factor de seguridad, apoyos por caras, cargas puntuales o por caras con límite de deformación (mm o %); guardada en el 3MF (`Metadata/Tisma_engineering.xml`) y en deshacer/rehacer; las caras CAD siguen a «Volver a teselar»; `build_analysis_input` pasa del objeto al análisis en coordenadas de impresión | Hecho, con pruebas |
 | 5c. GUI: página Ingeniería, elección de caras y puntos en 3D, cálculo en segundo plano, mapa de colores y veredicto | Pendiente |
 | Comparación con CalculiX | Pendiente |
 

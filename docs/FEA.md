@@ -14,10 +14,15 @@ factor de seguridad y un **veredicto**:
 | Aguanta | factor de seguridad ≥ el pedido en toda la pieza |
 | Margen bajo | factor de seguridad entre 1 y el pedido en algún punto |
 | Fuera de carga | la tensión supera la resistencia del material a esa temperatura en algún punto |
+| Demasiado flexible | aguanta, pero una carga se desplaza más que su límite de deformación (mm o % de la mayor dimensión de la pieza) |
 | Fuera de temperatura | la temperatura supera la temperatura máxima de servicio del material |
 | No aplicable | material elástomero (TPU): el análisis lineal no lo describe |
 
-Si no aguanta, propone materiales de la tabla que sí aguantarían a esa temperatura con el factor pedido.
+Si no aguanta, propone materiales de la tabla que sí aguantarían a esa temperatura con el factor pedido (y, si hay
+límites de deformación, que sean lo bastante rígidos: el desplazamiento se escala con 1/E).
+
+El límite de deformación se mide como el mayor desplazamiento de los nodos donde se aplica cada carga. Buscar el
+relleno mínimo que lo cumpla es el objetivo de la Fase 6 (ver la hoja de ruta).
 
 No hay conducción térmica: la temperatura solo cambia las propiedades del material (decisión del usuario).
 

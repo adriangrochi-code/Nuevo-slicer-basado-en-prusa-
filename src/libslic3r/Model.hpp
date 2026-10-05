@@ -26,6 +26,7 @@
 #include "EmbossShape.hpp"
 #include "TriangleSelector.hpp"
 #include "CadSource.hpp"
+#include "Engineering.hpp"
 #include "Feature/FullSpectrum/VirtualExtruder.hpp"
 
 #include <map>
@@ -409,6 +410,9 @@ public:
     CutConnectors           cut_connectors;
     CutId                 cut_id;
 
+    // Tisma: working conditions for the structural analysis (phase 5): supports, loads, temperature, material.
+    EngineeringSetup        engineering;
+
     /* This vector accumulates the total translation applied to the object by the
         center_around_origin() method. Callers might want to apply the same translation
         to new volumes before adding them to this object in order to preserve alignment
@@ -677,7 +681,7 @@ private:
             m_bounding_box_approx, m_bounding_box_approx_valid, 
             m_bounding_box_exact, m_bounding_box_exact_valid, m_min_max_z_valid,
             m_raw_bounding_box, m_raw_bounding_box_valid, m_raw_mesh_bounding_box, m_raw_mesh_bounding_box_valid,
-            cut_connectors, cut_id);
+            cut_connectors, cut_id, engineering);
 	}
 
     // Called by Print::validate() from the UI thread.

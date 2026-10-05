@@ -8,6 +8,12 @@
 
 #include "tisma_fea/Analysis.hpp"
 #include "tisma_fea/Materials.hpp"
+#include "tisma_fea/ModelSetup.hpp"
+
+#include <libslic3r/Format/3mf.hpp>
+#include <libslic3r/Model.hpp>
+
+#include <boost/filesystem/operations.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::Fea;
@@ -215,4 +221,120 @@ TEST_CASE("Size of a real analysis", "[.][FEA_benchmark]")
     REQUIRE(res.ok);
     WARN("voxels " << res.voxels.size() << " h " << res.h << " iterations " << res.iterations << " time " << seconds << " s"
          << " max displacement " << res.max_displacement << " safety " << res.safety_factor);
+}
+
+// Object with a 60 x 10 x 10 mm bar, held at x = 0, with a point load at the other end.
+static Model bar_model()
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "bar";
+    ModelVolume *volume = object->add_volume(TriangleMesh(its_make_cube(60., 10., 10.)));
+    volume->name = "bar";
+    object->add_instance();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(volume->mesh().its, 0, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.name   = "end";
+    load.volume = 0;
+    // The mesh of the volume is centered when it is added: the end is at x = 30 and the top at z = 5.
+    load.point  = Vec3d(30., 0., 5.);
+    load.force  = Vec3d(0., 0., -20.);
+    object->engineering.loads.push_back(load);
+    object->engineering.temperature = 40.;
+    return model;
+}
+
+TEST_CASE("Engineering setup is kept in the 3MF", "[FEA]")
+{
+    Model model = bar_model();
+    model.objects.front()->engineering.material = "PET";
+    const std::string path = (boost::filesystem::temp_directory_path() / "tisma_engineering_test.3mf").string();
+    REQUIRE(store_3mf(path.c_str(), &model, nullptr, false));
+    Model                     loaded;
+    DynamicPrintConfig        config;
+    ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
+    boost::optional<Semver>   version;
+    REQUIRE(load_3mf(path.c_str(), config, ctxt, &loaded, false, version));
+    boost::filesystem::remove(path);
+    REQUIRE(loaded.objects.size() == 1);
+    const EngineeringSetup &a = model.objects.front()->engineering;
+    const EngineeringSetup &b = loaded.objects.front()->engineering;
+    CHECK(b.material == "PET");
+    CHECK(b.temperature == Approx(40.));
+    CHECK(b.fixtures == a.fixtures);
+    REQUIRE(b.loads.size() == 1);
+    CHECK(b.loads.front().name == "end");
+    CHECK((b.loads.front().point - a.loads.front().point).norm() < 1e-6);
+    CHECK((b.loads.front().force - a.loads.front().force).norm() < 1e-6);
+}
+
+TEST_CASE("Analysis of an object of the model", "[FEA]")
+{
+    Model model = bar_model();
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    // The material comes from the filament type.
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PETG", input, error));
+    CHECK(input.material == "PET");
+    input.setup.voxel_size = 2.;
+    const Result flat = analyze(input.mesh, input.setup);
+    INFO(flat.error);
+    REQUIRE(flat.ok);
+    CHECK(flat.max_displacement > 0.);
+
+    // Standing the bar up (rotated 90 degrees about Y) bends it across the layers... no: the bending is now in the
+    // plane of the layers, where the material is the same, but the load stays vertical (print coordinates), so it
+    // pulls along the bar: much smaller displacement.
+    model.objects.front()->instances.front()->set_rotation(Vec3d(0., -0.5 * M_PI, 0.));
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PETG", input, error));
+    input.setup.voxel_size = 2.;
+    const Result standing = analyze(input.mesh, input.setup);
+    REQUIRE(standing.ok);
+    CHECK(standing.max_displacement < 0.2 * flat.max_displacement);
+
+    // Unknown filament types need a chosen material.
+    CHECK(! build_analysis_input(*model.objects.front(), 0, "SCAFF", input, error));
+    CHECK(! error.empty());
+    // A region on a volume which does not exist.
+    model.objects.front()->engineering.fixtures.front().volume = 3;
+    CHECK(! build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+}
+
+TEST_CASE("Deformation limit", "[FEA]")
+{
+    Model model = bar_model();
+    model.objects.front()->engineering.temperature = 23.;
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    input.setup.voxel_size = 2.;
+    const Result free = analyze(input.mesh, input.setup);
+    REQUIRE(free.ok);
+    REQUIRE(free.load_displacement.size() == 1);
+    const double d = free.load_displacement.front();
+    CHECK(d > 0.);
+    CHECK(free.verdict == Verdict::Holds);
+
+    // A limit above the displacement is met.
+    model.objects.front()->engineering.loads.front().max_displacement = 2. * d;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    input.setup.voxel_size = 2.;
+    CHECK(analyze(input.mesh, input.setup).verdict == Verdict::Holds);
+
+    // Half the displacement, given as % of the length of the bar (60 mm): too flexible; only stiffer materials
+    // are proposed.
+    model.objects.front()->engineering.loads.front().max_displacement = 0.;
+    model.objects.front()->engineering.loads.front().max_displacement_percent = 100. * 0.5 * d / 60.;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    CHECK(input.setup.loads.front().max_displacement == Approx(0.5 * d));
+    input.setup.voxel_size = 2.;
+    const Result stiff = analyze(input.mesh, input.setup);
+    REQUIRE(stiff.ok);
+    CHECK(stiff.verdict == Verdict::TooFlexible);
+    REQUIRE(! stiff.alternatives.empty());
+    for (const auto &[key, sf] : stiff.alternatives)
+        CHECK(find_material(key)->E_xy >= 2. * find_material("PLA")->E_xy);
 }

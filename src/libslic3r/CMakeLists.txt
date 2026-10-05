@@ -159,6 +159,7 @@ set(SLIC3R_SOURCES
     Format/STEP.cpp
     CadSource.hpp
     CadSource.cpp
+    Engineering.hpp
     Format/SVG.hpp
     Format/SVG.cpp
     Format/SLAArchiveFormatRegistry.hpp

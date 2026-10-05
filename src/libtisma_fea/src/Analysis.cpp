@@ -201,6 +201,7 @@ const char* verdict_name(Verdict verdict)
     case Verdict::Holds:            return "The part holds";
     case Verdict::LowMargin:        return "The part holds with a low safety margin";
     case Verdict::OutOfLoad:        return "Out of load: the stresses exceed the strength of the material";
+    case Verdict::TooFlexible:      return "Too flexible: a load moves more than the allowed deformation";
     case Verdict::OutOfTemperature: return "Out of temperature: the material is not structural at this temperature";
     case Verdict::NotApplicable:    return "The linear analysis does not describe this material";
     }
@@ -270,6 +271,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         return res;
     }
     std::vector<double> f(n_dofs, 0.);
+    std::vector<std::vector<int>> load_nodes;
     for (const Load &load : setup.loads) {
         std::vector<int> nodes;
         if (load.type == Load::Type::Faces)
@@ -298,6 +300,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         for (int n : nodes)
             for (int c = 0; c < 3; ++ c)
                 f[3 * n + c] += per_node[c];
+        load_nodes.emplace_back(std::move(nodes));
     }
     for (size_t d = 0; d < n_dofs; ++ d)
         if (fixed[d])
@@ -440,6 +443,21 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     }
     res.safety_factor = res.max_failure_index > 0. ? 1. / res.max_failure_index : std::numeric_limits<double>::infinity();
 
+    // Displacement where each load is applied, and the stiffness needed to keep it within its limit.
+    bool   too_flexible = false;
+    // Factor by which the stiffness must grow to meet all the limits (1 = they are met).
+    double stiffness_needed = 1.;
+    for (size_t l = 0; l < setup.loads.size(); ++ l) {
+        double d = 0.;
+        for (int n : load_nodes[l])
+            d = std::max(d, Vec3d(u[3 * n], u[3 * n + 1], u[3 * n + 2]).norm());
+        res.load_displacement.push_back(d);
+        if (setup.loads[l].max_displacement > 0.) {
+            stiffness_needed = std::max(stiffness_needed, d / setup.loads[l].max_displacement);
+            too_flexible |= d > setup.loads[l].max_displacement;
+        }
+    }
+
     // 7) Verdict.
     if (! material->linear_analysis_valid)
         res.verdict = Verdict::NotApplicable;
@@ -447,6 +465,8 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         res.verdict = Verdict::OutOfTemperature;
     else if (res.max_failure_index > 1.)
         res.verdict = Verdict::OutOfLoad;
+    else if (too_flexible)
+        res.verdict = Verdict::TooFlexible;
     else if (res.safety_factor < setup.required_safety_factor)
         res.verdict = Verdict::LowMargin;
     else
@@ -463,7 +483,8 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                 fi_max = std::max({ fi_max, res.von_mises[e] / (m.strength_xy * tf), sz_tension[e] / (m.strength_z * tf),
                                     tau_z[e] / (0.6 * m.strength_z * tf) });
             const double sf = fi_max > 0. ? 1. / fi_max : std::numeric_limits<double>::infinity();
-            if (sf >= setup.required_safety_factor)
+            const double stiffness_ratio = (m.E_xy * tf) / (material->E_xy * res.temperature_factor);
+            if (sf >= setup.required_safety_factor && stiffness_ratio >= stiffness_needed)
                 res.alternatives.emplace_back(m.key, sf);
         }
         std::sort(res.alternatives.begin(), res.alternatives.end(), [](const auto &a, const auto &b) { return a.second > b.second; });

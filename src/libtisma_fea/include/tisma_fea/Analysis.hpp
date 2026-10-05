@@ -37,6 +37,8 @@ struct Load
     std::vector<int> triangles;
     // Total force [N].
     Vec3d            force { Vec3d::Zero() };
+    // Largest allowed displacement where the load is applied [mm], 0 = no limit.
+    double           max_displacement { 0. };
 };
 
 struct Setup
@@ -61,6 +63,8 @@ enum class Verdict
     LowMargin,
     // The stresses exceed the strength of the material somewhere.
     OutOfLoad,
+    // The part holds, but a load moves more than its allowed displacement.
+    TooFlexible,
     // The temperature is above the maximum service temperature of the material.
     OutOfTemperature,
     // The linear analysis does not describe the material (elastomers).
@@ -90,9 +94,12 @@ struct Result
     // Position of the most loaded voxel.
     Vec3d               critical_point { Vec3d::Zero() };
     double              temperature_factor { 1. };
+    // Largest displacement of the nodes of each load [mm], in the order of Setup::loads.
+    std::vector<double> load_displacement;
     Verdict             verdict { Verdict::Holds };
-    // Materials of the table that would hold with the required safety factor at the temperature, with the
-    // safety factor estimated from the same stresses (exact for isotropic materials).
+    // Materials of the table that would hold with the required safety factor at the temperature (and keep the
+    // displacements within the limits), with the safety factor estimated from the same stresses (exact for
+    // isotropic materials; the displacements are scaled with the stiffness).
     std::vector<std::pair<std::string, double>> alternatives;
 
     int                 iterations { 0 };

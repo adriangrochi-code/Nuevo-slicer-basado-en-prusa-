@@ -4,8 +4,10 @@
 add_library(libtisma_fea STATIC
     include/tisma_fea/Materials.hpp
     include/tisma_fea/Analysis.hpp
+    include/tisma_fea/ModelSetup.hpp
     src/Materials.cpp
     src/Analysis.cpp
+    src/ModelSetup.cpp
 )
 target_include_directories(libtisma_fea PUBLIC include)
 target_link_libraries(libtisma_fea PUBLIC libslic3r)
