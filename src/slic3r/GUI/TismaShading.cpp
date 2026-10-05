@@ -96,7 +96,7 @@ TismaShading::Quality TismaShading::configured_quality()
 {
     const std::string value = wxGetApp().app_config->get(CONFIG_KEY);
     if (value.empty())
-        return DEFAULT_QUALITY;
+        return DEFAULT_RENDER_QUALITY;
     const int q = std::clamp(std::atoi(value.c_str()), 0, int(Quality::Shadows));
     return Quality(q);
 }

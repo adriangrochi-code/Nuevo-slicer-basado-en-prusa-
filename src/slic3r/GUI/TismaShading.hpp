@@ -24,7 +24,7 @@ class GLShaderProgram;
 
 namespace GUI {
 
-class Camera;
+struct Camera;
 
 class TismaShading
 {
@@ -40,7 +40,7 @@ public:
         Shadows   = 2,
     };
     static constexpr const char *CONFIG_KEY = "tisma_render_quality";
-    static constexpr Quality     DEFAULT_QUALITY = Quality::Shadows;
+    static constexpr Quality     DEFAULT_RENDER_QUALITY = Quality::Shadows;
     // Texture unit of the shadow map (libvgcode uses the units 0..3 for its texture buffers).
     static constexpr int         SHADOW_MAP_TEXTURE_UNIT = 4;
     static constexpr int         SHADOW_MAP_SIZE = 2048;
