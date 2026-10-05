@@ -22,6 +22,7 @@ endif ()
 add_subdirectory(slic3r-arrange)
 add_subdirectory(slic3r-arrange-wrapper)
 add_subdirectory(libseqarrange)
+add_subdirectory(libtisma_fea)
 
 
 if (SLIC3R_GUI)

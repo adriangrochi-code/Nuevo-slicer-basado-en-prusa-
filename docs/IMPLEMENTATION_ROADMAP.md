@@ -171,7 +171,19 @@ Decisiones y límites:
 - Si la malla se editó (simplificar, reparar, editar vértices), volver a teselar se rechaza en lugar de adivinar.
 - Los STEP se guardan dentro del 3MF: el proyecto crece lo que ocupa el STEP comprimido.
 
-## 6. Decisiones pendientes (para el usuario)
+## 6. Estado de la Fase 5 (análisis estructural)
+
+| Tarea | Estado |
+|---|---|
+| 5a. Núcleo en `src/libtisma_fea/`: tabla de 17 materiales con su variación con la temperatura, voxelizado, elementos hexaédricos con material transversalmente isótropo, gradiente conjugado sin matriz ensamblada (TBB), veredicto y materiales alternativos | Hecho, validado con soluciones analíticas (ver `docs/FEA.md`) |
+| 5b. Configuración de ingeniería por objeto guardada en el proyecto | En curso |
+| 5c. GUI: página Ingeniería, elección de caras y puntos en 3D, cálculo en segundo plano, mapa de colores y veredicto | Pendiente |
+| Comparación con CalculiX | Pendiente |
+
+Decisiones: solver propio sobre vóxeles con Eigen (sin dependencias nuevas); valores de material de fichas
+técnicas y bibliografía, aproximados y editables más adelante; la pieza se considera maciza hasta la Fase 6.
+
+## 7. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|

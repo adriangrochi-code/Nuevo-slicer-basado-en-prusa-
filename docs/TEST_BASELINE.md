@@ -11,6 +11,7 @@ Fecha: 2026-10-05 · Commit: `96fef2f` · Entorno: Ubuntu 24.04, GCC, Release, l
 | `slic3rutils_tests` | 31 | Pasa | 3,1 s |
 | `arrange_tests` | 31 | Pasa | 2,5 s |
 | `thumbnails_tests` | 8 | Pasa | 0,01 s |
+| `libtisma_fea_tests` | 7 (`[FEA]`, Fase 5; más un caso de rendimiento oculto `[FEA_benchmark]`) | Pasa | 0,3 s |
 | `libseqarrange_tests` | — | **Sin resultado**: se detuvo al llegar al límite de 2 h de ejecución sin terminar (usa el optimizador z3). Es código de upstream que el fork no modifica; queda pendiente ejecutarlo en una máquina más rápida | > 2 h |
 
 Incluye las pruebas propias del fork (`[NonPlanar]`, `[USBPrinter]`, `[ArcOverhangs]`, `[DenseInfill]`).
