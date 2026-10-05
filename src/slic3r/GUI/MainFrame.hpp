@@ -256,7 +256,6 @@ public:
     // Tisma: navigation column at the left (PrusaSlicer 3.0 style)
     NavRail*              m_nav_rail    { nullptr };
     wxBoxSizer*           m_rail_sizer  { nullptr };
-    wxWindow*             m_structures_page  { nullptr };
     void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;

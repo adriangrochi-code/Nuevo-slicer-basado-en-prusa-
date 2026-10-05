@@ -16,11 +16,13 @@
 
 #include <libslic3r/ObjectID.hpp>
 #include <tisma_fea/Analysis.hpp>
+#include <tisma_fea/Optimize.hpp>
 
 namespace Slic3r {
 
 class ModelObject;
 class ModelVolume;
+class DynamicPrintConfig;
 struct EngineeringRegion;
 
 namespace GUI {
@@ -34,6 +36,8 @@ public:
     bool on_mouse(const wxMouseEvent &mouse_event) override;
     void data_changed(bool is_serializing) override;
     std::string get_tooltip() const override;
+    // Opens the section of the lightest infill (Structures workspace).
+    void show_infill_section() { m_open_infill_section = true; }
 
 protected:
     bool               on_init() override;
@@ -47,7 +51,7 @@ protected:
 
 private:
     enum class Tool { None, Fixture, FaceLoad, PointLoad };
-    enum class Field { Safety, Stress, Displacement };
+    enum class Field { Safety, Stress, Displacement, Density };
 
     ModelObject* model_object() const;
     int          instance_idx() const;
@@ -59,6 +63,8 @@ private:
     std::string  filament_type(const ModelObject &object) const;
 
     void start_analysis();
+    void start_optimization();
+    void apply_optimization(bool zones);
     void cancel_analysis();
     void fetch_result();
 
@@ -90,6 +96,8 @@ private:
     std::atomic<int>  m_progress { 0 };
     std::mutex        m_mutex;
     std::optional<Fea::Result> m_pending;
+    std::optional<Fea::OptimizeResult> m_pending_opt;
+    bool              m_job_optimize { false };
 
     std::optional<Fea::Result> m_result;
     ObjectID                   m_result_object;
@@ -98,6 +106,13 @@ private:
     double                     m_result_safety { 2. };
     std::string                m_error;
     bool                       m_result_stale { false };
+    bool                       m_as_printed { true };
+    // Lightest infill.
+    std::optional<Fea::OptimizeResult> m_opt;
+    ObjectID                   m_opt_object;
+    bool                       m_opt_zones { true };
+    bool                       m_open_infill_section { false };
+    std::atomic<double>        m_current_infill_mass { 0. };
 
     // Render caches.
     struct RegionModel { GLModel model; Transform3d trafo; ColorRGBA color; };

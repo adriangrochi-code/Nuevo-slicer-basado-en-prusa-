@@ -142,6 +142,7 @@
 #include "PresetArchiveDatabase.hpp"
 #include "BulkExportDialog.hpp"
 #include "LoadStepDialog.hpp"
+#include "Gizmos/GLGizmoEngineering.hpp"
 
 #include "libslic3r/ArrangeHelper.hpp"
 
@@ -6642,6 +6643,14 @@ void Plater::open_engineering()
     if (gizmos.get_current_type() != GLGizmosManager::Engineering)
         gizmos.open_gizmo(GLGizmosManager::Engineering);
     canvas->set_as_dirty();
+}
+
+void Plater::open_structures()
+{
+    open_engineering();
+    if (is_engineering_open())
+        if (auto *gizmo = dynamic_cast<GLGizmoEngineering*>(p->view3D->get_canvas3d()->get_gizmos_manager().get_gizmo(GLGizmosManager::Engineering)))
+            gizmo->show_infill_section();
 }
 
 bool Plater::is_engineering_open() const

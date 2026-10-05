@@ -5,6 +5,7 @@
 #include "GLGizmoEngineering.hpp"
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <queue>
 
@@ -15,10 +16,12 @@
 #include <libslic3r/PresetBundle.hpp>
 #include <tisma_fea/Materials.hpp>
 #include <tisma_fea/ModelSetup.hpp>
+#include <tisma_fea/Optimize.hpp>
 
 #include "slic3r/GUI/Camera.hpp"
 #include "slic3r/GUI/GLCanvas3D.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
+#include "slic3r/GUI/GUI_ObjectList.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "slic3r/GUI/ImGuiPureWrap.hpp"
 #include "slic3r/GUI/ImGuiWrapper.hpp"
@@ -319,11 +322,13 @@ void GLGizmoEngineering::start_analysis()
         m_thread.join();
     Fea::ModelAnalysisInput input;
     std::string error;
-    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error)) {
+    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
+    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, m_as_printed ? &config : nullptr)) {
         m_error = error;
         return;
     }
     m_error.clear();
+    m_job_optimize       = false;
     m_result_material    = input.material;
     m_result_temperature = input.setup.temperature;
     m_result_safety      = input.setup.required_safety_factor;
@@ -348,6 +353,77 @@ void GLGizmoEngineering::start_analysis()
     });
 }
 
+void GLGizmoEngineering::start_optimization()
+{
+    const ModelObject *mo = model_object();
+    if (mo == nullptr || m_running)
+        return;
+    if (m_thread.joinable())
+        m_thread.join();
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
+    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, &config)) {
+        m_error = error;
+        return;
+    }
+    // The current infill of the object, to compare.
+    m_current_infill_mass = 0.;
+    m_error.clear();
+    m_job_optimize       = true;
+    m_result_material    = input.material;
+    m_result_temperature = input.setup.temperature;
+    m_result_safety      = input.setup.required_safety_factor;
+    m_result_object      = mo->id();
+    m_cancel   = false;
+    m_running  = true;
+    m_progress = 0;
+    Fea::OptimizeOptions options;
+    options.zones = m_opt_zones;
+    m_thread = std::thread([this, input = std::move(input), options]() {
+        Fea::OptimizeResult res;
+        // The current infill first: the reference of the comparison.
+        Fea::Result current = Fea::analyze(input.mesh, input.setup, [this]() { return m_cancel.load(); });
+        if (current.ok)
+            m_current_infill_mass = current.mass;
+        if (! m_cancel)
+            res = Fea::optimize_infill(input.mesh, input.setup, options, [this]() { return m_cancel.load(); },
+                                       [this](int p) { m_progress = p; });
+        else
+            res.error = "Cancelled";
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_pending_opt = std::move(res);
+        }
+        m_running = false;
+        wxGetApp().CallAfter([]() {
+            if (GLCanvas3D *canvas = wxGetApp().plater() ? wxGetApp().plater()->get_current_canvas3D() : nullptr) {
+                canvas->set_as_dirty();
+                canvas->request_extra_frame();
+            }
+        });
+    });
+}
+
+void GLGizmoEngineering::apply_optimization(bool zones)
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_opt || mo->id() != m_opt_object)
+        return;
+    const Fea::OptimizeResult &opt = *m_opt;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lightest infill"));
+    if (zones && opt.zones_found)
+        Fea::apply_infill(*mo, size_t(instance_idx()), opt.base_density, opt.zones);
+    else
+        Fea::apply_infill(*mo, size_t(instance_idx()), opt.uniform_density, {});
+    const int obj_idx = m_parent.get_selection().get_object_idx();
+    if (obj_idx >= 0)
+        wxGetApp().plater()->changed_object(obj_idx);
+    wxGetApp().obj_list()->update_after_undo_redo();
+    m_regions_dirty = true;
+    m_opt_object = mo->id();
+}
+
 void GLGizmoEngineering::cancel_analysis()
 {
     m_cancel = true;
@@ -356,14 +432,33 @@ void GLGizmoEngineering::cancel_analysis()
     m_running = false;
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pending.reset();
+    m_pending_opt.reset();
 }
 
 void GLGizmoEngineering::fetch_result()
 {
     std::optional<Fea::Result> res;
+    std::optional<Fea::OptimizeResult> opt;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         res.swap(m_pending);
+        opt.swap(m_pending_opt);
+    }
+    if (opt) {
+        if (m_thread.joinable())
+            m_thread.join();
+        if (! opt->ok) {
+            m_error = opt->error == "Cancelled" ? std::string() : opt->error;
+            return;
+        }
+        m_opt        = std::move(*opt);
+        m_opt_object = m_result_object;
+        // Show the infill found on the part.
+        m_result = m_opt->zones_found ? m_opt->zoned : m_opt->uniform;
+        m_result_stale = false;
+        m_field = Field::Density;
+        m_result_models_dirty = true;
+        return;
     }
     if (! res)
         return;
@@ -438,9 +533,13 @@ void GLGizmoEngineering::update_result_models()
         return;
     const Fea::Result &r = *m_result;
     const Vec3i size = r.size;
+    // The infill view hides the solid shell, to show the infill inside and its zones.
+    const bool only_interior = m_field == Field::Density && r.interior.size() == r.voxels.size();
+    auto shown = [&](size_t e) { return ! only_interior || r.interior[e]; };
     std::vector<int> voxel_of(size_t(size.x()) * size_t(size.y()) * size_t(size.z()), -1);
     for (size_t e = 0; e < r.voxels.size(); ++ e)
-        voxel_of[r.voxels[e]] = int(e);
+        if (shown(e))
+            voxel_of[r.voxels[e]] = int(e);
     auto solid = [&](int i, int j, int k) {
         return i >= 0 && j >= 0 && k >= 0 && i < size.x() && j < size.y() && k < size.z() &&
                voxel_of[i + size_t(size.x()) * (j + size_t(size.y()) * k)] >= 0;
@@ -452,6 +551,7 @@ void GLGizmoEngineering::update_result_models()
         case Field::Safety:       return r.failure_index[e];    // 1 = breaks
         case Field::Stress:       return float(r.von_mises[e] / max_vm);
         case Field::Displacement: return float(r.displacement[e].norm() / max_d);
+        case Field::Density:      return e < r.density.size() ? r.density[e] : 1.f;
         }
         return 0.f;
     };
@@ -462,6 +562,8 @@ void GLGizmoEngineering::update_result_models()
     static const int dirs[6][3] = { {1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1} };
     const float h = float(r.h);
     for (size_t e = 0; e < r.voxels.size(); ++ e) {
+        if (! shown(e))
+            continue;
         const int idx = r.voxels[e];
         const int i = idx % size.x(), j = (idx / size.x()) % size.y(), k = idx / (size.x() * size.y());
         const int step = std::clamp(int(value(e) * (COLOR_STEPS - 1) + 0.5f), 0, COLOR_STEPS - 1);
@@ -642,6 +744,14 @@ void GLGizmoEngineering::render_legend(float width)
     case Field::Safety:       lo = "0"; hi = _u8L("1 = breaks"); break;
     case Field::Stress:       lo = "0 MPa"; hi = GUI::format("%.2f MPa", r.max_von_mises); break;
     case Field::Displacement: lo = "0 mm"; hi = GUI::format("%.3f mm", r.max_displacement); break;
+    case Field::Density:      lo = _u8L("0 % (empty)"); hi = _u8L("100 % (solid)"); break;
+    }
+    if (m_field == Field::Density) {
+        ImGuiPureWrap::text(lo);
+        ImGui::SameLine(std::max(0.f, width - ImGuiPureWrap::calc_text_size(hi).x + ImGui::GetStyle().WindowPadding.x));
+        ImGuiPureWrap::text(hi);
+        ImGuiPureWrap::text_wrapped(_u8L("The solid walls are hidden to show the infill inside."), width);
+        return;
     }
     ImGuiPureWrap::text(lo);
     ImGui::SameLine(std::max(0.f, width - ImGuiPureWrap::calc_text_size(hi).x + ImGui::GetStyle().WindowPadding.x));
@@ -657,6 +767,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     if (m_running)
         m_imgui->set_requires_extra_frame();
 
+    // The panel never grows beyond the canvas: it scrolls.
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.f, 0.f), ImVec2(FLT_MAX, std::max(200.f, bottom_limit - 10.f)));
     ImGuiPureWrap::begin(get_name(false), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     const float win_h = ImGui::GetWindowHeight();
     ImGui::SetWindowPos(ImVec2(x, std::min(y, bottom_limit - win_h)), ImGuiCond_Always);
@@ -707,6 +819,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfTemperature)),
             GUI::format(_u8L("%1% is not structural above %2% °C"), material->name, material->max_service_temperature));
     edit_value(_u8L("Safety factor"), m_edit_safety, eng.safety_factor, 1.f, 20.f, _u8L("Change safety factor"));
+    if (ImGuiPureWrap::checkbox(_u8L("Printed part (walls and infill of the profile)"), m_as_printed))
+        m_result_stale = true;
 
     // Tools.
     ImGui::Separator();
@@ -808,6 +922,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text(GUI::format(_u8L("Safety factor: %1$.2f (required %2$.1f)"), r.safety_factor, m_result_safety));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. displacement: %1$.3f mm"), r.max_displacement));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. stress (von Mises): %1$.2f MPa"), r.max_von_mises));
+        ImGuiPureWrap::text(GUI::format(_u8L("Estimated mass: %1$.1f g (solid part: %2$.1f g)"), r.mass, r.solid_mass));
         if (! r.alternatives.empty()) {
             std::string alt;
             for (size_t i = 0; i < r.alternatives.size() && i < 5; ++ i)
@@ -816,7 +931,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         }
         ImGuiPureWrap::checkbox(_u8L("Show results on the part"), m_show_results);
         if (m_show_results) {
-            std::vector<std::string> fields = { _u8L("Safety (stress / strength)"), _u8L("Stress (von Mises)"), _u8L("Displacement") };
+            std::vector<std::string> fields = { _u8L("Safety (stress / strength)"), _u8L("Stress (von Mises)"), _u8L("Displacement"), _u8L("Infill") };
             int f = int(m_field);
             if (ImGuiPureWrap::combo(_u8L("Show"), fields, f, 0, 4.f * ImGui::GetFontSize(), 14.f * ImGui::GetFontSize())) {
                 m_field = Field(f);
@@ -824,7 +939,52 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             }
             render_legend(width);
         }
-        ImGuiPureWrap::text_wrapped(GUI::format(_u8L("Solid part, %1$.2f mm voxels. Walls and infill are taken into account in phase 6."), r.h), width);
+        ImGuiPureWrap::text_wrapped(r.density.empty() || r.mass >= r.solid_mass * 0.999 ?
+            GUI::format(_u8L("Solid part, %1$.2f mm voxels."), r.h) :
+            GUI::format(_u8L("Walls and homogenized infill, %1$.2f mm voxels."), r.h), width);
+    }
+
+    // Lightest infill (phase 6).
+    ImGui::Separator();
+    if (m_open_infill_section) {
+        ImGui::SetNextItemOpen(true);
+        m_open_infill_section = false;
+    }
+    if (ImGui::CollapsingHeader(_u8L("Lightest infill").c_str())) {
+        ImGuiPureWrap::text_wrapped(_u8L("Searches the lowest infill which meets the safety factor and the deformation limits of the loads, "
+                                         "with the walls and the infill pattern of the profile."), width);
+        ImGuiPureWrap::checkbox(_u8L("Also by zones (more infill where the stresses are high)"), m_opt_zones);
+        const bool can_run = ! m_running && ! eng.fixtures.empty() && ! eng.loads.empty();
+        if (ImGuiPureWrap::button(_u8L("Find lightest infill")) && can_run)
+            start_optimization();
+        if (m_opt && m_opt_object == mo->id()) {
+            const Fea::OptimizeResult &o = *m_opt;
+            if (! o.feasible) {
+                ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfLoad)),
+                    _u8L("Not even 100 % infill meets the requirements:"));
+                ImGuiPureWrap::text_wrapped(verdict_text(o.uniform.verdict), width);
+                ImGuiPureWrap::text_wrapped(_u8L("Add perimeters, choose another material or reinforce the shape."), width);
+            } else {
+                if (m_current_infill_mass > 0.)
+                    ImGuiPureWrap::text(GUI::format(_u8L("Current infill: %1$.1f g"), m_current_infill_mass.load()));
+                ImGuiPureWrap::text(GUI::format(_u8L("Uniform: %1% %% -> %2$.1f g, safety factor %3$.2f"),
+                    int(std::round(o.uniform_density * 100.)), o.uniform.mass, o.uniform.safety_factor));
+                if (ImGuiPureWrap::button(_u8L("Apply uniform")))
+                    apply_optimization(false);
+                if (o.zones_found) {
+                    std::string zones;
+                    for (const Fea::InfillZone &z : o.zones)
+                        zones += (zones.empty() ? "" : ", ") + std::to_string(int(std::round(z.density * 100.))) + " %";
+                    ImGuiPureWrap::text_wrapped(GUI::format(_u8L("By zones: %1% %% + zones of %2% -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"),
+                        int(std::round(o.base_density * 100.)), zones, o.zoned.mass,
+                        100. * (1. - o.zoned.mass / std::max(o.uniform.mass, 1e-9)), o.zoned.safety_factor), width);
+                    if (ImGuiPureWrap::button(_u8L("Apply by zones")))
+                        apply_optimization(true);
+                } else if (m_opt_zones)
+                    ImGuiPureWrap::text_wrapped(_u8L("The zones would not save material: the uniform infill is the lightest."), width);
+                ImGuiPureWrap::text_wrapped(GUI::format(_u8L("%1% analyses. Homogenized infill model: check the result with a printed test part."), o.analyses), width);
+            }
+        }
     }
 
     ImGui::PopItemWidth();

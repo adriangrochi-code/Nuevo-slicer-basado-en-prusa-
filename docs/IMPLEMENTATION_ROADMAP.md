@@ -194,6 +194,20 @@ Decisiones y límites:
 Decisiones: solver propio sobre vóxeles con Eigen (sin dependencias nuevas); valores de material de fichas
 técnicas y bibliografía, aproximados y editables más adelante; la pieza se considera maciza hasta la Fase 6.
 
+## 7. Estado de la Fase 6 (relleno mínimo guiado por el análisis)
+
+| Tarea | Estado |
+|---|---|
+| 6a. Paredes y relleno en el análisis (capa maciza + relleno homogeneizado por patrón), masa estimada; optimizador de relleno uniforme mínimo y por zonas | Hecho, con pruebas (ver `docs/FEA.md`) |
+| 6b. El análisis lee perímetros, capas sólidas, densidad, patrón y modificadores del perfil y del objeto; `apply_infill` escribe la densidad y los modificadores de zona | Hecho, con prueba de ida y vuelta |
+| 6c. GUI: casilla «Pieza impresa», masa estimada, vista «Relleno» (sin la capa maciza), sección «Relleno mínimo» (búsqueda en segundo plano, comparación con el relleno actual, aplicar uniforme o por zonas); el botón Estructuras abre esa sección; panel con desplazamiento | Hecho y probado en la GUI (bloque STEP, FS 6: actual 2,7 g; uniforme 45 % 3,3 g; por zonas 10 % + 23 % / 50 % 2,9 g; aplicado y laminado: el relleno cambia por zonas) |
+| Validación con las trayectorias reales laminadas (voxelizar el G-code) | Pendiente |
+| Calibración de los exponentes del relleno con probetas impresas | Pendiente (necesita ensayos físicos) |
+| Lattice 3D y refuerzos locales | Pendiente (siguientes pasos de la fase) |
+
+Observaciones: el laminador convierte en sólidas las áreas de relleno pequeñas y añade puentes en los bordes de las
+zonas; el modelo no lo tiene en cuenta, así que la masa real puede ser algo mayor que la estimada.
+
 ## 7. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |

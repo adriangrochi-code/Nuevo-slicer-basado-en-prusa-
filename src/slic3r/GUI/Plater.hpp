@@ -349,6 +349,8 @@ public:
     void notify_cad_check(const std::vector<size_t>& obj_idxs);
     // Tisma: Engineering workspace (phase 5): 3D view with the structural analysis of the selected object.
     void open_engineering();
+    // Tisma: Structures workspace (phase 6): Engineering with the section of the lightest infill open.
+    void open_structures();
     bool is_engineering_open() const;
     bool can_split_to_objects() const;
     bool can_split_to_volumes() const;

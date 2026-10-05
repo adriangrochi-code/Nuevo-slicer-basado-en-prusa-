@@ -32015,3 +32015,69 @@ msgstr "Radio de la carga [mm]"
 
 msgid ", r %1% mm"
 msgstr ", r %1% mm"
+
+msgid "Lightest infill for the loads: uniform or by zones"
+msgstr "Relleno más ligero para las cargas: uniforme o por zonas"
+
+msgid "Apply lightest infill"
+msgstr "Aplicar el relleno más ligero"
+
+msgid "0 % (empty)"
+msgstr "0 % (vacío)"
+
+msgid "100 % (solid)"
+msgstr "100 % (macizo)"
+
+msgid "Printed part (walls and infill of the profile)"
+msgstr "Pieza impresa (paredes y relleno del perfil)"
+
+msgid "Estimated mass: %1$.1f g (solid part: %2$.1f g)"
+msgstr "Masa estimada: %1$.1f g (pieza maciza: %2$.1f g)"
+
+msgid "Solid part, %1$.2f mm voxels."
+msgstr "Pieza maciza, vóxeles de %1$.2f mm."
+
+msgid "Walls and homogenized infill, %1$.2f mm voxels."
+msgstr "Paredes y relleno homogeneizado, vóxeles de %1$.2f mm."
+
+msgid "Lightest infill"
+msgstr "Relleno mínimo"
+
+msgid "Searches the lowest infill which meets the safety factor and the deformation limits of the loads, with the walls and the infill pattern of the profile."
+msgstr "Busca el relleno más bajo que cumple el factor de seguridad y los límites de deformación de las cargas, con las paredes y el patrón de relleno del perfil."
+
+msgid "Also by zones (more infill where the stresses are high)"
+msgstr "También por zonas (más relleno donde las tensiones son altas)"
+
+msgid "Find lightest infill"
+msgstr "Buscar relleno mínimo"
+
+msgid "Not even 100 % infill meets the requirements:"
+msgstr "Ni con el 100 % de relleno se cumplen los requisitos:"
+
+msgid "Add perimeters, choose another material or reinforce the shape."
+msgstr "Añade perímetros, elige otro material o refuerza la forma."
+
+msgid "Current infill: %1$.1f g"
+msgstr "Relleno actual: %1$.1f g"
+
+msgid "Uniform: %1% %% -> %2$.1f g, safety factor %3$.2f"
+msgstr "Uniforme: %1% %% -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Apply uniform"
+msgstr "Aplicar uniforme"
+
+msgid "By zones: %1% %% + zones of %2% -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"
+msgstr "Por zonas: %1% %% + zonas de %2% -> %3$.1f g (%4$.0f %% más ligero), factor de seguridad %5$.2f"
+
+msgid "Apply by zones"
+msgstr "Aplicar por zonas"
+
+msgid "The zones would not save material: the uniform infill is the lightest."
+msgstr "Las zonas no ahorrarían material: el relleno uniforme es el más ligero."
+
+msgid "%1% analyses. Homogenized infill model: check the result with a printed test part."
+msgstr "%1% análisis. Modelo de relleno homogeneizado: comprueba el resultado con una pieza de prueba impresa."
+
+msgid "The solid walls are hidden to show the infill inside."
+msgstr "Las paredes macizas se ocultan para mostrar el relleno interior."

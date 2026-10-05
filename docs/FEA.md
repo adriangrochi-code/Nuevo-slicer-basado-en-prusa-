@@ -38,6 +38,12 @@ No hay conducción térmica: la temperatura solo cambia las propiedades del mate
 5. «Calcular»: el análisis corre en segundo plano (cancelable) y muestra el veredicto, el factor de seguridad, el
    desplazamiento y el mapa de colores sobre la pieza.
 
+6. «Pieza impresa» (activada por defecto): el análisis usa las paredes, techos, suelos y el relleno del perfil.
+7. **Relleno mínimo** (también desde el botón Estructuras): busca el relleno uniforme más bajo y, si ahorra
+   material, el relleno por zonas; muestra la masa frente al relleno actual y los aplica al objeto con un clic
+   (densidad del objeto + modificadores «Tisma infill zone»). La vista «Relleno» oculta la capa maciza para ver el
+   interior.
+
 Todo se guarda en el proyecto (3MF) y se puede deshacer.
 
 ## Método

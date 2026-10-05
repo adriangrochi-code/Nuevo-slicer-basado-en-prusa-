@@ -62,7 +62,6 @@
 #include "NavRail.hpp"
 #include "USBPrintDialog.hpp"
 #include "CalibrationDialog.hpp"
-#include "WorkspacePage.hpp"
 #include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -872,14 +871,14 @@ void MainFrame::create_nav_rail()
     engineering.is_visible  = is_expert;
     m_nav_rail->add_item(engineering);
 
-    m_structures_page = create_structures_page(m_tabpanel);
-    m_tabpanel->AddNewPage(m_structures_page, _L("Structures"), "", false);
+    // Structures: the lightest infill for the loads (phase 6), in the Engineering view; lattice and local
+    // reinforcements will follow (docs/IMPLEMENTATION_ROADMAP.md).
     NavRail::Item structures;
     structures.label       = _L("Structures");
-    structures.tooltip     = _L("Adaptive infill, lattice and reinforcements (in development)");
+    structures.tooltip     = _L("Lightest infill for the loads: uniform or by zones");
     structures.icon        = "infill";
-    structures.on_click    = [this, select_page]() { select_page(m_structures_page); };
-    structures.is_selected = [this, current_page]() { return current_page() == m_structures_page; };
+    structures.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_structures(); update_nav_rail(); };
+    structures.is_selected = []() { return false; };
     structures.is_visible  = is_expert;
     m_nav_rail->add_item(structures);
 
@@ -942,8 +941,6 @@ void MainFrame::update_nav_rail(bool visibility)
     if (visibility) {
         // Leaving the Expert mode while an advanced workspace is shown: back to Prepare.
         wxWindow* page = m_tabpanel->GetCurrentPage();
-        if (wxGetApp().get_mode() != comExpert && page == m_structures_page)
-            select_tab(size_t(0));
         if (wxGetApp().get_mode() != comExpert && m_plater && m_plater->is_engineering_open())
             m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
