@@ -42,6 +42,8 @@ class TopBarItemsCtrl : public wxControl
 
         void sys_color_changed();
         void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
+        // Text drawn by render() (wxPanel::SetLabel does not change it).
+        void SetText(const wxString& label) { m_label = label; Refresh(); }
     };
 
     class ButtonWithPopup : public Button
@@ -104,6 +106,8 @@ public:
     void ShowJustMode();
     // Pages are selected from the navigation column of Tisma: hide their buttons.
     void ShowPageButtons(bool show);
+    // Tisma: name of the current project (PrusaSlicer 3.0 style project tab). Clicking it shows the plater.
+    void SetProjectName(const wxString& name);
     void SetSettingsButtonTooltip(const wxString& tooltip);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
@@ -117,6 +121,7 @@ private:
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_account_btn   {nullptr};
     Button*                         m_settings_btn  {nullptr};
+    Button*                         m_project_btn   {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

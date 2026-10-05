@@ -618,6 +618,16 @@ void MainFrame::update_title()
         title += (" " + _L("based on Slic3r"));
 
     SetTitle(title);
+
+    // Tisma: name of the project in the top bar, as the project tab of PrusaSlicer 3.0.
+    if (m_plater != nullptr && m_tabpanel != nullptr) {
+        wxString project = from_path(into_path(m_plater->get_project_filename()).filename());
+        if (project.empty())
+            project = _L("Untitled");
+        if (m_plater->is_project_dirty())
+            project += " *";
+        m_tabpanel->GetTopBarItemsCtrl()->SetProjectName(project);
+    }
 }
 
 static wxString GetTooltipForSettingsButton(PrinterTechnology pt)

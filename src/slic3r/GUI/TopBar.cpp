@@ -434,6 +434,19 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
     }
 
+    if (!m_cb_settings_btn) {
+        // Project "tab": the plater is the first page.
+        m_project_btn = new Button(this, " ");
+        m_project_btn->SetToolTip(_L("Project"));
+        m_project_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+            wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_TOPBAR_SEL_CHANGED);
+            evt.SetId(0);
+            wxPostEvent(this->GetParent(), evt);
+        });
+        m_project_btn->Hide();
+        left_sizer->Add(m_project_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
+    }
+
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
 
@@ -640,6 +653,22 @@ void TopBarItemsCtrl::ShowPageButtons(bool show)
     update_btns_width();
     UpdateSearchSizeAndPosition();
     m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::SetProjectName(const wxString& name)
+{
+    if (!m_project_btn)
+        return;
+    m_project_btn->SetText(name);
+    // Wide enough for the name, but a long name must not push the search box away.
+    const int em = em_unit(this);
+    wxClientDC dc(m_project_btn);
+    dc.SetFont(m_project_btn->GetFont());
+    const int width = std::min(dc.GetTextExtent(name).GetWidth() + 6 * em, 40 * em);
+    m_project_btn->SetMinSize(wxSize(width, m_project_btn->GetMinSize().GetHeight()));
+    m_project_btn->Show();
+    m_sizer->Layout();
+    m_project_btn->Refresh();
 }
 
 void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)

@@ -11,6 +11,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "OptionsGroup.hpp"
+#include "TismaTheme.hpp"
 #include "Search.hpp"
 #include "GUI_App.hpp"
 #include "OG_CustomCtrl.hpp"
@@ -447,7 +448,7 @@ void OptionsGroup::activate_line(Line& line)
 	bool is_legend_line = option_set.front().opt.gui_type == ConfigOptionDef::GUIType::legend;
 
     if (!custom_ctrl && m_use_custom_ctrl) {
-        custom_ctrl = new OG_CustomCtrl(is_legend_line || !staticbox ? this->parent() : static_cast<wxWindow*>(this->stb), this);
+        custom_ctrl = new OG_CustomCtrl(is_legend_line || !stb ? this->parent() : static_cast<wxWindow*>(this->stb), this);
         wxGetApp().UpdateDarkUI(custom_ctrl);
 		if (is_legend_line)
 			sizer->Add(custom_ctrl, 0, wxEXPAND | wxLEFT, wxOSX ? 0 : 10);
@@ -634,7 +635,9 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled/* = [](){}*/
 		return false;
 
 	try {
-		if (staticbox) {
+		// Tisma: flat titles in the settings tabs (PrusaSlicer 3.0 style), static boxes elsewhere.
+		const bool flat_title = staticbox && m_use_custom_ctrl;
+		if (staticbox && !flat_title) {
 			stb = new wxStaticBox(m_parent, wxID_ANY, _(title));
 			if (!wxOSX) stb->SetBackgroundStyle(wxBG_STYLE_PAINT);
 			stb->SetFont(wxOSX ? wxGetApp().normal_font() : wxGetApp().bold_font());
@@ -642,7 +645,16 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled/* = [](){}*/
 		}
 		else
 			stb = nullptr;
-		sizer = (staticbox ? new wxStaticBoxSizer(stb, wxVERTICAL) : new wxBoxSizer(wxVERTICAL));
+		sizer = (stb ? new wxStaticBoxSizer(stb, wxVERTICAL) : new wxBoxSizer(wxVERTICAL));
+		if (flat_title) {
+			const int em = wxGetApp().em_unit();
+			m_flat_line = new wxPanel(m_parent, wxID_ANY, wxDefaultPosition, wxSize(-1, 1));
+			m_flat_title = new wxStaticText(m_parent, wxID_ANY, _(title));
+			m_flat_title->SetFont(wxGetApp().bold_font());
+			update_flat_title_colors();
+			sizer->Add(m_flat_line, 0, wxEXPAND | wxTOP, int(0.8 * em));
+			sizer->Add(m_flat_title, 0, wxTOP | wxBOTTOM, int(0.4 * em));
+		}
 
 		auto num_columns = 1U;
 		size_t grow_col = 1;
@@ -954,8 +966,18 @@ void ConfigOptionsGroup::msw_rescale()
         custom_ctrl->msw_rescale();
 }
 
+void OptionsGroup::update_flat_title_colors()
+{
+	const bool dark = wxGetApp().dark_mode();
+	if (m_flat_title)
+		m_flat_title->SetForegroundColour(TismaTheme::accent_text(dark));
+	if (m_flat_line)
+		m_flat_line->SetBackgroundColour(TismaTheme::separator(dark));
+}
+
 void ConfigOptionsGroup::sys_color_changed()
 {
+	update_flat_title_colors();
 #ifdef _WIN32
     if (staticbox && stb) {
         wxGetApp().UpdateAllStaticTextDarkUI(stb);

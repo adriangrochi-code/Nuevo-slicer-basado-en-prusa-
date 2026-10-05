@@ -129,7 +129,8 @@ Las calibraciones restantes y el FEA térmico pueden intercalarse donde convenga
 | Espacios de trabajo en la columna: Preparar (vista 3D), Laminar (vista previa), Ingeniería, Estructuras, Calibración, Dispositivo, Printables, Configuración (menú: impresora, filamento, proceso, preferencias, asistente) | Hecho y probado en la GUI |
 | Modo básico como PrusaSlicer: Ingeniería y Estructuras solo en modo Experto; al salir de Experto con uno de ellos abierto se vuelve a Preparar | Hecho y probado en la GUI (Principiante y Experto) |
 | Páginas de Ingeniería y Estructuras: flujo previsto con la fase de cada paso, marcado como no disponible, sin controles simulados | Hecho |
-| Barra superior estilo 3.0 (menú, proyecto) y páginas de ajustes con el estilo plano | Pendiente |
+| Barra superior: nombre del proyecto (con `*` si hay cambios) como la pestaña de proyecto de la 3.0; al pulsarlo se vuelve a la plataforma. Se mantiene la barra de menús del sistema (atajos de teclado y menú nativo de Windows) | Hecho y probado en la GUI |
+| Páginas de ajustes con títulos planos (separador + título violeta) en lugar de recuadros, solo en las pestañas de ajustes; el resto de grupos no cambia | Hecho; probado en Proceso, Impresora y G-code personalizado |
 | Verificación en Windows | Pendiente del CI |
 
 ## 5. Decisiones pendientes (para el usuario)
