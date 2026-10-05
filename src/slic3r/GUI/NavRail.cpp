@@ -54,18 +54,29 @@ void NavRail::add_item(Item item)
     Refresh();
 }
 
+void NavRail::update_visibility()
+{
+    m_hovered = -1;
+    update_min_height();
+    Refresh();
+}
+
 void NavRail::update_min_height()
 {
     // All the items must fit at least with the compact height.
     const int em = wxGetApp().em_unit();
-    SetMinSize(wxSize(int(8.4 * em), items_top(em) + int(m_items.size()) * compact_item_height(em) + em));
+    int n = 0;
+    for (size_t i = 0; i < m_items.size(); ++i)
+        if (visible(i))
+            ++n;
+    SetMinSize(wxSize(int(9.4 * em), items_top(em) + n * compact_item_height(em) + em));
 }
 
 void NavRail::msw_rescale()
 {
     const int em = wxGetApp().em_unit();
-    SetMinSize(wxSize(int(8.4 * em), -1));
-    SetMaxSize(wxSize(int(8.4 * em), -1));
+    SetMinSize(wxSize(int(9.4 * em), -1));
+    SetMaxSize(wxSize(int(9.4 * em), -1));
     update_min_height();
     SetFont(wxGetApp().small_font());
     load_bitmaps();
@@ -87,7 +98,10 @@ int NavRail::item_height() const
 {
     // Shrink the items when the window is too low to show all of them with their labels.
     const int em = wxGetApp().em_unit();
-    const int n  = int(m_items.size());
+    int n = 0;
+    for (size_t i = 0; i < m_items.size(); ++i)
+        if (visible(i))
+            ++n;
     if (n == 0)
         return full_item_height(em);
     const int available = GetClientSize().GetHeight() - items_top(em) - em;
@@ -106,18 +120,19 @@ wxRect NavRail::item_rect(size_t idx) const
     const int width = GetClientSize().GetWidth();
     const int top   = items_top(em);
     int n_top = 0, n_bottom = 0;
-    for (const Item& item : m_items)
-        (item.bottom ? n_bottom : n_top) += 1;
+    for (size_t i = 0; i < m_items.size(); ++i)
+        if (visible(i))
+            (m_items[i].bottom ? n_bottom : n_top) += 1;
     if (!m_items[idx].bottom) {
         int pos = 0;
         for (size_t i = 0; i < idx; ++i)
-            if (!m_items[i].bottom)
+            if (!m_items[i].bottom && visible(i))
                 ++pos;
         return wxRect(0, top + pos * h, width, h);
     }
     int pos = 0;
     for (size_t i = 0; i < idx; ++i)
-        if (m_items[i].bottom)
+        if (m_items[i].bottom && visible(i))
             ++pos;
     // Bottom items stick to the bottom of the column, but never above the last top item.
     const int bottom_start = std::max(GetClientSize().GetHeight() - em - n_bottom * h, top + n_top * h);
@@ -127,7 +142,7 @@ wxRect NavRail::item_rect(size_t idx) const
 int NavRail::hit_test(const wxPoint& pt) const
 {
     for (size_t i = 0; i < m_items.size(); ++i)
-        if (item_rect(i).Contains(pt))
+        if (visible(i) && item_rect(i).Contains(pt))
             return int(i);
     return -1;
 }
@@ -153,13 +168,15 @@ void NavRail::on_paint(wxPaintEvent&)
 
     dc.SetFont(GetFont());
     for (size_t i = 0; i < m_items.size(); ++i) {
+        if (!visible(i))
+            continue;
         const Item&  item     = m_items[i];
         const wxRect rc       = item_rect(i);
         const bool   selected = item.is_selected && item.is_selected();
         const bool   hovered  = int(i) == m_hovered;
 
         // Highlight: rounded square behind the icon.
-        const int    pad = int(0.6 * em);
+        const int    pad = int(0.45 * em);
         const wxRect hl(rc.x + pad, rc.y + int(0.3 * em), rc.width - 2 * pad, rc.height - int(0.6 * em));
         if (selected || hovered) {
             const wxColour c = selected ? RAIL_SELECTED : RAIL_HOVER;

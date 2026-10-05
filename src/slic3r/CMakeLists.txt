@@ -142,6 +142,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/CalibrationDialog.cpp
     GUI/CalibrationDialog.hpp
     GUI/NavRail.cpp
+    GUI/WorkspacePage.cpp
+    GUI/WorkspacePage.hpp
     GUI/NavRail.hpp
     GUI/QuickSettings.cpp
     GUI/QuickSettings.hpp

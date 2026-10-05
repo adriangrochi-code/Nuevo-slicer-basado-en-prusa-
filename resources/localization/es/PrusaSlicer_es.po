@@ -31646,3 +31646,102 @@ msgstr "Prueba de calibración: %1% de %2% a %3% cada %4% mm."
 
 msgid "Disable the test"
 msgstr "Desactivar"
+
+msgid "In development: not available in this version"
+msgstr "En desarrollo: no disponible en esta versión"
+
+msgid "Planned workflow"
+msgstr "Flujo de trabajo previsto"
+
+msgid "Development phase %1%"
+msgstr "Fase de desarrollo %1%"
+
+msgid "The results of the simulations will be estimations based on simplified models and approximate material data, not guarantees of strength. The plan and its status are in docs/IMPLEMENTATION_ROADMAP.md."
+msgstr "Los resultados de las simulaciones serán estimaciones basadas en modelos simplificados y datos aproximados de materiales, no garantías de resistencia. El plan y su estado están en docs/IMPLEMENTATION_ROADMAP.md."
+
+msgid "Engineering"
+msgstr "Ingeniería"
+
+msgid "Mechanical and thermal analysis of the part before printing it: paint fixed faces and loads on the model, run a finite element simulation and see stresses and displacements on the part."
+msgstr "Análisis mecánico y térmico de la pieza antes de imprimirla: pinta caras fijas y cargas sobre el modelo, ejecuta una simulación por elementos finitos y observa tensiones y desplazamientos sobre la pieza."
+
+msgid "Boundary conditions"
+msgstr "Condiciones de contorno"
+
+msgid "Paint fixed faces, forces and pressures on the model with the painting tool, with direction, magnitude and load cases. They are saved in the project."
+msgstr "Pinta caras fijas, fuerzas y presiones sobre el modelo con la herramienta de pintura, con dirección, magnitud y casos de carga. Se guardan en el proyecto."
+
+msgid "Orthotropic material: the strength between layers is lower than along the extrusions. PLA and PETG with editable properties."
+msgstr "Material ortótropo: la resistencia entre capas es menor que a lo largo de las extrusiones. PLA y PETG con propiedades editables."
+
+msgid "Simulation"
+msgstr "Simulación"
+
+msgid "Linear finite element analysis on a voxel grid of the part, run in the background and cancellable."
+msgstr "Análisis lineal por elementos finitos sobre una rejilla de vóxeles de la pieza, en segundo plano y cancelable."
+
+msgid "Results"
+msgstr "Resultados"
+
+msgid "Displacement, von Mises stress and principal stresses shown with colors on the model."
+msgstr "Desplazamiento, tensión de von Mises y tensiones principales mostrados con colores sobre el modelo."
+
+msgid "Thermal analysis"
+msgstr "Análisis térmico"
+
+msgid "Steady state heat conduction with imposed temperatures and heat flows."
+msgstr "Conducción de calor en régimen estacionario con temperaturas y flujos de calor impuestos."
+
+msgid "Structures"
+msgstr "Estructuras"
+
+msgid "Internal structures adapted to the loads: the outside of the part is kept and the infill is generated from a first analysis, then validated with a second analysis of the real structure."
+msgstr "Estructuras internas adaptadas a las cargas: se mantiene el exterior de la pieza y el relleno se genera a partir de un primer análisis; después se valida con un segundo análisis de la estructura real."
+
+msgid "Preliminary analysis"
+msgstr "Análisis preliminar"
+
+msgid "Analysis of the part with the properties of a homogeneous reference infill, to find the critical zones."
+msgstr "Análisis de la pieza con las propiedades de un relleno homogéneo de referencia, para encontrar las zonas críticas."
+
+msgid "Adaptive infill"
+msgstr "Relleno adaptativo"
+
+msgid "Infill density and orientation follow the stresses. First version: internal modifiers by density bands."
+msgstr "La densidad y la orientación del relleno siguen las tensiones. Primera versión: modificadores internos por bandas de densidad."
+
+msgid "Local reinforcements"
+msgstr "Refuerzos locales"
+
+msgid "More walls and ribs around loads, fixtures and critical zones."
+msgstr "Más paredes y nervaduras alrededor de cargas, fijaciones y zonas críticas."
+
+msgid "3D lattice"
+msgstr "Lattice 3D"
+
+msgid "Cells and struts of variable thickness, connected to the shell."
+msgstr "Celdas y barras de espesor variable, conectadas al exterior de la pieza."
+
+msgid "Validation"
+msgstr "Validación"
+
+msgid "Second analysis of the sliced part with its real walls and infill; weight and estimated stiffness compared with a uniform infill."
+msgstr "Segundo análisis de la pieza laminada con sus paredes y relleno reales; peso y rigidez estimada comparados con un relleno uniforme."
+
+msgid "Import, arrange and orient the models; supports and painting tools"
+msgstr "Importar, colocar y orientar los modelos; soportes y herramientas de pintura"
+
+msgid "Layers, toolpaths and G-code preview"
+msgstr "Capas, trayectorias y vista previa del G-code"
+
+msgid "Mechanical and thermal analysis (in development)"
+msgstr "Análisis mecánico y térmico (en desarrollo)"
+
+msgid "Adaptive infill, lattice and reinforcements (in development)"
+msgstr "Relleno adaptativo, lattice y refuerzos (en desarrollo)"
+
+msgid "Configuration"
+msgstr "Configuración"
+
+msgid "Printer, filament and process profiles; preferences"
+msgstr "Perfiles de impresora, filamento y proceso; preferencias"

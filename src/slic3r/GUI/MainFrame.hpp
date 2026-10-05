@@ -211,6 +211,8 @@ public:
     // Select tab in m_tabpanel
     // When tab == -1, will be selected last selected tab
     void        select_tab(Tab* tab);
+    // Tisma navigation column: repaint the selection, or update the items shown in the current mode.
+    void        update_nav_rail(bool visibility = false);
     void        select_tab(size_t tab = size_t(-1));
     void        select_view(const std::string& direction);
     // Propagate changed configuration from the Tab to the Plater and save changes to the AppConfig
@@ -254,6 +256,8 @@ public:
     // Tisma: navigation column at the left (PrusaSlicer 3.0 style)
     NavRail*              m_nav_rail    { nullptr };
     wxBoxSizer*           m_rail_sizer  { nullptr };
+    wxWindow*             m_engineering_page { nullptr };
+    wxWindow*             m_structures_page  { nullptr };
     void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;

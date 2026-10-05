@@ -3298,6 +3298,10 @@ void Plater::priv::set_current_panel(wxPanel* panel)
     }
 
     current_panel->SetFocusFromKbd();
+
+    // The navigation column shows Prepare or Slice as selected.
+    if (wxGetApp().mainframe != nullptr)
+        wxGetApp().mainframe->update_nav_rail();
 }
 
 void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)

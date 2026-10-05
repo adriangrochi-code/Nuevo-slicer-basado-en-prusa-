@@ -62,6 +62,8 @@
 #include "NavRail.hpp"
 #include "USBPrintDialog.hpp"
 #include "CalibrationDialog.hpp"
+#include "WorkspacePage.hpp"
+#include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GalleryDialog.hpp"
@@ -824,33 +826,58 @@ void MainFrame::create_nav_rail()
     m_nav_rail = new NavRail(this);
     m_nav_rail->Hide();
 
-    auto is_fff = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
+    auto is_fff       = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
+    auto is_expert    = []() { return wxGetApp().get_mode() == comExpert; };
     auto current_page = [this]() -> wxWindow* { return m_tabpanel ? m_tabpanel->GetCurrentPage() : nullptr; };
-    auto tab_item = [this, current_page](const wxString& label, const std::string& icon, std::function<Preset::Type()> type) {
-        NavRail::Item item;
-        item.label    = label;
-        item.icon     = icon;
-        item.on_click = [this, type]() { select_tab(wxGetApp().get_tab(type())); };
-        item.is_selected = [current_page, type]() { Tab* tab = wxGetApp().get_tab(type()); return tab != nullptr && current_page() == tab; };
-        return item;
+    auto select_page  = [this](wxWindow* page) {
+        if (int idx = m_tabpanel->FindPage(page); idx != wxNOT_FOUND)
+            m_tabpanel->SetSelection(idx);
     };
 
-    NavRail::Item plater;
-    plater.label       = _L("Prepare");
-    plater.tooltip     = _L("Plater");
-    plater.icon        = "plater";
-    plater.on_click    = [this]() { select_tab(size_t(0)); };
-    plater.is_selected = [this, current_page]() { return current_page() == m_plater; };
-    m_nav_rail->add_item(plater);
+    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering, Structures, Configuration.
+    NavRail::Item prepare;
+    prepare.label       = _L("Prepare");
+    prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
+    prepare.icon        = "plater";
+    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); };
+    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown(); };
+    m_nav_rail->add_item(prepare);
 
-    m_nav_rail->add_item(tab_item(_L("Process"),  "cog",     [is_fff]() { return is_fff() ? Preset::TYPE_PRINT    : Preset::TYPE_SLA_PRINT; }));
-    m_nav_rail->add_item(tab_item(_L("Filament"), "spool",   [is_fff]() { return is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL; }));
-    m_nav_rail->add_item(tab_item(_L("Printer"),  "printer", []()       { return Preset::TYPE_PRINTER; }));
+    NavRail::Item slice;
+    slice.label       = _L("Slice");
+    slice.tooltip     = _L("Layers, toolpaths and G-code preview");
+    slice.icon        = "layers";
+    slice.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("Preview"); };
+    slice.is_selected = [this, current_page]() { return current_page() == m_plater && m_plater->is_preview_shown(); };
+    m_nav_rail->add_item(slice);
+
+    // Advanced workspaces: only in the Expert mode, the basic modes stay as in PrusaSlicer.
+    m_engineering_page = create_engineering_page(m_tabpanel);
+    m_tabpanel->AddNewPage(m_engineering_page, _L("Engineering"), "", false);
+    NavRail::Item engineering;
+    engineering.label       = _L("Engineering");
+    engineering.tooltip     = _L("Mechanical and thermal analysis (in development)");
+    engineering.icon        = "wrench";
+    engineering.on_click    = [this, select_page]() { select_page(m_engineering_page); };
+    engineering.is_selected = [this, current_page]() { return current_page() == m_engineering_page; };
+    engineering.is_visible  = is_expert;
+    m_nav_rail->add_item(engineering);
+
+    m_structures_page = create_structures_page(m_tabpanel);
+    m_tabpanel->AddNewPage(m_structures_page, _L("Structures"), "", false);
+    NavRail::Item structures;
+    structures.label       = _L("Structures");
+    structures.tooltip     = _L("Adaptive infill, lattice and reinforcements (in development)");
+    structures.icon        = "infill";
+    structures.on_click    = [this, select_page]() { select_page(m_structures_page); };
+    structures.is_selected = [this, current_page]() { return current_page() == m_structures_page; };
+    structures.is_visible  = is_expert;
+    m_nav_rail->add_item(structures);
 
     NavRail::Item calib;
     calib.label    = _L("Calibration");
     calib.tooltip  = _L("Calibration tests: temperature, pressure advance, retraction, speeds, ...");
-    calib.icon     = "measure";
+    calib.icon     = "test";
     calib.on_click = [this]() { show_calibration_menu(this); };
     m_nav_rail->add_item(calib);
 
@@ -865,24 +892,52 @@ void MainFrame::create_nav_rail()
         NavRail::Item printables;
         printables.label       = "Printables";
         printables.icon        = "open_browser";
-        printables.on_click    = [this]() {
-            if (int page = m_tabpanel->FindPage(m_printables_webview); page != wxNOT_FOUND)
-                m_tabpanel->SetSelection(page);
-        };
+        printables.on_click    = [select_page, this]() { select_page(m_printables_webview); };
         printables.is_selected = [this, current_page]() { return current_page() == m_printables_webview; };
         m_nav_rail->add_item(printables);
     }
 
-    NavRail::Item prefs;
-    prefs.label    = _L("Settings");
-    prefs.tooltip  = _L("Preferences");
-    prefs.icon     = "settings";
-    prefs.bottom   = true;
-    prefs.on_click = []() { wxGetApp().open_preferences(); };
-    m_nav_rail->add_item(prefs);
+    // Configuration: printer, filament and process profiles, preferences.
+    NavRail::Item config;
+    config.label       = _L("Configuration");
+    config.tooltip     = _L("Printer, filament and process profiles; preferences");
+    config.icon        = "settings";
+    config.bottom      = true;
+    config.is_selected = [current_page]() { return dynamic_cast<Tab*>(current_page()) != nullptr; };
+    config.on_click    = [this, is_fff]() {
+        wxMenu menu;
+        auto add = [this, &menu](const wxString& label, std::function<void()> action) {
+            const int id = wxWindow::NewControlId();
+            menu.Append(id, label);
+            menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
+        };
+        add(_L("Printer"),  [this]()         { select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER)); });
+        add(is_fff() ? _L("Filament") : _L("Material"),
+                            [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL)); });
+        add(_L("Process"),  [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT)); });
+        menu.AppendSeparator();
+        add(_L("Preferences") + dots, []()   { wxGetApp().open_preferences(); });
+        add(_(ConfigWizard::name()) + dots, []() { wxGetApp().run_wizard(ConfigWizard::RR_USER); });
+        PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
+    };
+    m_nav_rail->add_item(config);
 
     // The pages are selected from the navigation column.
     m_tabpanel->GetTopBarItemsCtrl()->ShowPageButtons(false);
+}
+
+void MainFrame::update_nav_rail(bool visibility)
+{
+    if (m_nav_rail == nullptr)
+        return;
+    if (visibility) {
+        // Leaving the Expert mode while an advanced workspace is shown: back to Prepare.
+        wxWindow* page = m_tabpanel->GetCurrentPage();
+        if (wxGetApp().get_mode() != comExpert && (page == m_engineering_page || page == m_structures_page))
+            select_tab(size_t(0));
+        m_nav_rail->update_visibility();
+    } else
+        m_nav_rail->update_selection();
 }
 
 void MainFrame::create_preset_tabs()

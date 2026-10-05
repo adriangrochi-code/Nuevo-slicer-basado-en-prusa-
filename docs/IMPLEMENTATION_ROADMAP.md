@@ -122,12 +122,22 @@ Las calibraciones restantes y el FEA térmico pueden intercalarse donde convenga
 | CI de Windows | **Nunca había pasado**: faltaba `-DCMAKE_CONFIGURATION_TYPES=Release` (FindOpenVDB pedía bibliotecas Debug). Corregido; pendiente de confirmar con una ejecución completa | `8111e4f` |
 | Línea base de tests | 6 de 7 suites pasan; `libseqarrange_tests` sigue sin terminar tras > 1 h | — |
 
-## 4. Decisiones pendientes (para el usuario)
+## 4. Estado de la Fase 3 (interfaz híbrida)
+
+| Tarea | Estado |
+|---|---|
+| Espacios de trabajo en la columna: Preparar (vista 3D), Laminar (vista previa), Ingeniería, Estructuras, Calibración, Dispositivo, Printables, Configuración (menú: impresora, filamento, proceso, preferencias, asistente) | Hecho y probado en la GUI |
+| Modo básico como PrusaSlicer: Ingeniería y Estructuras solo en modo Experto; al salir de Experto con uno de ellos abierto se vuelve a Preparar | Hecho y probado en la GUI (Principiante y Experto) |
+| Páginas de Ingeniería y Estructuras: flujo previsto con la fase de cada paso, marcado como no disponible, sin controles simulados | Hecho |
+| Barra superior estilo 3.0 (menú, proyecto) y páginas de ajustes con el estilo plano | Pendiente |
+| Verificación en Windows | Pendiente del CI |
+
+## 5. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|
 | Licencia | AGPL-3.0 obligatoria (obra derivada). |
-| Plataformas del primer lanzamiento | Windows primero (CI ya existe), Linux después. |
+| Plataformas del primer lanzamiento | **Decidido: Windows** (CI `build_windows.yml`); Linux después. |
 | Solver FEM | Propio sobre vóxeles con Eigen; CalculiX como referencia de validación. |
 | Materiales iniciales | PLA y PETG con propiedades ortótropas de bibliografía, editables. |
 | Objetivos de optimización | Configurables; el usuario elige el primero (p. ej. rigidez a igual masa). |

@@ -26,6 +26,8 @@ public:
         std::function<void()>       on_click;
         // Returns true when the item corresponds to the current page. Items without it are actions.
         std::function<bool()>       is_selected;
+        // Returns false to hide the item (e.g. advanced workspaces outside of the Expert mode).
+        std::function<bool()>       is_visible;
         bool                        bottom { false };
         wxBitmapBundle              bmp;
     };
@@ -35,6 +37,8 @@ public:
     void add_item(Item item);
     // Repaint the selection, e.g. after the page of the main window changed.
     void update_selection() { Refresh(); }
+    // The visibility of the items changed (e.g. another mode was selected).
+    void update_visibility();
     void msw_rescale();
 
 private:
@@ -47,6 +51,7 @@ private:
     void        update_min_height();
     wxRect      item_rect(size_t idx) const;
     int         hit_test(const wxPoint& pt) const;
+    bool        visible(size_t idx) const { return !m_items[idx].is_visible || m_items[idx].is_visible(); }
 
     std::vector<Item>   m_items;
     wxBitmapBundle      m_logo;

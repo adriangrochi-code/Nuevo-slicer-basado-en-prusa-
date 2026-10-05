@@ -2705,6 +2705,8 @@ void GUI_App::update_mode()
 
     mainframe->m_tmp_top_bar->UpdateMode();
     mainframe->m_tabpanel->UpdateMode();
+    // Advanced workspaces are shown only in the Expert mode.
+    mainframe->update_nav_rail(true);
 
     for (auto tab : tabs_list)
         tab->update_mode();
