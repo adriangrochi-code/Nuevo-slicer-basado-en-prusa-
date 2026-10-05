@@ -1465,10 +1465,12 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
             config.set_key_value("filament_extruder_id", new ConfigOptionInt(extruder_id));
             file.writeln(this->placeholder_parser_process("end_filament_gcode", print.config().end_filament_gcode.get_at(extruder_id), extruder_id, &config));
         } else {
-            for (const std::string &end_gcode : print.config().end_filament_gcode.values) {
-                int extruder_id = (unsigned int)(&end_gcode - &print.config().end_filament_gcode.values.front());
+            // Upstream fix (PrusaSlicer master, "Fix UB in end_filament_gcode processing"): index the values instead of
+            // computing the index from the addresses of the elements.
+            const std::vector<std::string> &end_filament_gcode = print.config().end_filament_gcode.values;
+            for (int extruder_id = 0; extruder_id < int(end_filament_gcode.size()); ++ extruder_id) {
                 config.set_key_value("filament_extruder_id", new ConfigOptionInt(extruder_id));
-                file.writeln(this->placeholder_parser_process("end_filament_gcode", end_gcode, extruder_id, &config));
+                file.writeln(this->placeholder_parser_process("end_filament_gcode", end_filament_gcode[extruder_id], extruder_id, &config));
             }
         }
         file.writeln(this->placeholder_parser_process("end_gcode", print.config().end_gcode, m_writer.extruder()->id(), &config));
@@ -1574,8 +1576,9 @@ void GCodeGenerator::process_layers(
 {
     size_t layer_to_print_idx = 0;
     const GCode::SmoothPathCache::InterpolationParameters interpolation_params = interpolation_parameters(print.config());
-    const auto smooth_path_interpolator = tbb::make_filter<void, std::pair<size_t, GCode::SmoothPathCache>>(slic3r_tbb_filtermode::serial_in_order,
-        [this, &print, &layers_to_print, &layer_to_print_idx, &interpolation_params](tbb::flow_control &fc) -> std::pair<size_t, GCode::SmoothPathCache> {
+    std::vector<GCode::SmoothPathCache> smooth_path_cache_per_layer{layers_to_print.size()};
+    const auto smooth_path_interpolator = tbb::make_filter<void, size_t>(slic3r_tbb_filtermode::serial_in_order,
+        [this, &print, &layers_to_print, &layer_to_print_idx, &interpolation_params, &smooth_path_cache_per_layer](tbb::flow_control &fc) -> size_t {
             if (layer_to_print_idx >= layers_to_print.size()) {
                 if (layer_to_print_idx == layers_to_print.size() + (m_pressure_equalizer ? 1 : 0)) {
                     fc.stop();
@@ -1583,21 +1586,21 @@ void GCodeGenerator::process_layers(
                 } else {
                     // Pressure equalizer need insert empty input. Because it returns one layer back.
                     // Insert NOP (no operation) layer;
-                    return { layer_to_print_idx ++, {} };
+                    return layer_to_print_idx++;
                 }
             } else {
                 print.throw_if_canceled();
-                size_t idx = layer_to_print_idx ++;
-                GCode::SmoothPathCache smooth_path_cache;
-                for (const ObjectLayerToPrint &l : layers_to_print[idx].second)
+                const size_t idx = layer_to_print_idx++;
+                GCode::SmoothPathCache &smooth_path_cache = smooth_path_cache_per_layer[idx];
+                for (const ObjectLayerToPrint &l : layers_to_print[idx].second) {
                     GCodeGenerator::smooth_path_interpolate(l, interpolation_params, smooth_path_cache);
-                return { idx, std::move(smooth_path_cache) };
+                }
+
+                return idx;
             }
         });
-    const auto generator = tbb::make_filter<std::pair<size_t, GCode::SmoothPathCache>, LayerResult>(slic3r_tbb_filtermode::serial_in_order,
-        [this, &print, &tool_ordering, &print_object_instances_ordering, &layers_to_print, &smooth_path_cache_global](
-            std::pair<size_t, GCode::SmoothPathCache> in) -> LayerResult {
-            size_t layer_to_print_idx = in.first;
+    const auto generator = tbb::make_filter<size_t, LayerResult>(slic3r_tbb_filtermode::serial_in_order,
+        [this, &print, &tool_ordering, &print_object_instances_ordering, &layers_to_print, &smooth_path_cache_global, &smooth_path_cache_per_layer](const size_t layer_to_print_idx) -> LayerResult {
             if (layer_to_print_idx == layers_to_print.size()) {
                 // Pressure equalizer need insert empty input. Because it returns one layer back.
                 // Insert NOP (no operation) layer;
@@ -1608,9 +1611,15 @@ void GCodeGenerator::process_layers(
                 if (m_wipe_tower && layer_tools.has_wipe_tower)
                     m_wipe_tower->next_layer();
                 print.throw_if_canceled();
-                return this->process_layer(print, layer.second, layer_tools, 
-                    GCode::SmoothPathCaches{ smooth_path_cache_global, in.second }, 
+
+                const GCode::SmoothPathCache &smooth_path_cache = smooth_path_cache_per_layer[layer_to_print_idx];
+                LayerResult layer_result = this->process_layer(print, layer.second, layer_tools,
+                    GCode::SmoothPathCaches{ smooth_path_cache_global, smooth_path_cache },
                     &layer == &layers_to_print.back(), &print_object_instances_ordering, size_t(-1));
+
+                // Free the SmoothPathCache for this layer.
+                smooth_path_cache_per_layer[layer_to_print_idx] = GCode::SmoothPathCache{};
+                return layer_result;
             }
         });
     // The pipeline is variable: The vase mode filter is optional.
@@ -1680,8 +1689,9 @@ void GCodeGenerator::process_layers(
 {
     size_t layer_to_print_idx = 0;
     const GCode::SmoothPathCache::InterpolationParameters interpolation_params = interpolation_parameters(print.config());
-    const auto smooth_path_interpolator = tbb::make_filter<void, std::pair<size_t, GCode::SmoothPathCache>> (slic3r_tbb_filtermode::serial_in_order,
-        [this, &print, &layers_to_print, &layer_to_print_idx, interpolation_params](tbb::flow_control &fc) -> std::pair<size_t, GCode::SmoothPathCache> {
+    std::vector<GCode::SmoothPathCache> smooth_path_cache_per_layer{layers_to_print.size()};
+    const auto smooth_path_interpolator = tbb::make_filter<void, size_t> (slic3r_tbb_filtermode::serial_in_order,
+        [this, &print, &layers_to_print, &layer_to_print_idx, interpolation_params, &smooth_path_cache_per_layer](tbb::flow_control &fc) -> size_t {
             if (layer_to_print_idx >= layers_to_print.size()) {
                 if (layer_to_print_idx == layers_to_print.size() + (m_pressure_equalizer ? 1 : 0)) {
                     fc.stop();
@@ -1689,19 +1699,18 @@ void GCodeGenerator::process_layers(
                 } else {
                     // Pressure equalizer need insert empty input. Because it returns one layer back.
                     // Insert NOP (no operation) layer;
-                    return { layer_to_print_idx ++, {} };
+                    return layer_to_print_idx++;
                 }
             } else {
                 print.throw_if_canceled();
-                size_t idx = layer_to_print_idx ++;
-                GCode::SmoothPathCache smooth_path_cache;
+                const size_t idx = layer_to_print_idx ++;
+                GCode::SmoothPathCache &smooth_path_cache = smooth_path_cache_per_layer[idx];
                 GCodeGenerator::smooth_path_interpolate(layers_to_print[idx], interpolation_params, smooth_path_cache);
-                return { idx, std::move(smooth_path_cache) };
+                return idx;
             }
         });
-    const auto generator = tbb::make_filter<std::pair<size_t, GCode::SmoothPathCache>, LayerResult>(slic3r_tbb_filtermode::serial_in_order,
-        [this, &print, &tool_ordering, &layers_to_print, &smooth_path_cache_global, single_object_idx](std::pair<size_t, GCode::SmoothPathCache> in) -> LayerResult {
-            size_t layer_to_print_idx = in.first;
+    const auto generator = tbb::make_filter<size_t, LayerResult>(slic3r_tbb_filtermode::serial_in_order,
+        [this, &print, &tool_ordering, &layers_to_print, &smooth_path_cache_global, single_object_idx, &smooth_path_cache_per_layer](const size_t layer_to_print_idx) -> LayerResult {
             if (layer_to_print_idx == layers_to_print.size()) {
                 // Pressure equalizer need insert empty input. Because it returns one layer back.
                 // Insert NOP (no operation) layer;
@@ -1709,9 +1718,16 @@ void GCodeGenerator::process_layers(
             } else {
                 ObjectLayerToPrint &layer = layers_to_print[layer_to_print_idx];
                 print.throw_if_canceled();
-                return this->process_layer(print, { std::move(layer) }, tool_ordering.tools_for_layer(layer.print_z()), 
-                    GCode::SmoothPathCaches{ smooth_path_cache_global, in.second }, 
+
+                const GCode::SmoothPathCache &smooth_path_cache = smooth_path_cache_per_layer[layer_to_print_idx];
+
+                LayerResult layer_result = this->process_layer(print, { std::move(layer) }, tool_ordering.tools_for_layer(layer.print_z()),
+                    GCode::SmoothPathCaches{ smooth_path_cache_global, smooth_path_cache },
                     &layer == &layers_to_print.back(), nullptr, single_object_idx);
+
+                // Free the SmoothPathCache for this layer.
+                smooth_path_cache_per_layer[layer_to_print_idx] = GCode::SmoothPathCache{};
+                return layer_result;
             }
         });
     // The pipeline is variable: The vase mode filter is optional.
@@ -3939,7 +3955,9 @@ std::string GCodeGenerator::travel_to(
     }
     travel.emplace_back(end_point);
 
-    if (this->config().travel_short_distance_acceleration > 0.) {
+    // Upstream fix SPE-3488: no short distance travel acceleration when the travel acceleration control is disabled
+    // (zero), there would be no way back to the default acceleration.
+    if (this->config().travel_acceleration > 0. && this->config().travel_short_distance_acceleration > 0.) {
         return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode, enforce_first_z, [&]() {
                    return role.is_external_perimeter() && xy_path.length() < scaled<double>(EXTRUDER_CONFIG(retract_before_travel));
                });

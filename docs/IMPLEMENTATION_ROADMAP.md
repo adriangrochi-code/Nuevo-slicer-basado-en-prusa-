@@ -209,7 +209,30 @@ técnicas y bibliografía, aproximados y editables más adelante; la pieza se co
 Observaciones: el laminador convierte en sólidas las áreas de relleno pequeñas y añade puentes en los bordes de las
 zonas; el modelo no lo tiene en cuenta, así que la masa real puede ser algo mayor que la estimada.
 
-## 7. Decisiones pendientes (para el usuario)
+## 8. Dirección del usuario (05-10-2026) y fases siguientes
+
+Orden indicado por el usuario: primero modernizar (render, rendimiento, bugs), después el laminado no planar y, como
+últimas etapas, el servicio en la nube.
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| 7 | Render moderno: luz por píxel y sombras (técnicas de PrusaSlicer 3.0), ver `docs/RENDER.md` | 7a y 7b hechas; 7c (oclusión ambiental) y 7d (PBR) sin autorizar |
+| 8 | Rendimiento del laminado y bugs conocidos: banco de pruebas (`build-utils/benchmark_slicing.sh`), perfil, optimizaciones medidas sin cambiar el G-code, bugs de upstream 2.9.6 y propios | En curso |
+| 9 | Laminado no planar | Pendiente |
+| 10 | Laminado en la nube: el mismo motor sin interfaz (la línea de comandos ya lamina sin GUI) en los servidores propios, con cola de trabajos | Idea del usuario, sin diseñar |
+| 11 | App de teléfono y FEA en la nube: subir el modelo, elegir perfil y material, analizar, laminar y descargar o enviar el G-code; suscripción (idea inicial: 10 USD/mes con un número de trabajos) | Idea del usuario, sin diseñar |
+
+Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
+- Licencia: con la AGPL, el código del servidor modificado que se ofrece por red debe estar disponible para sus
+  usuarios. Es compatible con el modelo: el código sigue abierto y se cobra el cómputo, el almacenamiento y la
+  comodidad, no el programa.
+- Capacidad: medir con el banco de pruebas cuántos trabajos por hora soporta cada servidor (un Benchy lamina en ~5 s
+  con 4 núcleos; un análisis FEA con optimización de relleno tarda de segundos a minutos según la malla) para fijar el
+  precio y las cuotas.
+- Pendiente de decidir: precio y cuotas, cuentas y pago, almacenamiento y privacidad de los modelos, envío a la
+  impresora (PrusaConnect, OctoPrint, Bambu…), plataforma de la app.
+
+## 9. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|
