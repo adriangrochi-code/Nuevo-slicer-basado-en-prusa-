@@ -280,6 +280,19 @@ static t_config_enum_values s_keys_map_NonPlanarMode {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
 
+static t_config_enum_values s_keys_map_CalibMode {
+    { "disabled",         int(CalibMode::Disabled) },
+    { "temperature",      int(CalibMode::Temperature) },
+    { "pressure_advance", int(CalibMode::PressureAdvance) },
+    { "retraction",       int(CalibMode::Retraction) },
+    { "volumetric_speed", int(CalibMode::VolumetricSpeed) },
+    { "perimeter_speed",  int(CalibMode::PerimeterSpeed) },
+    { "acceleration",     int(CalibMode::Acceleration) },
+    { "cornering",        int(CalibMode::Cornering) },
+    { "input_shaping",    int(CalibMode::InputShaping) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
+
 static t_config_enum_values s_keys_map_NonPlanarPattern {
     { "egg",     int(NonPlanarPattern::Egg) },
     { "ridges",  int(NonPlanarPattern::Ridges) },
@@ -4050,6 +4063,41 @@ void PrintConfigDef::init_fff_params()
     def->label = "";
     def->tooltip = "";
     def->set_default_value(new ConfigOptionBool{ false });
+
+    // Calibration tests (project options, set by the Calibration menu).
+    def = this->add("calib_mode", coEnum);
+    def->label = L("Calibration test");
+    def->tooltip = L("Value changed along the height of the print by the calibration test.");
+    def->set_enum<CalibMode>({
+        { "disabled",         L("Disabled") },
+        { "temperature",      L("Temperature") },
+        { "pressure_advance", L("Pressure advance") },
+        { "retraction",       L("Retraction length") },
+        { "volumetric_speed", L("Maximum volumetric speed") },
+        { "perimeter_speed",  L("Perimeter speed") },
+        { "acceleration",     L("Acceleration") },
+        { "cornering",        L("Cornering (jerk / square corner velocity)") },
+        { "input_shaping",    L("Input shaping frequency") }
+    });
+    def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+
+    def = this->add("calib_start", coFloat);
+    def->label = L("Start value");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_end", coFloat);
+    def->label = L("End value");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_step", coFloat);
+    def->label = L("Step");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_band_height", coFloat);
+    def->label = L("Height of each step");
+    def->sidetext = L("mm");
+    def->set_default_value(new ConfigOptionFloat(5.));
+
 
     def = this->add("wipe_tower_width", coFloat);
     def->label = L("Width");

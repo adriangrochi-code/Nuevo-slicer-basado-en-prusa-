@@ -6842,9 +6842,9 @@ void GLCanvas3D::_render_view_toolbar() const
     GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
 
     const Size cnv_size = get_canvas_size();
-    // places the toolbar (3D editor / preview switch) on the top-left corner of the 3d scene, as in PrusaSlicer 3.0
+    // places the toolbar on the bottom-left corner of the 3d scene (the legend of the preview uses the top-left corner)
     const float margin = 8.0f * wxGetApp().imgui()->get_style_scaling();
-    const float top = 0.5f * (float)cnv_size.get_height() - margin;
+    const float top = -0.5f * (float)cnv_size.get_height() + view_toolbar.get_height() + margin;
     const float left = -0.5f * (float)cnv_size.get_width() + margin;
     view_toolbar.set_position(top, left);
     view_toolbar.render(*this);

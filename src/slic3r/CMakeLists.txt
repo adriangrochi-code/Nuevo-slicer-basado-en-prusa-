@@ -139,6 +139,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdatesUIManager.hpp
     GUI/FrequentlyChangedParameters.cpp
     GUI/FrequentlyChangedParameters.hpp
+    GUI/CalibrationDialog.cpp
+    GUI/CalibrationDialog.hpp
     GUI/NavRail.cpp
     GUI/NavRail.hpp
     GUI/QuickSettings.cpp

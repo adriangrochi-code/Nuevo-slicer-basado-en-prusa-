@@ -2717,6 +2717,11 @@ LayerResult GCodeGenerator::process_layer(
         }
     }
 
+    // Retraction calibration: the new length must already be used by the retraction of the layer change.
+    const bool calib_retraction = print.config().calib_mode.value == CalibMode::Retraction;
+    if (calib_retraction)
+        gcode += this->emit_calibration_step(print, print_z, false);
+
     gcode += this->change_layer(previous_layer_z, print_z, result.spiral_vase_enable, first_point.head<2>(), first_layer); // this will increase m_layer_index
     m_layer = &layer;
     if (this->line_distancer_is_required(layer_tools.extruders) && this->m_layer != nullptr && this->m_layer->lower_layer != nullptr)
@@ -2758,7 +2763,11 @@ LayerResult GCodeGenerator::process_layer(
 
         // Mark the temperature transition from 1st to 2nd layer to be finished.
         m_second_layer_things_done = true;
-    }
+        // The transition may have overwritten the temperature of a temperature tower.
+        if (!calib_retraction)
+            gcode += this->emit_calibration_step(print, print_z, true);
+    } else if (!calib_retraction)
+        gcode += this->emit_calibration_step(print, print_z, false);
 
     if (this->config().avoid_crossing_curled_overhangs) {
         m_avoid_crossing_curled_overhangs.clear();
@@ -2992,6 +3001,11 @@ void GCodeGenerator::apply_print_config(const PrintConfig &print_config)
 {
     m_writer.apply_print_config(print_config);
     m_config.apply(print_config);
+    // Tisma speed calibration tests: the cooling must not slow the print down, the speed is the tested value.
+    if (const CalibMode mode = print_config.calib_mode.value;
+        mode == CalibMode::VolumetricSpeed || mode == CalibMode::PerimeterSpeed || mode == CalibMode::Acceleration || mode == CalibMode::Cornering || mode == CalibMode::InputShaping)
+        for (auto &t : m_config.slowdown_below_layer_time.values)
+            t = 0;
     m_scaled_resolution = scaled<double>(print_config.gcode_resolution.value);
 }
 
@@ -3482,6 +3496,10 @@ std::string GCodeGenerator::_extrude(
         gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
     }
 
+    // Tisma acceleration calibration test.
+    if (m_calib_value > 0. && m_config.calib_mode.value == CalibMode::Acceleration && !this->on_first_layer())
+        gcode += m_writer.set_print_acceleration((unsigned int)std::round(m_calib_value));
+
     // calculate extrusion length per distance unit
     double e_per_mm = m_writer.extruder()->e_per_mm3() * path_attr.mm3_per_mm;
     if (m_writer.extrusion_axis().empty())
@@ -3551,6 +3569,14 @@ std::string GCodeGenerator::_extrude(
 
     // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)
     speed = cap_speed(speed, m_config, m_writer.extruder()->id(), path_attr);
+
+    // Tisma speed calibration tests: the perimeters use the speed of the current step, without the caps.
+    if (m_calib_value > 0. && path_attr.role.is_perimeter() && !this->on_first_layer()) {
+        if (m_config.calib_mode.value == CalibMode::VolumetricSpeed && path_attr.mm3_per_mm > 0.)
+            speed = m_calib_value / path_attr.mm3_per_mm;
+        else if (m_config.calib_mode.value == CalibMode::PerimeterSpeed)
+            speed = m_calib_value;
+    }
 
     double F = speed * 60;  // convert mm/sec to mm/min
 
@@ -4090,6 +4116,83 @@ Point GCodeGenerator::gcode_to_point(const Vec2d &point) const
         // This function may be called at the very start from toolchange G-code when the extruder is not assigned yet.
         pt += m_config.extruder_offset.get_at(extruder->id());
     return scaled<coord_t>(pt);
+}
+
+
+// Tisma calibration tests: the value of the test changes every calib_band_height millimeters.
+// Speeds and accelerations are applied when extruding (see _extrude()), the other values are sent here.
+std::string GCodeGenerator::emit_calibration_step(const Print &print, double print_z, bool force)
+{
+    const PrintConfig &cfg  = print.config();
+    const CalibMode    mode = cfg.calib_mode.value;
+    if (mode == CalibMode::Disabled || cfg.calib_band_height.value <= 0. || m_writer.extruder() == nullptr)
+        return {};
+
+    const int step = std::max(0, int(std::floor((print_z - EPSILON) / cfg.calib_band_height.value)));
+    if (step == m_calib_last_step && !force)
+        return {};
+    m_calib_last_step = step;
+
+    const double lo    = std::min(cfg.calib_start.value, cfg.calib_end.value);
+    const double hi    = std::max(cfg.calib_start.value, cfg.calib_end.value);
+    const double value = std::clamp(cfg.calib_start.value + step * cfg.calib_step.value, lo, hi);
+    m_calib_value = value;
+
+    const GCodeFlavor flavor = cfg.gcode_flavor.value;
+    const bool        marlin = flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy;
+    char buf[256];
+    std::string gcode;
+    switch (mode) {
+    case CalibMode::Temperature:
+        gcode += m_writer.set_temperature(int(std::round(value)), false, m_writer.extruder()->id());
+        sprintf(buf, "M117 Temp %d\n", int(std::round(value)));
+        break;
+    case CalibMode::PressureAdvance:
+        if (flavor == gcfKlipper)
+            sprintf(buf, "SET_PRESSURE_ADVANCE ADVANCE=%.4f ; calibration\nM117 PA %.4f\n", value, value);
+        else if (flavor == gcfRepRapFirmware)
+            sprintf(buf, "M572 D%d S%.4f ; calibration\nM117 PA %.4f\n", m_writer.extruder()->id(), value, value);
+        else
+            sprintf(buf, "M900 K%.4f ; calibration\nM117 K %.4f\n", value, value);
+        break;
+    case CalibMode::Retraction:
+        for (double &length : m_writer.config.retract_length.values)
+            length = value;
+        sprintf(buf, "; calibration: retraction length %.2f mm\nM117 Retract %.2f\n", value, value);
+        break;
+    case CalibMode::VolumetricSpeed:
+        sprintf(buf, "; calibration: volumetric speed %.2f mm3/s\nM117 Flow %.1f\n", value, value);
+        break;
+    case CalibMode::PerimeterSpeed:
+        sprintf(buf, "; calibration: perimeter speed %.0f mm/s\nM117 Speed %.0f\n", value, value);
+        break;
+    case CalibMode::Acceleration:
+        sprintf(buf, "; calibration: acceleration %.0f mm/s2\nM117 Accel %.0f\n", value, value);
+        break;
+    case CalibMode::Cornering:
+        if (flavor == gcfKlipper)
+            sprintf(buf, "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=%.2f ; calibration\nM117 SCV %.2f\n", value, value);
+        else if (flavor == gcfRepRapFirmware)
+            sprintf(buf, "M566 X%.0f Y%.0f ; calibration\nM117 Jerk %.1f\n", value * 60., value * 60., value);
+        else if (value < 1.)
+            // Values below 1 are a junction deviation (Marlin with classic jerk disabled).
+            sprintf(buf, "M205 J%.3f ; calibration\nM117 JD %.3f\n", value, value);
+        else
+            sprintf(buf, "M205 X%.2f Y%.2f ; calibration\nM117 Jerk %.1f\n", value, value, value);
+        break;
+    case CalibMode::InputShaping:
+        if (flavor == gcfKlipper)
+            sprintf(buf, "SET_INPUT_SHAPER SHAPER_FREQ_X=%.1f SHAPER_FREQ_Y=%.1f ; calibration\nM117 IS %.1f Hz\n", value, value, value);
+        else
+            sprintf(buf, "M593 F%.1f ; calibration\nM117 IS %.1f Hz\n", value, value);
+        break;
+    default:
+        buf[0] = 0;
+        break;
+    }
+    (void)marlin;
+    gcode += buf;
+    return gcode;
 }
 
 }   // namespace Slic3r

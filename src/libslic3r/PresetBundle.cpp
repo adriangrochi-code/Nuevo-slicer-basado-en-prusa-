@@ -39,7 +39,8 @@ namespace Slic3r {
 static std::vector<std::string> s_project_options {
     "colorprint_heights",
     "wiping_volumes_matrix",
-    "wiping_volumes_use_custom_matrix"
+    "wiping_volumes_use_custom_matrix",
+    "calib_mode", "calib_start", "calib_end", "calib_step", "calib_band_height"
 };
 
 const char *PresetBundle::PRUSA_BUNDLE = "PrusaResearch";

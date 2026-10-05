@@ -112,6 +112,9 @@ public:
     const std::vector<GCodeProcessorResult>& get_gcode_results() const;
 
     void new_project();
+    // Tisma calibration suite: replaces the objects by the calibration model and sets the calibration test
+    // of the project (calib_* options).
+    void load_calibration(const Model& model, const DynamicPrintConfig& calib_config);
     void load_project();
     void load_project(const wxString& filename);
     void add_model(bool imperial_units = false);

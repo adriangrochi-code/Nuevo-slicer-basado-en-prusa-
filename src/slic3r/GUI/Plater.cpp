@@ -2169,6 +2169,9 @@ void Plater::priv::reset()
 {
     Plater::TakeSnapshot snapshot(q, _L("Reset Project"), UndoRedo::SnapshotType::ProjectSeparator);
 
+    // A new project is not a calibration test.
+    wxGetApp().preset_bundle->project_config.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+
 	clear_warnings();
 
     set_project_filename(wxEmptyString);
@@ -3842,7 +3845,7 @@ bool Plater::priv::init_view_toolbar()
         return false;
 
     view_toolbar.set_horizontal_orientation(GLToolbar::Layout::HO_Left);
-    view_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Top);
+    view_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Bottom);
     //view_toolbar.set_border(5.0f);
     //view_toolbar.set_gap_size(1.0f);
 
@@ -5522,6 +5525,24 @@ void Plater::deselect_all() { p->deselect_all(); }
 
 void Plater::remove(size_t obj_idx) { p->remove(obj_idx); }
 void Plater::reset() { p->reset(); }
+
+void Plater::load_calibration(const Model& model, const DynamicPrintConfig& calib_config)
+{
+    if (!p->model.objects.empty() &&
+        MessageDialog(static_cast<wxWindow*>(this), _L("The calibration test replaces all the objects of the plater, continue?"),
+                      wxString(SLIC3R_APP_NAME) + " - " + _L("Calibration"), wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxCENTRE).ShowModal() != wxID_YES)
+        return;
+
+    wxGetApp().mainframe->select_tab(size_t(0));
+    p->reset();
+    {
+        Plater::TakeSnapshot snapshot(this, _L("Calibration test"));
+        wxGetApp().preset_bundle->project_config.apply(calib_config);
+        p->load_model_objects(model.objects);
+    }
+    update_project_dirty_from_presets();
+    p->schedule_background_process();
+}
 void Plater::reset_with_confirm()
 {
     if (p->model.objects.empty() ||

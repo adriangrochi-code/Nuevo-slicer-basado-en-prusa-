@@ -84,6 +84,11 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
     // or they are only notes not influencing the generated G-code.
     static std::unordered_set<std::string> steps_gcode = {
         "autoemit_temperature_commands",
+        "calib_band_height",
+        "calib_end",
+        "calib_mode",
+        "calib_start",
+        "calib_step",
         "nonplanar_flow_policy",
         "nonplanar_max_slope",
         "nonplanar_segment_length",

@@ -61,6 +61,7 @@
 #include "TopBar.hpp"
 #include "NavRail.hpp"
 #include "USBPrintDialog.hpp"
+#include "CalibrationDialog.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GalleryDialog.hpp"
@@ -845,6 +846,13 @@ void MainFrame::create_nav_rail()
     m_nav_rail->add_item(tab_item(_L("Process"),  "cog",     [is_fff]() { return is_fff() ? Preset::TYPE_PRINT    : Preset::TYPE_SLA_PRINT; }));
     m_nav_rail->add_item(tab_item(_L("Filament"), "spool",   [is_fff]() { return is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL; }));
     m_nav_rail->add_item(tab_item(_L("Printer"),  "printer", []()       { return Preset::TYPE_PRINTER; }));
+
+    NavRail::Item calib;
+    calib.label    = _L("Calibration");
+    calib.tooltip  = _L("Calibration tests: temperature, pressure advance, retraction, speeds, ...");
+    calib.icon     = "measure";
+    calib.on_click = [this]() { show_calibration_menu(this); };
+    m_nav_rail->add_item(calib);
 
     NavRail::Item usb;
     usb.label    = _L("Device");
@@ -1858,6 +1866,7 @@ void MainFrame::init_menubar_as_editor()
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
     m_menubar->Append(wxGetApp().get_config_menu(this), _L("&Configuration"));
+    m_menubar->Append(create_calibration_menu(this), _L("C&alibration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
     SetMenuBar(m_menubar);

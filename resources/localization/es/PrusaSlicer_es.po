@@ -31523,3 +31523,120 @@ msgstr "Dispositivo"
 
 msgid "Prepare"
 msgstr "Preparar"
+
+msgid "Temperature tower"
+msgstr "Torre de temperatura"
+
+msgid "Prints a tower of blocks with bridges and gaps. The nozzle temperature changes at each block."
+msgstr "Imprime una torre de bloques con puentes y huecos. La temperatura de la boquilla cambia en cada bloque."
+
+msgid "Choose the block with the best bridge, the least stringing and good layer adhesion. Its temperature is the start value plus the block number (from the bottom, starting at 0) times the step."
+msgstr "Elige el bloque con el mejor puente, menos hilos y buena adhesión entre capas. Su temperatura es el valor inicial más el número de bloque (desde abajo, empezando en 0) por el paso."
+
+msgid "Pressure advance tower"
+msgstr "Torre de pressure advance"
+
+msgid "Prints a thin walled square tower at high speed. Pressure advance (linear advance) changes along the height."
+msgstr "Imprime una torre cuadrada de pared fina a alta velocidad. El pressure advance (linear advance) cambia con la altura."
+
+msgid "Look at the corners: choose the height where they are sharp, without bulges nor gaps. The value is start + step × floor(height / step height). The printer also shows it on its display."
+msgstr "Mira las esquinas: elige la altura donde quedan nítidas, sin abultamientos ni huecos. El valor es inicio + paso × entero(altura / altura de cada paso). La impresora también lo muestra en su pantalla."
+
+msgid "Retraction tower"
+msgstr "Torre de retracción"
+
+msgid "Prints two thin pillars. The retraction length changes along the height."
+msgstr "Imprime dos columnas finas. La longitud de retracción cambia con la altura."
+
+msgid "Find the lowest height without strings between the pillars. The retraction length is start + step × floor(height / step height)."
+msgstr "Busca la altura más baja sin hilos entre las columnas. La retracción es inicio + paso × entero(altura / altura de cada paso)."
+
+msgid "Maximum volumetric speed"
+msgstr "Velocidad volumétrica máxima"
+
+msgid "Prints a single wall cylinder. The volumetric flow of the wall increases along the height (the speed of the wall is the flow divided by the section of the extrusion)."
+msgstr "Imprime un cilindro de una sola pared. El caudal volumétrico de la pared aumenta con la altura (la velocidad de la pared es el caudal dividido por la sección de la extrusión)."
+
+msgid "Find the height where the wall starts to get weak, with gaps or a matte surface. The flow there is start + step × floor(height / step height) mm³/s: use a slightly lower value as the maximum volumetric speed of the filament."
+msgstr "Busca la altura donde la pared empieza a debilitarse, con huecos o superficie mate. El caudal allí es inicio + paso × entero(altura / altura de cada paso) mm³/s: usa un valor algo menor como velocidad volumétrica máxima del filamento."
+
+msgid "Vertical fine artifacts (VFA)"
+msgstr "Artefactos verticales finos (VFA)"
+
+msgid "Prints a single wall square tower. The speed of the walls increases at each block."
+msgstr "Imprime una torre cuadrada de una sola pared. La velocidad de las paredes aumenta en cada bloque."
+
+msgid "Look at the walls against the light: choose the fastest block without fine vertical lines (VFA). Its speed is start + step × block number (from the bottom, starting at 0)."
+msgstr "Mira las paredes a contraluz: elige el bloque más rápido sin líneas verticales finas (VFA). Su velocidad es inicio + paso × número de bloque (desde abajo, empezando en 0)."
+
+msgid "Acceleration tower"
+msgstr "Torre de aceleración"
+
+msgid "Prints a thin walled square tower. The print acceleration changes at each block."
+msgstr "Imprime una torre cuadrada de pared fina. La aceleración de impresión cambia en cada bloque."
+
+msgid "Look at the ringing (ghosting) after the corners: choose the highest acceleration that still prints clean walls."
+msgstr "Mira las ondulaciones (ghosting) después de las esquinas: elige la aceleración más alta que todavía imprime paredes limpias."
+
+msgid "Cornering tower (jerk / junction deviation)"
+msgstr "Torre de esquinas (jerk / junction deviation)"
+
+msgid "Prints a thin walled square tower. The cornering setting changes at each block: square corner velocity on Klipper, jerk on Marlin (values of 1 or more) or junction deviation on Marlin (values below 1)."
+msgstr "Imprime una torre cuadrada de pared fina. El ajuste de esquinas cambia en cada bloque: square corner velocity en Klipper, jerk en Marlin (valores de 1 o más) o junction deviation en Marlin (valores menores que 1)."
+
+msgid "Choose the highest value with sharp corners and no ringing."
+msgstr "Elige el valor más alto con esquinas nítidas y sin ondulaciones."
+
+msgid "Input shaping frequency"
+msgstr "Frecuencia de input shaping"
+
+msgid "Prints a thin walled square tower at high speed and acceleration. The input shaper frequency changes at each block (Klipper SET_INPUT_SHAPER, Marlin M593)."
+msgstr "Imprime una torre cuadrada de pared fina a alta velocidad y aceleración. La frecuencia del input shaper cambia en cada bloque (Klipper SET_INPUT_SHAPER, Marlin M593)."
+
+msgid "Choose the block with the least ringing after the corners: its frequency is start + step × block number."
+msgstr "Elige el bloque con menos ondulaciones después de las esquinas: su frecuencia es inicio + paso × número de bloque."
+
+msgid "Start value"
+msgstr "Valor inicial"
+
+msgid "End value"
+msgstr "Valor final"
+
+msgid "Step"
+msgstr "Paso"
+
+msgid "Height of each step"
+msgstr "Altura de cada paso"
+
+msgid "%1% steps, tower height %2% mm."
+msgstr "%1% pasos, altura de la torre %2% mm."
+
+msgid "The step and its height must be greater than zero."
+msgstr "El paso y su altura deben ser mayores que cero."
+
+msgid "Calibration"
+msgstr "Calibración"
+
+msgid "C&alibration"
+msgstr "C&alibración"
+
+msgid "Calibration tests: temperature, pressure advance, retraction, speeds, ..."
+msgstr "Pruebas de calibración: temperatura, pressure advance, retracción, velocidades..."
+
+msgid "The calibration test replaces all the objects of the plater, continue?"
+msgstr "La prueba de calibración reemplaza todos los objetos de la plataforma. ¿Continuar?"
+
+msgid "Calibration test"
+msgstr "Prueba de calibración"
+
+msgid "Value changed along the height of the print by the calibration test."
+msgstr "Valor que la prueba de calibración cambia a lo largo de la altura de la impresión."
+
+msgid "Pressure advance"
+msgstr "Pressure advance"
+
+msgid "Perimeter speed"
+msgstr "Velocidad de perímetro"
+
+msgid "Cornering (jerk / square corner velocity)"
+msgstr "Esquinas (jerk / square corner velocity)"

@@ -182,6 +182,9 @@ enum class LabelObjectsStyle {
 
 // Non-planar layers (see NonPlanar.hpp).
 enum class NonPlanarMode { Disabled, Wave, Conical };
+
+// Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
+enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
 enum class NonPlanarFlowPolicy { Preserve, Uniform, Off };
 
@@ -313,6 +316,7 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(GCodeThumbnailsFormat)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(ForwardCompatibilitySubstitutionRule)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarMode)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(CalibMode)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarPattern)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarFlowPolicy)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOnePerimeterType)
@@ -1079,6 +1083,11 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloats,             wiping_volumes_matrix))
     ((ConfigOptionBool,               wiping_volumes_use_custom_matrix))
     ((ConfigOptionFloat,              z_offset))
+    ((ConfigOptionEnum<CalibMode>,    calib_mode))
+    ((ConfigOptionFloat,              calib_start))
+    ((ConfigOptionFloat,              calib_end))
+    ((ConfigOptionFloat,              calib_step))
+    ((ConfigOptionFloat,              calib_band_height))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
