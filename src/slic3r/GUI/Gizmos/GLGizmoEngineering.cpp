@@ -424,6 +424,110 @@ void GLGizmoEngineering::apply_optimization(bool zones)
     m_opt_object = mo->id();
 }
 
+bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input)
+{
+    const ModelObject *mo = model_object();
+    if (mo == nullptr || m_running)
+        return false;
+    if (m_thread.joinable())
+        m_thread.join();
+    std::string error;
+    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
+    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, &config)) {
+        m_error = error;
+        return false;
+    }
+    m_error.clear();
+    m_result_material    = input.material;
+    m_result_temperature = input.setup.temperature;
+    m_result_safety      = input.setup.required_safety_factor;
+    m_result_object      = mo->id();
+    return true;
+}
+
+template<class T> void GLGizmoEngineering::launch(std::function<T()> job, std::optional<T> *pending)
+{
+    m_cancel   = false;
+    m_running  = true;
+    m_progress = 0;
+    m_thread = std::thread([this, job = std::move(job), pending]() {
+        T res = job();
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            *pending = std::move(res);
+        }
+        m_running = false;
+        wxGetApp().CallAfter([]() {
+            if (GLCanvas3D *canvas = wxGetApp().plater() ? wxGetApp().plater()->get_current_canvas3D() : nullptr) {
+                canvas->set_as_dirty();
+                canvas->request_extra_frame();
+            }
+        });
+    });
+}
+
+void GLGizmoEngineering::start_reinforcement()
+{
+    Fea::ModelAnalysisInput input;
+    if (! prepare_input(input))
+        return;
+    m_reinf_base_perimeters = input.setup.infill.perimeters;
+    Fea::ReinforcementOptions options;
+    options.radius           = std::max(0.f, m_reinf_radius);
+    options.extra_perimeters = std::clamp(m_reinf_perimeters, 0, 10);
+    options.density          = std::clamp(m_reinf_density, 0.f, 100.f) * 0.01;
+    launch<Fea::ReinforcementResult>([this, input = std::move(input), options]() {
+        return Fea::optimize_reinforcement(input.mesh, input.setup, options, [this]() { return m_cancel.load(); },
+                                           [this](int p) { m_progress = p; });
+    }, &m_pending_reinf);
+}
+
+void GLGizmoEngineering::start_lattice()
+{
+    Fea::ModelAnalysisInput input;
+    if (! prepare_input(input))
+        return;
+    Fea::LatticeOptions options;
+    options.cell         = std::max(2.f, m_lattice_cell);
+    options.min_diameter = std::max(0.2f, m_lattice_min_d);
+    options.max_diameter = std::max(options.min_diameter, double(m_lattice_max_d));
+    launch<Fea::LatticeResult>([this, input = std::move(input), options]() {
+        return Fea::optimize_lattice(input.mesh, input.setup, options, [this]() { return m_cancel.load(); },
+                                     [this](int p) { m_progress = p; });
+    }, &m_pending_lattice);
+}
+
+void GLGizmoEngineering::apply_reinforcement()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_reinf || mo->id() != m_reinf_object || ! m_reinf->with.feasible)
+        return;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply local reinforcement"));
+    Fea::apply_reinforcement(*mo, size_t(instance_idx()), m_reinf->with.uniform_density, m_reinf->zone,
+                             m_reinf_base_perimeters + std::clamp(m_reinf_perimeters, 0, 10));
+    const int obj_idx = m_parent.get_selection().get_object_idx();
+    if (obj_idx >= 0)
+        wxGetApp().plater()->changed_object(obj_idx);
+    wxGetApp().obj_list()->update_after_undo_redo();
+    m_regions_dirty = true;
+    m_reinf_object = mo->id();
+}
+
+void GLGizmoEngineering::apply_lattice()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_lattice || mo->id() != m_lattice_object || ! m_lattice->feasible)
+        return;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lattice"));
+    Fea::apply_lattice(*mo, size_t(instance_idx()), m_lattice->mesh, m_lattice->grid.cell);
+    const int obj_idx = m_parent.get_selection().get_object_idx();
+    if (obj_idx >= 0)
+        wxGetApp().plater()->changed_object(obj_idx);
+    wxGetApp().obj_list()->update_after_undo_redo();
+    m_regions_dirty = true;
+    m_lattice_object = mo->id();
+}
+
 void GLGizmoEngineering::cancel_analysis()
 {
     m_cancel = true;
@@ -433,16 +537,46 @@ void GLGizmoEngineering::cancel_analysis()
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pending.reset();
     m_pending_opt.reset();
+    m_pending_reinf.reset();
+    m_pending_lattice.reset();
 }
 
 void GLGizmoEngineering::fetch_result()
 {
     std::optional<Fea::Result> res;
     std::optional<Fea::OptimizeResult> opt;
+    std::optional<Fea::ReinforcementResult> reinf;
+    std::optional<Fea::LatticeResult> lattice;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         res.swap(m_pending);
         opt.swap(m_pending_opt);
+        reinf.swap(m_pending_reinf);
+        lattice.swap(m_pending_lattice);
+    }
+    if (reinf || lattice) {
+        if (m_thread.joinable())
+            m_thread.join();
+        const std::string error = reinf ? reinf->error : lattice->error;
+        if (reinf ? ! reinf->ok : ! lattice->ok) {
+            m_error = error == "Cancelled" ? std::string() : error;
+            return;
+        }
+        m_result_is_lattice = ! reinf;
+        if (reinf) {
+            m_reinf        = std::move(*reinf);
+            m_reinf_object = m_result_object;
+            m_result       = m_reinf->with.uniform;
+        } else {
+            m_lattice        = std::move(*lattice);
+            m_lattice_object = m_result_object;
+            m_result         = m_lattice->variable_found ? m_lattice->variable : m_lattice->uniform;
+            m_lattice_model_dirty = true;
+        }
+        m_result_stale = false;
+        m_field = Field::Density;
+        m_result_models_dirty = true;
+        return;
     }
     if (opt) {
         if (m_thread.joinable())
@@ -453,6 +587,7 @@ void GLGizmoEngineering::fetch_result()
         }
         m_opt        = std::move(*opt);
         m_opt_object = m_result_object;
+        m_result_is_lattice = false;
         // Show the infill found on the part.
         m_result = m_opt->zones_found ? m_opt->zoned : m_opt->uniform;
         m_result_stale = false;
@@ -469,6 +604,7 @@ void GLGizmoEngineering::fetch_result()
         return;
     }
     m_result = std::move(*res);
+    m_result_is_lattice = false;
     m_result_stale = false;
     m_result_models_dirty = true;
 }
@@ -612,7 +748,11 @@ void GLGizmoEngineering::on_render()
 
     const bool results = m_show_results && m_result && m_result_object == mo->id();
     show_object(! results);
-    if (results)
+    const bool lattice_view = results && m_result_is_lattice && m_field == Field::Density && m_lattice && m_lattice_object == mo->id() &&
+                              m_lattice->feasible && ! m_lattice->mesh.indices.empty();
+    if (lattice_view)
+        render_lattice();
+    else if (results)
         render_results();
     else
         render_regions();
@@ -661,6 +801,28 @@ void GLGizmoEngineering::render_results()
     for (GLModel &m : m_result_models)
         if (m.is_initialized())
             m.render();
+    shader->stop_using();
+}
+
+void GLGizmoEngineering::render_lattice()
+{
+    if (m_lattice_model_dirty) {
+        m_lattice_model.reset();
+        m_lattice_model.init_from(m_lattice->mesh);
+        m_lattice_model_dirty = false;
+    }
+    GLShaderProgram *shader = wxGetApp().get_shader("gouraud_light");
+    if (shader == nullptr)
+        return;
+    shader->start_using();
+    const Camera &camera = wxGetApp().plater()->get_camera();
+    shader->set_uniform("projection_matrix", camera.get_projection_matrix());
+    const Transform3d view_model = camera.get_view_matrix();
+    shader->set_uniform("view_model_matrix", view_model);
+    shader->set_uniform("view_normal_matrix", Matrix3d(view_model.matrix().block(0, 0, 3, 3).inverse().transpose()));
+    glsafe(::glEnable(GL_DEPTH_TEST));
+    m_lattice_model.set_color({ 0.62f, 0.35f, 0.95f, 1.f });
+    m_lattice_model.render();
     shader->stop_using();
 }
 
@@ -983,6 +1145,73 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
                 } else if (m_opt_zones)
                     ImGuiPureWrap::text_wrapped(_u8L("The zones would not save material: the uniform infill is the lightest."), width);
                 ImGuiPureWrap::text_wrapped(GUI::format(_u8L("%1% analyses. Homogenized infill model: check the result with a printed test part."), o.analyses), width);
+            }
+        }
+    }
+
+    auto input_float = [&](const std::string &label, float &value, const char *fmt) {
+        ImGuiPureWrap::text(label);
+        ImGui::SameLine(14.f * ImGui::GetFontSize());
+        ImGui::PushItemWidth(5.f * ImGui::GetFontSize());
+        ImGui::InputFloat(("##" + label).c_str(), &value, 0.f, 0.f, fmt);
+        ImGui::PopItemWidth();
+    };
+    const bool can_run = ! m_running && ! eng.fixtures.empty() && ! eng.loads.empty();
+
+    // Local reinforcement (phase 6).
+    if (ImGui::CollapsingHeader(_u8L("Local reinforcement").c_str())) {
+        ImGuiPureWrap::text_wrapped(_u8L("More perimeters and infill around the fixed faces and the loads, and the rest of the part as light as possible."), width);
+        input_float(_u8L("Radius [mm] (0 = automatic)"), m_reinf_radius, "%.1f");
+        ImGuiPureWrap::text(_u8L("Extra perimeters"));
+        ImGui::SameLine(14.f * ImGui::GetFontSize());
+        ImGui::PushItemWidth(5.f * ImGui::GetFontSize());
+        ImGui::InputInt("##extra_perimeters", &m_reinf_perimeters, 0, 0);
+        ImGui::PopItemWidth();
+        input_float(_u8L("Infill of the reinforcement [%]"), m_reinf_density, "%.0f");
+        if (ImGuiPureWrap::button(_u8L("Calculate reinforcement")) && can_run)
+            start_reinforcement();
+        if (m_reinf && m_reinf_object == mo->id()) {
+            const Fea::ReinforcementResult &r = *m_reinf;
+            if (r.without.feasible)
+                ImGuiPureWrap::text(GUI::format(_u8L("Without reinforcement: %1% %% -> %2$.1f g"),
+                    int(std::round(r.without.uniform_density * 100.)), r.without.uniform.mass));
+            else
+                ImGuiPureWrap::text_wrapped(_u8L("Without reinforcement: not even 100 % infill meets the requirements."), width);
+            if (r.with.feasible) {
+                ImGuiPureWrap::text_wrapped(GUI::format(_u8L("With reinforcement: %1% %% + reinforcement -> %2$.1f g, safety factor %3$.2f"),
+                    int(std::round(r.with.uniform_density * 100.)), r.with.uniform.mass, r.with.uniform.safety_factor), width);
+                if (r.without.feasible && r.with.uniform.mass >= r.without.uniform.mass * 0.99)
+                    ImGuiPureWrap::text_wrapped(_u8L("The reinforcement does not save material here: the stresses are not concentrated at the supports and loads."), width);
+                if (ImGuiPureWrap::button(_u8L("Apply reinforcement")))
+                    apply_reinforcement();
+            } else
+                ImGuiPureWrap::text_wrapped(_u8L("With reinforcement: not even 100 % infill meets the requirements."), width);
+        }
+    }
+
+    // 3D lattice (phase 6).
+    if (ImGui::CollapsingHeader(_u8L("3D lattice").c_str())) {
+        ImGuiPureWrap::text_wrapped(_u8L("Struts instead of the infill, joined to the walls: vertical and at 45 degrees, printable without supports. "
+                                         "Their thickness follows the stresses."), width);
+        input_float(_u8L("Cell [mm]"), m_lattice_cell, "%.1f");
+        input_float(_u8L("Min. strut diameter [mm]"), m_lattice_min_d, "%.2f");
+        input_float(_u8L("Max. strut diameter [mm]"), m_lattice_max_d, "%.2f");
+        if (ImGuiPureWrap::button(_u8L("Generate lattice")) && can_run)
+            start_lattice();
+        if (m_lattice && m_lattice_object == mo->id()) {
+            const Fea::LatticeResult &l = *m_lattice;
+            if (! l.feasible)
+                ImGuiPureWrap::text_wrapped(_u8L("Not even the thickest struts meet the requirements: a smaller cell, more walls or another material."), width);
+            else {
+                ImGuiPureWrap::text(GUI::format(_u8L("Uniform struts: %1$.2f mm -> %2$.1f g, safety factor %3$.2f"),
+                    l.uniform_diameter, l.uniform.mass, l.uniform.safety_factor));
+                if (l.variable_found)
+                    ImGuiPureWrap::text_wrapped(GUI::format(_u8L("Variable struts: %1$.2f-%2$.2f mm -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"),
+                        l.min_used_diameter, l.max_used_diameter, l.variable.mass,
+                        100. * (1. - l.variable.mass / std::max(l.uniform.mass, 1e-9)), l.variable.safety_factor), width);
+                if (ImGuiPureWrap::button(_u8L("Apply lattice")))
+                    apply_lattice();
+                ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The infill of the part becomes 0 %%. %1% analyses; homogenized lattice model: check the first print."), l.analyses), width);
             }
         }
     }

@@ -32081,3 +32081,72 @@ msgstr "%1% análisis. Modelo de relleno homogeneizado: comprueba el resultado c
 
 msgid "The solid walls are hidden to show the infill inside."
 msgstr "Las paredes macizas se ocultan para mostrar el relleno interior."
+
+msgid "Apply local reinforcement"
+msgstr "Aplicar refuerzo local"
+
+msgid "Apply lattice"
+msgstr "Aplicar lattice"
+
+msgid "Local reinforcement"
+msgstr "Refuerzos locales"
+
+msgid "More perimeters and infill around the fixed faces and the loads, and the rest of the part as light as possible."
+msgstr "Más perímetros y relleno alrededor de las caras fijas y de las cargas, y el resto de la pieza lo más ligero posible."
+
+msgid "Radius [mm] (0 = automatic)"
+msgstr "Radio [mm] (0 = automático)"
+
+msgid "Extra perimeters"
+msgstr "Perímetros extra"
+
+msgid "Infill of the reinforcement [%]"
+msgstr "Relleno del refuerzo [%]"
+
+msgid "Calculate reinforcement"
+msgstr "Calcular refuerzo"
+
+msgid "Without reinforcement: %1% %% -> %2$.1f g"
+msgstr "Sin refuerzo: %1% %% -> %2$.1f g"
+
+msgid "Without reinforcement: not even 100 % infill meets the requirements."
+msgstr "Sin refuerzo: ni con el 100 % de relleno se cumplen los requisitos."
+
+msgid "With reinforcement: %1% %% + reinforcement -> %2$.1f g, safety factor %3$.2f"
+msgstr "Con refuerzo: %1% %% + refuerzo -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Apply reinforcement"
+msgstr "Aplicar refuerzo"
+
+msgid "With reinforcement: not even 100 % infill meets the requirements."
+msgstr "Con refuerzo: ni con el 100 % de relleno se cumplen los requisitos."
+
+msgid "Struts instead of the infill, joined to the walls: vertical and at 45 degrees, printable without supports. Their thickness follows the stresses."
+msgstr "Barras en lugar del relleno, unidas a las paredes: verticales y a 45°, imprimibles sin soportes. Su grosor sigue a las tensiones."
+
+msgid "Cell [mm]"
+msgstr "Celda [mm]"
+
+msgid "Min. strut diameter [mm]"
+msgstr "Diámetro mín. de barra [mm]"
+
+msgid "Max. strut diameter [mm]"
+msgstr "Diámetro máx. de barra [mm]"
+
+msgid "Generate lattice"
+msgstr "Generar lattice"
+
+msgid "Not even the thickest struts meet the requirements: a smaller cell, more walls or another material."
+msgstr "Ni con las barras más gruesas se cumplen los requisitos: celda más pequeña, más paredes u otro material."
+
+msgid "Uniform struts: %1$.2f mm -> %2$.1f g, safety factor %3$.2f"
+msgstr "Barras uniformes: %1$.2f mm -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Variable struts: %1$.2f-%2$.2f mm -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"
+msgstr "Barras variables: %1$.2f-%2$.2f mm -> %3$.1f g (%4$.0f %% más ligero), factor de seguridad %5$.2f"
+
+msgid "The infill of the part becomes 0 %%. %1% analyses; homogenized lattice model: check the first print."
+msgstr "El relleno de la pieza pasa a 0 %%. %1% análisis; modelo de lattice homogeneizado: revisa la primera impresión."
+
+msgid "The reinforcement does not save material here: the stresses are not concentrated at the supports and loads."
+msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en los apoyos y las cargas."

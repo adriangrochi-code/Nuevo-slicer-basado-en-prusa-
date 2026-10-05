@@ -17,6 +17,8 @@
 #include <libslic3r/ObjectID.hpp>
 #include <tisma_fea/Analysis.hpp>
 #include <tisma_fea/Optimize.hpp>
+#include <tisma_fea/Structures.hpp>
+#include <tisma_fea/ModelSetup.hpp>
 
 namespace Slic3r {
 
@@ -65,6 +67,15 @@ private:
     void start_analysis();
     void start_optimization();
     void apply_optimization(bool zones);
+    // Builds the input of an analysis of the printed part and remembers its material, temperature and object.
+    bool prepare_input(Fea::ModelAnalysisInput &input);
+    // Runs a job in the background; its result is stored in *pending under the mutex.
+    template<class T> void launch(std::function<T()> job, std::optional<T> *pending);
+    void start_reinforcement();
+    void apply_reinforcement();
+    void start_lattice();
+    void apply_lattice();
+    void render_lattice();
     void cancel_analysis();
     void fetch_result();
 
@@ -97,6 +108,8 @@ private:
     std::mutex        m_mutex;
     std::optional<Fea::Result> m_pending;
     std::optional<Fea::OptimizeResult> m_pending_opt;
+    std::optional<Fea::ReinforcementResult> m_pending_reinf;
+    std::optional<Fea::LatticeResult>       m_pending_lattice;
     bool              m_job_optimize { false };
 
     std::optional<Fea::Result> m_result;
@@ -113,6 +126,23 @@ private:
     bool                       m_opt_zones { true };
     bool                       m_open_infill_section { false };
     std::atomic<double>        m_current_infill_mass { 0. };
+    // Local reinforcement.
+    std::optional<Fea::ReinforcementResult> m_reinf;
+    ObjectID                   m_reinf_object;
+    float                      m_reinf_radius { 0.f };      // 0 = automatic
+    int                        m_reinf_perimeters { 2 };
+    float                      m_reinf_density { 40.f };    // %
+    int                        m_reinf_base_perimeters { 2 };
+    // Lattice.
+    std::optional<Fea::LatticeResult> m_lattice;
+    ObjectID                   m_lattice_object;
+    float                      m_lattice_cell { 8.f };
+    float                      m_lattice_min_d { 0.9f };
+    float                      m_lattice_max_d { 3.f };
+    GLModel                    m_lattice_model;
+    // The shown result is the one of the lattice (its struts are drawn in the infill view).
+    bool                       m_result_is_lattice { false };
+    bool                       m_lattice_model_dirty { true };
 
     // Render caches.
     struct RegionModel { GLModel model; Transform3d trafo; ColorRGBA color; };

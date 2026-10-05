@@ -202,8 +202,9 @@ técnicas y bibliografía, aproximados y editables más adelante; la pieza se co
 | 6b. El análisis lee perímetros, capas sólidas, densidad, patrón y modificadores del perfil y del objeto; `apply_infill` escribe la densidad y los modificadores de zona | Hecho, con prueba de ida y vuelta |
 | 6c. GUI: casilla «Pieza impresa», masa estimada, vista «Relleno» (sin la capa maciza), sección «Relleno mínimo» (búsqueda en segundo plano, comparación con el relleno actual, aplicar uniforme o por zonas); el botón Estructuras abre esa sección; panel con desplazamiento | Hecho y probado en la GUI (bloque STEP, FS 6: actual 2,7 g; uniforme 45 % 3,3 g; por zonas 10 % + 23 % / 50 % 2,9 g; aplicado y laminado: el relleno cambia por zonas) |
 | Validación con las trayectorias reales laminadas (voxelizar el G-code) | Pendiente |
-| Calibración de los exponentes del relleno con probetas impresas | Pendiente (necesita ensayos físicos) |
-| Lattice 3D y refuerzos locales | Pendiente (siguientes pasos de la fase) |
+| Calibración de los exponentes del relleno y del lattice con probetas impresas | Pendiente (necesita ensayos físicos) |
+| 6d. Refuerzos locales (más perímetros y relleno alrededor de apoyos y cargas, relleno más ligero del resto) y lattice 3D (barras verticales y a 45°, sin soportes, diámetro variable según la tensión) en el núcleo | Hecho, con pruebas (ver `docs/FEA.md`) |
+| 6e. Aplicar refuerzos (modificador con perímetros y relleno) y lattice (relleno 0 % + modificador macizo con las barras); reconocerlos al volver a analizar; secciones «Refuerzos locales» y «Lattice 3D» en Ingeniería con vista de las barras | Hecho y probado en la GUI (bloque STEP: lattice generado, aplicado y laminado; refuerzo calculado). Con la carga de prueba de 400 N (más de lo realista para esa pieza, el usuario indica 100 N como máximo) el lattice resultó casi tan pesado como la pieza maciza y el refuerzo no ahorró material: el panel lo dice |
 
 Observaciones: el laminador convierte en sólidas las áreas de relleno pequeñas y añade puentes en los bordes de las
 zonas; el modelo no lo tiene en cuenta, así que la masa real puede ser algo mayor que la estimada.
