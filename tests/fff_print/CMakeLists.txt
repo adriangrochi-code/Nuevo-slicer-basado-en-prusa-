@@ -2,6 +2,7 @@ get_filename_component(_TEST_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 add_executable(${_TEST_NAME}_tests 
 	${_TEST_NAME}_tests.cpp
 	test_arc_overhangs.cpp
+	test_calibration.cpp
 	test_avoid_crossing_perimeters.cpp
 	test_bridges.cpp
 	test_cooling.cpp
