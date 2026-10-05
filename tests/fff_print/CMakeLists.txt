@@ -25,6 +25,7 @@ add_executable(${_TEST_NAME}_tests
     test_seam_rear.cpp
     test_seam_random.cpp
     test_seam_scarf.cpp
+    test_seam_visibility_cache.cpp
     benchmark_seams.cpp
 	test_gcodefindreplace.cpp
 	test_gcodewriter.cpp

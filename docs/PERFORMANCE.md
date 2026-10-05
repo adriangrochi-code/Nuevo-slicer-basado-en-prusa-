@@ -82,11 +82,16 @@ Total: 52 600 millones de instrucciones (antes 60 800 millones).
 | Perímetros extra (`PrintObject::make_perimeters`, dos offsets por iteración sobre contornos de alta resolución) | 12 % | ~0,25 s |
 | Perímetros Arachne | 12 % | ~0,25 s |
 
+## Caché de la visibilidad de la costura
+
+`ModelInfo::Visibility` guarda su resultado (muestras, visibilidad, radio) en una caché de 16 entradas, con una clave
+que resume las mallas y matrices de las piezas y volúmenes negativos, la transformación del objeto y los parámetros.
+En la interfaz, cambiar un ajuste que solo afecta al G-code (temperaturas, velocidades, G-code personalizado) ya no
+vuelve a lanzar los 750 000 rayos (~0,7 s en el Benchy). Resultado idéntico (prueba `[TismaCache]`, G-code del
+Benchy igual byte a byte).
+
 ## Pendiente (propuestas)
 
-- Visibilidad de la costura: guardarla entre exportaciones mientras la malla y la posición del objeto no cambien. No
-  acelera la línea de comandos, pero en la interfaz evita repetir ~0,7 s cada vez que se cambia un ajuste que solo
-  afecta al G-code (temperaturas, velocidades, G-code personalizado).
 - Compilación con LTO (`/GL /LTCG` en MSVC), medida en Windows.
 - Migrar de Clipper 6 a Clipper2 (más rápido en offsets y booleanas). Es un cambio amplio en todo el núcleo y no
   está autorizado.

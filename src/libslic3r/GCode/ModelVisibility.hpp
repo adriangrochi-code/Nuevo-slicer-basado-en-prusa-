@@ -50,6 +50,15 @@ struct Visibility
     float mesh_samples_radius;
 
     float calculate_point_visibility(const Vec3f &position) const;
+
+private:
+    // Casts the rays (the constructor takes the result from a cache when the inputs did not change).
+    void compute(
+        const Transform3d &obj_transform,
+        const ModelVolumePtrs &volumes,
+        const Params &params,
+        const std::function<void(void)> &throw_if_canceled
+    );
 };
 
 } // namespace Slic3r::ModelInfo

@@ -4,6 +4,9 @@
 #include <oneapi/tbb/parallel_for.h>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
+#include <deque>
+#include <mutex>
 
 #include "libslic3r/ShortEdgeCollapse.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
@@ -193,7 +196,111 @@ std::vector<float> raycast_visibility(
 }
 }
 
+namespace {
+
+// Tisma (phase 8): cache of the visibility between G-code exports. The visibility depends only on the meshes and
+// the matrices of the model parts and negative volumes, on the transformation of the object and on the parameters,
+// so changing a setting which only affects the G-code (temperatures, speeds, custom G-code...) does not cast the
+// rays again (~0.7 s for the Benchy). The key is a hash of all these inputs, the result is the same.
+struct VisibilityCacheEntry
+{
+    uint64_t           key;
+    TriangleSetSamples samples;
+    std::vector<float> visibility;
+    float              radius;
+};
+
+struct VisibilityCache
+{
+    std::mutex                       mutex;
+    std::deque<VisibilityCacheEntry> entries;
+    static constexpr size_t          MAX_ENTRIES = 16;
+};
+
+VisibilityCache& visibility_cache()
+{
+    static VisibilityCache cache;
+    return cache;
+}
+
+class Hasher
+{
+public:
+    void add(const void *data, size_t size)
+    {
+        // FNV-1a over 64 bit words, then the remaining bytes.
+        const unsigned char *p = static_cast<const unsigned char*>(data);
+        for (; size >= 8; p += 8, size -= 8) {
+            uint64_t w;
+            std::memcpy(&w, p, 8);
+            m_hash = (m_hash ^ w) * 0x100000001b3ull;
+        }
+        for (; size > 0; ++ p, -- size)
+            m_hash = (m_hash ^ *p) * 0x100000001b3ull;
+    }
+    template<typename T> void add(const T &value) { add(&value, sizeof(T)); }
+    uint64_t value() const { return m_hash; }
+
+private:
+    uint64_t m_hash { 0xcbf29ce484222325ull };
+};
+
+uint64_t visibility_key(const Transform3d &obj_transform, const ModelVolumePtrs &volumes, const Visibility::Params &params)
+{
+    Hasher h;
+    h.add(obj_transform.matrix().data(), sizeof(double) * 16);
+    h.add(params.raycasting_visibility_samples_count);
+    h.add(params.fast_decimation_triangle_count_target);
+    h.add(params.sqr_rays_per_sample_point);
+    for (const ModelVolume *model_volume : volumes) {
+        if (model_volume->type() != ModelVolumeType::MODEL_PART && model_volume->type() != ModelVolumeType::NEGATIVE_VOLUME)
+            continue;
+        h.add(int(model_volume->type()));
+        h.add(model_volume->get_matrix().matrix().data(), sizeof(double) * 16);
+        const indexed_triangle_set &its = model_volume->mesh().its;
+        h.add(its.vertices.size());
+        h.add(its.indices.size());
+        h.add(its.vertices.data(), its.vertices.size() * sizeof(stl_vertex));
+        h.add(its.indices.data(), its.indices.size() * sizeof(stl_triangle_vertex_indices));
+    }
+    return h.value();
+}
+
+} // namespace
+
 Visibility::Visibility(
+    const Transform3d &obj_transform,
+    const ModelVolumePtrs &volumes,
+    const Params &params,
+    const std::function<void(void)> &throw_if_canceled
+) {
+    const uint64_t key = visibility_key(obj_transform, volumes, params);
+    {
+        VisibilityCache &cache = visibility_cache();
+        std::lock_guard<std::mutex> lock(cache.mutex);
+        for (const VisibilityCacheEntry &entry : cache.entries)
+            if (entry.key == key) {
+                this->mesh_samples                    = entry.samples;
+                this->mesh_samples_visibility         = entry.visibility;
+                this->mesh_samples_radius             = entry.radius;
+                this->mesh_samples_coordinate_functor = Impl::CoordinateFunctor(&this->mesh_samples.positions);
+                this->mesh_samples_tree = KDTreeIndirect<3, float, Impl::CoordinateFunctor>(this->mesh_samples_coordinate_functor,
+                    this->mesh_samples.positions.size());
+                BOOST_LOG_TRIVIAL(debug) << "SeamPlacer: visibility from the cache";
+                return;
+            }
+    }
+    this->compute(obj_transform, volumes, params, throw_if_canceled);
+    {
+        VisibilityCache &cache = visibility_cache();
+        std::lock_guard<std::mutex> lock(cache.mutex);
+        cache.entries.push_front({ key, this->mesh_samples, this->mesh_samples_visibility, this->mesh_samples_radius });
+        if (cache.entries.size() > VisibilityCache::MAX_ENTRIES)
+            cache.entries.pop_back();
+    }
+}
+
+void Visibility::compute(
     const Transform3d &obj_transform,
     const ModelVolumePtrs &volumes,
     const Params &params,
