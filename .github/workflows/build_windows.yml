@@ -47,24 +47,40 @@ jobs:
           path: C:/dd
           key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
+      # Compiler cache in the GitHub Actions cache: a small change compiles in minutes instead of ~55 min.
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      # Ninja + MSVC from the developer command prompt, so that every object file goes through sccache
+      # (sccache needs /Z7 and no precompiled headers; /MP is useless with Ninja).
       - name: Configure
         shell: cmd
+        env:
+          SCCACHE_GHA_ENABLED: "true"
         run: |
-          rem Release only, as build_win.bat does: with Debug among the configurations, FindOpenVDB also
-          rem requires the debug libraries, which are not built (DEP_DEBUG=OFF).
-          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DCMAKE_CONFIGURATION_TYPES=Release -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
+          cmake -S . -B %APP_BUILD% -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON ^
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
+            -DSLIC3R_PCH=OFF -DSLIC3R_MSVC_COMPILE_PARALLEL=OFF -DTISMA_MSVC_EMBEDDED_DEBUG_INFO=ON || exit /b 1
 
       - name: Build
         shell: cmd
+        env:
+          SCCACHE_GHA_ENABLED: "true"
         run: |
-          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
+          cmake --build %APP_BUILD% --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper || exit /b 1
+          sccache --show-stats
 
       - name: Package
         shell: pwsh
         run: |
           $out = "TismaSlicer"
           New-Item -ItemType Directory -Force $out | Out-Null
-          Get-ChildItem "$env:APP_BUILD/src/Release" -File |
+          # Ninja (single configuration) puts the binaries in src/, Visual Studio in src/Release/.
+          $bin = @("$env:APP_BUILD/src/Release", "$env:APP_BUILD/src") | Where-Object { Test-Path "$_/prusa-slicer.exe" } | Select-Object -First 1
+          if (-not $bin) { throw "prusa-slicer.exe not found" }
+          Get-ChildItem $bin -File |
             Where-Object { $_.Extension -in '.exe', '.dll' } |
             Copy-Item -Destination $out
           # The STEP import (and the CAD retessellation) loads OCCTWrapper.dll next to the executable.
