@@ -35,8 +35,12 @@ intersecciones.
 |---|---|---|
 | `merge_bridges` (`LayerRegion.cpp`): quitar los puntos a menos de `SCALED_EPSILON` (0,1 µm) del contorno simplificado (Douglas-Peucker) antes de `closing_ex` | Coordenadas de algunos puentes desplazadas 1–4 µm (≈1,6 % de las líneas del Benchy); filamento y tiempo estimado iguales; área cerrada cambia < 0,001 % | Llamada de 924 ms → 21 ms |
 
-Probado y descartado: repartir las capas de «Processing external surfaces» de una en una (`simple_partitioner`):
-no mejora, porque el coste está en una sola capa.
+Probado y descartado:
+- Repartir las capas de «Processing external surfaces» de una en una (`simple_partitioner`): no mejora, porque el
+  coste está en una sola capa.
+- Recorrer primero el hijo más cercano en los rayos de «primer impacto» del árbol AABB (visibilidad de la costura),
+  con el mismo resultado exacto (G-code idéntico en los 6 casos): más lento (exportación 0,84 → 1,19 s en el Benchy),
+  calcular la entrada en las dos cajas hijas cuesta más que la poda que gana.
 
 ## Resultados (mediana de 3, segundos)
 
@@ -68,8 +72,21 @@ SPE-3792 (anclaje de puentes), SPE-3853 (prefijo de cambio de herramienta), SPE-
 herramienta), invalidación de `nozzle_diameter`. Las de la nueva arquitectura de la 3.0 (validación de
 `layer_config_ranges`, `Print::update`) no aplican.
 
-## Pendiente
+## Perfil después de la optimización (Benchy)
 
-- Visibilidad de la costura (21 % de las instrucciones): rayos en doble precisión sobre un árbol en simple.
-- Exportación del G-code: ahora es la etapa más larga del Benchy (~30 %).
-- Compilación con LTO (`/GL /LTCG` en MSVC) medida en Windows.
+Total: 52 600 millones de instrucciones (antes 60 800 millones).
+
+| Parte | Instrucciones | Tiempo real (4 núcleos) |
+|---|---|---|
+| Visibilidad de la costura (750 000 rayos: 30 000 muestras × 25) | 24 % | ~0,7 s de 2,75 s |
+| Perímetros extra (`PrintObject::make_perimeters`, dos offsets por iteración sobre contornos de alta resolución) | 12 % | ~0,25 s |
+| Perímetros Arachne | 12 % | ~0,25 s |
+
+## Pendiente (propuestas)
+
+- Visibilidad de la costura: guardarla entre exportaciones mientras la malla y la posición del objeto no cambien. No
+  acelera la línea de comandos, pero en la interfaz evita repetir ~0,7 s cada vez que se cambia un ajuste que solo
+  afecta al G-code (temperaturas, velocidades, G-code personalizado).
+- Compilación con LTO (`/GL /LTCG` en MSVC), medida en Windows.
+- Migrar de Clipper 6 a Clipper2 (más rápido en offsets y booleanas). Es un cambio amplio en todo el núcleo y no
+  está autorizado.
