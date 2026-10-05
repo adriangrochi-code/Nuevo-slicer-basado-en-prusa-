@@ -1,5 +1,7 @@
 # Hoja de ruta de Tisma Slicer
 
+> Plan de referencia actual: [docs/IMPLEMENTATION_ROADMAP.md](../docs/IMPLEMENTATION_ROADMAP.md). Este archivo queda como registro de lo hecho en las primeras fases.
+
 Interfaz híbrida: estructura y estética de PrusaSlicer 3.0 (interfaz clara y tranquila, columna de
 navegación a la izquierda, panel derecho con los ajustes más usados y favoritos) con las calibraciones
 y funciones de OrcaSlicer. Ambos proyectos son AGPLv3: el código portado conserva su atribución.
