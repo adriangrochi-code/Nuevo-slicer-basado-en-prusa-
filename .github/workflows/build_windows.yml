@@ -47,30 +47,18 @@ jobs:
           path: C:/dd
           key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
-      # Compiler cache in the GitHub Actions cache: a small change compiles in minutes instead of ~55 min.
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      # Ninja + MSVC from the developer command prompt, so that every object file goes through sccache
-      # (sccache needs /Z7 and no precompiled headers; /MP is useless with Ninja).
+      # TODO (after the first test on Windows): Ninja + sccache (see commit 4a4a936) for incremental builds.
       - name: Configure
         shell: cmd
-        env:
-          SCCACHE_GHA_ENABLED: "true"
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
-          cmake -S . -B %APP_BUILD% -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON ^
-            -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
-            -DSLIC3R_PCH=OFF -DSLIC3R_MSVC_COMPILE_PARALLEL=OFF -DTISMA_MSVC_EMBEDDED_DEBUG_INFO=ON || exit /b 1
+          rem Release only, as build_win.bat does: with Debug among the configurations, FindOpenVDB also
+          rem requires the debug libraries, which are not built (DEP_DEBUG=OFF).
+          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DCMAKE_CONFIGURATION_TYPES=Release -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
 
       - name: Build
         shell: cmd
-        env:
-          SCCACHE_GHA_ENABLED: "true"
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" || exit /b 1
-          cmake --build %APP_BUILD% --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper || exit /b 1
-          sccache --show-stats
+          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
 
       - name: Package
         shell: pwsh
@@ -87,10 +75,22 @@ jobs:
           $occt = @("$env:APP_BUILD/src/Release/OCCTWrapper.dll", "$env:APP_BUILD/src/OCCTWrapper.dll") | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $occt) { throw "OCCTWrapper.dll not found" }
           Copy-Item $occt -Destination $out -Force
+          # PrusaSlicer.dll needs GMP and MPFR (CGAL); upstream copies them with the PrusaSlicerDllsCopy target,
+          # which is not among the built targets. Without them prusa-slicer.exe exits silently.
+          Copy-Item deps/+GMP/gmp/lib/win64/libgmp-10.dll, deps/+MPFR/mpfr/lib/win64/libmpfr-4.dll -Destination $out
+          # Visual C++ runtime next to the executable (app-local deployment of the redistributable files), so a PC
+          # without the Visual C++ Redistributable can run it too.
+          $crt = Get-ChildItem "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT" -Directory |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $crt) { throw "Visual C++ runtime not found" }
+          Copy-Item "$($crt.FullName)/*.dll" -Destination $out
           Copy-Item -Recurse resources "$out/resources"
           Copy-Item doc/NonPlanarSlicer.md "$out/LEEME.md"
           Get-ChildItem $out
-          & "$out/prusa-slicer-console.exe" --help | Select-Object -First 3
+          # Smoke test: PrusaSlicer.dll must load (it prints the usage), otherwise the package is broken.
+          $help = & "$out/prusa-slicer-console.exe" --help 2>&1 | Out-String
+          if ($help -notmatch "Usage:") { Write-Output $help; throw "prusa-slicer-console.exe did not start (PrusaSlicer.dll not loaded?)" }
+          Write-Output ($help -split "`n" | Select-Object -First 4)
 
       - uses: actions/upload-artifact@v4
         with:
