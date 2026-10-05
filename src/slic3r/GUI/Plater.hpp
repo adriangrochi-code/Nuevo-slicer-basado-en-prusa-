@@ -341,6 +341,12 @@ public:
     bool can_set_instance_to_object() const;
     bool can_fix_through_winsdk() const;
     bool can_simplify() const;
+    // Tisma: parts imported from STEP (phase 4).
+    bool can_retessellate_cad() const;
+    void retessellate_cad();
+    void show_cad_check();
+    // Notifies the parts of the objects whose STEP model did not pass the geometry check.
+    void notify_cad_check(const std::vector<size_t>& obj_idxs);
     bool can_split_to_objects() const;
     bool can_split_to_volumes() const;
     bool can_arrange() const;

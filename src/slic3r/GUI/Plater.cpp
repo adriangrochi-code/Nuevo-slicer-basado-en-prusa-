@@ -1774,6 +1774,8 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
     // A project may contain a calibration test.
     q->update_calibration_notification();
+    // Tisma: STEP models with errors found by the B-Rep check.
+    q->notify_cad_check(obj_idxs);
 
     return obj_idxs;
 }
@@ -6531,6 +6533,105 @@ bool Plater::export_3mf(const boost::filesystem::path& output_path)
 void Plater::reload_from_disk()
 {
     p->reload_from_disk();
+}
+
+// Tisma: the selected parts which were imported from STEP and keep their B-Rep origin, as (object, volume) indices.
+static std::vector<std::pair<int, int>> selected_cad_volumes(const Selection& selection, const Model& model)
+{
+    std::set<std::pair<int, int>> out;
+    for (unsigned int idx : selection.get_volume_idxs()) {
+        const GLVolume* v = selection.get_volume(idx);
+        const int o = v->object_idx();
+        const int vi = v->volume_idx();
+        if (o < 0 || o >= int(model.objects.size()) || vi < 0 || vi >= int(model.objects[o]->volumes.size()))
+            continue;
+        if (model.objects[o]->volumes[vi]->has_cad_source())
+            out.emplace(o, vi);
+    }
+    return { out.begin(), out.end() };
+}
+
+bool Plater::can_retessellate_cad() const
+{
+    return ! selected_cad_volumes(get_selection(), p->model).empty();
+}
+
+void Plater::retessellate_cad()
+{
+    const std::vector<std::pair<int, int>> items = selected_cad_volumes(get_selection(), p->model);
+    if (items.empty())
+        return;
+    const CadSource& first = *p->model.objects[items.front().first]->volumes[items.front().second]->cad_source;
+    LoadStepDialog dlg(this, first.step->name, first.linear_deflection, first.angular_deflection, false, true);
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+    const double linear  = dlg.get_linear_precision();
+    const double angular = dlg.get_angle_precision();
+
+    Plater::TakeSnapshot snapshot(this, _L("Tessellate again"));
+    wxBusyCursor wait;
+    CadRemapStats stats;
+    std::string   errors;
+    std::set<int> changed;
+    size_t        done = 0;
+    for (const auto& [o, v] : items) {
+        ModelVolume* volume = p->model.objects[o]->volumes[v];
+        std::string error;
+        if (cad_retessellate_volume(*volume, linear, angular, &stats, error)) {
+            volume->set_new_unique_id();
+            changed.insert(o);
+            ++ done;
+        } else
+            errors += "\n" + volume->name + ": " + error;
+    }
+    for (int o : changed) {
+        p->model.objects[o]->invalidate_bounding_box();
+        p->model.objects[o]->ensure_on_bed(true);
+        changed_mesh(o);
+        sidebar().obj_list()->update_info_items(size_t(o));
+        sidebar().obj_list()->update_item_error_icon(o, -1);
+    }
+
+    std::string text = format(_u8L("%1% of %2% parts tessellated again."), done, items.size());
+    if (stats.faces_approximate > 0)
+        text += "\n" + format(_u8L("The painting of %1% faces painted only in part was projected triangle by triangle: check it."), stats.faces_approximate);
+    if (! errors.empty())
+        text += "\n" + _u8L("Errors:") + errors;
+    get_notification_manager()->push_notification(NotificationType::CustomNotification,
+        errors.empty() ? NotificationManager::NotificationLevel::PrintInfoNotificationLevel : NotificationManager::NotificationLevel::WarningNotificationLevel, text);
+}
+
+void Plater::show_cad_check()
+{
+    const std::vector<std::pair<int, int>> items = selected_cad_volumes(get_selection(), p->model);
+    wxString text;
+    for (const auto& [o, v] : items) {
+        const ModelVolume& volume = *p->model.objects[o]->volumes[v];
+        const CadSource& cad = *volume.cad_source;
+        text += from_u8(volume.name) + ": ";
+        text += cad.brep_valid ? _L("valid geometry") : _L("geometry with errors") + " (" + from_u8(cad.brep_report) + ")";
+        text += "\n" + format_wxstr(_L("STEP file: %1%, solid %2%, %3% faces, %4% triangles"), cad.step->name, cad.solid_index + 1,
+                                    cad.face_count, cad.face_ids.size());
+        text += "\n" + format_wxstr(_L("Tessellation: linear %1% mm, angular %2%"), cad.linear_deflection, cad.angular_deflection) + "\n\n";
+    }
+    if (! text.empty())
+        InfoDialog(this, _L("CAD geometry"), text).ShowModal();
+}
+
+void Plater::notify_cad_check(const std::vector<size_t>& obj_idxs)
+{
+    std::string text;
+    for (size_t o : obj_idxs) {
+        if (o >= p->model.objects.size())
+            continue;
+        for (const ModelVolume* volume : p->model.objects[o]->volumes)
+            if (volume->cad_source && ! volume->cad_source->brep_valid)
+                text += "\n" + volume->name + ": " + volume->cad_source->brep_report;
+    }
+    if (! text.empty())
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::WarningNotificationLevel,
+            _u8L("The STEP model has geometry errors (B-Rep check). Check the printed result:") + text);
 }
 
 void Plater::replace_with_stl()

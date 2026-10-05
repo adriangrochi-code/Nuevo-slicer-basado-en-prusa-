@@ -49,7 +49,15 @@ add_executable(${_TEST_NAME}_tests
     ../data/prusaparts.hpp
      test_static_map.cpp
      test_custom_parameters_handling.cpp
+     test_cad_source.cpp
  )
+
+# Tisma: the STEP import loads the OCCT wrapper from the directory of the executable.
+if (TARGET OCCTWrapper AND NOT APPLE)
+    add_dependencies(${_TEST_NAME}_tests OCCTWrapper)
+    add_custom_command(TARGET ${_TEST_NAME}_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:OCCTWrapper> $<TARGET_FILE_DIR:${_TEST_NAME}_tests>)
+endif ()
 
 if (TARGET OpenVDB::openvdb)
     target_sources(${_TEST_NAME}_tests PRIVATE test_hollowing.cpp)

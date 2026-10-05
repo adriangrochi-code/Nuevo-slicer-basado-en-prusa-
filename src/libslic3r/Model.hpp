@@ -25,6 +25,7 @@
 #include "TextConfiguration.hpp"
 #include "EmbossShape.hpp"
 #include "TriangleSelector.hpp"
+#include "CadSource.hpp"
 #include "Feature/FullSpectrum/VirtualExtruder.hpp"
 
 #include <map>
@@ -838,6 +839,11 @@ public:
     // Contain 2d information about embossed shape to be editabled
     std::optional<EmbossShape> emboss_shape; 
 
+    // Tisma: B-Rep origin of the mesh when it was imported from a STEP file (face of every triangle, STEP contents).
+    // Only valid while it matches the mesh, see CadSource::matches().
+    std::shared_ptr<const CadSource> cad_source;
+    bool                has_cad_source() const { return cad_source && cad_source->matches(this->mesh()); }
+
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; }
     ModelVolumeType     type() const { return m_type; }
@@ -1013,7 +1019,8 @@ private:
         name(other.name), source(other.source), m_mesh(other.m_mesh), m_convex_hull(other.m_convex_hull),
         config(other.config), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
         supported_facets(other.supported_facets), seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets),
-        fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
+        fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape),
+        cad_source(other.cad_source)
     {
 		assert(this->id().valid()); 
         assert(this->config.id().valid()); 
@@ -1081,6 +1088,27 @@ private:
         assert(this->mm_segmentation_facets.id().invalid());
         assert(this->fuzzy_skin_facets.id().invalid());
 	}
+    // Tisma: the STEP contents stay in the registry of CadSource.hpp, the Undo / Redo stack only keeps their key.
+    template<class Archive> void save_cad_source(Archive &ar) const {
+        const bool has_cad = cad_source && cad_source->step;
+        ar(has_cad);
+        if (has_cad)
+            ar(cad_source->step->key, cad_source->solid_index, cad_source->linear_deflection, cad_source->angular_deflection,
+               cad_face_ids_to_string(cad_source->face_ids), cad_source->face_count, cad_source->brep_valid, cad_source->brep_report);
+    }
+    template<class Archive> void load_cad_source(Archive &ar) {
+        bool has_cad = false;
+        ar(has_cad);
+        cad_source.reset();
+        if (has_cad) {
+            auto        cad = std::make_shared<CadSource>();
+            std::string key, face_ids;
+            ar(key, cad->solid_index, cad->linear_deflection, cad->angular_deflection, face_ids, cad->face_count, cad->brep_valid, cad->brep_report);
+            cad->step = cad_step_file_find(key);
+            if (cad->step && cad_face_ids_from_string(face_ids, cad->face_ids))
+                cad_source = std::move(cad);
+        }
+    }
 	template<class Archive> void load(Archive &ar) {
 		bool has_convex_hull;
         ar(name, source, m_mesh, m_type, m_material_id, m_transformation, m_is_splittable, has_convex_hull, cut_info);
@@ -1091,6 +1119,7 @@ private:
         cereal::load_by_value(ar, config);
         cereal::load(ar, text_configuration);
         cereal::load(ar, emboss_shape);
+        load_cad_source(ar);
 		assert(m_mesh);
 		if (has_convex_hull) {
 			cereal::load_optional(ar, m_convex_hull);
@@ -1110,6 +1139,7 @@ private:
         cereal::save_by_value(ar, config);
         cereal::save(ar, text_configuration);
         cereal::save(ar, emboss_shape);
+        save_cad_source(ar);
 		if (has_convex_hull)
 			cereal::save_optional(ar, m_convex_hull);
 	}

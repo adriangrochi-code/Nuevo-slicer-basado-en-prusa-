@@ -99,6 +99,10 @@ const std::string SLA_DRAIN_HOLES_FILE = "Metadata/Slic3r_PE_sla_drain_holes.txt
 const std::string CUSTOM_GCODE_PER_PRINT_Z_FILE = "Metadata/Prusa_Slicer_custom_gcode_per_print_z.xml";
 const std::string WIPE_TOWER_INFORMATION_FILE = "Metadata/Prusa_Slicer_wipe_tower_information.xml";
 const std::string CUT_INFORMATION_FILE = "Metadata/Prusa_Slicer_cut_information.xml";
+// Tisma: B-Rep origin of the volumes imported from STEP (face of every triangle) and the STEP files themselves.
+// Other slicers ignore these entries.
+const std::string TISMA_CAD_FILE = "Metadata/Tisma_cad.xml";
+const std::string TISMA_CAD_STEP_DIR = "Metadata/Tisma_CAD/";
 
 static constexpr const char *RELATIONSHIP_TAG = "Relationship";
 
@@ -525,6 +529,16 @@ namespace Slic3r {
         CurrentConfig m_curr_config;
         IdToMetadataMap m_objects_metadata;
         IdToCutObjectInfoMap m_cut_object_infos;
+        // Tisma: CAD origin of volumes, by 1 based object index, and contents of the stored STEP files by key.
+        struct CadVolumeInfo {
+            int volume_id { -1 };
+            std::string step_key, step_name, face_ids, brep_report;
+            int solid { -1 }, face_count { 0 };
+            double linear { 0. }, angular { 0. };
+            bool brep_valid { true };
+        };
+        std::map<int, std::vector<CadVolumeInfo>> m_cad_volume_infos;
+        std::map<std::string, std::string>        m_cad_step_data;
         IdToLayerHeightsProfileMap m_layer_heights_profiles;
         IdToLayerConfigRangesMap m_layer_config_ranges;
         IdToSlaSupportPointsMap m_sla_support_points;
@@ -563,6 +577,9 @@ namespace Slic3r {
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _is_svg_shape_file(const std::string &filename) const;
         void _extract_cut_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions);
+        void _extract_tisma_cad_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
+        void _extract_tisma_cad_step_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, const std::string& name);
+        void _apply_tisma_cad(ModelObject& object, int object_id);
         void _extract_layer_heights_profile_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions);
         void _extract_sla_support_points_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
@@ -700,6 +717,8 @@ namespace Slic3r {
         m_curr_config.object_id = -1;
         m_curr_config.volume_id = -1;
         m_objects_metadata.clear();
+        m_cad_volume_infos.clear();
+        m_cad_step_data.clear();
         m_layer_heights_profiles.clear();
         m_layer_config_ranges.clear();
         m_sla_support_points.clear();
@@ -823,6 +842,12 @@ namespace Slic3r {
                 else if (boost::algorithm::iequals(name, CUT_INFORMATION_FILE)) {
                     // extract slic3r layer config ranges file
                     _extract_cut_information_from_archive(archive, stat, config_substitutions);
+                }
+                else if (boost::algorithm::iequals(name, TISMA_CAD_FILE)) {
+                    _extract_tisma_cad_from_archive(archive, stat);
+                }
+                else if (boost::algorithm::istarts_with(name, TISMA_CAD_STEP_DIR)) {
+                    _extract_tisma_cad_step_from_archive(archive, stat, name);
                 }
                 else if (boost::algorithm::iequals(name, LAYER_CONFIG_RANGES_FILE)) {
                     // extract slic3r layer config ranges file
@@ -1014,6 +1039,8 @@ namespace Slic3r {
                         ModelVolume::CutInfo(CutConnectorType(connector.type), connector.r_tolerance, connector.h_tolerance, true);
                 }
             }
+
+            _apply_tisma_cad(*model_object, object.second + 1);
         }
 
         // If instances contain a single volume, the volume offset should be 0,0,0
@@ -1229,6 +1256,91 @@ namespace Slic3r {
                 CutObjectInfo cut_info {cut_id, connectors};
                 m_cut_object_infos.insert({ obj_idx, cut_info });
             }
+        }
+    }
+
+    void _3MF_Importer::_extract_tisma_cad_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat)
+    {
+        if (stat.m_uncomp_size == 0)
+            return;
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        if (mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0) == 0) {
+            add_error("Error while reading CAD information data to buffer");
+            return;
+        }
+        try {
+            std::istringstream iss(buffer);
+            pt::ptree tree;
+            pt::read_xml(iss, tree);
+            std::map<std::string, std::string> step_names;
+            for (const auto& item : tree.get_child("tisma_cad")) {
+                if (item.first == "step")
+                    step_names[item.second.get<std::string>("<xmlattr>.key", "")] = item.second.get<std::string>("<xmlattr>.name", "");
+            }
+            for (const auto& item : tree.get_child("tisma_cad")) {
+                if (item.first != "volume")
+                    continue;
+                const pt::ptree& v = item.second;
+                CadVolumeInfo info;
+                const int object_id = v.get<int>("<xmlattr>.object_id", -1);
+                info.volume_id   = v.get<int>("<xmlattr>.volume_id", -1);
+                info.step_key    = v.get<std::string>("<xmlattr>.step", "");
+                info.step_name   = step_names[info.step_key];
+                info.solid       = v.get<int>("<xmlattr>.solid", -1);
+                info.face_count  = v.get<int>("<xmlattr>.face_count", 0);
+                info.linear      = string_to_double_decimal_point(v.get<std::string>("<xmlattr>.linear_deflection", "0"));
+                info.angular     = string_to_double_decimal_point(v.get<std::string>("<xmlattr>.angular_deflection", "0"));
+                info.brep_valid  = v.get<int>("<xmlattr>.brep_valid", 1) != 0;
+                info.brep_report = v.get<std::string>("<xmlattr>.brep_report", "");
+                info.face_ids    = v.get_value<std::string>();
+                if (object_id > 0 && info.volume_id >= 0 && ! info.step_key.empty())
+                    m_cad_volume_infos[object_id].emplace_back(std::move(info));
+            }
+        } catch (const std::exception& ex) {
+            // The CAD information is optional, the model is still usable without it.
+            BOOST_LOG_TRIVIAL(warning) << "Invalid CAD information in 3MF: " << ex.what();
+            m_cad_volume_infos.clear();
+        }
+    }
+
+    void _3MF_Importer::_extract_tisma_cad_step_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, const std::string& name)
+    {
+        if (stat.m_uncomp_size == 0)
+            return;
+        std::string data((size_t)stat.m_uncomp_size, 0);
+        if (mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)data.data(), (size_t)stat.m_uncomp_size, 0) == 0) {
+            add_error("Error while reading a STEP file stored in the project");
+            return;
+        }
+        std::string key = name.substr(TISMA_CAD_STEP_DIR.size());
+        if (boost::algorithm::iends_with(key, ".step"))
+            key.erase(key.size() - 5);
+        m_cad_step_data[key] = std::move(data);
+    }
+
+    void _3MF_Importer::_apply_tisma_cad(ModelObject& object, int object_id)
+    {
+        auto it = m_cad_volume_infos.find(object_id);
+        if (it == m_cad_volume_infos.end())
+            return;
+        for (const CadVolumeInfo& info : it->second) {
+            if (info.volume_id >= int(object.volumes.size()))
+                continue;
+            auto data = m_cad_step_data.find(info.step_key);
+            if (data == m_cad_step_data.end())
+                continue;
+            ModelVolume& volume = *object.volumes[info.volume_id];
+            auto cad = std::make_shared<CadSource>();
+            // The data is copied: several volumes can share the file, the registry keeps a single copy.
+            cad->step               = cad_step_file_register(info.step_name, data->second);
+            cad->solid_index        = info.solid;
+            cad->linear_deflection  = info.linear;
+            cad->angular_deflection = info.angular;
+            cad->face_count         = info.face_count;
+            cad->brep_valid         = info.brep_valid;
+            cad->brep_report        = info.brep_report;
+            if (cad_face_ids_from_string(info.face_ids, cad->face_ids) && cad->matches(volume.mesh()))
+                volume.cad_source = std::move(cad);
         }
     }
 
@@ -2823,6 +2935,7 @@ namespace Slic3r {
         bool _add_mesh_to_object_stream(mz_zip_writer_staged_context &context, ModelObject& object, VolumeToOffsetsMap& volumes_offsets);        
         bool _add_build_to_model_stream(std::stringstream& stream, const BuildItemsList& build_items);
         bool _add_cut_information_file_to_archive(mz_zip_archive& archive, Model& model);
+        bool _add_tisma_cad_files_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model);
@@ -2891,6 +3004,13 @@ namespace Slic3r {
         // All information for object cut of all ModelObjects are stored here, indexed by 1 based index of the ModelObject in Model.
         // The index differes from the index of an object ID of an object instance of a 3MF file!
         if (!_add_cut_information_file_to_archive(archive, model)) {
+            close_zip_writer(&archive);
+            boost::filesystem::remove(filename);
+            return false;
+        }
+
+        // Tisma: STEP files of the volumes imported from CAD and the face of every triangle ("Metadata/Tisma_cad.xml").
+        if (!_add_tisma_cad_files_to_archive(archive, model)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3494,6 +3614,61 @@ namespace Slic3r {
             }
         }
 
+        return true;
+    }
+
+    bool _3MF_Exporter::_add_tisma_cad_files_to_archive(mz_zip_archive& archive, const Model& model)
+    {
+        pt::ptree tree;
+        pt::ptree& root = tree.add("tisma_cad", "");
+        root.put("<xmlattr>.version", 1);
+        std::map<std::string, const CadStepFile*> steps;
+        bool any = false;
+        int object_id = 0;
+        for (const ModelObject* object : model.objects) {
+            ++ object_id;
+            for (size_t volume_id = 0; volume_id < object->volumes.size(); ++ volume_id) {
+                const ModelVolume* volume = object->volumes[volume_id];
+                if (! volume->has_cad_source())
+                    continue;
+                const CadSource& cad = *volume->cad_source;
+                steps[cad.step->key] = cad.step.get();
+                pt::ptree& v = root.add("volume", cad_face_ids_to_string(cad.face_ids));
+                v.put("<xmlattr>.object_id", object_id);
+                v.put("<xmlattr>.volume_id", volume_id);
+                v.put("<xmlattr>.step", cad.step->key);
+                v.put("<xmlattr>.solid", cad.solid_index);
+                v.put("<xmlattr>.face_count", cad.face_count);
+                v.put("<xmlattr>.linear_deflection", float_to_string_decimal_point(cad.linear_deflection));
+                v.put("<xmlattr>.angular_deflection", float_to_string_decimal_point(cad.angular_deflection));
+                v.put("<xmlattr>.brep_valid", cad.brep_valid ? 1 : 0);
+                if (! cad.brep_report.empty())
+                    v.put("<xmlattr>.brep_report", cad.brep_report);
+                any = true;
+            }
+        }
+        if (! any)
+            return true;
+
+        for (const auto& [key, step] : steps) {
+            pt::ptree& s = root.add("step", "");
+            s.put("<xmlattr>.key", key);
+            s.put("<xmlattr>.name", step->name);
+            const std::string entry = TISMA_CAD_STEP_DIR + key + ".step";
+            if (!mz_zip_writer_add_mem(&archive, entry.c_str(), (const void*)step->data.data(), step->data.size(), MZ_DEFAULT_COMPRESSION)) {
+                add_error("Unable to add a STEP file to archive");
+                return false;
+            }
+        }
+
+        std::ostringstream oss;
+        pt::write_xml(oss, tree);
+        std::string out = oss.str();
+        boost::replace_all(out, "><", ">\n<");
+        if (!mz_zip_writer_add_mem(&archive, TISMA_CAD_FILE.c_str(), (const void*)out.data(), out.length(), MZ_DEFAULT_COMPRESSION)) {
+            add_error("Unable to add CAD information file to archive");
+            return false;
+        }
         return true;
     }
 

@@ -31745,3 +31745,105 @@ msgstr "Configuración"
 
 msgid "Printer, filament and process profiles; preferences"
 msgstr "Perfiles de impresora, filamento y proceso; preferencias"
+
+msgid "Structural analysis at the working temperature (in development)"
+msgstr "Análisis estructural a la temperatura de trabajo (en desarrollo)"
+
+msgid ""
+"Structural analysis of the part in its working conditions: set the ambient temperature where the part will be used, "
+"place the supports and the loads, and see stresses and displacements on the part."
+msgstr ""
+"Análisis estructural de la pieza en sus condiciones de trabajo: indica la temperatura ambiente donde se usará la "
+"pieza, coloca los apoyos y las cargas, y mira las tensiones y desplazamientos sobre la pieza."
+
+msgid "Working temperature"
+msgstr "Temperatura de trabajo"
+
+msgid ""
+"A single ambient temperature for the whole part, like a heated chamber (for example 130 °C). It changes the "
+"stiffness and strength of the material; there is no heat conduction analysis. A warning is shown when the "
+"temperature is close to or above the glass transition of the material."
+msgstr ""
+"Una sola temperatura ambiente para toda la pieza, como una cámara caliente (por ejemplo 130 °C). Cambia la "
+"rigidez y la resistencia del material; no hay análisis de conducción de calor. Se avisa cuando la temperatura "
+"se acerca o supera la transición vítrea del material."
+
+msgid "Supports and loads"
+msgstr "Apoyos y cargas"
+
+msgid ""
+"Paint the fixed faces, and place loads on specific points or faces with their components X, Y and Z in newtons. "
+"Several load cases are saved in the project."
+msgstr ""
+"Pinta las caras fijas y coloca cargas en puntos o caras concretas con sus componentes X, Y y Z en newtons. "
+"Los casos de carga se guardan en el proyecto."
+
+msgid ""
+"Orthotropic material: the strength between layers is lower than along the extrusions. PLA and PETG with editable "
+"properties that depend on the temperature."
+msgstr ""
+"Material ortótropo: la resistencia entre capas es menor que a lo largo de las extrusiones. PLA y PETG con "
+"propiedades editables que dependen de la temperatura."
+
+msgid "Displacement, von Mises stress and safety factor shown with colors on the model."
+msgstr "Desplazamiento, tensión de von Mises y factor de seguridad mostrados con colores sobre el modelo."
+
+msgid "Tessellate again (%1%)"
+msgstr "Volver a teselar (%1%)"
+
+msgid "Tessellate again"
+msgstr "Volver a teselar"
+
+msgid "Tessellate again the selected parts from their STEP model with another precision, keeping the painting"
+msgstr "Vuelve a teselar las piezas seleccionadas desde su modelo STEP con otra precisión, conservando lo pintado"
+
+msgid "Check CAD geometry"
+msgstr "Comprobar geometría CAD"
+
+msgid "Show the result of the geometry check of the STEP model of the selected parts"
+msgstr "Muestra el resultado de la comprobación geométrica del modelo STEP de las piezas seleccionadas"
+
+msgid "%1% of %2% parts tessellated again."
+msgstr "%1% de %2% piezas teseladas de nuevo."
+
+msgid "The painting of %1% faces painted only in part was projected triangle by triangle: check it."
+msgstr "Lo pintado en %1% caras pintadas solo en parte se proyectó triángulo a triángulo: revísalo."
+
+msgid "Errors:"
+msgstr "Errores:"
+
+msgid "valid geometry"
+msgstr "geometría válida"
+
+msgid "geometry with errors"
+msgstr "geometría con errores"
+
+msgid "STEP file: %1%, solid %2%, %3% faces, %4% triangles"
+msgstr "Archivo STEP: %1%, sólido %2%, %3% caras, %4% triángulos"
+
+msgid "Tessellation: linear %1% mm, angular %2%"
+msgstr "Teselado: lineal %1% mm, angular %2%"
+
+msgid "CAD geometry"
+msgstr "Geometría CAD"
+
+msgid "The STEP model has geometry errors (B-Rep check). Check the printed result:"
+msgstr "El modelo STEP tiene errores geométricos (comprobación B-Rep). Revisa el resultado impreso:"
+
+msgid ""
+"Table of printing materials (PLA, PETG, ABS, ASA, PC, PA, ...) with their properties and how they change with the "
+"temperature. The material of the filament selected for printing is used by default. Orthotropic: the strength "
+"between layers is lower than along the extrusions."
+msgstr ""
+"Tabla de materiales de impresión (PLA, PETG, ABS, ASA, PC, PA, ...) con sus propiedades y cómo cambian con la "
+"temperatura. Por defecto se usa el material del filamento elegido para imprimir. Ortótropo: la resistencia "
+"entre capas es menor que a lo largo de las extrusiones."
+
+msgid ""
+"Displacement, von Mises stress and safety factor shown with colors on the model, and a clear verdict: the part "
+"holds, it is out of load, or the temperature is too high for the material, with materials of the table that "
+"would work."
+msgstr ""
+"Desplazamiento, tensión de von Mises y factor de seguridad con colores sobre el modelo, y un veredicto claro: la "
+"pieza aguanta, está fuera de carga o la temperatura es demasiado alta para el material, con los materiales de la "
+"tabla que sí servirían."

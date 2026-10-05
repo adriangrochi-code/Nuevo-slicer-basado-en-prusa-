@@ -98,21 +98,26 @@ void WorkspacePage::sys_color_changed()
 WorkspacePage* create_engineering_page(wxWindow* parent)
 {
     return new WorkspacePage(parent, _L("Engineering"),
-        _L("Mechanical and thermal analysis of the part before printing it: paint fixed faces and loads on the model, "
-           "run a finite element simulation and see stresses and displacements on the part."),
+        _L("Structural analysis of the part in its working conditions: set the ambient temperature where the part "
+           "will be used, place the supports and the loads, and see stresses and displacements on the part."),
         {
-            { _L("Boundary conditions"),
-              _L("Paint fixed faces, forces and pressures on the model with the painting tool, with direction, magnitude "
-                 "and load cases. They are saved in the project."), 5 },
+            { _L("Working temperature"),
+              _L("A single ambient temperature for the whole part, like a heated chamber (for example 130 \u00B0C). "
+                 "It changes the stiffness and strength of the material; there is no heat conduction analysis. "
+                 "A warning is shown when the temperature is close to or above the glass transition of the material."), 5 },
+            { _L("Supports and loads"),
+              _L("Paint the fixed faces, and place loads on specific points or faces with their components X, Y and Z "
+                 "in newtons. Several load cases are saved in the project."), 5 },
             { _L("Material"),
-              _L("Orthotropic material: the strength between layers is lower than along the extrusions. PLA and PETG "
-                 "with editable properties."), 5 },
+              _L("Table of printing materials (PLA, PETG, ABS, ASA, PC, PA, ...) with their properties and how they change "
+                 "with the temperature. The material of the filament selected for printing is used by default. "
+                 "Orthotropic: the strength between layers is lower than along the extrusions."), 5 },
             { _L("Simulation"),
               _L("Linear finite element analysis on a voxel grid of the part, run in the background and cancellable."), 5 },
             { _L("Results"),
-              _L("Displacement, von Mises stress and principal stresses shown with colors on the model."), 5 },
-            { _L("Thermal analysis"),
-              _L("Steady state heat conduction with imposed temperatures and heat flows."), 5 },
+              _L("Displacement, von Mises stress and safety factor shown with colors on the model, and a clear verdict: "
+                 "the part holds, it is out of load, or the temperature is too high for the material, with materials "
+                 "of the table that would work."), 5 },
         });
 }
 

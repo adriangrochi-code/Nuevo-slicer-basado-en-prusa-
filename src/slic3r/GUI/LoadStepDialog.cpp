@@ -40,8 +40,8 @@ static std::vector<std::pair<std::string, PrecisionParams>> default_step_import_
     {"High"     , {0.001, 0.25}},
 };
 
-LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading)
-        : DPIDialog(parent, wxID_ANY, format_wxstr(_L("STEP import quality (%1%)"), filename), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading, bool retessellate)
+        : DPIDialog(parent, wxID_ANY, format_wxstr(retessellate ? _L("Tessellate again (%1%)") : _L("STEP import quality (%1%)"), filename), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
         m_params({ linear_precision, angle_precision })
 {
 
@@ -64,6 +64,8 @@ LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, do
     m_remember_chb = new ::CheckBox(this, _L("Remember my choice"));
 
     bottom_sizer->Add(m_remember_chb, 0, wxEXPAND | wxRIGHT, 5);
+    if (retessellate)
+        m_remember_chb->Hide();
     bottom_sizer->AddStretchSpacer();
 
     auto buttons_sizer = CreateStdDialogButtonSizer(wxOK | wxCANCEL);

@@ -866,7 +866,7 @@ void MainFrame::create_nav_rail()
     m_tabpanel->AddNewPage(m_engineering_page, _L("Engineering"), "", false);
     NavRail::Item engineering;
     engineering.label       = _L("Engineering");
-    engineering.tooltip     = _L("Mechanical and thermal analysis (in development)");
+    engineering.tooltip     = _L("Structural analysis at the working temperature (in development)");
     engineering.icon        = "wrench";
     engineering.on_click    = [this, select_page]() { select_page(m_engineering_page); };
     engineering.is_selected = [this, current_page]() { return current_page() == m_engineering_page; };

@@ -8,10 +8,13 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
+#include "libslic3r/CadSource.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/nowide/fstream.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <string>
 #include <functional>
@@ -109,10 +112,39 @@ bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn
     else
         new_object->name = occt_object.object_name;
 
+    // Tisma: the STEP file is kept with the project, so that the parts can be tessellated again (phase 4).
+    std::shared_ptr<const CadStepFile> step_file;
+    {
+        constexpr std::streamoff max_size = std::streamoff(256) * 1024 * 1024;
+        boost::nowide::ifstream in(path, std::ios::binary | std::ios::ate);
+        const std::streamoff size = in ? std::streamoff(in.tellg()) : std::streamoff(-1);
+        if (size > 0 && size <= max_size) {
+            std::string data(size_t(size), '\0');
+            in.seekg(0);
+            if (in.read(data.data(), size))
+                step_file = cad_step_file_register(boost::filesystem::path(path).filename().string(), std::move(data));
+        } else if (size > max_size)
+            BOOST_LOG_TRIVIAL(warning) << "STEP file " << path << " is too big to be stored in the project";
+    }
+    const double linear_deflection  = deflections.has_value() ? deflections->first  : OCCT_DEFAULT_LINEAR_DEFLECTION;
+    const double angular_deflection = deflections.has_value() ? deflections->second : OCCT_DEFAULT_ANGULAR_DEFLECTION;
+
     for (size_t i = 0; i < occt_object.volumes.size(); ++i) {
         TriangleMesh triangle_mesh;
-        triangle_mesh.from_facets(std::move(occt_object.volumes[i].facets));
+        std::vector<uint16_t> face_tags;
+        triangle_mesh.from_facets(std::move(occt_object.volumes[i].facets), true, face_tags);
         ModelVolume* new_volume = new_object->add_volume(std::move(triangle_mesh));
+
+        auto cad = std::make_shared<CadSource>();
+        cad->step               = step_file;
+        cad->solid_index        = occt_object.volumes[i].solid_index;
+        cad->linear_deflection  = linear_deflection;
+        cad->angular_deflection = angular_deflection;
+        cad->face_ids           = cad_face_ids_from_tags(face_tags);
+        cad->face_count         = occt_object.volumes[i].face_count;
+        cad->brep_valid         = occt_object.volumes[i].brep_valid;
+        cad->brep_report        = occt_object.volumes[i].brep_report;
+        new_volume->cad_source  = std::move(cad);
 
         new_volume->name = occt_object.volumes[i].volume_name.empty()
                        ? std::string("Part") + std::to_string(i + 1)
@@ -123,6 +155,29 @@ bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn
     }
 
     return true;
+}
+
+bool step_tessellate_solid(const char *path, int solid_index, double linear_deflection, double angular_deflection,
+                           TriangleMesh &mesh_out, std::vector<uint16_t> &face_tags_out, std::string &error)
+{
+    LoadStepFn load_step_fn = get_load_step_fn();
+    if (! load_step_fn) {
+        error = "The STEP import library is not available";
+        return false;
+    }
+    OCCTResult result;
+    if (! load_step_fn(path, &result, std::make_pair(linear_deflection, angular_deflection))) {
+        error = result.error_str.empty() ? std::string("Cannot read the STEP model") : result.error_str;
+        return false;
+    }
+    for (OCCTVolume &volume : result.volumes)
+        if (volume.solid_index == solid_index) {
+            mesh_out = TriangleMesh();
+            mesh_out.from_facets(std::move(volume.facets), true, face_tags_out);
+            return true;
+        }
+    error = "The solid was not found in the STEP model";
+    return false;
 }
 
 }; // namespace Slic3r

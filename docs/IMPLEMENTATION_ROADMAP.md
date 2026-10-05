@@ -13,7 +13,8 @@ Sustituye a `doc/TismaRoadmap.md` como plan de referencia (aquel queda como hist
 - **Dependencias**: ninguna. **Riesgos**: 11, 17. **Pruebas**: guion de humo con Xvfb. **Complejidad**: 2.
 
 ### Importación STEP y geometría CAD
-- **Existe**: importación STEP con OCCT 7.6.1 y teselado configurable; el B-Rep se descarta.
+- **Estado**: hecho en la Fase 4, ver la sección 5.
+- **Existía**: importación STEP con OCCT 7.6.1 y teselado configurable; el B-Rep se descartaba.
 - **Reutilizable**: `occt_wrapper`, `LoadStepDialog`, `Format/STEP.cpp`.
 - **Falta**: guardar el STEP en el proyecto; id de cara por triángulo; retesselado; detección de errores geométricos (`BRepCheck`).
 - **Módulos**: `occt_wrapper`, `Format/STEP.cpp`, `Format/3mf.cpp`, `ModelVolume`. **Nuevos**: `libslic3r/Cad/` (referencia al B-Rep y mapa cara↔triángulo).
@@ -32,10 +33,24 @@ Sustituye a `doc/TismaRoadmap.md` como plan de referencia (aquel queda como hist
 - **Nuevos**: `src/libtisma_fea/`; visualización de campos en `GLCanvas3D` (mapa de colores sobre la pieza).
 - **Dependencias**: Eigen (ya); opcional AMGCL. **Riesgos**: 3, 4. **Pruebas**: barra a tracción, voladizo, patch test, convergencia, comparación con CalculiX. **Complejidad**: 4.
 
-### FEA térmico
-- **Existe**: nada. **Reutilizable**: la malla y el ensamblado del FEA mecánico (conducción estacionaria es más simple).
-- **Falta**: condiciones térmicas, conductividad, resultados. **Dependencias**: ninguna nueva.
-- **Riesgos**: 3. **Pruebas**: placa con temperaturas impuestas (solución analítica lineal). **Complejidad**: 3 (después del mecánico).
+### Temperatura de trabajo (decisión del usuario, 2026-10-05)
+- **Decisión**: no se hará conducción térmica. El análisis usa **una temperatura ambiente uniforme** para toda la
+  pieza, como una cámara caliente (por ejemplo 130 °C), más las **cargas puntuales o por cara en N (componentes X, Y, Z)**
+  y las caras fijas.
+- **Efecto**: la temperatura cambia el módulo y la resistencia del material (tablas E(T), σ(T) por material, editables);
+  dilatación térmica libre opcional más adelante. Aviso claro cuando la temperatura se acerca o supera la transición
+  vítrea (PLA ≈ 55–60 °C, PETG ≈ 75–80 °C): a 130 °C ninguno de los dos sirve estructuralmente, y el resultado lo debe
+  decir en lugar de dar un número engañoso.
+- **Tabla de materiales** (pedido del usuario): todos los materiales de impresión habituales (PLA, PETG, ABS, ASA,
+  PC, PA/PA-CF, TPU, PEI/PEKK, …) con módulo y resistencia en XY y entre capas, temperatura de transición vítrea /
+  HDT y curva con la temperatura. Por defecto se toma el material del filamento elegido para imprimir
+  (`filament_type` del perfil); se puede cambiar y editar. Los valores son de bibliografía y fichas técnicas, con su
+  fuente, y se marcan como aproximados.
+- **Veredicto**: además de los mapas de color, un resumen claro: «aguanta» (factor de seguridad ≥ el elegido),
+  «fuera de carga» (tensión mayor que la resistencia a esa temperatura, con la zona marcada) o «fuera de temperatura»
+  (temperatura de trabajo por encima del límite del material), sugiriendo materiales de la tabla que sí servirían.
+- **Pruebas**: la misma barra a tracción a dos temperaturas da desplazamientos en la razón E(T1)/E(T2). **Complejidad**: 1
+  (sobre el FEA mecánico).
 
 ### Relleno adaptativo híbrido guiado por FEA
 - **Existe**: cúbico adaptativo (geométrico); modificadores de densidad; relleno denso bajo techos (fork).
@@ -108,7 +123,7 @@ Sustituye a `doc/TismaRoadmap.md` como plan de referencia (aquel queda como hist
 | 8 | Aceleración | Decisión sobre Vulkan con mediciones; cómputo GPU opcional. |
 | 9 | Estabilización | Pruebas, benchmarks, documentación, versión pública (con las obligaciones de la AGPL). |
 
-Las calibraciones restantes y el FEA térmico pueden intercalarse donde convenga.
+Las calibraciones restantes pueden intercalarse donde convenga. La temperatura de trabajo entra en la Fase 5.
 
 ## 3. Estado de la Fase 2 (consolidación)
 
@@ -133,7 +148,30 @@ Las calibraciones restantes y el FEA térmico pueden intercalarse donde convenga
 | Páginas de ajustes con títulos planos (separador + título violeta) en lugar de recuadros, solo en las pestañas de ajustes; el resto de grupos no cambia | Hecho; probado en Proceso, Impresora y G-code personalizado |
 | Verificación en Windows | Pendiente del CI |
 
-## 5. Decisiones pendientes (para el usuario)
+## 5. Estado de la Fase 4 (geometría CAD)
+
+| Tarea | Estado |
+|---|---|
+| Id de cara B-Rep por triángulo: el wrapper OCCT escribe el índice de cara (orden de `TopExp_Explorer`) en `stl_facet::extra`; la reparación de admesh mueve y borra facetas pero la etiqueta viaja con ellas; `TriangleMesh::from_facets(..., facet_tags)` la devuelve | Hecho, con prueba |
+| `CadSource` en `ModelVolume` (`libslic3r/CadSource.hpp`): STEP compartido, sólido, desviaciones del teselado, cara por triángulo, resultado de `BRepCheck`. Solo vale mientras coincide con la malla (mismo número de triángulos); dividir o cortar la pieza lo descarta | Hecho |
+| STEP guardado en el proyecto: `Metadata/Tisma_CAD/<clave>.step` + `Metadata/Tisma_cad.xml` (cara por triángulo en tramos `cara*n`). Entradas que otros laminadores ignoran; un 3MF sin ellas carga igual | Hecho, con prueba de ida y vuelta |
+| Deshacer / rehacer: la pila guarda la clave del STEP y los tramos, el contenido queda en un registro de la sesión | Hecho |
+| Volver a teselar (menú contextual de objeto y pieza): vuelve a leer el STEP guardado, recupera la posición actual (ajuste afín contra el teselado original, cubre mover, escalar y espejar) y reproyecta soportes, costura, multimaterial y piel difusa por cara | Hecho, con prueba |
+| Detección de errores geométricos con `BRepCheck_Analyzer`: aviso al importar y comando «Comprobar geometría CAD» | Hecho; prueba con STEP válido (falta un STEP defectuoso de referencia) |
+| Actualizar OCCT | No hecho: es opcional y cambiaría la receta de dependencias de Windows; se deja para cuando haga falta |
+
+Decisiones y límites:
+
+- Las caras pintadas enteras se copian exactas. Las pintadas en parte se reproyectan triángulo a triángulo (cada
+  triángulo nuevo toma el estado de la zona pintada más cercana de la misma cara), sin subdividir; el aviso dice
+  cuántas caras se aproximaron. Es suficiente para condiciones de contorno por cara (Fase 5).
+- Máximo 65 534 caras por sólido con id (16 bits de `extra`); por encima las caras quedan sin id y se reproyectan
+  por distancia.
+- Un STEP de más de 256 MB no se guarda en el proyecto.
+- Si la malla se editó (simplificar, reparar, editar vértices), volver a teselar se rechaza en lugar de adivinar.
+- Los STEP se guardan dentro del 3MF: el proyecto crece lo que ocupa el STEP comprimido.
+
+## 6. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|
