@@ -6612,7 +6612,7 @@ void Plater::show_cad_check()
         text += cad.brep_valid ? _L("valid geometry") : _L("geometry with errors") + " (" + from_u8(cad.brep_report) + ")";
         text += "\n" + format_wxstr(_L("STEP file: %1%, solid %2%, %3% faces, %4% triangles"), cad.step->name, cad.solid_index + 1,
                                     cad.face_count, cad.face_ids.size());
-        text += "\n" + format_wxstr(_L("Tessellation: linear %1% mm, angular %2%"), cad.linear_deflection, cad.angular_deflection) + "\n\n";
+        text += "\n" + format_wxstr(_L("Tessellation: linear %1% mm, angular %2%°"), cad.linear_deflection, cad.angular_deflection) + "\n\n";
     }
     if (! text.empty())
         InfoDialog(this, _L("CAD geometry"), text).ShowModal();

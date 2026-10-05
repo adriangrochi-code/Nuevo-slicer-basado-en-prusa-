@@ -31821,8 +31821,8 @@ msgstr "geometría con errores"
 msgid "STEP file: %1%, solid %2%, %3% faces, %4% triangles"
 msgstr "Archivo STEP: %1%, sólido %2%, %3% caras, %4% triángulos"
 
-msgid "Tessellation: linear %1% mm, angular %2%"
-msgstr "Teselado: lineal %1% mm, angular %2%"
+msgid "Tessellation: linear %1% mm, angular %2%°"
+msgstr "Teselado: lineal %1% mm, angular %2%°"
 
 msgid "CAD geometry"
 msgstr "Geometría CAD"
