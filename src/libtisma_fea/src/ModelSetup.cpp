@@ -41,7 +41,9 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
     const ConfigOption *top        = cfg.option("top_solid_layers");
     const ConfigOption *bottom     = cfg.option("bottom_solid_layers");
     infill.enabled              = true;
-    infill.wall_thickness       = (perimeters ? perimeters->getInt() : 2) * w;
+    infill.perimeters           = perimeters ? perimeters->getInt() : 2;
+    infill.perimeter_width      = w;
+    infill.wall_thickness       = infill.perimeters * w;
     infill.top_bottom_thickness = std::max(top ? top->getInt() : 3, bottom ? bottom->getInt() : 3) * layer_height;
     const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density");
     infill.density = density ? std::clamp(density->value * 0.01, 0., 1.) : 0.2;

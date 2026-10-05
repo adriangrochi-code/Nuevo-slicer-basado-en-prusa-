@@ -6,10 +6,13 @@ add_library(libtisma_fea STATIC
     include/tisma_fea/Analysis.hpp
     include/tisma_fea/ModelSetup.hpp
     include/tisma_fea/Optimize.hpp
+    include/tisma_fea/Structures.hpp
+    src/CellsMesh.hpp
     src/Materials.cpp
     src/Analysis.cpp
     src/ModelSetup.cpp
     src/Optimize.cpp
+    src/Structures.cpp
 )
 target_include_directories(libtisma_fea PUBLIC include)
 target_link_libraries(libtisma_fea PUBLIC libslic3r)

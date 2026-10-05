@@ -227,21 +227,63 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
         return Vec3d(grid.origin + h * (ijk.cast<double>() + Vec3d(0.5, 0.5, 0.5)));
     };
 
-    // Density of the infill of every voxel: the part, then the zones, or the field.
-    std::vector<double> rho(n_el, std::clamp(infill.density, 0., 1.));
+    // Infill of every voxel: density, stiffness and strength factors and the wall thickness. The part, then the
+    // zones in order, or the field.
+    const double base = std::clamp(infill.density, 0., 1.);
+    auto stiff = [](double d, double n) { return std::pow(std::max(d, 0.02), n); };
+    std::vector<double> rho(n_el, base), s_inf(n_el, stiff(base, infill.stiffness_exponent)),
+                        t_inf(n_el, stiff(base, infill.strength_exponent)), wall(n_el, infill.wall_thickness);
+    auto index_of = [&](int v) -> long long {
+        const auto it = std::lower_bound(grid.voxels.begin(), grid.voxels.end(), v);
+        return it != grid.voxels.end() && *it == v ? (long long)(it - grid.voxels.begin()) : -1;
+    };
     if (infill.density_field) {
-        for (size_t e = 0; e < n_el; ++ e)
-            rho[e] = std::clamp(infill.density_field(voxel_center(e)), 0., 1.);
-    } else {
-        for (const InfillZone &zone : infill.zones) {
+        for (size_t e = 0; e < n_el; ++ e) {
+            rho[e]   = std::clamp(infill.density_field(voxel_center(e)), 0., 1.);
+            s_inf[e] = stiff(rho[e], infill.stiffness_exponent);
+            t_inf[e] = stiff(rho[e], infill.strength_exponent);
+        }
+    }
+    for (const InfillZone &zone : infill.zones) {
+        const double d  = std::clamp(zone.density, 0., 1.);
+        const double nE = zone.stiffness_exponent > 0. ? zone.stiffness_exponent : infill.stiffness_exponent;
+        const double nS = zone.strength_exponent  > 0. ? zone.strength_exponent  : infill.strength_exponent;
+        if (zone.volume_fraction) {
+            // Fraction of each voxel inside the mesh, from a grid 3 times finer.
+            constexpr int sub = 3;
+            Grid fine;
+            fine.h      = h / sub;
+            fine.origin = grid.origin;
+            fine.size   = grid.size * sub;
+            std::vector<int> inside;
+            if (! voxelize_on_grid(zone.mesh, fine, inside, cancel))
+                return false;
+            std::vector<int> count(n_el, 0);
+            for (int v : inside) {
+                const Vec3i f = fine.voxel_ijk(v);
+                const long long e = index_of(int(grid.voxel_index(f.x() / sub, f.y() / sub, f.z() / sub)));
+                if (e >= 0)
+                    ++ count[e];
+            }
+            for (size_t e = 0; e < n_el; ++ e)
+                if (count[e] > 0) {
+                    const double f = double(count[e]) / double(sub * sub * sub);
+                    rho[e]   = f * d + (1. - f) * rho[e];
+                    s_inf[e] = f * stiff(d, nE) + (1. - f) * s_inf[e];
+                    t_inf[e] = f * stiff(d, nS) + (1. - f) * t_inf[e];
+                }
+        } else {
             std::vector<int> inside;
             if (! voxelize_on_grid(zone.mesh, grid, inside, cancel))
                 return false;
-            for (int v : inside) {
-                const auto it = std::lower_bound(grid.voxels.begin(), grid.voxels.end(), v);
-                if (it != grid.voxels.end() && *it == v)
-                    rho[it - grid.voxels.begin()] = std::clamp(zone.density, 0., 1.);
-            }
+            for (int v : inside)
+                if (const long long e = index_of(v); e >= 0) {
+                    rho[e]   = d;
+                    s_inf[e] = stiff(d, nE);
+                    t_inf[e] = stiff(d, nS);
+                    if (zone.wall_thickness >= 0.)
+                        wall[e] = zone.wall_thickness;
+                }
         }
     }
 
@@ -257,14 +299,13 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
         const float d2 = AABBTreeIndirect::squared_distance_to_indexed_triangle_set(mesh.vertices, mesh.indices, tree, c, hit_idx, hit_point);
         const double d = d2 >= 0.f ? std::sqrt(double(d2)) : 0.;
         const double nz = std::abs(its_face_normal(mesh, int(hit_idx)).z());
-        const double t = nz > 0.7 ? infill.top_bottom_thickness : infill.wall_thickness;
+        const double t = nz > 0.7 ? infill.top_bottom_thickness : wall[e];
         // Fraction of the voxel (along the normal) inside the shell.
         const double shell = std::clamp((t - (d - 0.5 * h)) / h, 0., 1.);
-        const double r = std::max(rho[e], 0.02);
         out.interior[e]  = shell < 1.;
         out.density[e]   = float(shell + (1. - shell) * rho[e]);
-        out.stiffness[e] = float(shell + (1. - shell) * std::pow(r, infill.stiffness_exponent));
-        out.strength[e]  = float(shell + (1. - shell) * std::pow(r, infill.strength_exponent));
+        out.stiffness[e] = float(shell + (1. - shell) * s_inf[e]);
+        out.strength[e]  = float(shell + (1. - shell) * t_inf[e]);
     }
     return true;
 }

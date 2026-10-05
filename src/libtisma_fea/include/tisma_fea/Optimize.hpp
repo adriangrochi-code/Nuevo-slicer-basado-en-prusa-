@@ -22,6 +22,8 @@ struct OptimizeOptions
     int    zone_levels { 3 };
     // Edge of the cells of the zones [mm], 0 = automatic (3 voxels, at least 3 mm).
     double zone_cell { 0. };
+    // Zones always applied over the searched infill (local reinforcements).
+    std::vector<InfillZone> fixed_zones;
 };
 
 struct OptimizeResult

@@ -11,6 +11,7 @@
 #include "tisma_fea/Materials.hpp"
 #include "tisma_fea/ModelSetup.hpp"
 #include "tisma_fea/Optimize.hpp"
+#include "tisma_fea/Structures.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
@@ -504,4 +505,178 @@ TEST_CASE("Infill of an object from its print settings, applied back", "[FEA]")
     INFO("optimizer mass " << opt.zoned.mass << " applied " << applied.mass);
     CHECK(meets_requirements(applied));
     CHECK(applied.mass == Approx(opt.zoned.mass).epsilon(0.02));
+}
+
+TEST_CASE("Local reinforcement around supports and loads", "[FEA]")
+{
+    indexed_triangle_set its;
+    Setup setup = printed_cantilever(its, 25., 0.);
+    // A point load near the free end on the top face.
+    setup.loads.front().type   = Load::Type::Point;
+    setup.loads.front().point  = Vec3d(75., 5., 10.);
+    setup.loads.front().radius = 3.;
+    setup.infill.perimeters      = 2;
+    setup.infill.perimeter_width = 0.45;
+    ReinforcementOptions options;
+    options.radius = 6.;
+    const InfillZone zone = reinforcement_zone(its, setup, options);
+    REQUIRE(! zone.mesh.indices.empty());
+    CHECK(its_num_open_edges(zone.mesh) == 0);
+    CHECK(zone.wall_thickness == Approx(setup.infill.wall_thickness + 2 * 0.45));
+    BoundingBoxf3 bb;
+    for (const Vec3f &v : zone.mesh.vertices)
+        bb.merge(v.cast<double>());
+    // Around the clamped face (x = 0) and the load (x = 75), nothing in the middle of the bar.
+    CHECK(bb.min.x() < 0.);
+    CHECK(bb.max.x() > 78.);
+
+    // Same infill, with and without the reinforcement: stronger with it.
+    const Result plain = analyze(its, setup);
+    Setup reinforced = setup;
+    InfillZone z = zone;
+    z.density = std::max(z.density, setup.infill.density);
+    reinforced.infill.zones = { z };
+    const Result strong = analyze(its, reinforced);
+    REQUIRE(plain.ok);
+    REQUIRE(strong.ok);
+    INFO("safety plain " << plain.safety_factor << " reinforced " << strong.safety_factor << " mass " << plain.mass << " / " << strong.mass);
+    CHECK(strong.safety_factor > plain.safety_factor);
+    CHECK(strong.mass > plain.mass);
+
+    // Lightest infill with and without the reinforcement.
+    setup.required_safety_factor = 2.;
+    const ReinforcementResult res = optimize_reinforcement(its, setup, options);
+    REQUIRE(res.ok);
+    INFO("without " << res.without.uniform_density << " (" << res.without.uniform.mass << " g), with "
+         << res.with.uniform_density << " (" << res.with.uniform.mass << " g)");
+    REQUIRE(res.without.feasible);
+    REQUIRE(res.with.feasible);
+    CHECK(meets_requirements(res.with.uniform));
+    CHECK(res.with.uniform_density <= res.without.uniform_density);
+}
+
+TEST_CASE("Lattice struts are printable and closed", "[FEA]")
+{
+    LatticeGrid grid;
+    grid.origin = Vec3d::Zero();
+    grid.cell   = 10.;
+    grid.cells  = Vec3i(1, 1, 1);
+    LatticeOptions options;
+    options.segments = 6;
+    const indexed_triangle_set its = lattice_mesh(grid, options, [](const Vec3d &) { return 1.2; });
+    // 4 vertical struts and 2 crosses on each of the 4 side faces of the cell, 4 * 6 triangles each.
+    CHECK(its.indices.size() == size_t(12 * 4 * 6));
+    CHECK(its_num_open_edges(its) == 0);
+    // No horizontal strut: every prism goes up at least 45 degrees (checked on the cap centers, the last 2 vertices
+    // of each strut).
+    const size_t per_strut = 2 * 6 + 2;
+    for (size_t s = 0; s < its.vertices.size() / per_strut; ++ s) {
+        const Vec3f a = its.vertices[s * per_strut + 12], b = its.vertices[s * per_strut + 13];
+        const Vec3f d = b - a;
+        CHECK(std::abs(d.z()) >= 0.99f * Vec2f(d.x(), d.y()).norm());
+    }
+}
+
+TEST_CASE("Lattice instead of the infill", "[FEA]")
+{
+    // Block 30 x 30 x 30 standing on its bottom face, pressed on the top face.
+    const indexed_triangle_set its = its_make_cube(30., 30., 30.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.required_safety_factor = 2.;
+    setup.fixtures.push_back({ side(its, 2, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 2, true);
+    load.force     = Vec3d(0., 0., -6000.);
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.9;
+    LatticeOptions options;
+    options.cell = 7.5;
+    const LatticeResult res = optimize_lattice(its, setup, options);
+    REQUIRE(res.ok);
+    INFO("uniform " << res.uniform_diameter << " mm, mass " << res.uniform.mass << " g, safety " << res.uniform.safety_factor
+         << "; variable " << res.variable_found << " " << res.min_used_diameter << "-" << res.max_used_diameter
+         << " mm, mass " << res.variable.mass << "; analyses " << res.analyses);
+    REQUIRE(res.feasible);
+    CHECK(meets_requirements(res.uniform));
+    CHECK(res.uniform_diameter >= options.min_diameter);
+    CHECK(res.uniform_diameter <= options.max_diameter);
+    CHECK(! res.mesh.indices.empty());
+    // Lighter than the solid block (33.5 g of PLA).
+    CHECK(res.uniform.mass < res.uniform.solid_mass);
+    if (res.variable_found) {
+        CHECK(meets_requirements(res.variable));
+        CHECK(res.variable.mass < res.uniform.mass);
+    }
+}
+
+TEST_CASE("Lattice with variable struts in bending", "[FEA]")
+{
+    // Cantilever 90 x 20 x 20 mm: the bending moment grows towards the clamped end.
+    const indexed_triangle_set its = its_make_cube(90., 20., 20.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.required_safety_factor = 2.;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -200.);
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.9;
+    LatticeOptions options;
+    options.cell = 7.5;
+    const LatticeResult res = optimize_lattice(its, setup, options);
+    REQUIRE(res.ok);
+    INFO("uniform " << res.uniform_diameter << " mm, mass " << res.uniform.mass << " g; variable " << res.variable_found << " "
+         << res.min_used_diameter << "-" << res.max_used_diameter << " mm, mass " << res.variable.mass << "; analyses " << res.analyses);
+    REQUIRE(res.feasible);
+    REQUIRE(res.variable_found);
+    CHECK(meets_requirements(res.variable));
+    CHECK(res.variable.mass < res.uniform.mass);
+    CHECK(res.max_used_diameter > res.min_used_diameter);
+    // The thickest struts are near the clamped end.
+    const Vec3i n = res.grid.cells;
+    double near = 0., far = 0.;
+    for (int k = 0; k < n.z(); ++ k)
+        for (int j = 0; j < n.y(); ++ j) {
+            near = std::max(near, double(res.cell_diameter[0 + size_t(n.x()) * (j + size_t(n.y()) * k)]));
+            far  = std::max(far,  double(res.cell_diameter[n.x() - 1 + size_t(n.x()) * (j + size_t(n.y()) * k)]));
+        }
+    CHECK(near > far);
+}
+
+TEST_CASE("Lattice analysis cost", "[.][FEA_benchmark]")
+{
+    const indexed_triangle_set its = its_make_cube(90., 20., 20.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -60.);
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.9;
+    setup.infill.density              = 0.;
+    setup.infill.stiffness_exponent   = 1.5;
+    setup.infill.strength_exponent    = 1.5;
+    for (double rho : { 0.075, 0.3, 0.84 }) {
+        setup.infill.density_field = [rho](const Vec3d &) { return rho; };
+        const auto t0 = std::chrono::steady_clock::now();
+        const Result r = analyze(its, setup);
+        const double s = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        WARN("rho " << rho << " ok " << r.ok << " '" << r.error << "' iterations " << r.iterations << " residual " << r.residual
+             << " safety " << r.safety_factor << " time " << s << " s voxels " << r.voxels.size());
+    }
 }

@@ -46,6 +46,14 @@ struct InfillZone
 {
     indexed_triangle_set mesh;
     double               density { 0.2 };
+    // Thickness of the walls inside the zone (more perimeters: local reinforcement), < 0 = the one of the part.
+    double               wall_thickness { -1. };
+    // Exponents of the infill of the zone, < 0 = the ones of the part.
+    double               stiffness_exponent { -1. };
+    double               strength_exponent { -1. };
+    // The mesh is material at the density of the zone (a solid modifier, the struts of a lattice): every voxel
+    // gets the fraction of its volume inside the mesh, instead of all or nothing by its center.
+    bool                 volume_fraction { false };
 };
 
 // Printed structure of the part (phase 6): a solid shell (perimeters, top and bottom layers) and an infill whose
@@ -60,6 +68,9 @@ struct InfillModel
     // Thickness of the solid shell [mm] on walls and on top / bottom surfaces.
     double                  wall_thickness { 0.9 };
     double                  top_bottom_thickness { 0.8 };
+    // Perimeters of the walls and the width of one of them [mm] (wall_thickness = perimeters * perimeter_width).
+    int                     perimeters { 2 };
+    double                  perimeter_width { 0.45 };
     double                  stiffness_exponent { 1.5 };
     double                  strength_exponent { 1.5 };
     // Zones with other densities, applied in order (the later ones win).

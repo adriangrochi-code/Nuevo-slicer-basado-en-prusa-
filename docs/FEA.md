@@ -101,6 +101,28 @@ temperatura:
    las mallas de las celdas de cada nivel, tal como se aplicarán (modificadores), de modo que el último análisis es
    el de lo que se imprimirá. Solo se propone si es más ligero que el uniforme.
 
+## Refuerzos locales (Fase 6)
+
+`reinforcement_zone`: las celdas (2 mm) a menos de un radio (por defecto 2 × el radio de la carga, mínimo 5 mm) de
+las caras fijas y de las cargas forman una zona con más perímetros (+2: el análisis la ve como una pared más gruesa
+dentro de la zona) y más relleno (40 %, nunca menos que el de la pieza). `optimize_reinforcement` busca el relleno
+uniforme más ligero del resto de la pieza con la zona puesta y lo compara con el mejor relleno sin ella.
+
+## Lattice 3D (Fase 6)
+
+- **Geometría imprimible sin soportes**: celdas cúbicas con barras verticales y cruces a 45° en los planos XZ e YZ;
+  ninguna barra horizontal (los techos de las celdas los resuelven las capas sólidas y los puentes del laminador).
+- **Barras**: prismas cerrados (6 lados) que se solapan en los nodos; se conservan las que tocan la pieza, así que
+  llegan hasta las paredes. Se aplican como un modificador macizo con el relleno de la pieza al 0 %: el laminador
+  imprime las barras unidas a las paredes, sin operaciones booleanas.
+- **Análisis**: cada celda es un material homogeneizado con la densidad relativa de sus barras,
+  ρ = π(1 + 4√2)·(r/a)² (longitud de barra por celda (1 + 4√2)·a, sin descontar los solapes), con exponente de
+  Gibson–Ashby 1,5 para rigidez y resistencia (aproximado, a calibrar con probetas). Los vóxeles de ~1 mm no
+  resuelven las barras: el primer intento con la fracción de volumen de cada vóxel daba tensiones irreales en los
+  vóxeles casi vacíos junto a las barras y se descartó.
+- **Búsqueda**: diámetro uniforme mínimo por bisección (entre el mínimo imprimible, 0,9 mm, y 3 mm); luego un
+  diámetro por celda según su tensión (sección ∝ utilización) escalado en conjunto hasta cumplir los requisitos.
+
 ## Validación (pruebas automáticas)
 
 | Caso | Resultado | Referencia |
@@ -117,6 +139,11 @@ temperatura:
 | Límite de deformación fijado con el desplazamiento al 40 % | el optimizador encuentra el 40 % (10 análisis); el 38 % no cumple | bisección |
 | Voladizo cargado a resistencia | uniforme 17 % (4,33 g) → por zonas: base 7 % + 2 zonas junto al empotramiento (3,96 g, −8,5 %) | zonas donde el momento es máximo |
 | Objeto con el perfil (2 perímetros, giroide), 55 N, FS 1,5 | uniforme 48 % (6,51 g) → por zonas 5,51 g (−15 %); aplicado al objeto como densidad + modificadores y analizado de nuevo: misma masa (±2 %) y cumple | ida y vuelta modelo ↔ análisis |
+
+| Barra con carga puntual, refuerzo de 6 mm (+2 perímetros, 40 %) | FS 2,63 → 2,90 con el mismo relleno; malla cerrada alrededor del empotramiento y de la carga | refuerzo |
+| Celda de lattice | 12 barras cerradas, ninguna por debajo de 45° | imprimibilidad |
+| Cubo de 30 mm comprimido (6000 N, FS 2) | barras de 2,08 mm, 16,8 g frente a 33,5 g macizo; las barras variables no aportan (tensión uniforme) | lattice uniforme |
+| Voladizo 90 × 20 × 20 mm, 200 N, FS 2 | uniforme 2,25 mm (25,4 g) → variable 1,0–2,5 mm (≈ 17 g, −30 %), más gruesas junto al empotramiento | lattice variable |
 
 Rendimiento medido: 62 370 vóxeles, 704 iteraciones, 2,5 s en 4 núcleos.
 

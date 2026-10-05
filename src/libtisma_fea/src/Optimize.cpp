@@ -11,6 +11,7 @@
 //    together by bisection until the requirements are met. The zones are the meshes of the cells of each level,
 //    as they will be applied (infill modifiers), so the last analysis is the one of what is printed.
 #include "tisma_fea/Optimize.hpp"
+#include "CellsMesh.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -20,46 +21,6 @@ namespace Slic3r {
 namespace Fea {
 
 namespace {
-
-// Closed mesh of the boundary faces of a set of cells of a regular grid (shared vertices).
-indexed_triangle_set cells_mesh(const std::vector<char> &selected, const Vec3i &n, const Vec3d &origin, double c)
-{
-    indexed_triangle_set its;
-    std::map<long long, int> vertex_id;
-    auto vertex = [&](int i, int j, int k) {
-        const long long key = i + (long long)(n.x() + 1) * (j + (long long)(n.y() + 1) * k);
-        auto it = vertex_id.find(key);
-        if (it != vertex_id.end())
-            return it->second;
-        const int id = int(its.vertices.size());
-        its.vertices.emplace_back((origin + c * Vec3d(i, j, k)).cast<float>());
-        vertex_id.emplace(key, id);
-        return id;
-    };
-    auto is_sel = [&](int i, int j, int k) {
-        return i >= 0 && j >= 0 && k >= 0 && i < n.x() && j < n.y() && k < n.z() && selected[i + size_t(n.x()) * (j + size_t(n.y()) * k)];
-    };
-    for (int k = 0; k < n.z(); ++ k)
-        for (int j = 0; j < n.y(); ++ j)
-            for (int i = 0; i < n.x(); ++ i) {
-                if (! is_sel(i, j, k))
-                    continue;
-                // The four corners of each face, counter clockwise seen from outside.
-                if (! is_sel(i - 1, j, k)) { int a = vertex(i, j, k), b = vertex(i, j, k + 1), cc = vertex(i, j + 1, k + 1), d = vertex(i, j + 1, k);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-                if (! is_sel(i + 1, j, k)) { int a = vertex(i + 1, j, k), b = vertex(i + 1, j + 1, k), cc = vertex(i + 1, j + 1, k + 1), d = vertex(i + 1, j, k + 1);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-                if (! is_sel(i, j - 1, k)) { int a = vertex(i, j, k), b = vertex(i + 1, j, k), cc = vertex(i + 1, j, k + 1), d = vertex(i, j, k + 1);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-                if (! is_sel(i, j + 1, k)) { int a = vertex(i, j + 1, k), b = vertex(i, j + 1, k + 1), cc = vertex(i + 1, j + 1, k + 1), d = vertex(i + 1, j + 1, k);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-                if (! is_sel(i, j, k - 1)) { int a = vertex(i, j, k), b = vertex(i, j + 1, k), cc = vertex(i + 1, j + 1, k), d = vertex(i + 1, j, k);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-                if (! is_sel(i, j, k + 1)) { int a = vertex(i, j, k + 1), b = vertex(i + 1, j, k + 1), cc = vertex(i + 1, j + 1, k + 1), d = vertex(i, j + 1, k + 1);
-                    its.indices.emplace_back(a, b, cc); its.indices.emplace_back(a, cc, d); }
-            }
-    return its;
-}
 
 double round_up(double v, double step) { return std::ceil(v / step - 1e-9) * step; }
 
@@ -87,8 +48,16 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         ++ out.analyses;
         return r;
     };
+    // The fixed zones never have less infill than the part around them.
+    auto fixed_zones = [&](double base) {
+        std::vector<InfillZone> zones = options.fixed_zones;
+        for (InfillZone &z : zones)
+            z.density = std::max(z.density, base);
+        return zones;
+    };
     auto uniform = [&](double density) {
         setup.infill.density = density;
+        setup.infill.zones   = fixed_zones(density);
         return run(setup);
     };
 
@@ -225,6 +194,9 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         }
         s.infill.density = base;
         s.infill.zones   = zones;
+        // The fixed zones (local reinforcements) win over the levels.
+        const std::vector<InfillZone> fixed = fixed_zones(base);
+        s.infill.zones.insert(s.infill.zones.end(), fixed.begin(), fixed.end());
     };
     auto evaluate = [&](double k, Result &r, double &base, std::vector<InfillZone> &zones) {
         Setup s;
@@ -246,7 +218,7 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
     }
     if (found) {
         double k_lo = 0.;
-        while (k_hi - k_lo > 0.05 * k_hi && ! (cancel && cancel())) {
+        for (int it = 0; it < 10 && k_hi - k_lo > 0.05 * k_hi && ! (cancel && cancel()); ++ it) {
             const double k = 0.5 * (k_lo + k_hi);
             double base;
             std::vector<InfillZone> zones;
