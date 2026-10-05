@@ -110,7 +110,19 @@ Sustituye a `doc/TismaRoadmap.md` como plan de referencia (aquel queda como hist
 
 Las calibraciones restantes y el FEA térmico pueden intercalarse donde convenga.
 
-## 3. Decisiones pendientes (para el usuario)
+## 3. Estado de la Fase 2 (consolidación)
+
+| Tarea | Estado | Commit |
+|---|---|---|
+| Restaurar CRLF de `GLCanvas3D.cpp` | Hecho (diff contra upstream: 28 líneas) | `004aabd` |
+| OpenSSL 4.0.1, curl 8.21.0, expat 2.8.2, libpng 1.6.58 | Hecho; verificado en Linux; libpng y curl con Schannel los verifica el CI de Windows | `d909f72` |
+| Tests automáticos de calibraciones `[Calibration]` | Hecho: 7 casos, 1359 comprobaciones | `57e6d09` |
+| Aviso de calibración activa con "Desactivar" | Hecho y probado en la GUI | `1676169` |
+| Columna de navegación sin solapes en ventanas bajas | Hecho y probado en la GUI | `1676169` |
+| CI de Windows | **Nunca había pasado**: faltaba `-DCMAKE_CONFIGURATION_TYPES=Release` (FindOpenVDB pedía bibliotecas Debug). Corregido; pendiente de confirmar con una ejecución completa | `8111e4f` |
+| Línea base de tests | 6 de 7 suites pasan; `libseqarrange_tests` sigue sin terminar tras > 1 h | — |
+
+## 4. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|
