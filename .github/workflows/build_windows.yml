@@ -50,7 +50,9 @@ jobs:
       - name: Configure
         shell: cmd
         run: |
-          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
+          rem Release only, as build_win.bat does: with Debug among the configurations, FindOpenVDB also
+          rem requires the debug libraries, which are not built (DEP_DEBUG=OFF).
+          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DCMAKE_CONFIGURATION_TYPES=Release -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
 
       - name: Build
         shell: cmd
