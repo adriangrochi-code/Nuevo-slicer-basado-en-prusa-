@@ -347,6 +347,9 @@ public:
     void show_cad_check();
     // Notifies the parts of the objects whose STEP model did not pass the geometry check.
     void notify_cad_check(const std::vector<size_t>& obj_idxs);
+    // Tisma: Engineering workspace (phase 5): 3D view with the structural analysis of the selected object.
+    void open_engineering();
+    bool is_engineering_open() const;
     bool can_split_to_objects() const;
     bool can_split_to_volumes() const;
     bool can_arrange() const;

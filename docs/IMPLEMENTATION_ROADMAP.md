@@ -187,8 +187,9 @@ Decisiones y límites:
 |---|---|
 | 5a. Núcleo en `src/libtisma_fea/`: tabla de 17 materiales con su variación con la temperatura, voxelizado, elementos hexaédricos con material transversalmente isótropo, gradiente conjugado sin matriz ensamblada (TBB), veredicto y materiales alternativos | Hecho, validado con soluciones analíticas (ver `docs/FEA.md`) |
 | 5b. Configuración de ingeniería por objeto (`libslic3r/Engineering.hpp`): material, temperatura, factor de seguridad, apoyos por caras, cargas puntuales o por caras con límite de deformación (mm o %); guardada en el 3MF (`Metadata/Tisma_engineering.xml`) y en deshacer/rehacer; las caras CAD siguen a «Volver a teselar»; `build_analysis_input` pasa del objeto al análisis en coordenadas de impresión | Hecho, con pruebas |
-| 5c. GUI: página Ingeniería, elección de caras y puntos en 3D, cálculo en segundo plano, mapa de colores y veredicto | Pendiente |
+| 5c. GUI (`GLGizmoEngineering`): el botón Ingeniería abre la vista 3D con el panel de análisis del objeto; material (por defecto el del filamento), temperatura y factor de seguridad; clic en caras (cara CAD completa o región plana) para apoyos y cargas, o en puntos para cargas con radio (3 mm por defecto); fuerza en N y límite de deformación; cálculo en segundo plano cancelable; mapa de colores sobre los vóxeles (seguridad, tensión, desplazamiento) con escala; veredicto y materiales alternativos; deshacer/rehacer | Hecho y probado en la GUI (bloque STEP: aguanta a 23 °C; a 130 °C «fuera de temperatura» con PEEK, PEKK, PEI, PSU y PA-CF propuestos; mapa de desplazamientos; Ctrl+Z) |
 | Comparación con CalculiX | Pendiente |
+| Pendiente de la 5c: el panel es alto en pantallas bajas; flechas de cargas por cara en el centroide; tabla de materiales editable | Pendiente |
 
 Decisiones: solver propio sobre vóxeles con Eigen (sin dependencias nuevas); valores de material de fichas
 técnicas y bibliografía, aproximados y editables más adelante; la pieza se considera maciza hasta la Fase 6.

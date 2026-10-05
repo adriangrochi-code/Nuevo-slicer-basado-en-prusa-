@@ -26,6 +26,20 @@ relleno mínimo que lo cumpla es el objetivo de la Fase 6 (ver la hoja de ruta).
 
 No hay conducción térmica: la temperatura solo cambia las propiedades del material (decisión del usuario).
 
+## Uso (GUI)
+
+1. Modo Experto → botón **Ingeniería** de la columna: se abre la vista 3D con el panel del objeto seleccionado.
+2. Material (por defecto el del filamento del objeto), temperatura de trabajo y factor de seguridad.
+3. «Cara fija»: clic en las caras donde se sujeta la pieza (en piezas STEP se toma la cara CAD completa; en
+   mallas, la región plana alrededor del triángulo). Otro clic en la misma cara la quita.
+4. «Carga en una cara» o «Carga en un punto»: fuerza X, Y, Z en N (Z hacia arriba, como en la cama), límite de
+   deformación opcional y, para cargas puntuales, el radio en el que se reparte (3 mm por defecto: una carga real
+   actúa sobre un área; con radios muy pequeños la tensión local crece sin límite).
+5. «Calcular»: el análisis corre en segundo plano (cancelable) y muestra el veredicto, el factor de seguridad, el
+   desplazamiento y el mapa de colores sobre la pieza.
+
+Todo se guarda en el proyecto (3MF) y se puede deshacer.
+
 ## Método
 
 - **Unidades**: mm, N, MPa, °C. El eje Z es la dirección de impresión.

@@ -31847,3 +31847,171 @@ msgstr ""
 "Desplazamiento, tensión de von Mises y factor de seguridad con colores sobre el modelo, y un veredicto claro: la "
 "pieza aguanta, está fuera de carga o la temperatura es demasiado alta para el material, con los materiales de la "
 "tabla que sí servirían."
+
+msgid "Structural analysis at the working temperature: supports, loads and material"
+msgstr "Análisis estructural a la temperatura de trabajo: apoyos, cargas y material"
+
+msgid "Load a part to analyze it in Engineering."
+msgstr "Carga una pieza para analizarla en Ingeniería."
+
+msgid "The structural analysis is available for FFF printers."
+msgstr "El análisis estructural está disponible para impresoras FFF."
+
+msgid "The part holds"
+msgstr "La pieza aguanta"
+
+msgid "It holds, but with less margin than the required safety factor"
+msgstr "Aguanta, pero con menos margen que el factor de seguridad pedido"
+
+msgid "Out of load: the stresses exceed the strength of the material"
+msgstr "Fuera de carga: las tensiones superan la resistencia del material"
+
+msgid "Too flexible: a load moves more than its allowed deformation"
+msgstr "Demasiado flexible: una carga se desplaza más que su deformación permitida"
+
+msgid "Out of temperature: the material is not structural at this temperature"
+msgstr "Fuera de temperatura: el material no es estructural a esta temperatura"
+
+msgid "The linear analysis does not describe this material (elastomer)"
+msgstr "El análisis lineal no describe este material (elastómero)"
+
+msgid "Click a face to hold the part there"
+msgstr "Haz clic en una cara para sujetar la pieza ahí"
+
+msgid "Click a face to apply the load on it"
+msgstr "Haz clic en una cara para aplicarle la carga"
+
+msgid "Click a point of the part to apply the load there"
+msgstr "Haz clic en un punto de la pieza para aplicar la carga ahí"
+
+msgid "Remove fixed face"
+msgstr "Quitar cara fija"
+
+msgid "Add fixed face"
+msgstr "Añadir cara fija"
+
+msgid "Load %1%"
+msgstr "Carga %1%"
+
+msgid "Add load"
+msgstr "Añadir carga"
+
+msgid "1 = breaks"
+msgstr "1 = rompe"
+
+msgid "Filament (%1%)"
+msgstr "Del filamento (%1%)"
+
+msgid "Change material"
+msgstr "Cambiar material"
+
+msgid "The filament type has no material in the table: choose one."
+msgstr "El tipo de filamento no tiene material en la tabla: elige uno."
+
+msgid "Temperature [°C]"
+msgstr "Temperatura [°C]"
+
+msgid "Change working temperature"
+msgstr "Cambiar temperatura de trabajo"
+
+msgid "%1% is not structural above %2% °C"
+msgstr "%1% no es estructural por encima de %2% °C"
+
+msgid "Safety factor"
+msgstr "Factor de seguridad"
+
+msgid "Change safety factor"
+msgstr "Cambiar factor de seguridad"
+
+msgid "Click on the part:"
+msgstr "Clic sobre la pieza:"
+
+msgid "Rotate the view"
+msgstr "Girar la vista"
+
+msgid "Fixed face"
+msgstr "Cara fija"
+
+msgid "Load on a face"
+msgstr "Carga en una cara"
+
+msgid "Load on a point"
+msgstr "Carga en un punto"
+
+msgid "Force X, Y, Z [N]"
+msgstr "Fuerza X, Y, Z [N]"
+
+msgid "Max. deformation [mm] / [%]"
+msgstr "Deformación máx. [mm] / [%]"
+
+msgid "0 = no limit. Z is up, as on the bed: -100 in Z pushes down with 100 N (about 10 kg)."
+msgstr "0 = sin límite. Z hacia arriba, como en la cama: -100 en Z empuja hacia abajo con 100 N (unos 10 kg)."
+
+msgid "Fixed faces: %1%"
+msgstr "Caras fijas: %1%"
+
+msgid "Face %1%"
+msgstr "Cara %1%"
+
+msgid "Loads: %1%"
+msgstr "Cargas: %1%"
+
+msgid ", max %1% mm"
+msgstr ", máx. %1% mm"
+
+msgid ", max %1% %%"
+msgstr ", máx. %1% %%"
+
+msgid " -> moves %1$.3f mm"
+msgstr " -> se mueve %1$.3f mm"
+
+msgid "Remove load"
+msgstr "Quitar carga"
+
+msgid "Analyze"
+msgstr "Calcular"
+
+msgid "Run the structural analysis"
+msgstr "Ejecuta el análisis estructural"
+
+msgid "Add a fixed face and a load."
+msgstr "Añade una cara fija y una carga."
+
+msgid "The setup changed: analyze again."
+msgstr "La configuración cambió: vuelve a calcular."
+
+msgid "Material: %1% at %2% °C (stiffness and strength x %3$.2f)"
+msgstr "Material: %1% a %2% °C (rigidez y resistencia x %3$.2f)"
+
+msgid "Safety factor: %1$.2f (required %2$.1f)"
+msgstr "Factor de seguridad: %1$.2f (pedido %2$.1f)"
+
+msgid "Max. displacement: %1$.3f mm"
+msgstr "Desplazamiento máx.: %1$.3f mm"
+
+msgid "Max. stress (von Mises): %1$.2f MPa"
+msgstr "Tensión máx. (von Mises): %1$.2f MPa"
+
+msgid "Materials that would hold (safety factor): %1%"
+msgstr "Materiales que aguantarían (factor de seguridad): %1%"
+
+msgid "Show results on the part"
+msgstr "Mostrar resultados sobre la pieza"
+
+msgid "Safety (stress / strength)"
+msgstr "Seguridad (tensión / resistencia)"
+
+msgid "Stress (von Mises)"
+msgstr "Tensión (von Mises)"
+
+msgid "Displacement"
+msgstr "Desplazamiento"
+
+msgid "Solid part, %1$.2f mm voxels. Walls and infill are taken into account in phase 6."
+msgstr "Pieza maciza, vóxeles de %1$.2f mm. Las paredes y el relleno se tendrán en cuenta en la Fase 6."
+
+msgid "Load radius [mm]"
+msgstr "Radio de la carga [mm]"
+
+msgid ", r %1% mm"
+msgstr ", r %1% mm"

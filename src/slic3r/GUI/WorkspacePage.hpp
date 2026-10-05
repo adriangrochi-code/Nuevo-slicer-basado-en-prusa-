@@ -32,8 +32,8 @@ private:
     void apply_colors();
 };
 
-// The pages of the Engineering (FEA) and Structures (adaptive infill, lattice, reinforcements) workspaces.
-WorkspacePage* create_engineering_page(wxWindow* parent);
+// The page of the Structures workspace (adaptive infill, lattice, reinforcements). Engineering works on the 3D view
+// (GLGizmoEngineering).
 WorkspacePage* create_structures_page(wxWindow* parent);
 
 } // namespace GUI

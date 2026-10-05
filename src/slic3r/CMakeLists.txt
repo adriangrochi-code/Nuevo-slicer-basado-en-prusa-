@@ -95,6 +95,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoSeam.hpp
     GUI/Gizmos/GLGizmoSimplify.cpp
     GUI/Gizmos/GLGizmoSimplify.hpp
+    GUI/Gizmos/GLGizmoEngineering.cpp
+    GUI/Gizmos/GLGizmoEngineering.hpp
     GUI/Gizmos/GLGizmoSVG.cpp
     GUI/Gizmos/GLGizmoSVG.hpp
     GUI/Gizmos/GLGizmoMmuSegmentation.cpp
@@ -466,6 +468,7 @@ target_link_libraries(
     libslic3r_gui
     PUBLIC
     libslic3r
+    libtisma_fea
     slic3r-arrange-wrapper
     avrdude
     libcereal

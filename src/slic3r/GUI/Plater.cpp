@@ -6618,6 +6618,37 @@ void Plater::show_cad_check()
         InfoDialog(this, _L("CAD geometry"), text).ShowModal();
 }
 
+void Plater::open_engineering()
+{
+    select_view_3D("3D");
+    if (p->model.objects.empty()) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Load a part to analyze it in Engineering."));
+        return;
+    }
+    if (printer_technology() != ptFFF) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("The structural analysis is available for FFF printers."));
+        return;
+    }
+    GLCanvas3D* canvas = p->view3D->get_canvas3d();
+    Selection& selection = canvas->get_selection();
+    if (! selection.is_single_full_instance()) {
+        const int obj_idx = selection.get_object_idx();
+        selection.add_instance(unsigned(obj_idx >= 0 ? obj_idx : 0), 0, true);
+        canvas->set_as_dirty();
+    }
+    GLGizmosManager& gizmos = canvas->get_gizmos_manager();
+    if (gizmos.get_current_type() != GLGizmosManager::Engineering)
+        gizmos.open_gizmo(GLGizmosManager::Engineering);
+    canvas->set_as_dirty();
+}
+
+bool Plater::is_engineering_open() const
+{
+    return p->view3D && p->view3D->get_canvas3d()->get_gizmos_manager().get_current_type() == GLGizmosManager::Engineering;
+}
+
 void Plater::notify_cad_check(const std::vector<size_t>& obj_idxs)
 {
     std::string text;

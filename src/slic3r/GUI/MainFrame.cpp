@@ -850,7 +850,7 @@ void MainFrame::create_nav_rail()
     prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
     prepare.icon        = "plater";
     prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); };
-    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown(); };
+    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && !m_plater->is_engineering_open(); };
     m_nav_rail->add_item(prepare);
 
     NavRail::Item slice;
@@ -862,14 +862,13 @@ void MainFrame::create_nav_rail()
     m_nav_rail->add_item(slice);
 
     // Advanced workspaces: only in the Expert mode, the basic modes stay as in PrusaSlicer.
-    m_engineering_page = create_engineering_page(m_tabpanel);
-    m_tabpanel->AddNewPage(m_engineering_page, _L("Engineering"), "", false);
+    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5).
     NavRail::Item engineering;
     engineering.label       = _L("Engineering");
-    engineering.tooltip     = _L("Structural analysis at the working temperature (in development)");
+    engineering.tooltip     = _L("Structural analysis at the working temperature: supports, loads and material");
     engineering.icon        = "wrench";
-    engineering.on_click    = [this, select_page]() { select_page(m_engineering_page); };
-    engineering.is_selected = [this, current_page]() { return current_page() == m_engineering_page; };
+    engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
+    engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
     engineering.is_visible  = is_expert;
     m_nav_rail->add_item(engineering);
 
@@ -943,8 +942,10 @@ void MainFrame::update_nav_rail(bool visibility)
     if (visibility) {
         // Leaving the Expert mode while an advanced workspace is shown: back to Prepare.
         wxWindow* page = m_tabpanel->GetCurrentPage();
-        if (wxGetApp().get_mode() != comExpert && (page == m_engineering_page || page == m_structures_page))
+        if (wxGetApp().get_mode() != comExpert && page == m_structures_page)
             select_tab(size_t(0));
+        if (wxGetApp().get_mode() != comExpert && m_plater && m_plater->is_engineering_open())
+            m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
     } else
         m_nav_rail->update_selection();
