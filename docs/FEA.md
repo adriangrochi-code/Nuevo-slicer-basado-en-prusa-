@@ -73,6 +73,15 @@ Con `InfillModel` activado la pieza deja de ser maciza:
 - **Zonas**: mallas con su propia densidad (los modificadores de relleno), voxelizadas sobre la misma rejilla.
 - **Masa**: suma de la fracción de material de cada vóxel × densidad del material.
 
+## Del objeto al análisis y vuelta (Fase 6)
+
+- `build_analysis_input(..., print_config)` toma del perfil (con los ajustes propios del objeto) los perímetros y
+  el ancho de extrusión (espesor de pared), las capas sólidas superiores e inferiores, la densidad y el patrón de
+  relleno, y los modificadores del objeto con densidad de relleno como zonas.
+- `apply_infill` escribe el resultado: la densidad de relleno del objeto y un modificador de relleno por zona
+  («Tisma infill zone NN%»), reemplazando los de una optimización anterior; las regiones de apoyos y cargas
+  siguen a sus piezas.
+
 ## Relleno mínimo (Fase 6)
 
 `optimize_infill` busca el relleno más ligero que cumple el factor de seguridad, los límites de deformación y la
@@ -101,6 +110,7 @@ temperatura:
 | Barra 80 × 10 × 10 con paredes de 0,9 mm y relleno del 20 / 60 % | masa 4,53 / 7,22 g (maciza 9,92 g, exacto); menos relleno, más flexible y menos resistente | coherencia del modelo |
 | Límite de deformación fijado con el desplazamiento al 40 % | el optimizador encuentra el 40 % (10 análisis); el 38 % no cumple | bisección |
 | Voladizo cargado a resistencia | uniforme 17 % (4,33 g) → por zonas: base 7 % + 2 zonas junto al empotramiento (3,96 g, −8,5 %) | zonas donde el momento es máximo |
+| Objeto con el perfil (2 perímetros, giroide), 55 N, FS 1,5 | uniforme 48 % (6,51 g) → por zonas 5,51 g (−15 %); aplicado al objeto como densidad + modificadores y analizado de nuevo: misma masa (±2 %) y cumple | ida y vuelta modelo ↔ análisis |
 
 Rendimiento medido: 62 370 vóxeles, 704 iteraciones, 2,5 s en 4 núcleos.
 

@@ -445,3 +445,63 @@ TEST_CASE("Infill by zones follows the stresses", "[FEA]")
     CHECK(bb.min.x() < 10.);
     CHECK(bb.max.x() < 60.);
 }
+
+TEST_CASE("Infill of an object from its print settings, applied back", "[FEA]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(80., 10., 10.)));
+    object->add_instance();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(object->volumes.front()->mesh().its, 0, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type            = EngineeringLoad::Type::Faces;
+    load.faces.volume    = 0;
+    load.faces.triangles = side(object->volumes.front()->mesh().its, 0, true);
+    load.force           = Vec3d(0., 0., -55.);
+    object->engineering.loads.push_back(load);
+    object->engineering.safety_factor = 1.5;
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("perimeters", new ConfigOptionInt(2));
+    config.set_key_value("fill_density", new ConfigOptionPercent(20));
+    config.set_deserialize_strict("fill_pattern", "gyroid");
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.enabled);
+    CHECK(input.setup.infill.density == Approx(0.2));
+    CHECK(input.setup.infill.wall_thickness > 0.5);
+    CHECK(input.setup.infill.stiffness_exponent == Approx(infill_exponents("gyroid").first));
+    // Without the print config the part is solid.
+    Fea::ModelAnalysisInput solid;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", solid, error));
+    CHECK(! solid.setup.infill.enabled);
+
+    input.setup.voxel_size = 1.;
+    const OptimizeResult opt = optimize_infill(input.mesh, input.setup);
+    INFO("uniform " << opt.uniform_density << " feasible " << opt.feasible << " uniform mass " << opt.uniform.mass
+         << " zoned mass " << opt.zoned.mass);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.zones_found);
+
+    // Applied twice: the second time replaces the zones of the first one.
+    apply_infill(*object, 0, opt.base_density, opt.zones);
+    const size_t added = apply_infill(*object, 0, opt.base_density, opt.zones);
+    CHECK(added == opt.zones.size());
+    CHECK(object->volumes.size() == 1 + opt.zones.size());
+    CHECK(object->engineering.fixtures.front().volume == 0);
+    CHECK(object->config.get().option<ConfigOptionPercent>("fill_density")->value == Approx(std::round(opt.base_density * 100.)));
+
+    // The object, analyzed with its modifiers, is what the optimizer validated.
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.zones.size() == opt.zones.size());
+    input.setup.voxel_size = 1.;
+    const Result applied = analyze(input.mesh, input.setup);
+    REQUIRE(applied.ok);
+    INFO("optimizer mass " << opt.zoned.mass << " applied " << applied.mass);
+    CHECK(meets_requirements(applied));
+    CHECK(applied.mass == Approx(opt.zoned.mass).epsilon(0.02));
+}
