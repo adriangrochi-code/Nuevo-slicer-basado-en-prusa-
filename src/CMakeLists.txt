@@ -172,7 +172,11 @@ if (SLIC3R_GUI)
     else ()
         target_link_libraries(PrusaSlicer PRIVATE -ldl)
     endif ()
-    if (WIN32)
+    if (MSVC)
+        # Tisma: system library, the MSVC linker finds it by name. find_library() only finds it inside a
+        # Visual Studio developer prompt (vcvars), which the CI does not use.
+        target_link_libraries(PrusaSlicer PRIVATE psapi.lib)
+    elseif (WIN32)
         find_library(PSAPI_LIB NAMES Psapi)
         target_link_libraries(PrusaSlicer PRIVATE ${PSAPI_LIB})
     endif ()
