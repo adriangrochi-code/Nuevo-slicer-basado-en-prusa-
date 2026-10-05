@@ -31,3 +31,14 @@ Las pruebas `[CadSource]` usan `tests/data/block_with_hole.step` (bloque de 20 �
 pruebas, los casos que la necesitan avisan y no comprueban nada.
 
 Pendiente: pruebas automáticas de los Ajustes rápidos y de la GUI.
+
+## Windows (CI, `.github/workflows/build_windows.yml`)
+
+- MSVC 2022, x64, Release, dependencias de `deps/` en caché.
+- Run 32 (commit 7ae0df4, 05-10-2026): Configure, Build (~43 min), Package y artefacto correctos. El paquete arranca
+  `prusa-slicer-console.exe --help` en el runner.
+- Faltaba `OCCTWrapper.dll` en el paquete (no se compilaba ni se copiaba): sin ella no se importan archivos STEP ni se
+  vuelve a teselar la geometría CAD. Ahora se compila el objetivo `OCCTWrapper` y el paquete falla si no está.
+- El artefacto se llama `TismaSlicer-windows` (antes `NonPlanarSlicer-windows`). Uso: descomprimir y ejecutar
+  `prusa-slicer.exe`.
+- No se ejecutan las pruebas en Windows (`BUILD_TESTING=OFF`).

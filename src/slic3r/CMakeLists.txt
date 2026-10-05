@@ -55,6 +55,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/GLShader.hpp    
     GUI/GLCanvas3D.hpp
     GUI/GLCanvas3D.cpp
+    GUI/TismaShading.cpp
+    GUI/TismaShading.hpp
     GUI/SceneRaycaster.hpp
     GUI/SceneRaycaster.cpp	
     GUI/OpenGLManager.hpp

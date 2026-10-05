@@ -1,7 +1,7 @@
 name: Build windows
 
 # Builds the Windows binaries (prusa-slicer.exe) with MSVC and uploads them as a zip artifact:
-# Actions > the run > Artifacts > NonPlanarSlicer-windows.
+# Actions > the run > Artifacts > TismaSlicer-windows.
 # The dependencies are built from deps/ and cached, so only the first run is slow (~2-3 h).
 
 on:
@@ -57,16 +57,20 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer -- /m /v:minimal
+          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
 
       - name: Package
         shell: pwsh
         run: |
-          $out = "NonPlanarSlicer"
+          $out = "TismaSlicer"
           New-Item -ItemType Directory -Force $out | Out-Null
           Get-ChildItem "$env:APP_BUILD/src/Release" -File |
             Where-Object { $_.Extension -in '.exe', '.dll' } |
             Copy-Item -Destination $out
+          # The STEP import (and the CAD retessellation) loads OCCTWrapper.dll next to the executable.
+          $occt = @("$env:APP_BUILD/src/Release/OCCTWrapper.dll", "$env:APP_BUILD/src/OCCTWrapper.dll") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $occt) { throw "OCCTWrapper.dll not found" }
+          Copy-Item $occt -Destination $out -Force
           Copy-Item -Recurse resources "$out/resources"
           Copy-Item doc/NonPlanarSlicer.md "$out/LEEME.md"
           Get-ChildItem $out
@@ -74,6 +78,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NonPlanarSlicer-windows
-          path: NonPlanarSlicer
+          name: TismaSlicer-windows
+          path: TismaSlicer
           retention-days: 30

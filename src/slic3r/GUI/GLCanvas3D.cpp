@@ -1362,6 +1362,7 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas *canvas, Bed3D &bed)
 GLCanvas3D::~GLCanvas3D()
 {
     reset_volumes();
+    m_tisma_shading.shutdown();
 }
 
 void GLCanvas3D::post_event(wxEvent &&event)
@@ -2159,6 +2160,12 @@ void GLCanvas3D::render()
 #endif // SHOW_IMGUI_DEMO_WINDOW
 
     const bool is_looking_downward = camera.is_looking_downward();
+
+    // Tisma (phase 7): per pixel lighting and shadows of this frame.
+    m_tisma_shading.begin_frame(camera);
+    Slic3r::ScopeGuard tisma_shading_guard([this]() { m_tisma_shading.end_frame(); });
+    if (! s_multiple_beds.is_autoslicing())
+        _render_tisma_shadow_map();
 
     // draw scene
     glsafe(::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -6227,7 +6234,14 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
 
     GLShaderProgram* shader = wxGetApp().get_shader("gouraud");
     if (shader != nullptr) {
+        // Tisma (phase 7): the painted volumes are rendered with the "mm_gouraud" shader.
+        if (GLShaderProgram* mm_shader = wxGetApp().get_shader("mm_gouraud"); mm_shader != nullptr) {
+            mm_shader->start_using();
+            m_tisma_shading.apply(*mm_shader, true);
+            mm_shader->stop_using();
+        }
         shader->start_using();
+        m_tisma_shading.apply(*shader, true);
 
         switch (type)
         {
@@ -6277,6 +6291,45 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
     }
 
     m_camera_clipping_plane = ClippingPlane::ClipsNothing();
+}
+
+void GLCanvas3D::_render_tisma_shadow_map()
+{
+    if (m_tisma_shading.quality() != TismaShading::Quality::Shadows)
+        return;
+
+    // Casters: the opaque volumes and the toolpaths.
+    std::vector<GLVolume*> casters;
+    BoundingBoxf3 box;
+    for (GLVolume* volume : m_volumes.volumes) {
+        if (!volume->is_active || volume->is_modifier || volume->render_color.is_transparent() ||
+            !(m_render_sla_auxiliaries || volume->composite_id.volume_id >= 0))
+            continue;
+        casters.push_back(volume);
+        box.merge(volume->transformed_bounding_box());
+    }
+    const bool toolpaths = !m_main_toolbar.is_enabled() && current_printer_technology() != ptSLA &&
+        m_gcode_viewer.has_data() && m_gcode_viewer.get_paths_bounding_box().defined;
+    if (toolpaths) {
+        BoundingBoxf3 paths = m_gcode_viewer.get_paths_bounding_box();
+        paths.translate(s_multiple_beds.get_bed_translation(s_multiple_beds.get_active_bed()));
+        box.merge(paths);
+    }
+    if (casters.empty() && !toolpaths)
+        return;
+
+    m_tisma_shading.render_shadow_map(box, [this, &casters, toolpaths](const Transform3d& view, const Transform3d& projection) {
+        GLShaderProgram* shader = wxGetApp().get_current_shader();
+        if (shader != nullptr) {
+            shader->set_uniform("projection_matrix", projection);
+            for (GLVolume* volume : casters) {
+                shader->set_uniform("view_model_matrix", view * volume->world_matrix());
+                volume->render();
+            }
+        }
+        if (toolpaths)
+            m_gcode_viewer.render_toolpaths_for_shadows(view, projection);
+    });
 }
 
 void GLCanvas3D::_render_selection()

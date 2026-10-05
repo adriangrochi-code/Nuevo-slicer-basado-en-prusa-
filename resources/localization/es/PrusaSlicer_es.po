@@ -32150,3 +32150,15 @@ msgstr "El relleno de la pieza pasa a 0 %%. %1% análisis; modelo de lattice hom
 
 msgid "The reinforcement does not save material here: the stresses are not concentrated at the supports and loads."
 msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en los apoyos y las cargas."
+
+msgid "Rendering quality"
+msgstr "Calidad de render"
+
+msgid "Quality of the 3D view of the objects, of the bed and of the G-code preview. Classic: lighting per vertex, as PrusaSlicer 2.9. Per pixel: smooth lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and shadows of the main light (needs a faster graphics card)."
+msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como PrusaSlicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
+
+msgid "Per pixel"
+msgstr "Por píxel"
+
+msgid "Shadows"
+msgstr "Sombras"
