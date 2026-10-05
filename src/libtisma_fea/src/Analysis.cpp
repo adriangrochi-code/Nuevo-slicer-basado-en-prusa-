@@ -104,6 +104,37 @@ struct Grid
     long long node_index(int i, int j, int k) const { return i + (long long)(size.x() + 1) * (j + (long long)(size.y() + 1) * k); }
 };
 
+// Voxels of the grid whose center is inside the mesh (sorted linear indices).
+bool voxelize_on_grid(const indexed_triangle_set &mesh, const Grid &grid, std::vector<int> &out, const std::function<bool()> &cancel)
+{
+    const double h = grid.h;
+    out.clear();
+    std::vector<float> zs(grid.size.z());
+    for (int k = 0; k < grid.size.z(); ++ k)
+        zs[k] = float(grid.origin.z() + (k + 0.5) * h);
+    const std::vector<ExPolygons> slices = slice_mesh_ex(mesh, zs);
+    for (int k = 0; k < grid.size.z(); ++ k) {
+        if (cancel && cancel())
+            return false;
+        for (const ExPolygon &expoly : slices[k]) {
+            const BoundingBox bb = get_extents(expoly);
+            const int i0 = std::max(0, int(std::floor((unscaled(bb.min.x()) - grid.origin.x()) / h - 0.5)));
+            const int i1 = std::min(grid.size.x() - 1, int(std::ceil((unscaled(bb.max.x()) - grid.origin.x()) / h - 0.5)));
+            const int j0 = std::max(0, int(std::floor((unscaled(bb.min.y()) - grid.origin.y()) / h - 0.5)));
+            const int j1 = std::min(grid.size.y() - 1, int(std::ceil((unscaled(bb.max.y()) - grid.origin.y()) / h - 0.5)));
+            for (int j = j0; j <= j1; ++ j)
+                for (int i = i0; i <= i1; ++ i) {
+                    const Point p = Point::new_scale(grid.origin.x() + (i + 0.5) * h, grid.origin.y() + (j + 0.5) * h);
+                    if (expoly.contains(p))
+                        out.push_back(int(grid.voxel_index(i, j, k)));
+                }
+        }
+    }
+    std::sort(out.begin(), out.end());
+    out.erase(std::unique(out.begin(), out.end()), out.end());
+    return true;
+}
+
 bool voxelize(const indexed_triangle_set &mesh, const Setup &setup, Grid &grid, std::string &error, const std::function<bool()> &cancel)
 {
     BoundingBoxf3 bbox;
@@ -132,32 +163,10 @@ bool voxelize(const indexed_triangle_set &mesh, const Setup &setup, Grid &grid, 
     // Center the grid on the part.
     grid.origin = bbox.min - 0.5 * (grid.size.cast<double>() * h - extent);
 
-    std::vector<float> zs(grid.size.z());
-    for (int k = 0; k < grid.size.z(); ++ k)
-        zs[k] = float(grid.origin.z() + (k + 0.5) * h);
-    const std::vector<ExPolygons> slices = slice_mesh_ex(mesh, zs);
-
-    for (int k = 0; k < grid.size.z(); ++ k) {
-        if (cancel && cancel()) {
-            error = "Cancelled";
-            return false;
-        }
-        for (const ExPolygon &expoly : slices[k]) {
-            const BoundingBox bb = get_extents(expoly);
-            const int i0 = std::max(0, int(std::floor((unscaled(bb.min.x()) - grid.origin.x()) / h - 0.5)));
-            const int i1 = std::min(grid.size.x() - 1, int(std::ceil((unscaled(bb.max.x()) - grid.origin.x()) / h - 0.5)));
-            const int j0 = std::max(0, int(std::floor((unscaled(bb.min.y()) - grid.origin.y()) / h - 0.5)));
-            const int j1 = std::min(grid.size.y() - 1, int(std::ceil((unscaled(bb.max.y()) - grid.origin.y()) / h - 0.5)));
-            for (int j = j0; j <= j1; ++ j)
-                for (int i = i0; i <= i1; ++ i) {
-                    const Point p = Point::new_scale(grid.origin.x() + (i + 0.5) * h, grid.origin.y() + (j + 0.5) * h);
-                    if (expoly.contains(p))
-                        grid.voxels.push_back(int(grid.voxel_index(i, j, k)));
-                }
-        }
+    if (! voxelize_on_grid(mesh, grid, grid.voxels, cancel)) {
+        error = "Cancelled";
+        return false;
     }
-    std::sort(grid.voxels.begin(), grid.voxels.end());
-    grid.voxels.erase(std::unique(grid.voxels.begin(), grid.voxels.end()), grid.voxels.end());
     if (grid.voxels.empty()) {
         error = "The part is too thin for the voxel size";
         return false;
@@ -193,7 +202,93 @@ std::vector<int> nodes_near_triangles(const indexed_triangle_set &mesh, const st
     return out;
 }
 
+// Fraction of material, stiffness factor and strength factor of every voxel with the printed structure.
+struct VoxelMaterial
+{
+    std::vector<float> density;     // fraction of material
+    std::vector<float> stiffness;   // factor of the stiffness of the solid material
+    std::vector<float> strength;    // factor of the strength
+    std::vector<char>  interior;
+};
+
+bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill, const Grid &grid, VoxelMaterial &out,
+                     const std::function<bool()> &cancel)
+{
+    const size_t n_el = grid.voxels.size();
+    out.density.assign(n_el, 1.f);
+    out.stiffness.assign(n_el, 1.f);
+    out.strength.assign(n_el, 1.f);
+    out.interior.assign(n_el, 0);
+    if (! infill.enabled)
+        return true;
+    const double h = grid.h;
+    auto voxel_center = [&](size_t e) {
+        const Vec3i ijk = grid.voxel_ijk(grid.voxels[e]);
+        return Vec3d(grid.origin + h * (ijk.cast<double>() + Vec3d(0.5, 0.5, 0.5)));
+    };
+
+    // Density of the infill of every voxel: the part, then the zones, or the field.
+    std::vector<double> rho(n_el, std::clamp(infill.density, 0., 1.));
+    if (infill.density_field) {
+        for (size_t e = 0; e < n_el; ++ e)
+            rho[e] = std::clamp(infill.density_field(voxel_center(e)), 0., 1.);
+    } else {
+        for (const InfillZone &zone : infill.zones) {
+            std::vector<int> inside;
+            if (! voxelize_on_grid(zone.mesh, grid, inside, cancel))
+                return false;
+            for (int v : inside) {
+                const auto it = std::lower_bound(grid.voxels.begin(), grid.voxels.end(), v);
+                if (it != grid.voxels.end() && *it == v)
+                    rho[it - grid.voxels.begin()] = std::clamp(zone.density, 0., 1.);
+            }
+        }
+    }
+
+    // Solid shell: the part of the voxel closer to the surface than the shell thickness (walls or top / bottom,
+    // after the normal of the closest surface).
+    const auto tree = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(mesh.vertices, mesh.indices);
+    for (size_t e = 0; e < n_el; ++ e) {
+        if (e % 4096 == 0 && cancel && cancel())
+            return false;
+        const Vec3f c = voxel_center(e).cast<float>();
+        size_t hit_idx = 0;
+        Vec3f  hit_point;
+        const float d2 = AABBTreeIndirect::squared_distance_to_indexed_triangle_set(mesh.vertices, mesh.indices, tree, c, hit_idx, hit_point);
+        const double d = d2 >= 0.f ? std::sqrt(double(d2)) : 0.;
+        const double nz = std::abs(its_face_normal(mesh, int(hit_idx)).z());
+        const double t = nz > 0.7 ? infill.top_bottom_thickness : infill.wall_thickness;
+        // Fraction of the voxel (along the normal) inside the shell.
+        const double shell = std::clamp((t - (d - 0.5 * h)) / h, 0., 1.);
+        const double r = std::max(rho[e], 0.02);
+        out.interior[e]  = shell < 1.;
+        out.density[e]   = float(shell + (1. - shell) * rho[e]);
+        out.stiffness[e] = float(shell + (1. - shell) * std::pow(r, infill.stiffness_exponent));
+        out.strength[e]  = float(shell + (1. - shell) * std::pow(r, infill.strength_exponent));
+    }
+    return true;
+}
+
 } // namespace
+
+std::pair<double, double> infill_exponents(const std::string &pattern)
+{
+    // Stretch dominated patterns (straight lines crossing in the layer) are nearly linear with the density; bending
+    // dominated ones lose stiffness faster. Approximate values, to calibrate with printed specimens.
+    if (pattern == "rectilinear" || pattern == "alignedrectilinear" || pattern == "grid" || pattern == "line" ||
+        pattern == "triangles" || pattern == "stars" || pattern == "monotonic" || pattern == "monotoniclines")
+        return { 1.2, 1.2 };
+    if (pattern == "honeycomb" || pattern == "3dhoneycomb")
+        return { 1.4, 1.4 };
+    if (pattern == "gyroid")
+        return { 1.6, 1.5 };
+    if (pattern == "cubic" || pattern == "adaptivecubic" || pattern == "supportcubic")
+        return { 1.5, 1.4 };
+    if (pattern == "lightning")
+        // Lightning only supports the top surfaces: it is not structural.
+        return { 2.5, 2.5 };
+    return { 1.5, 1.5 };
+}
 
 const char* verdict_name(Verdict verdict)
 {
@@ -255,6 +350,13 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         }
     }
     const size_t n_dofs = 3 * node_pos.size();
+
+    // Printed structure: shell and infill.
+    VoxelMaterial vm_mat;
+    if (! voxel_materials(mesh, setup.infill, grid, vm_mat, cancel)) {
+        res.error = "Cancelled";
+        return res;
+    }
 
     // 3) Boundary conditions. The surface of the mesh is within a voxel of the boundary nodes.
     const double surface_dist = 0.9 * h;
@@ -327,7 +429,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             xe[3 * a + k] = x[3 * nodes[a] + k];
-                    ye.noalias() = ke * xe;
+                    ye.noalias() = (double(vm_mat.stiffness[color[ci]]) * ke) * xe;
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             y[3 * nodes[a] + k] += ye[3 * a + k];
@@ -338,10 +440,10 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                 y[d] = 0.;
     };
     std::vector<double> diag(n_dofs, 0.);
-    for (const std::array<int, 8> &nodes : elements)
+    for (size_t e = 0; e < elements.size(); ++ e)
         for (int a = 0; a < 8; ++ a)
             for (int k = 0; k < 3; ++ k)
-                diag[3 * nodes[a] + k] += ke(3 * a + k, 3 * a + k);
+                diag[3 * elements[e][a] + k] += double(vm_mat.stiffness[e]) * ke(3 * a + k, 3 * a + k);
     report(15);
 
     // 5) Preconditioned conjugate gradient.
@@ -410,8 +512,10 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     res.von_mises.resize(n_el);
     res.failure_index.resize(n_el);
     res.displacement.resize(n_el);
+    res.density  = vm_mat.density;
+    res.interior = vm_mat.interior;
     // Stress measures for the safety factors of the other materials.
-    std::vector<double> sz_tension(n_el), tau_z(n_el);
+    std::vector<double> sz_tension(n_el), tau_z(n_el), vm_eff(n_el);
     const double s_xy = material->strength_xy * res.temperature_factor;
     const double s_z  = material->strength_z  * res.temperature_factor;
     for (size_t e = 0; e < n_el; ++ e) {
@@ -422,14 +526,17 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                 ue[3 * a + k] = u[3 * elements[e][a] + k];
                 disp[k] += 0.125 * ue[3 * a + k];
             }
-        const Eigen::Matrix<double, 6, 1> s = c * (b0 * ue);
+        // Homogenized stress of the voxel; the strength of the voxel is scaled the same way as the material.
+        const Eigen::Matrix<double, 6, 1> s = double(vm_mat.stiffness[e]) * (c * (b0 * ue));
+        const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
         const double vm = std::sqrt(0.5 * ((s[0] - s[1]) * (s[0] - s[1]) + (s[1] - s[2]) * (s[1] - s[2]) + (s[2] - s[0]) * (s[2] - s[0]))
                                     + 3. * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));
-        sz_tension[e] = std::max(0., s[2]);
-        tau_z[e]      = std::sqrt(s[3] * s[3] + s[4] * s[4]);
+        sz_tension[e] = std::max(0., s[2]) / sf_e;
+        tau_z[e]      = std::sqrt(s[3] * s[3] + s[4] * s[4]) / sf_e;
         // Simplified criterion: von Mises against the strength along the layers, tension and shear across the layers
         // against the layer adhesion (shear strength between layers taken as 0.6 of the tensile one).
-        const double fi = std::max({ vm / s_xy, sz_tension[e] / s_z, tau_z[e] / (0.6 * s_z) });
+        const double fi = std::max({ vm / sf_e / s_xy, sz_tension[e] / s_z, tau_z[e] / (0.6 * s_z) });
+        vm_eff[e] = vm / sf_e;
         res.von_mises[e]     = float(vm);
         res.failure_index[e] = float(fi);
         res.displacement[e]  = disp.cast<float>();
@@ -442,6 +549,12 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         }
     }
     res.safety_factor = res.max_failure_index > 0. ? 1. / res.max_failure_index : std::numeric_limits<double>::infinity();
+
+    // Mass [g]: voxel volume [mm³] / 1000 * density [g/cm³].
+    const double voxel_mass = h * h * h * 1e-3 * material->density;
+    for (size_t e = 0; e < n_el; ++ e)
+        res.mass += voxel_mass * vm_mat.density[e];
+    res.solid_mass = voxel_mass * double(n_el);
 
     // Displacement where each load is applied, and the stiffness needed to keep it within its limit.
     bool   too_flexible = false;
@@ -480,7 +593,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             const double tf = temperature_factor(m, setup.temperature);
             double fi_max = 0.;
             for (size_t e = 0; e < n_el; ++ e)
-                fi_max = std::max({ fi_max, res.von_mises[e] / (m.strength_xy * tf), sz_tension[e] / (m.strength_z * tf),
+                fi_max = std::max({ fi_max, vm_eff[e] / (m.strength_xy * tf), sz_tension[e] / (m.strength_z * tf),
                                     tau_z[e] / (0.6 * m.strength_z * tf) });
             const double sf = fi_max > 0. ? 1. / fi_max : std::numeric_limits<double>::infinity();
             const double stiffness_ratio = (m.E_xy * tf) / (material->E_xy * res.temperature_factor);

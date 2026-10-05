@@ -4,11 +4,13 @@
 
 #include <chrono>
 
+#include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/TriangleMesh.hpp>
 
 #include "tisma_fea/Analysis.hpp"
 #include "tisma_fea/Materials.hpp"
 #include "tisma_fea/ModelSetup.hpp"
+#include "tisma_fea/Optimize.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
@@ -337,4 +339,109 @@ TEST_CASE("Deformation limit", "[FEA]")
     REQUIRE(! stiff.alternatives.empty());
     for (const auto &[key, sf] : stiff.alternatives)
         CHECK(find_material(key)->E_xy >= 2. * find_material("PLA")->E_xy);
+}
+
+// Bar 80 x 10 x 10 mm clamped at x = 0 with a load on the end face, printed with walls and infill.
+static Setup printed_cantilever(indexed_triangle_set &its, double force, double max_displacement)
+{
+    its = its_make_cube(80., 10., 10.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type             = Load::Type::Faces;
+    load.triangles        = side(its, 0, true);
+    load.force            = Vec3d(0., 0., -force);
+    load.max_displacement = max_displacement;
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.8;
+    setup.infill.density              = 0.2;
+    std::tie(setup.infill.stiffness_exponent, setup.infill.strength_exponent) = infill_exponents("gyroid");
+    return setup;
+}
+
+TEST_CASE("Walls and infill", "[FEA]")
+{
+    indexed_triangle_set its;
+    Setup setup = printed_cantilever(its, 5., 0.);
+    const Result r20 = analyze(its, setup);
+    setup.infill.density = 0.6;
+    const Result r60 = analyze(its, setup);
+    setup.infill.enabled = false;
+    const Result solid = analyze(its, setup);
+    REQUIRE(r20.ok);
+    REQUIRE(r60.ok);
+    REQUIRE(solid.ok);
+    INFO("mass 20% " << r20.mass << " 60% " << r60.mass << " solid " << solid.mass << " (" << solid.solid_mass << ")");
+    // 0.9 mm walls on a 10 x 10 section are about 1/3 of it.
+    CHECK(r20.mass > 0.35 * solid.mass);
+    CHECK(r20.mass < 0.60 * solid.mass);
+    CHECK(r20.mass < r60.mass);
+    CHECK(r60.mass < solid.mass);
+    // 80 mm x 100 mm² of PLA (1.24 g/cm³) = 9.92 g.
+    CHECK(solid.mass == Approx(9.92).epsilon(0.02));
+    // Less infill, more flexible and weaker.
+    CHECK(r20.max_displacement > r60.max_displacement);
+    CHECK(r60.max_displacement > solid.max_displacement);
+    CHECK(r20.safety_factor < r60.safety_factor);
+    // The shell carries most of the bending: the infill changes the stiffness much less than its density.
+    CHECK(r20.max_displacement < 3. * solid.max_displacement);
+    CHECK(infill_exponents("lightning").first > infill_exponents("rectilinear").first);
+}
+
+TEST_CASE("Lightest uniform infill", "[FEA]")
+{
+    indexed_triangle_set its;
+    Setup setup = printed_cantilever(its, 5., 0.);
+    // The limit is the displacement with 40 % infill: the answer must be close to 40 %.
+    setup.infill.density = 0.4;
+    const Result at40 = analyze(its, setup);
+    REQUIRE(at40.ok);
+    setup.loads.front().max_displacement = at40.load_displacement.front() * 1.0001;
+    OptimizeOptions options;
+    options.zones = false;
+    const OptimizeResult opt = optimize_infill(its, setup, options);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    INFO("density " << opt.uniform_density << " analyses " << opt.analyses);
+    CHECK(opt.uniform_density == Approx(0.40).margin(0.02));
+    CHECK(meets_requirements(opt.uniform));
+    // 2 % less does not meet the limit.
+    setup.infill.density = opt.uniform_density - 0.02;
+    CHECK(! meets_requirements(analyze(its, setup)));
+
+    // A limit that not even the solid part meets.
+    setup.loads.front().max_displacement = 1e-4;
+    const OptimizeResult impossible = optimize_infill(its, setup, options);
+    REQUIRE(impossible.ok);
+    CHECK(! impossible.feasible);
+    CHECK(impossible.uniform.verdict == Verdict::TooFlexible);
+}
+
+TEST_CASE("Infill by zones follows the stresses", "[FEA]")
+{
+    indexed_triangle_set its;
+    // Strength driven: high load, no deformation limit. The bending moment is highest at the clamped end.
+    Setup setup = printed_cantilever(its, 40., 0.);
+    setup.required_safety_factor = 1.5;
+    const OptimizeResult opt = optimize_infill(its, setup);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    INFO("uniform " << opt.uniform_density << " mass " << opt.uniform.mass << " zones " << opt.zones.size()
+         << " base " << opt.base_density << " mass " << opt.zoned.mass << " analyses " << opt.analyses);
+    REQUIRE(opt.zones_found);
+    CHECK(meets_requirements(opt.zoned));
+    CHECK(opt.zoned.mass < opt.uniform.mass);
+    CHECK(opt.base_density < opt.uniform_density);
+    // The densest zone is near the clamped end (x = 0).
+    const InfillZone &densest = opt.zones.back();
+    BoundingBoxf3 bb;
+    for (const Vec3f &v : densest.mesh.vertices)
+        bb.merge(v.cast<double>());
+    CHECK(bb.min.x() < 10.);
+    CHECK(bb.max.x() < 60.);
 }

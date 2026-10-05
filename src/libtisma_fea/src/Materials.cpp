@@ -14,24 +14,24 @@ namespace Fea {
 // specimens (tensile tests in XY and Z). They are a starting point to compare options, not design values: the
 // documentation (docs/FEA.md) asks to verify them with the data sheet of the filament used.
 static const std::vector<Material> s_materials = {
-    //  key      name                       E_xy   E_z    nu    S_xy  S_z   Tg     Tmax   linear note
-    { "PLA",    "PLA",                      3000., 2600., 0.35, 50.,  30.,  60.,   55.,   true,  "" },
-    { "PET",    "PETG",                     2000., 1800., 0.38, 45.,  30.,  80.,   70.,   true,  "" },
-    { "ABS",    "ABS",                      2000., 1700., 0.35, 35.,  20.,  105.,  90.,   true,  "" },
-    { "ASA",    "ASA",                      2000., 1700., 0.35, 40.,  25.,  100.,  90.,   true,  "" },
-    { "HIPS",   "HIPS",                     1800., 1500., 0.35, 25.,  15.,  100.,  85.,   true,  "" },
-    { "PC",     "PC",                       2300., 2000., 0.37, 55.,  35.,  147.,  115.,  true,  "" },
-    { "PA",     "PA (nylon)",               1500., 1200., 0.39, 45.,  30.,  50.,   90.,   true,  "Semi-crystalline: it keeps stiffness above Tg. Absorbs moisture: properties of a conditioned part." },
-    { "PA-CF",  "PA with carbon fiber",     6000., 2500., 0.35, 70.,  35.,  60.,   140.,  true,  "Fibers: much stiffer along the extrusions than across the layers." },
-    { "PC-CF",  "PC with carbon fiber",     5000., 2300., 0.35, 65.,  35.,  147.,  120.,  true,  "" },
-    { "PP",     "PP",                       1000., 800.,  0.40, 25.,  15.,  -10.,  90.,   true,  "Semi-crystalline." },
-    { "POM",    "POM (acetal)",             2400., 2000., 0.37, 50.,  25.,  -60.,  110.,  true,  "Semi-crystalline; difficult layer adhesion." },
-    { "PEI",    "PEI (ULTEM 9085)",         2200., 2000., 0.36, 70.,  40.,  186.,  150.,  true,  "" },
-    { "PEEK",   "PEEK",                     3500., 3000., 0.38, 90.,  50.,  143.,  150.,  true,  "Semi-crystalline: depends on the annealing." },
-    { "PEKK",   "PEKK",                     3000., 2600., 0.38, 80.,  45.,  160.,  150.,  true,  "" },
-    { "PSU",    "PSU",                      2400., 2100., 0.37, 60.,  35.,  185.,  170.,  true,  "" },
-    { "PVDF",   "PVDF",                     1800., 1500., 0.38, 40.,  25.,  -35.,  120.,  true,  "Semi-crystalline." },
-    { "FLEX",   "TPU (flexible)",           30.,   25.,   0.45, 30.,  20.,  -40.,  60.,   false, "Elastomer: the linear analysis does not describe it." },
+    //  key      name                       E_xy   E_z    nu    S_xy  S_z   Tg     Tmax   linear note, density [g/cm³]
+    { "PLA",    "PLA",                      3000., 2600., 0.35, 50.,  30.,  60.,   55.,   true,  "", 1.24 },
+    { "PET",    "PETG",                     2000., 1800., 0.38, 45.,  30.,  80.,   70.,   true,  "", 1.27 },
+    { "ABS",    "ABS",                      2000., 1700., 0.35, 35.,  20.,  105.,  90.,   true,  "", 1.04 },
+    { "ASA",    "ASA",                      2000., 1700., 0.35, 40.,  25.,  100.,  90.,   true,  "", 1.07 },
+    { "HIPS",   "HIPS",                     1800., 1500., 0.35, 25.,  15.,  100.,  85.,   true,  "", 1.04 },
+    { "PC",     "PC",                       2300., 2000., 0.37, 55.,  35.,  147.,  115.,  true,  "", 1.20 },
+    { "PA",     "PA (nylon)",               1500., 1200., 0.39, 45.,  30.,  50.,   90.,   true,  "Semi-crystalline: it keeps stiffness above Tg. Absorbs moisture: properties of a conditioned part.", 1.14 },
+    { "PA-CF",  "PA with carbon fiber",     6000., 2500., 0.35, 70.,  35.,  60.,   140.,  true,  "Fibers: much stiffer along the extrusions than across the layers.", 1.18 },
+    { "PC-CF",  "PC with carbon fiber",     5000., 2300., 0.35, 65.,  35.,  147.,  120.,  true,  "", 1.22 },
+    { "PP",     "PP",                       1000., 800.,  0.40, 25.,  15.,  -10.,  90.,   true,  "Semi-crystalline.", 0.90 },
+    { "POM",    "POM (acetal)",             2400., 2000., 0.37, 50.,  25.,  -60.,  110.,  true,  "Semi-crystalline; difficult layer adhesion.", 1.41 },
+    { "PEI",    "PEI (ULTEM 9085)",         2200., 2000., 0.36, 70.,  40.,  186.,  150.,  true,  "", 1.27 },
+    { "PEEK",   "PEEK",                     3500., 3000., 0.38, 90.,  50.,  143.,  150.,  true,  "Semi-crystalline: depends on the annealing.", 1.30 },
+    { "PEKK",   "PEKK",                     3000., 2600., 0.38, 80.,  45.,  160.,  150.,  true,  "", 1.30 },
+    { "PSU",    "PSU",                      2400., 2100., 0.37, 60.,  35.,  185.,  170.,  true,  "", 1.24 },
+    { "PVDF",   "PVDF",                     1800., 1500., 0.38, 40.,  25.,  -35.,  120.,  true,  "Semi-crystalline.", 1.78 },
+    { "FLEX",   "TPU (flexible)",           30.,   25.,   0.45, 30.,  20.,  -40.,  60.,   false, "Elastomer: the linear analysis does not describe it.", 1.21 },
 };
 
 static std::string upper(std::string s)

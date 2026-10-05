@@ -34,6 +34,8 @@ struct Material
     bool        linear_analysis_valid { true };
     // Short note about the values.
     std::string note;
+    // Density of the solid material [g/cm³], for the estimation of the mass.
+    double      density { 1.2 };
 };
 
 // Reference temperature of the properties.

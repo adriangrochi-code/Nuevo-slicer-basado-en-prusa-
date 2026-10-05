@@ -60,6 +60,32 @@ Todo se guarda en el proyecto (3MF) y se puede deshacer.
 - **Criterio de rotura** (simplificado): el mayor de von Mises / resistencia en XY, tracción en Z / adhesión entre
   capas y cortante entre capas / (0,6 × adhesión), todo a la temperatura de trabajo.
 
+## Paredes y relleno (Fase 6)
+
+Con `InfillModel` activado la pieza deja de ser maciza:
+
+- **Capa maciza**: la parte de cada vóxel a menos del espesor de pared (perímetros) o de techo/suelo (capas
+  sólidas) de la superficie es material macizo; la fracción se calcula con la distancia del centro del vóxel a la
+  superficie y la normal de la cara más cercana.
+- **Relleno homogeneizado**: rigidez E·ρ^nE y resistencia σ·ρ^nS con exponentes por patrón (rectilíneo/rejilla 1,2;
+  panal 1,4; cúbico 1,5/1,4; giroide 1,6/1,5; lightning 2,5, no estructural). Son aproximados: hay que calibrarlos
+  con probetas impresas.
+- **Zonas**: mallas con su propia densidad (los modificadores de relleno), voxelizadas sobre la misma rejilla.
+- **Masa**: suma de la fracción de material de cada vóxel × densidad del material.
+
+## Relleno mínimo (Fase 6)
+
+`optimize_infill` busca el relleno más ligero que cumple el factor de seguridad, los límites de deformación y la
+temperatura:
+
+1. **Uniforme**: bisección de la densidad (los requisitos mejoran al aumentar el relleno) y redondeo a un
+   porcentaje entero. Si ni el 100 % basta, lo dice (hacen falta más paredes, otro material u otra forma).
+2. **Por zonas**: con las tensiones del relleno uniforme, cada punto del interior recibe la densidad que lleva su
+   tensión a la admisible (ρ·(utilización)^(1/nS)); el interior se divide en celdas (3 vóxeles, mínimo 3 mm) y se
+   agrupan en 3 niveles. Los niveles se escalan juntos por bisección hasta cumplir los requisitos. Las zonas son
+   las mallas de las celdas de cada nivel, tal como se aplicarán (modificadores), de modo que el último análisis es
+   el de lo que se imprimirá. Solo se propone si es más ligero que el uniforme.
+
 ## Validación (pruebas automáticas)
 
 | Caso | Resultado | Referencia |
@@ -72,15 +98,18 @@ Todo se guarda en el proyecto (3MF) y se puede deshacer.
 | PLA a 130 °C | «fuera de temperatura», propone PEI entre otros | tabla |
 | 60 MPa en PLA; 35 MPa entre capas | «fuera de carga» | resistencias de la tabla |
 
+| Barra 80 × 10 × 10 con paredes de 0,9 mm y relleno del 20 / 60 % | masa 4,53 / 7,22 g (maciza 9,92 g, exacto); menos relleno, más flexible y menos resistente | coherencia del modelo |
+| Límite de deformación fijado con el desplazamiento al 40 % | el optimizador encuentra el 40 % (10 análisis); el 38 % no cumple | bisección |
+| Voladizo cargado a resistencia | uniforme 17 % (4,33 g) → por zonas: base 7 % + 2 zonas junto al empotramiento (3,96 g, −8,5 %) | zonas donde el momento es máximo |
+
 Rendimiento medido: 62 370 vóxeles, 704 iteraciones, 2,5 s en 4 núcleos.
 
 Pendiente: comparación con CalculiX en una pieza real (prevista en la hoja de ruta).
 
 ## Límites que hay que conocer
 
-- **Pieza maciza**: el análisis supone la pieza 100 % sólida. Las paredes y el relleno reales se tendrán en
-  cuenta en la Fase 6 (relleno adaptativo y validación con la estructura real). Con relleno bajo, la pieza real
-  es más blanda y menos resistente que el resultado.
+- **Relleno homogeneizado**: el relleno se trata como un material continuo más blando; no se modelan las
+  trayectorias reales ni su orientación. La validación con las trayectorias laminadas queda pendiente.
 - **Valores de material aproximados**: valores típicos de fichas técnicas y bibliografía para piezas impresas; hay
   que verificarlos con la ficha del filamento usado. La impresión (temperatura, ventilación, orientación) los cambia
   mucho, sobre todo la adhesión entre capas.

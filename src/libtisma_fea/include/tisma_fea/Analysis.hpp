@@ -41,6 +41,36 @@ struct Load
     double           max_displacement { 0. };
 };
 
+// Region of the part with its own infill density (an infill modifier), in the coordinates of the setup.
+struct InfillZone
+{
+    indexed_triangle_set mesh;
+    double               density { 0.2 };
+};
+
+// Printed structure of the part (phase 6): a solid shell (perimeters, top and bottom layers) and an infill whose
+// properties are homogenized: E_infill = E * density^stiffness_exponent, strength * density^strength_exponent.
+// The exponents depend on the infill pattern (see infill_exponents()); they are approximate and should be
+// calibrated with printed specimens.
+struct InfillModel
+{
+    bool                    enabled { false };
+    // Infill density of the part (0..1).
+    double                  density { 0.2 };
+    // Thickness of the solid shell [mm] on walls and on top / bottom surfaces.
+    double                  wall_thickness { 0.9 };
+    double                  top_bottom_thickness { 0.8 };
+    double                  stiffness_exponent { 1.5 };
+    double                  strength_exponent { 1.5 };
+    // Zones with other densities, applied in order (the later ones win).
+    std::vector<InfillZone> zones;
+    // When set, the density of the infill at a point (overrides density and zones). Used by the optimizer.
+    std::function<double(const Vec3d &point)> density_field;
+};
+
+// Exponents of the homogenized infill for a pattern name of the print settings (rectilinear, grid, gyroid, ...).
+std::pair<double, double> infill_exponents(const std::string &pattern);
+
 struct Setup
 {
     std::string          material { "PLA" };
@@ -53,6 +83,8 @@ struct Setup
     size_t               target_voxels { 60000 };
     // Convergence of the iterative solver (relative residual).
     double               tolerance { 1e-7 };
+    // Walls and infill of the print; disabled = solid part.
+    InfillModel          infill;
 };
 
 enum class Verdict
@@ -85,6 +117,13 @@ struct Result
     std::vector<float>  von_mises;          // [MPa]
     std::vector<float>  failure_index;      // stress / strength at the temperature, > 1 = breaks
     std::vector<Vec3f>  displacement;       // at the center of the voxel [mm]
+    // Fraction of material in the voxel (1 = solid, shell; the infill density inside).
+    std::vector<float>  density;
+    // Interior voxels (not in the shell): their density is the one of the infill.
+    std::vector<char>   interior;
+    // Estimated mass of the printed part and of the solid part [g].
+    double              mass { 0. };
+    double              solid_mass { 0. };
 
     double              max_displacement { 0. };
     double              max_von_mises { 0. };
