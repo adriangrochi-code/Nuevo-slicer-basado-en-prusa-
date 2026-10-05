@@ -19,16 +19,15 @@ endif ()
 
 ExternalProject_Add(dep_OpenSSL
     EXCLUDE_FROM_ALL ON
-    URL "https://github.com/openssl/openssl/archive/OpenSSL_1_1_0l.tar.gz"
-    URL_HASH SHA256=e2acf0cf58d9bff2b42f2dc0aee79340c8ffe2c5e45d3ca4533dd5d4f5775b1d
+    URL "https://github.com/openssl/openssl/releases/download/openssl-4.0.1/openssl-4.0.1.tar.gz"
+    URL_HASH SHA256=2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09
     DOWNLOAD_DIR ${${PROJECT_NAME}_DEP_DOWNLOAD_DIR}/OpenSSL
     BUILD_IN_SOURCE ON
     CONFIGURE_COMMAND ${_conf_cmd} ${_cross_arch}
         "--prefix=${${PROJECT_NAME}_DEP_INSTALL_PREFIX}"
         ${_cross_comp_prefix_line}
+        "--libdir=lib"
         no-shared
-        no-ssl3-method
-        no-dynamic-engine
         -Wa,--noexecstack
     BUILD_COMMAND make depend && make "-j${NPROC}"
     INSTALL_COMMAND make install_sw

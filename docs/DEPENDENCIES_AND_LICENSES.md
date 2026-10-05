@@ -33,10 +33,10 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | Boost | 1.83.0 | BSL-1.0 | |
 | c-blosc | commit `8724c06` | BSD-3-Clause | Para OpenVDB. |
 | CGAL | 5.6.2 | Núcleo LGPL-3.0+; **paquetes usados GPL-3.0+** (`Polygon_mesh_processing`, `Surface_mesh`, `Voronoi_diagram_2`…) | Compatible con AGPL-3.0. Impide relicenciar con licencia permisiva. |
-| curl | 7.75.0 | curl (tipo MIT) | **Versión de 2021**, con vulnerabilidades conocidas. Actualizar. |
+| curl | **8.21.0** (antes 7.75.0) | curl (tipo MIT) | Actualizado en la Fase 2 (versión de PrusaSlicer master). Windows: Schannel; Linux: OpenSSL; macOS: curl del sistema. |
 | Catch2 | 3.8.0 | BSL-1.0 | Solo tests. |
 | cereal | 1.3.0 | BSD-3-Clause | Deshacer/rehacer. |
-| Expat | 2.4.3 | MIT | Antigua; actualizar. |
+| Expat | **2.8.2** (antes 2.4.3) | MIT | Actualizado en la Fase 2; el parche de seguridad local ya no hace falta. |
 | Eigen | 3.3.7 | MPL-2.0 | Base del álgebra lineal de un futuro FEA. |
 | GLEW | 2.2.0 | BSD modificada + MIT | Solo OpenGL. |
 | GMP | 6.2.1 | LGPL-3.0+ / GPL-2.0+ | Para CGAL. |
@@ -48,9 +48,9 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | **OCCT** | **7.6.1** | LGPL-2.1 con excepción adicional | Ya se usa para STEP. Versión de 2022; la actual es 7.8/7.9. |
 | OpenCSG | 1.4.2 | GPL-2.0 **o posterior (sin verificar)** | Si fuera GPL-2.0 *only* sería incompatible. Verificar `COPYING`. |
 | OpenEXR | 2.5.5 | BSD-3-Clause | Para OpenVDB. |
-| **OpenSSL** | **1.1.0l** | OpenSSL + SSLeay | **Riesgo**: sin soporte desde 2019 y licencia incompatible con GPL/AGPL. Pasar a OpenSSL 3.x (Apache-2.0) o al TLS del sistema. |
+| OpenSSL | **4.0.1** (antes 1.1.0l) | Apache-2.0 | Actualizado en la Fase 2. **Solo se compila en Linux** (curl y hash SHA-256 de la cuenta); Windows usa Schannel y macOS el TLS del sistema, así que los binarios de Windows no lo incluyen. |
 | OpenVDB | fork de Prusa `339ee88` | MPL-2.0 (versiones < 10) **(sin verificar versión)** | Vaciado y SLA. |
-| libpng | 1.6.35 | libpng | Antigua (2018). |
+| libpng | **1.6.58** (antes 1.6.35) | libpng | Actualizado en la Fase 2. Solo se compila en Windows y macOS (Linux usa la del sistema). |
 | Qhull | 8.1-alpha3 | Qhull (permisiva) | |
 | oneTBB | 2021.5.0 | Apache-2.0 | Paralelismo de todo el núcleo. |
 | zlib | 1.3.1 | zlib | |
@@ -58,6 +58,14 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | nlohmann/json | 3.12.0 | MIT | |
 | wxWidgets | fork de Prusa `5462e7d` | wxWindows Library Licence (LGPL-2.0+ con excepción) | En Linux se usa la 3.2 del sistema. |
 | z3 | 4.15.1 | MIT | Ordenación secuencial. |
+
+### Verificación de las actualizaciones (Fase 2)
+
+- OpenSSL, curl y expat: compilados e instalados en Linux desde `deps/` (descarga con verificación SHA-256 incluida).
+- libpng: compilado desde la etiqueta `v1.6.58` con los mismos argumentos de la receta (símbolos con prefijo
+  `prusaslicer_`). El hash del zip no se pudo recalcular aquí (el proxy bloquea las descargas `archive/` de
+  GitHub); se tomó de PrusaSlicer master y lo comprobará el CI de Windows al descargarlo.
+- Las recetas se adaptaron de PrusaSlicer master, quitando lo que depende de su nuevo sistema de dependencias.
 
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
