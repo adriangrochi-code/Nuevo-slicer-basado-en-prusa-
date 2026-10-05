@@ -39,6 +39,18 @@ extern const char *INFILL_ZONE_NAME;
 // infill modifiers. The modifiers created by a previous call are replaced. Returns the number of modifiers.
 size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones);
 
+// Names of the modifiers of the local reinforcements and of the lattice.
+extern const char *REINFORCEMENT_NAME;
+extern const char *LATTICE_NAME;
+
+// Applies a local reinforcement: the infill density of the object and a modifier with more perimeters and infill
+// (zone in print coordinates). Replaces a previous reinforcement.
+void apply_reinforcement(ModelObject &object, size_t instance_idx, double density, const InfillZone &zone, int perimeters);
+
+// Applies a lattice (mesh of the struts in print coordinates of the cells of edge cell): infill of the object 0 % and
+// a solid modifier with the struts. Replaces a previous lattice and the infill zones.
+void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_triangle_set &struts, double cell);
+
 } // namespace Fea
 } // namespace Slic3r
 

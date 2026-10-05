@@ -8,10 +8,16 @@
 #include <libslic3r/Model.hpp>
 #include <libslic3r/PrintConfig.hpp>
 
+#include "tisma_fea/Structures.hpp"
+
 namespace Slic3r {
 namespace Fea {
 
-const char *INFILL_ZONE_NAME = "Tisma infill zone";
+const char *INFILL_ZONE_NAME   = "Tisma infill zone";
+const char *REINFORCEMENT_NAME = "Tisma reinforcement";
+const char *LATTICE_NAME       = "Tisma lattice";
+
+static bool starts_with(const std::string &s, const char *prefix) { return s.rfind(prefix, 0) == 0; }
 
 // Walls and infill of the object from the print configuration with the overrides of the object.
 static void infill_from_config(const ModelObject &object, const DynamicPrintConfig &print_config, InfillModel &infill)
@@ -104,14 +110,30 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
             if (! volume.is_modifier())
                 continue;
             const ConfigOptionPercent *d = volume.config.get().option<ConfigOptionPercent>("fill_density");
-            if (d == nullptr)
+            const ConfigOption        *p = volume.config.get().option("perimeters");
+            if (d == nullptr && p == nullptr)
                 continue;
             InfillZone zone;
             zone.mesh = volume.mesh().its;
             its_transform(zone.mesh, instance_trafo * volume.get_matrix());
             if (zone.mesh.indices.empty())
                 continue;
-            zone.density = std::clamp(d->value * 0.01, 0., 1.);
+            zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : infill.density;
+            if (p)
+                zone.wall_thickness = p->getInt() * infill.perimeter_width;
+            if (starts_with(volume.name, LATTICE_NAME)) {
+                // Struts of a lattice: homogenized over its cells (edge in the name, "Tisma lattice 8 mm").
+                double cell = 8.;
+                try { cell = std::stod(volume.name.substr(std::string(LATTICE_NAME).size())); } catch (...) {}
+                zone.volume_fraction    = true;
+                zone.homogenize_cell    = cell;
+                zone.stiffness_exponent = LATTICE_EXPONENT;
+                zone.strength_exponent  = LATTICE_EXPONENT;
+                zone.density            = 1.;
+            } else if (d && d->value >= 100.) {
+                // Solid modifiers: material where the mesh is.
+                zone.volume_fraction = true;
+            }
             infill.zones.emplace_back(std::move(zone));
         }
     }
@@ -173,14 +195,19 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
     return true;
 }
 
-size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones)
+// Removes the modifiers whose name starts with one of the prefixes; the regions of the engineering setup follow
+// the volumes.
+static void remove_modifiers(ModelObject &object, std::initializer_list<const char*> prefixes)
 {
-    // Remove the zones of a previous optimization; the regions of the engineering setup follow the volumes.
     std::vector<int> new_index(object.volumes.size(), -1);
     int next = 0;
-    for (size_t v = 0; v < object.volumes.size(); ++ v)
-        if (! (object.volumes[v]->is_modifier() && object.volumes[v]->name.rfind(INFILL_ZONE_NAME, 0) == 0))
+    for (size_t v = 0; v < object.volumes.size(); ++ v) {
+        bool remove = false;
+        for (const char *p : prefixes)
+            remove |= object.volumes[v]->is_modifier() && starts_with(object.volumes[v]->name, p);
+        if (! remove)
             new_index[v] = next ++;
+    }
     for (int v = int(object.volumes.size()) - 1; v >= 0; -- v)
         if (new_index[v] < 0)
             object.delete_volume(size_t(v));
@@ -191,7 +218,49 @@ size_t apply_infill(ModelObject &object, size_t instance_idx, double density, co
         remap(l.volume);
         remap(l.faces.volume);
     }
+}
 
+// Adds a modifier with a mesh in print coordinates of the instance.
+static ModelVolume* add_modifier(ModelObject &object, size_t instance_idx, const indexed_triangle_set &mesh, const std::string &name)
+{
+    const Transform3d to_object = object.instances[std::min(instance_idx, object.instances.size() - 1)]->get_matrix().inverse();
+    indexed_triangle_set its = mesh;
+    its_transform(its, to_object);
+    if (to_object.matrix().block<3, 3>(0, 0).determinant() < 0.)
+        its_flip_triangles(its);
+    if (its.indices.empty())
+        return nullptr;
+    ModelVolume *volume = object.add_volume(TriangleMesh(std::move(its)), ModelVolumeType::PARAMETER_MODIFIER);
+    volume->name = name;
+    return volume;
+}
+
+void apply_reinforcement(ModelObject &object, size_t instance_idx, double density, const InfillZone &zone, int perimeters)
+{
+    remove_modifiers(object, { REINFORCEMENT_NAME, LATTICE_NAME });
+    object.config.set_key_value("fill_density", new ConfigOptionPercent(std::round(std::clamp(density, 0., 1.) * 100.)));
+    if (ModelVolume *v = add_modifier(object, instance_idx, zone.mesh, REINFORCEMENT_NAME)) {
+        const int percent = int(std::round(std::clamp(std::max(zone.density, density), 0., 1.) * 100.));
+        v->config.set_key_value("fill_density", new ConfigOptionPercent(percent));
+        v->config.set_key_value("perimeters", new ConfigOptionInt(perimeters));
+    }
+    object.invalidate_bounding_box();
+}
+
+void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_triangle_set &struts, double cell)
+{
+    remove_modifiers(object, { LATTICE_NAME, INFILL_ZONE_NAME, REINFORCEMENT_NAME });
+    object.config.set_key_value("fill_density", new ConfigOptionPercent(0));
+    char name[64];
+    snprintf(name, sizeof(name), "%s %g mm", LATTICE_NAME, cell);
+    if (ModelVolume *v = add_modifier(object, instance_idx, struts, name))
+        v->config.set_key_value("fill_density", new ConfigOptionPercent(100));
+    object.invalidate_bounding_box();
+}
+
+size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones)
+{
+    remove_modifiers(object, { INFILL_ZONE_NAME, LATTICE_NAME });
     object.config.set_key_value("fill_density", new ConfigOptionPercent(std::round(std::clamp(density, 0., 1.) * 100.)));
 
     const Transform3d to_object = object.instances[std::min(instance_idx, object.instances.size() - 1)]->get_matrix().inverse();

@@ -680,3 +680,67 @@ TEST_CASE("Lattice analysis cost", "[.][FEA_benchmark]")
              << " safety " << r.safety_factor << " time " << s << " s voxels " << r.voxels.size());
     }
 }
+
+TEST_CASE("Reinforcement and lattice applied to an object", "[FEA]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(60., 20., 20.)));
+    object->add_instance();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(object->volumes.front()->mesh().its, 0, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type            = EngineeringLoad::Type::Faces;
+    load.faces.volume    = 0;
+    load.faces.triangles = side(object->volumes.front()->mesh().its, 0, true);
+    load.force           = Vec3d(0., 0., -150.);
+    object->engineering.loads.push_back(load);
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("perimeters", new ConfigOptionInt(2));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    input.setup.voxel_size = 1.;
+
+    // Reinforcement: a modifier with 4 perimeters, read back as thicker walls.
+    ReinforcementOptions ropt;
+    const InfillZone zone = reinforcement_zone(input.mesh, input.setup, ropt);
+    apply_reinforcement(*object, 0, 0.15, zone, input.setup.infill.perimeters + ropt.extra_perimeters);
+    REQUIRE(object->volumes.size() == 2);
+    CHECK(object->volumes.back()->name == REINFORCEMENT_NAME);
+    Fea::ModelAnalysisInput rin;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", rin, error, &config));
+    REQUIRE(rin.setup.infill.zones.size() == 1);
+    CHECK(rin.setup.infill.zones.front().wall_thickness == Approx(4 * rin.setup.infill.perimeter_width));
+    CHECK(rin.setup.infill.density == Approx(0.15));
+
+    // Lattice: replaces the reinforcement and the infill.
+    LatticeOptions lopt;
+    lopt.cell = 7.5;
+    const LatticeResult lat = optimize_lattice(input.mesh, input.setup, lopt);
+    REQUIRE(lat.ok);
+    REQUIRE(lat.feasible);
+    apply_lattice(*object, 0, lat.mesh, lopt.cell);
+    REQUIRE(object->volumes.size() == 2);
+    CHECK(object->volumes.back()->name.rfind(LATTICE_NAME, 0) == 0);
+    CHECK(object->config.get().option<ConfigOptionPercent>("fill_density")->value == Approx(0.));
+    CHECK(object->engineering.fixtures.front().volume == 0);
+
+    // The object analyzed with its lattice modifier (homogenized from the real struts).
+    Fea::ModelAnalysisInput lin;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", lin, error, &config));
+    REQUIRE(lin.setup.infill.zones.size() == 1);
+    CHECK(lin.setup.infill.zones.front().homogenize_cell == Approx(7.5));
+    lin.setup.voxel_size = 1.;
+    const Result applied = analyze(lin.mesh, lin.setup);
+    REQUIRE(applied.ok);
+    const Result &expected = lat.variable_found ? lat.variable : lat.uniform;
+    INFO("optimizer mass " << expected.mass << " safety " << expected.safety_factor << "; applied mass " << applied.mass
+         << " safety " << applied.safety_factor);
+    // The struts overlap at the nodes (less material than the formula) and the walls cut the outer struts.
+    CHECK(applied.mass == Approx(expected.mass).epsilon(0.25));
+    CHECK(applied.safety_factor > 0.7 * expected.safety_factor);
+}

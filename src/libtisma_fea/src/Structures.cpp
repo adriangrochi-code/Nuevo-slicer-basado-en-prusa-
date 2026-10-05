@@ -132,9 +132,6 @@ ReinforcementResult optimize_reinforcement(const indexed_triangle_set &mesh, con
 
 // Relative density of a cell: pi * r^2 * (1 + 4 sqrt(2)) * a / a^3.
 static constexpr double LATTICE_DENSITY_FACTOR = M_PI * (1. + 4. * M_SQRT2);
-// Exponent of the stiffness and of the strength of the lattice with its relative density (braced in the vertical
-// planes, bending in the horizontal ones). Approximate, to calibrate with printed specimens.
-static constexpr double LATTICE_EXPONENT = 1.5;
 
 LatticeGrid LatticeGrid::over(const BoundingBoxf3 &bbox, double cell)
 {

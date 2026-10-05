@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <map>
 
 #include <Eigen/Dense>
 #include <tbb/parallel_for.h>
@@ -265,9 +266,32 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
                 if (e >= 0)
                     ++ count[e];
             }
+            std::vector<double> fraction(n_el, 0.);
             for (size_t e = 0; e < n_el; ++ e)
-                if (count[e] > 0) {
-                    const double f = double(count[e]) / double(sub * sub * sub);
+                fraction[e] = double(count[e]) / double(sub * sub * sub);
+            if (zone.homogenize_cell > 0.) {
+                // Average over the blocks (cells of the lattice), counting only the voxels of the part.
+                BoundingBoxf3 zb;
+                for (const Vec3f &v : zone.mesh.vertices)
+                    zb.merge(v.cast<double>());
+                std::map<long long, std::pair<double, int>> blocks;
+                auto block_of = [&](size_t e) {
+                    const Vec3d q = ((voxel_center(e) - zb.min) / zone.homogenize_cell).array().floor();
+                    return (long long)(q.x() + 4096) + 8192LL * ((long long)(q.y() + 4096) + 8192LL * (long long)(q.z() + 4096));
+                };
+                for (size_t e = 0; e < n_el; ++ e) {
+                    auto &b = blocks[block_of(e)];
+                    b.first += fraction[e];
+                    ++ b.second;
+                }
+                for (size_t e = 0; e < n_el; ++ e) {
+                    const auto &b = blocks[block_of(e)];
+                    fraction[e] = b.first / std::max(1, b.second);
+                }
+            }
+            for (size_t e = 0; e < n_el; ++ e)
+                if (fraction[e] > 0.) {
+                    const double f = fraction[e];
                     rho[e]   = f * d + (1. - f) * rho[e];
                     s_inf[e] = f * stiff(d, nE) + (1. - f) * s_inf[e];
                     t_inf[e] = f * stiff(d, nS) + (1. - f) * t_inf[e];

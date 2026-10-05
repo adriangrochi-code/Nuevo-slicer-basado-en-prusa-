@@ -49,6 +49,10 @@ ReinforcementResult optimize_reinforcement(const indexed_triangle_set &mesh, con
 // 3D lattice: struts of variable thickness instead of the infill, connected to the walls.
 // Printable without supports: vertical struts and struts at 45 degrees in the XZ and YZ planes, no horizontal struts.
 
+// Exponent of the stiffness and of the strength of the lattice with its relative density (Gibson-Ashby; braced
+// in the vertical planes, bending in the horizontal ones). Approximate, to calibrate with printed specimens.
+constexpr double LATTICE_EXPONENT = 1.5;
+
 struct LatticeOptions
 {
     // Edge of the cubic cells [mm].

@@ -54,6 +54,9 @@ struct InfillZone
     // The mesh is material at the density of the zone (a solid modifier, the struts of a lattice): every voxel
     // gets the fraction of its volume inside the mesh, instead of all or nothing by its center.
     bool                 volume_fraction { false };
+    // With volume_fraction: the fraction is averaged over cubic blocks of this edge [mm] from the minimum of the
+    // zone (the cells of a lattice), so that the zone is a homogenized material. 0 = per voxel.
+    double               homogenize_cell { 0. };
 };
 
 // Printed structure of the part (phase 6): a solid shell (perimeters, top and bottom layers) and an infill whose
