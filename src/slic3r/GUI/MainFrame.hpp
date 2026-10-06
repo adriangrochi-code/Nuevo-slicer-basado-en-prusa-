@@ -43,6 +43,7 @@ class Tab;
 class PrintHostQueueDialog;
 class Plater;
 class NavRail;
+class PrinterChip;
 class MainFrame;
 class PreferencesDialog;
 class GalleryDialog;
@@ -258,6 +259,7 @@ public:
     TopBar*               m_tmp_top_bar { nullptr };
     // Tisma: navigation column at the left (PrusaSlicer 3.0 style)
     NavRail*              m_nav_rail    { nullptr };
+    PrinterChip*          m_printer_chip{ nullptr };
     wxBoxSizer*           m_rail_sizer  { nullptr };
     void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };

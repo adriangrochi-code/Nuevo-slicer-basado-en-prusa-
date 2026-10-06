@@ -32779,3 +32779,15 @@ msgstr "Cp -1,5 (succión)"
 
 msgid "1 (stagnation)"
 msgstr "1 (estancamiento)"
+
+msgid "No connection configured"
+msgstr "Sin conexión configurada"
+
+msgid "Connection: %1%"
+msgstr "Conexión: %1%"
+
+msgid "No connection configured. Add a physical printer to send the G-code over the network or USB."
+msgstr "Sin conexión configurada. Agregá una impresora física para enviar el G-code por red o USB."
+
+msgid "Click to open Device"
+msgstr "Clic para abrir Dispositivo"

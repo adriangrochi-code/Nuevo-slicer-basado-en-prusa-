@@ -372,6 +372,8 @@ void TopBarItemsCtrl::update_btns_width()
         for (const Button* btn : m_pageButtons)
             m_btns_width += btn->GetSize().GetWidth() + m_btn_margin;
     }
+    if (m_workspace_tabs)
+        m_btns_width += m_workspace_tabs->GetMinSize().GetWidth();
 
     // Check min width of parent and change it if needed
 
@@ -414,6 +416,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     this->SetSizer(m_sizer);
 
     wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
+    m_left_sizer = left_sizer;
 /*
 #ifdef __APPLE__
     auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 40));
@@ -461,6 +464,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     m_sizer->Add(left_sizer, 1, wxEXPAND);
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
+    m_right_sizer = right_sizer;
 
     m_workspace_btn = new ButtonWithPopup(this, "Workspace", "mode_simple");
     right_sizer->AddStretchSpacer(20);
@@ -655,9 +659,27 @@ void TopBarItemsCtrl::ShowPageButtons(bool show)
     m_sizer->Layout();
 }
 
+void TopBarItemsCtrl::SetWorkspaceTabs(wxWindow* tabs)
+{
+    m_workspace_tabs = tabs;
+    m_left_sizer->Insert(0, tabs, 0, wxEXPAND);
+    if (m_project_btn)
+        m_project_btn->Hide();
+    update_btns_width();
+    UpdateSearchSizeAndPosition();
+    m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::AddRightWindow(wxWindow* win)
+{
+    // After the stretch spacer, before the mode and account buttons.
+    m_right_sizer->Insert(1, win, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
+    m_sizer->Layout();
+}
+
 void TopBarItemsCtrl::SetProjectName(const wxString& name)
 {
-    if (!m_project_btn)
+    if (!m_project_btn || m_workspace_tabs)
         return;
     m_project_btn->SetText(name);
     // Wide enough for the name, but a long name must not push the search box away.

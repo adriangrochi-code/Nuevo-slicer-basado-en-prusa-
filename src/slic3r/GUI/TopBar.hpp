@@ -109,6 +109,10 @@ public:
     // Tisma: name of the current project (PrusaSlicer 3.0 style project tab). Clicking it shows the plater.
     void SetProjectName(const wxString& name);
     void SetSettingsButtonTooltip(const wxString& tooltip);
+    // Tisma (Órbita Pro): workspace tabs at the left end of the bar (they replace the project name, which
+    // stays in the window title) and a window (the printer chip) at the right end.
+    void SetWorkspaceTabs(wxWindow* tabs);
+    void AddRightWindow(wxWindow* win);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
@@ -122,6 +126,9 @@ private:
     ButtonWithPopup*                m_account_btn   {nullptr};
     Button*                         m_settings_btn  {nullptr};
     Button*                         m_project_btn   {nullptr};
+    wxWindow*                       m_workspace_tabs{nullptr};
+    wxBoxSizer*                     m_left_sizer    {nullptr};
+    wxBoxSizer*                     m_right_sizer   {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

@@ -367,7 +367,7 @@ void MainFrame::update_layout()
             m_main_sizer->Remove(m_rail_sizer);
             m_rail_sizer = nullptr;
         }
-        if (m_nav_rail)
+        if (m_nav_rail && !m_nav_rail->horizontal())
             m_nav_rail->Hide();
         clean_sizer(m_main_sizer);
         clean_sizer(m_settings_dialog.GetSizer());
@@ -425,7 +425,7 @@ void MainFrame::update_layout()
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
 
-        if (m_nav_rail) {
+        if (m_nav_rail && !m_nav_rail->horizontal()) {
             m_rail_sizer = new wxBoxSizer(wxHORIZONTAL);
             m_rail_sizer->Add(m_nav_rail, 0, wxEXPAND);
             m_rail_sizer->Add(m_tabpanel, 1, wxEXPAND);
@@ -834,8 +834,9 @@ void MainFrame::register_win32_callbacks()
 
 void MainFrame::create_nav_rail()
 {
-    m_nav_rail = new NavRail(this);
-    m_nav_rail->Hide();
+    // Órbita Pro: the workspaces are tabs of the top bar.
+    TopBarItemsCtrl* top_bar = m_tabpanel->GetTopBarItemsCtrl();
+    m_nav_rail = new NavRail(top_bar, true);
 
     auto is_fff       = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
     auto is_expert    = []() { return wxGetApp().get_mode() == comExpert; };
@@ -938,8 +939,37 @@ void MainFrame::create_nav_rail()
     };
     m_nav_rail->add_item(config);
 
-    // The pages are selected from the navigation column.
-    m_tabpanel->GetTopBarItemsCtrl()->ShowPageButtons(false);
+    // The pages are selected from the workspace tabs.
+    top_bar->ShowPageButtons(false);
+    top_bar->SetWorkspaceTabs(m_nav_rail);
+
+    // Current printer and whether it has a connection (physical printer with a host).
+    m_printer_chip = new PrinterChip(top_bar,
+        []() {
+            PrinterChip::State st;
+            PresetBundle* bundle = wxGetApp().preset_bundle;
+            if (bundle == nullptr)
+                return st;
+            st.name = from_u8(bundle->printers.get_selected_preset_name());
+            PhysicalPrinterCollection& ph = bundle->physical_printers;
+            if (ph.has_selection()) {
+                st.name = from_u8(ph.get_selected_printer_name());
+                const DynamicPrintConfig* cfg = ph.get_selected_printer_config();
+                const std::string host = cfg && cfg->has("print_host") ? cfg->opt_string("print_host") : std::string();
+                st.connected = !host.empty();
+                st.tooltip   = st.connected ? format_wxstr(_L("Connection: %1%"), host) : _L("No connection configured");
+            } else
+                st.tooltip = _L("No connection configured. Add a physical printer to send the G-code over the network or USB.");
+            st.tooltip += "\n" + _L("Click to open Device");
+            return st;
+        },
+        [this, select_page]() {
+            if (m_devices_panel)
+                select_page(m_devices_panel);
+            else
+                USBPrintDialog::run(this);
+        });
+    top_bar->AddRightWindow(m_printer_chip);
 }
 
 void MainFrame::update_nav_rail(bool visibility)
