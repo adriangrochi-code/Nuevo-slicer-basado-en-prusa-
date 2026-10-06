@@ -1139,6 +1139,7 @@ void ImGuiWrapper::init_font(bool compress)
 
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
+    s_large_font = nullptr;
 
     // Create ranges of characters from m_glyph_ranges, possibly adding some OS specific special characters.
     ImVector<ImWchar> ranges;
@@ -1207,6 +1208,10 @@ void ImGuiWrapper::init_font(bool compress)
         m_custom_glyph_rects_ids[icon.first] =
             io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz * 4, icon_sz * 4, 3.0 * font_scale + icon_sz * 4);
     }
+
+    // Large figures of the results: the same font, 1.6 times larger, Latin characters only.
+    s_large_font = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSans-Regular.ttf").c_str(),
+                                                1.6f * m_font_size, nullptr, io.Fonts->GetGlyphRangesDefault());
 
     // Build texture atlas
     unsigned char* pixels;

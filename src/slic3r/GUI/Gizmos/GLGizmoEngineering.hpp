@@ -54,7 +54,7 @@ protected:
     CommonGizmosDataID on_get_requirements() const override;
 
 private:
-    enum class Tool { None, Fixture, FaceLoad, PointLoad };
+    enum class Tool { None, Fixture, FaceLoad, PointLoad, Limit };
     enum class Field { Safety, Stress, Displacement, Density };
     // Resolution of the analysis (saved in the application config as "tisma_fea_quality"): Fast and Normal give a
     // number of voxels, High and Ultra a voxel of twice and once the line width of the print.
@@ -118,6 +118,9 @@ private:
     float m_new_limit_percent { 0.f };
     // Radius over which a point load is spread [mm]: a real load acts on an area (a screw, a support).
     float m_new_radius { 3.f };
+    // Displacement limit of the next zone: in mm and in % of the largest dimension (0 = not used).
+    float m_new_zone_mm { 0.5f };
+    float m_new_zone_percent { 0.f };
     // Text fields being edited.
     float m_edit_temperature { 23.f };
     float m_edit_safety { 2.f };
@@ -148,6 +151,11 @@ private:
     std::string                m_quality_note;
     // Nozzle temperature of the analyzed part (0 = unknown) and the factor of the layer adhesion.
     double                     m_result_print_temperature { 0. };
+    // Smallest displacement limit of the loads and the limited zones of the analysis [mm], 0 = none: the
+    // displacement view reaches red at it.
+    double                     m_result_disp_limit { 0. };
+    // Displacement limit of each limited zone of the analysis [mm], in the order of Fea::Result::limit_displacement.
+    std::vector<double>        m_result_zone_limits;
     // Recommended orientation.
     std::optional<Fea::OrientationResult> m_orient;
     ObjectID                   m_orient_object;

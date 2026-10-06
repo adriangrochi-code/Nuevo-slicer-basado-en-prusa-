@@ -41,7 +41,11 @@ namespace {
 const ColorRGBA FIXTURE_COLOR   { 0.20f, 0.55f, 1.00f, 0.85f };
 const ColorRGBA FACE_LOAD_COLOR { 1.00f, 0.55f, 0.10f, 0.85f };
 const ColorRGBA LOAD_COLOR      { 0.95f, 0.25f, 0.20f, 1.00f };
+const ColorRGBA LIMIT_COLOR     { 0.79f, 0.64f, 0.96f, 0.85f };
 constexpr int   COLOR_STEPS = 16;
+// Where the material breaks (stress above the strength): black, after the red of the scale, which only means that
+// a limit is reached (the safety factor 1, or the allowed displacement).
+const ColorRGBA BROKEN_COLOR    { 0.06f, 0.06f, 0.07f, 1.00f };
 
 // Blue - cyan - green - yellow - red.
 ColorRGBA scale_color(float t)
@@ -57,6 +61,147 @@ ColorRGBA scale_color(float t)
 }
 
 ImVec4 to_imvec(const ColorRGBA &c) { return { c.r(), c.g(), c.b(), c.a() }; }
+
+// Building blocks of the panels (Órbita Pro): sections, rows of values, big figures, segmented buttons.
+namespace ui {
+const ImVec4 MUTED        { 0.541f, 0.541f, 0.588f, 1.f };
+const ImVec4 CARD         { 0.153f, 0.153f, 0.176f, 1.f };
+const ImVec4 CARD_HOVER   { 0.200f, 0.200f, 0.227f, 1.f };
+const ImVec4 LINE         { 0.204f, 0.204f, 0.235f, 1.f };
+const ImVec4 ACCENT       { 0.478f, 0.141f, 0.788f, 1.f };
+const ImVec4 ACCENT_HOVER { 0.557f, 0.204f, 0.875f, 1.f };
+const ImVec4 WHITE        { 1.f, 1.f, 1.f, 1.f };
+
+void muted(const std::string &text, float width = 0.f)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, MUTED);
+    if (width > 0.f) {
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + width);
+        ImGui::TextUnformatted(text.c_str());
+        ImGui::PopTextWrapPos();
+    } else
+        ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+}
+
+// Title of a section with a line above it, and an optional note at the right.
+void section(const std::string &title, float width, const std::string &right = {}, const ImVec4 &right_color = MUTED)
+{
+    const float fs = ImGui::GetFontSize();
+    ImGui::Dummy(ImVec2(0.f, 0.15f * fs));
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    ImGui::GetWindowDrawList()->AddLine(p, ImVec2(p.x + width, p.y), ImGui::GetColorU32(LINE));
+    ImGui::Dummy(ImVec2(0.f, 0.2f * fs));
+    const float x0 = ImGui::GetCursorPosX();
+    ImGui::TextUnformatted(title.c_str());
+    if (! right.empty()) {
+        ImGui::SameLine(std::max(x0 + ImGui::CalcTextSize(title.c_str()).x + fs, x0 + width - ImGui::CalcTextSize(right.c_str()).x));
+        ImGui::PushStyleColor(ImGuiCol_Text, right_color);
+        ImGui::TextUnformatted(right.c_str());
+        ImGui::PopStyleColor();
+    }
+}
+
+// Label at the left (muted) and value at the right.
+void row(const std::string &label, const std::string &value, float width, const ImVec4 *color = nullptr)
+{
+    const float x0 = ImGui::GetCursorPosX();
+    muted(label);
+    ImGui::SameLine(std::max(x0 + ImGui::CalcTextSize(label.c_str()).x + ImGui::GetFontSize(), x0 + width - ImGui::CalcTextSize(value.c_str()).x));
+    if (color)
+        ImGui::PushStyleColor(ImGuiCol_Text, *color);
+    ImGui::TextUnformatted(value.c_str());
+    if (color)
+        ImGui::PopStyleColor();
+}
+
+struct Metric {
+    std::string label;
+    std::string value;
+    ImVec4      color { 0.925f, 0.925f, 0.941f, 1.f };
+};
+
+// The main figures of a result in cards, side by side, in a larger font.
+void metrics(const std::vector<Metric> &items, float width)
+{
+    if (items.empty())
+        return;
+    ImDrawList  *dl  = ImGui::GetWindowDrawList();
+    const ImVec2 p0  = ImGui::GetCursorScreenPos();
+    const float  fs  = ImGui::GetFontSize();
+    ImFont      *big = ImGuiWrapper::large_font();
+    const float  big_size = big ? big->FontSize : fs;
+    if (big == nullptr)
+        big = ImGui::GetFont();
+    const float gap = ImGui::GetStyle().ItemSpacing.x;
+    const float w   = (width - gap * float(items.size() - 1)) / float(items.size());
+    const float pad = 0.55f * fs;
+    const float h   = 2.f * pad + 1.2f * fs + big_size;
+    for (size_t i = 0; i < items.size(); ++ i) {
+        const ImVec2 a(p0.x + float(i) * (w + gap), p0.y);
+        dl->AddRectFilled(a, ImVec2(a.x + w, a.y + h), ImGui::GetColorU32(CARD), 4.f);
+        dl->AddText(ImGui::GetFont(), fs, ImVec2(a.x + pad, a.y + pad), ImGui::GetColorU32(MUTED), items[i].label.c_str());
+        dl->AddText(big, big_size, ImVec2(a.x + pad, a.y + pad + 1.2f * fs), ImGui::GetColorU32(items[i].color), items[i].value.c_str());
+    }
+    ImGui::Dummy(ImVec2(width, h));
+}
+
+// Buttons side by side filling the width, the selected one in the brand color. selected = -1: none.
+bool segmented(const char *id, const std::vector<std::string> &options, int &selected, float width)
+{
+    bool changed = false;
+    const float gap = 2.f;
+    const float w   = (width - gap * float(options.size() - 1)) / float(options.size());
+    ImGui::PushID(id);
+    for (size_t i = 0; i < options.size(); ++ i) {
+        if (i > 0)
+            ImGui::SameLine(0.f, gap);
+        const bool on = int(i) == selected;
+        ImGui::PushStyleColor(ImGuiCol_Button,        on ? ACCENT : CARD);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, on ? ACCENT_HOVER : CARD_HOVER);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ACCENT_HOVER);
+        ImGui::PushStyleColor(ImGuiCol_Text,          on ? WHITE : ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        ImGui::PushID(int(i));
+        if (ImGui::Button(options[i].c_str(), ImVec2(w, 0.f)) && ! on) {
+            selected = int(i);
+            changed  = true;
+        }
+        ImGui::PopID();
+        ImGui::PopStyleColor(4);
+    }
+    ImGui::PopID();
+    return changed;
+}
+
+// The main action of a panel: a full width button in the brand color.
+bool primary_button(const std::string &label, float width, bool enabled = true)
+{
+    if (! enabled)
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.45f);
+    ImGui::PushStyleColor(ImGuiCol_Button,        ACCENT);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, enabled ? ACCENT_HOVER : ACCENT);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  enabled ? ACCENT_HOVER : ACCENT);
+    ImGui::PushStyleColor(ImGuiCol_Text,          WHITE);
+    const bool clicked = ImGui::Button(label.c_str(), ImVec2(width, 1.5f * ImGui::GetFrameHeight()));
+    ImGui::PopStyleColor(4);
+    if (! enabled)
+        ImGui::PopStyleVar();
+    return clicked && enabled;
+}
+
+// Small "x" at the right end of the line, to remove an item of a list.
+bool remove_button(const char *id, float width)
+{
+    const float bw = ImGui::GetFrameHeight();
+    ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMin().x + width - bw));
+    ImGui::PushID(id);
+    ImGui::PushStyleColor(ImGuiCol_Button, CARD);
+    const bool clicked = ImGui::Button("x", ImVec2(bw, 0.f));
+    ImGui::PopStyleColor();
+    ImGui::PopID();
+    return clicked;
+}
+} // namespace ui
 
 // The object changed (infill, modifiers, transformation): the scene, the object list and the slicing are updated.
 void changed_object(ModelObject &object)
@@ -78,7 +223,7 @@ std::string verdict_text(Fea::Verdict v)
     case Fea::Verdict::Holds:            return _u8L("The part holds");
     case Fea::Verdict::LowMargin:        return _u8L("It holds, but with less margin than the required safety factor");
     case Fea::Verdict::OutOfLoad:        return _u8L("Out of load: the stresses exceed the strength of the material");
-    case Fea::Verdict::TooFlexible:      return _u8L("Too flexible: a load moves more than its allowed deformation");
+    case Fea::Verdict::TooFlexible:      return _u8L("Too flexible: a load or a limited zone moves more than its allowed displacement");
     case Fea::Verdict::OutOfTemperature: return _u8L("Out of temperature: the material is not structural at this temperature");
     case Fea::Verdict::NotApplicable:    return _u8L("The linear analysis does not describe this material (elastomer)");
     }
@@ -282,6 +427,25 @@ void GLGizmoEngineering::add_at_mouse(const Vec2d &mouse)
             }
         Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Add fixed face"));
         eng.fixtures.emplace_back(std::move(region));
+    } else if (m_tool == Tool::Limit) {
+        EngineeringLimit limit;
+        pick_face(volume, volume_idx, facet, limit.faces);
+        // Clicking a limited face again removes its limit.
+        for (auto it = eng.limits.begin(); it != eng.limits.end(); ++ it)
+            if (it->faces.volume == limit.faces.volume && it->faces.triangles == limit.faces.triangles) {
+                Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove displacement limit"));
+                eng.limits.erase(it);
+                m_regions_dirty = m_result_stale = true;
+                return;
+            }
+        limit.max_displacement         = std::max(0.f, m_new_zone_mm);
+        limit.max_displacement_percent = std::max(0.f, m_new_zone_percent);
+        int n = 1;
+        for (const EngineeringLimit &l : eng.limits)
+            n = std::max(n, std::atoi(l.name.substr(l.name.find_last_of(' ') + 1).c_str()) + 1);
+        limit.name = GUI::format(_u8L("Zone %1%"), n);
+        Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Add displacement limit"));
+        eng.limits.emplace_back(std::move(limit));
     } else {
         EngineeringLoad load;
         load.force = Vec3d(m_new_force[0], m_new_force[1], m_new_force[2]);
@@ -440,6 +604,15 @@ bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input, JobSize s
     m_result_temperature = input.setup.temperature;
     m_result_safety      = input.setup.required_safety_factor;
     m_result_print_temperature = input.setup.print_temperature;
+    m_result_disp_limit  = 0.;
+    auto add_limit = [this](double l) { if (l > 0.) m_result_disp_limit = m_result_disp_limit > 0. ? std::min(m_result_disp_limit, l) : l; };
+    for (const Fea::Load &l : input.setup.loads)
+        add_limit(l.max_displacement);
+    m_result_zone_limits.clear();
+    for (const Fea::DisplacementLimit &l : input.setup.limits) {
+        add_limit(l.max_displacement);
+        m_result_zone_limits.push_back(l.max_displacement);
+    }
     m_result_object      = mo->id();
     return true;
 }
@@ -761,6 +934,8 @@ void GLGizmoEngineering::update_region_models()
     for (const EngineeringLoad &l : mo->engineering.loads)
         if (l.type == EngineeringLoad::Type::Faces)
             add(l.faces, FACE_LOAD_COLOR);
+    for (const EngineeringLimit &l : mo->engineering.limits)
+        add(l.faces, LIMIT_COLOR);
 }
 
 void GLGizmoEngineering::update_result_models()
@@ -783,7 +958,10 @@ void GLGizmoEngineering::update_result_models()
                voxel_of[i + size_t(size.x()) * (j + size_t(size.y()) * k)] >= 0;
     };
     const double max_vm = std::max(r.max_von_mises, 1e-9);
-    const double max_d  = std::max(r.max_displacement, 1e-12);
+    // Red at the allowed displacement when there is one (above it stays red), else at the largest displacement.
+    const double max_d  = m_result_disp_limit > 0. ? m_result_disp_limit : std::max(r.max_displacement, 1e-12);
+    // Broken voxels are black in the views of the results (not in the infill view).
+    auto broken = [&](size_t e) { return m_field != Field::Density && e < r.failure_index.size() && r.failure_index[e] > 1.f; };
     auto value = [&](size_t e) -> float {
         switch (m_field) {
         case Field::Safety:       return r.failure_index[e];    // 1 = breaks
@@ -794,7 +972,8 @@ void GLGizmoEngineering::update_result_models()
         return 0.f;
     };
 
-    std::vector<GLModel::Geometry> geos(COLOR_STEPS);
+    // The colors of the scale and, last, the broken voxels.
+    std::vector<GLModel::Geometry> geos(COLOR_STEPS + 1);
     for (GLModel::Geometry &g : geos)
         g.format = { GLModel::Geometry::EPrimitiveType::Triangles, GLModel::Geometry::EVertexLayout::P3N3 };
     static const int dirs[6][3] = { {1,0,0}, {-1,0,0}, {0,1,0}, {0,-1,0}, {0,0,1}, {0,0,-1} };
@@ -804,7 +983,7 @@ void GLGizmoEngineering::update_result_models()
             continue;
         const int idx = r.voxels[e];
         const int i = idx % size.x(), j = (idx / size.x()) % size.y(), k = idx / (size.x() * size.y());
-        const int step = std::clamp(int(value(e) * (COLOR_STEPS - 1) + 0.5f), 0, COLOR_STEPS - 1);
+        const int step = broken(e) ? COLOR_STEPS : std::clamp(int(value(e) * (COLOR_STEPS - 1) + 0.5f), 0, COLOR_STEPS - 1);
         GLModel::Geometry &g = geos[step];
         const Vec3f c = (r.origin + r.h * Vec3d(i + 0.5, j + 0.5, k + 0.5)).cast<float>();
         for (const auto &d : dirs) {
@@ -832,12 +1011,12 @@ void GLGizmoEngineering::update_result_models()
             }
         }
     }
-    m_result_models.resize(COLOR_STEPS);
-    for (int s = 0; s < COLOR_STEPS; ++ s) {
+    m_result_models.resize(COLOR_STEPS + 1);
+    for (int s = 0; s <= COLOR_STEPS; ++ s) {
         if (geos[s].is_empty())
             continue;
         m_result_models[s].init_from(std::move(geos[s]));
-        m_result_models[s].set_color(scale_color(float(s) / float(COLOR_STEPS - 1)));
+        m_result_models[s].set_color(s == COLOR_STEPS ? BROKEN_COLOR : scale_color(float(s) / float(COLOR_STEPS - 1)));
     }
 }
 
@@ -1013,9 +1192,12 @@ void GLGizmoEngineering::render_legend(float width)
     const Fea::Result &r = *m_result;
     std::string lo, hi;
     switch (m_field) {
-    case Field::Safety:       lo = "0"; hi = _u8L("1 = breaks"); break;
+    case Field::Safety:       lo = "0"; hi = _u8L("1 = at the strength"); break;
     case Field::Stress:       lo = "0 MPa"; hi = GUI::format("%.2f MPa", r.max_von_mises); break;
-    case Field::Displacement: lo = "0 mm"; hi = GUI::format("%.3f mm", r.max_displacement); break;
+    case Field::Displacement:
+        lo = "0 mm";
+        hi = m_result_disp_limit > 0. ? GUI::format(_u8L("%1$.3f mm (limit)"), m_result_disp_limit) : GUI::format("%.3f mm", r.max_displacement);
+        break;
     case Field::Density:      lo = _u8L("0 % (empty)"); hi = _u8L("100 % (solid)"); break;
     }
     if (m_field == Field::Density) {
@@ -1028,6 +1210,16 @@ void GLGizmoEngineering::render_legend(float width)
     ImGuiPureWrap::text(lo);
     ImGui::SameLine(std::max(0.f, width - ImGuiPureWrap::calc_text_size(hi).x + ImGui::GetStyle().WindowPadding.x));
     ImGuiPureWrap::text(hi);
+    // Black: where the material breaks.
+    if (r.max_failure_index > 1.) {
+        const ImVec2 q  = ImGui::GetCursorScreenPos();
+        const float  sq = ImGui::GetTextLineHeight();
+        draw->AddRectFilled(q, ImVec2(q.x + sq, q.y + sq), ImGui::GetColorU32(to_imvec(BROKEN_COLOR)), 2.f);
+        draw->AddRect(q, ImVec2(q.x + sq, q.y + sq), ImGui::GetColorU32(ImVec4(0.55f, 0.55f, 0.6f, 1.f)), 2.f);
+        ImGui::Dummy(ImVec2(sq, sq));
+        ImGui::SameLine();
+        ImGuiPureWrap::text(_u8L("Breaks (stress above the strength)"));
+    }
 }
 
 void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_limit)
@@ -1044,7 +1236,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     ImGuiPureWrap::begin(get_name(false), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     const float win_h = ImGui::GetWindowHeight();
     ImGui::SetWindowPos(ImVec2(x, std::min(y, bottom_limit - win_h)), ImGuiCond_Always);
-    const float width = 22.f * ImGui::GetFontSize();
+    const float width   = 24.f * ImGui::GetFontSize();
+    const float label_w = 9.f * ImGui::GetFontSize();
     ImGui::PushItemWidth(10.f * ImGui::GetFontSize());
 
     ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, mo->name);
@@ -1068,7 +1261,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         return;
     }
 
-    // Material.
+    // ---- Conditions: material, temperature, safety factor, model of the part.
+    ui::section(_u8L("Conditions"), width);
     const std::string filament = filament_type(*mo);
     const Fea::Material *from_filament = Fea::material_for_filament_type(filament);
     std::vector<std::string> options;
@@ -1079,22 +1273,23 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         if (Fea::materials()[i].key == eng.material)
             selection = int(i + 1);
     }
-    if (ImGuiPureWrap::combo(_u8L("Material"), options, selection, 0, 9.f * ImGui::GetFontSize(), 10.f * ImGui::GetFontSize())) {
+    if (ImGuiPureWrap::combo(_u8L("Material"), options, selection, 0, label_w, width - label_w)) {
         Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Change material"));
         eng.material = selection == 0 ? std::string() : Fea::materials()[selection - 1].key;
         m_result_stale = true;
     }
     const Fea::Material *material = eng.material.empty() ? from_filament : Fea::find_material(eng.material);
     if (material == nullptr)
-        ImGuiPureWrap::text_wrapped(_u8L("The filament type has no material in the table: choose one."), width);
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("The filament type has no material in the table: choose one."));
     else if (! material->note.empty())
-        ImGuiPureWrap::text_wrapped(material->note, width);
+        ui::muted(material->note, width);
 
-    // Working conditions.
     auto edit_value = [&](const std::string &label, float &buffer, double &target, float lo, float hi, const std::string &snapshot_name) {
-        ImGuiPureWrap::text(label);
-        ImGui::SameLine(9.f * ImGui::GetFontSize());
+        ui::muted(label);
+        ImGui::SameLine(label_w);
+        ImGui::PushItemWidth(width - label_w);
         ImGui::InputFloat(("##" + label).c_str(), &buffer, 0.f, 0.f, "%.1f");
+        ImGui::PopItemWidth();
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             buffer = std::clamp(buffer, lo, hi);
             if (double(buffer) != target) {
@@ -1110,13 +1305,11 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfTemperature)),
             GUI::format(_u8L("%1% is not structural above %2% °C"), material->name, material->max_service_temperature));
     edit_value(_u8L("Safety factor"), m_edit_safety, eng.safety_factor, 1.f, 20.f, _u8L("Change safety factor"));
-    if (ImGuiPureWrap::checkbox(_u8L("Printed part (walls and infill of the profile)"), m_as_printed))
-        m_result_stale = true;
     {
         std::vector<std::string> qualities = { _u8L("Fast"), _u8L("Normal"), _u8L("High (voxel 2 line widths)"),
                                                _u8L("Ultra (voxel 1 line width)") };
         int q = int(m_quality);
-        if (ImGuiPureWrap::combo(_u8L("Resolution"), qualities, q, 0, 9.f * ImGui::GetFontSize(), 12.f * ImGui::GetFontSize())) {
+        if (ImGuiPureWrap::combo(_u8L("Resolution"), qualities, q, 0, label_w, width - label_w)) {
             m_quality = Quality(q);
             wxGetApp().app_config->set("tisma_fea_quality", std::to_string(q));
             m_result_stale = true;
@@ -1127,92 +1320,154 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT,
                 GUI::format(_u8L("About %1% voxels of %2$.2f mm: too many, limited to %3%."), size_t(voxels), h, size_t(MAX_VOXELS_SINGLE)));
         else
-            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_GREY_LIGHT,
-                GUI::format(_u8L("About %1% voxels of %2$.2f mm."), size_t(voxels), h));
+            ui::muted(GUI::format(_u8L("About %1% voxels of %2$.2f mm."), size_t(voxels), h));
         if (voxels > MAX_VOXELS_MANY)
-            ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
-                                                    size_t(MAX_VOXELS_MANY)), width);
+            ui::muted(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
+                                  size_t(MAX_VOXELS_MANY)), width);
     }
+    if (ImGuiPureWrap::checkbox(_u8L("Printed part (walls and infill of the profile)"), m_as_printed))
+        m_result_stale = true;
 
-    // Tools.
-    ImGui::Separator();
-    ImGuiPureWrap::text(_u8L("Click on the part:"));
-    if (ImGuiPureWrap::radio_button(_u8L("Rotate the view"), m_tool == Tool::None))       m_tool = Tool::None;
-    if (ImGuiPureWrap::radio_button(_u8L("Fixed face"), m_tool == Tool::Fixture))         m_tool = Tool::Fixture;
-    if (ImGuiPureWrap::radio_button(_u8L("Load on a face"), m_tool == Tool::FaceLoad))    m_tool = Tool::FaceLoad;
-    if (ImGuiPureWrap::radio_button(_u8L("Load on a point"), m_tool == Tool::PointLoad))  m_tool = Tool::PointLoad;
-    if (m_tool == Tool::FaceLoad || m_tool == Tool::PointLoad) {
-        ImGuiPureWrap::text(_u8L("Force X, Y, Z [N]"));
-        ImGui::InputFloat3("##force", m_new_force, "%.1f");
-        ImGuiPureWrap::text(_u8L("Max. deformation [mm] / [%]"));
-        ImGui::PushItemWidth(4.8f * ImGui::GetFontSize());
-        ImGui::InputFloat("##limit_mm", &m_new_limit_mm, 0.f, 0.f, "%.2f");
-        ImGui::SameLine();
-        ImGui::InputFloat("##limit_pct", &m_new_limit_percent, 0.f, 0.f, "%.2f");
-        ImGui::PopItemWidth();
-        if (m_tool == Tool::PointLoad) {
-            ImGuiPureWrap::text(_u8L("Load radius [mm]"));
-            ImGui::SameLine(9.f * ImGui::GetFontSize());
-            ImGui::InputFloat("##radius", &m_new_radius, 0.f, 0.f, "%.1f");
+    // ---- Supports, loads and displacement limits: what a click on the part adds.
+    ui::section(_u8L("Supports, loads and limits"), width);
+    ui::muted(_u8L("Click on the part to add:"));
+    {
+        struct Option { std::string label; Tool tool; };
+        const std::vector<std::vector<Option>> rows = {
+            { { _u8L("Nothing (rotate)"), Tool::None },     { _u8L("Fixed face"), Tool::Fixture } },
+            { { _u8L("Load on a face"), Tool::FaceLoad },   { _u8L("Load on a point"), Tool::PointLoad } },
+            { { _u8L("Displacement limit"), Tool::Limit } } };
+        for (size_t r = 0; r < rows.size(); ++ r) {
+            std::vector<std::string> labels;
+            int sel = -1;
+            for (size_t i = 0; i < rows[r].size(); ++ i) {
+                labels.push_back(rows[r][i].label);
+                if (rows[r][i].tool == m_tool)
+                    sel = int(i);
+            }
+            if (ui::segmented(("tool" + std::to_string(r)).c_str(), labels, sel, width))
+                m_tool = rows[r][size_t(sel)].tool;
         }
-        ImGuiPureWrap::text_wrapped(_u8L("0 = no limit. Z is up, as on the bed: -100 in Z pushes down with 100 N (about 10 kg)."), width);
+    }
+    auto limit_inputs = [&](const char *id, float &mm, float &percent) {
+        ui::muted(_u8L("Max. displacement"));
+        ImGui::SameLine(label_w);
+        const float w = 0.5f * (width - label_w - ImGui::GetStyle().ItemSpacing.x);
+        ImGui::PushItemWidth(w);
+        ImGui::InputFloat((std::string("##mm") + id).c_str(), &mm, 0.f, 0.f, "%.2f mm");
+        ImGui::SameLine();
+        ImGui::InputFloat((std::string("##pct") + id).c_str(), &percent, 0.f, 0.f, "%.2f %%");
+        ImGui::PopItemWidth();
+        mm      = std::max(0.f, mm);
+        percent = std::max(0.f, percent);
+    };
+    if (m_tool == Tool::FaceLoad || m_tool == Tool::PointLoad) {
+        ui::muted(_u8L("Force X, Y, Z [N]"));
+        ImGui::PushItemWidth(width);
+        ImGui::InputFloat3("##force", m_new_force, "%.1f");
+        ImGui::PopItemWidth();
+        limit_inputs("load", m_new_limit_mm, m_new_limit_percent);
+        if (m_tool == Tool::PointLoad) {
+            ui::muted(_u8L("Load radius [mm]"));
+            ImGui::SameLine(label_w);
+            ImGui::PushItemWidth(width - label_w);
+            ImGui::InputFloat("##radius", &m_new_radius, 0.f, 0.f, "%.1f");
+            ImGui::PopItemWidth();
+        }
+        ui::muted(_u8L("0 = no limit. Z is up, as on the bed: -100 in Z pushes down with 100 N (about 10 kg)."), width);
+    } else if (m_tool == Tool::Limit) {
+        limit_inputs("zone", m_new_zone_mm, m_new_zone_percent);
+        ui::muted(_u8L("Faces which must not move more than this, whatever the loads (a fit, a sealing face, a mechanism). "
+                       "Elsewhere the part may deform more: only its strength is checked there. Click a limited face again to remove it."),
+                  width);
     }
 
-    // Supports and loads.
-    ImGui::Separator();
-    ImGuiPureWrap::text(GUI::format(_u8L("Fixed faces: %1%"), eng.fixtures.size()));
+    // Lists of what was added, with the displacement measured by the last analysis.
+    const bool measured = m_result && ! m_result_stale && m_result_object == mo->id();
+    const ImVec4 red = to_imvec(verdict_color(Fea::Verdict::OutOfLoad));
+    if (! eng.fixtures.empty() || ! eng.loads.empty() || ! eng.limits.empty())
+        ImGui::Dummy(ImVec2(0.f, 0.2f * ImGui::GetFontSize()));
     for (size_t i = 0; i < eng.fixtures.size(); ++ i) {
-        ImGui::PushID(int(i));
-        ImGuiPureWrap::text(GUI::format("  %1% (%2%)", GUI::format(_u8L("Face %1%"), i + 1), eng.fixtures[i].triangles.size()));
-        ImGui::SameLine();
-        if (ImGuiPureWrap::button(_u8L("Remove"))) {
+        ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(FIXTURE_COLOR));
+        ImGui::TextUnformatted(GUI::format(_u8L("Fixed face %1%"), i + 1).c_str());
+        ImGui::PopStyleColor();
+        if (ui::remove_button(("fixture" + std::to_string(i)).c_str(), width)) {
             Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove fixed face"));
             eng.fixtures.erase(eng.fixtures.begin() + i);
             m_regions_dirty = m_result_stale = true;
-            ImGui::PopID();
             break;
         }
-        ImGui::PopID();
     }
-    ImGuiPureWrap::text(GUI::format(_u8L("Loads: %1%"), eng.loads.size()));
     for (size_t i = 0; i < eng.loads.size(); ++ i) {
         const EngineeringLoad &l = eng.loads[i];
-        ImGui::PushID(int(1000 + i));
-        std::string text = GUI::format("  %1%: (%2%, %3%, %4%) N", l.name, l.force.x(), l.force.y(), l.force.z());
-        if (l.type == EngineeringLoad::Type::Point && l.radius > 0.)
-            text += GUI::format(_u8L(", r %1% mm"), l.radius);
-        if (l.max_displacement > 0.)
-            text += GUI::format(_u8L(", max %1% mm"), l.max_displacement);
-        if (l.max_displacement_percent > 0.)
-            text += GUI::format(_u8L(", max %1% %%"), l.max_displacement_percent);
-        if (m_result && ! m_result_stale && i < m_result->load_displacement.size())
-            text += GUI::format(_u8L(" -> moves %1$.3f mm"), m_result->load_displacement[i]);
-        ImGuiPureWrap::text(text);
-        ImGui::SameLine();
-        if (ImGuiPureWrap::button(_u8L("Remove"))) {
+        ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(l.type == EngineeringLoad::Type::Faces ? FACE_LOAD_COLOR : LOAD_COLOR));
+        ImGui::TextUnformatted(GUI::format("%1%: (%2%, %3%, %4%) N", l.name, l.force.x(), l.force.y(), l.force.z()).c_str());
+        ImGui::PopStyleColor();
+        if (ui::remove_button(("load" + std::to_string(i)).c_str(), width)) {
             Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove load"));
             eng.loads.erase(eng.loads.begin() + i);
             m_regions_dirty = m_result_stale = true;
-            ImGui::PopID();
             break;
         }
-        ImGui::PopID();
+        std::string details;
+        if (l.type == EngineeringLoad::Type::Point && l.radius > 0.)
+            details += GUI::format(_u8L("radius %1% mm"), l.radius);
+        if (l.max_displacement > 0.)
+            details += (details.empty() ? "" : ", ") + GUI::format(_u8L("max %1% mm"), l.max_displacement);
+        if (l.max_displacement_percent > 0.)
+            details += (details.empty() ? "" : ", ") + GUI::format(_u8L("max %1% %%"), l.max_displacement_percent);
+        if (measured && i < m_result->load_displacement.size())
+            details += (details.empty() ? "" : ", ") + GUI::format(_u8L("moves %1$.3f mm"), m_result->load_displacement[i]);
+        if (! details.empty())
+            ui::muted("    " + details, width);
     }
-
-    // Quick cleanup: the last load, or everything to start again.
-    if (! eng.loads.empty()) {
-        if (ImGuiPureWrap::button(_u8L("Remove last load"), _u8L("Removes the last load added (Ctrl+Z restores it)"))) {
-            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove load"));
-            eng.loads.pop_back();
+    for (size_t i = 0; i < eng.limits.size(); ++ i) {
+        EngineeringLimit &l = eng.limits[i];
+        ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(LIMIT_COLOR));
+        std::string text = l.name + ":";
+        if (l.max_displacement > 0.)
+            text += GUI::format(_u8L(" max %1% mm"), l.max_displacement);
+        if (l.max_displacement_percent > 0.)
+            text += GUI::format(_u8L(" max %1% %%"), l.max_displacement_percent);
+        if (l.max_displacement <= 0. && l.max_displacement_percent <= 0.)
+            text += " " + _u8L("no limit");
+        ImGui::TextUnformatted(text.c_str());
+        ImGui::PopStyleColor();
+        if (ui::remove_button(("limit" + std::to_string(i)).c_str(), width)) {
+            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove displacement limit"));
+            eng.limits.erase(eng.limits.begin() + i);
             m_regions_dirty = m_result_stale = true;
+            break;
         }
-        ImGui::SameLine();
+        // The measured displacement of the zone: red when it is above its limit.
+        size_t k = 0;   // index among the zones with a limit (the analysis skips the others)
+        for (size_t j = 0; j < i; ++ j)
+            k += eng.limits[j].max_displacement > 0. || eng.limits[j].max_displacement_percent > 0.;
+        const bool has_limit = l.max_displacement > 0. || l.max_displacement_percent > 0.;
+        if (measured && has_limit && k < m_result->limit_displacement.size()) {
+            const double d = m_result->limit_displacement[k];
+            const double lim = k < m_result_zone_limits.size() ? m_result_zone_limits[k] : 0.;
+            const std::string t = "    " + GUI::format(_u8L("moves %1$.3f mm of %2$.3f mm allowed"), d, lim);
+            if (lim > 0. && d > lim)
+                ImGuiPureWrap::text_colored(red, t);
+            else
+                ui::muted(t, width);
+        }
     }
-    if (! eng.loads.empty() || ! eng.fixtures.empty()) {
-        if (ImGuiPureWrap::button(_u8L("Clear all"), _u8L("Removes all the fixed faces and loads of the part (Ctrl+Z restores them)"))) {
+    if (! eng.loads.empty() || ! eng.fixtures.empty() || ! eng.limits.empty()) {
+        if (! eng.loads.empty()) {
+            if (ImGuiPureWrap::button(_u8L("Remove last load"), _u8L("Removes the last load added (Ctrl+Z restores it)"))) {
+                Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove load"));
+                eng.loads.pop_back();
+                m_regions_dirty = m_result_stale = true;
+            }
+            ImGui::SameLine();
+        }
+        if (ImGuiPureWrap::button(_u8L("Clear all"), _u8L("Removes all the fixed faces, loads and limits of the part (Ctrl+Z restores them)"))) {
             Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Clear supports and loads"));
             eng.loads.clear();
             eng.fixtures.clear();
+            eng.limits.clear();
             m_regions_dirty = m_result_stale = true;
             m_result.reset();
             m_result_models_dirty = true;
@@ -1220,75 +1475,75 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         }
     }
 
-    // Analysis.
-    ImGui::Separator();
+    // ---- The analysis.
+    ImGui::Dummy(ImVec2(0.f, 0.3f * ImGui::GetFontSize()));
     if (m_running) {
-        ImGui::ProgressBar(float(m_progress.load()) / 100.f, ImVec2(width * 0.7f, 0.f));
+        ImGui::ProgressBar(float(m_progress.load()) / 100.f, ImVec2(width - 6.f * ImGui::GetFontSize(), 0.f));
         ImGui::SameLine();
         if (ImGuiPureWrap::button(_u8L("Cancel")))
             cancel_analysis();
     } else {
         const bool can_run = ! eng.fixtures.empty() && ! eng.loads.empty();
-        if (ImGuiPureWrap::button(_u8L("Analyze"), _u8L("Run the structural analysis")) && can_run)
+        if (ui::primary_button(_u8L("Analyze"), width, can_run))
             start_analysis();
-        if (! can_run) {
-            ImGui::SameLine();
-            ImGuiPureWrap::text(_u8L("Add a fixed face and a load."));
-        }
+        if (! can_run)
+            ui::muted(_u8L("Add a fixed face and a load."));
     }
     if (! m_error.empty())
-        ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfLoad)), m_error);
+        ImGuiPureWrap::text_colored(red, m_error);
 
-    // Results.
+    // ---- Result.
     if (m_result && m_result_object == mo->id()) {
         const Fea::Result &r = *m_result;
-        ImGui::Separator();
-        if (m_result_stale)
-            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_GREY_LIGHT, _u8L("The setup changed: analyze again."));
+        ui::section(_u8L("Result"), width, m_result_stale ? _u8L("setup changed: analyze again") : std::string(), ImGuiPureWrap::COL_ORANGE_LIGHT);
         ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(verdict_color(r.verdict)));
         ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + width);
         ImGui::TextUnformatted(verdict_text(r.verdict).c_str());
         ImGui::PopTextWrapPos();
         ImGui::PopStyleColor();
-        ImGuiPureWrap::text(GUI::format(_u8L("Material: %1% at %2% °C (stiffness and strength x %3$.2f)"),
-                                   m_result_material, m_result_temperature, r.temperature_factor));
+        const ImVec4 text_col = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        const ImVec4 sf_col = to_imvec(verdict_color(r.safety_factor >= m_result_safety ? Fea::Verdict::Holds :
+                                                     r.safety_factor >= 1. ? Fea::Verdict::LowMargin : Fea::Verdict::OutOfLoad));
+        ui::metrics({ { _u8L("Safety factor"), GUI::format("%1$.2f", r.safety_factor), sf_col },
+                      { _u8L("Max. displacement"), GUI::format("%1$.3f mm", r.max_displacement),
+                        r.verdict == Fea::Verdict::TooFlexible ? red : text_col } }, width);
+        ui::row(_u8L("Required safety factor"), GUI::format("%1$.1f", m_result_safety), width);
+        ui::row(_u8L("Max. stress (von Mises)"), GUI::format("%1$.2f MPa", r.max_von_mises), width);
+        ui::row(_u8L("Estimated mass"), GUI::format(_u8L("%1$.1f g (solid %2$.1f g)"), r.mass, r.solid_mass), width);
+        ui::row(_u8L("Material"), GUI::format(_u8L("%1% at %2% °C (x %3$.2f)"), m_result_material, m_result_temperature, r.temperature_factor), width);
         if (m_result_print_temperature > 0.)
-            ImGuiPureWrap::text(GUI::format(_u8L("Layer adhesion with the nozzle at %1% °C: x %2$.2f"),
-                                            int(std::round(m_result_print_temperature)), r.layer_adhesion_factor));
+            ui::row(_u8L("Layer adhesion"), GUI::format(_u8L("x %1$.2f (nozzle at %2% °C)"), r.layer_adhesion_factor,
+                                                        int(std::round(m_result_print_temperature))), width);
         else
-            ImGuiPureWrap::text(_u8L("Nozzle temperature unknown: nominal layer adhesion."));
+            ui::row(_u8L("Layer adhesion"), _u8L("nominal (nozzle temperature unknown)"), width);
         if (r.layer_orientations > 1)
-            ImGuiPureWrap::text(GUI::format(_u8L("Curved (non-planar) layers: the material follows them (%1% directions)."),
-                                            r.layer_orientations));
-        ImGuiPureWrap::text(GUI::format(_u8L("Safety factor: %1$.2f (required %2$.1f)"), r.safety_factor, m_result_safety));
-        ImGuiPureWrap::text(GUI::format(_u8L("Max. displacement: %1$.3f mm"), r.max_displacement));
-        ImGuiPureWrap::text(GUI::format(_u8L("Max. stress (von Mises): %1$.2f MPa"), r.max_von_mises));
-        ImGuiPureWrap::text(GUI::format(_u8L("Estimated mass: %1$.1f g (solid part: %2$.1f g)"), r.mass, r.solid_mass));
+            ui::row(_u8L("Curved layers"), GUI::format(_u8L("%1% directions"), r.layer_orientations), width);
         if (! r.alternatives.empty()) {
             std::string alt;
             for (size_t i = 0; i < r.alternatives.size() && i < 5; ++ i)
                 alt += (i ? ", " : "") + GUI::format("%1% (%2$.1f)", r.alternatives[i].first, r.alternatives[i].second);
-            ImGuiPureWrap::text_wrapped(GUI::format(_u8L("Materials that would hold (safety factor): %1%"), alt), width);
+            ui::muted(GUI::format(_u8L("Materials that would hold (safety factor): %1%"), alt), width);
         }
-        ImGuiPureWrap::checkbox(_u8L("Show results on the part"), m_show_results);
-        if (m_show_results) {
-            std::vector<std::string> fields = { _u8L("Safety (stress / strength)"), _u8L("Stress (von Mises)"), _u8L("Displacement"), _u8L("Infill") };
-            int f = int(m_field);
-            if (ImGuiPureWrap::combo(_u8L("Show"), fields, f, 0, 4.f * ImGui::GetFontSize(), 14.f * ImGui::GetFontSize())) {
-                m_field = Field(f);
-                m_result_models_dirty = true;
-            }
+
+        // What the colors on the part show.
+        int view = m_show_results ? int(m_field) : 4;
+        if (ui::segmented("view", { _u8L("Safety"), _u8L("Stress"), _u8L("Displ."), _u8L("Infill"), _u8L("Hide") }, view, width)) {
+            m_show_results = view != 4;
+            if (m_show_results)
+                m_field = Field(view);
+            m_result_models_dirty = true;
+        }
+        if (m_show_results)
             render_legend(width);
-        }
-        ImGuiPureWrap::text_wrapped(r.density.empty() || r.mass >= r.solid_mass * 0.999 ?
+        ui::muted(r.density.empty() || r.mass >= r.solid_mass * 0.999 ?
             GUI::format(_u8L("Solid part, %1$.2f mm voxels."), r.h) :
             GUI::format(_u8L("Walls and homogenized infill, %1$.2f mm voxels."), r.h), width);
         if (! m_quality_note.empty())
-            ImGuiPureWrap::text_wrapped(m_quality_note, width);
+            ui::muted(m_quality_note, width);
     }
 
-    // Lightest infill (phase 6).
-    ImGui::Separator();
+    // ---- Optimize: the lightest structure for these loads.
+    ui::section(_u8L("Optimize"), width);
     if (m_open_infill_section) {
         ImGui::SetNextItemOpen(true);
         m_open_infill_section = false;
@@ -1567,52 +1822,70 @@ void GLGizmoEngineering::render_aero()
 void GLGizmoEngineering::render_aero_panel(float width)
 {
     const ModelObject *mo = model_object();
-    ImGuiPureWrap::text_wrapped(_u8L("Air flowing around the part as printed: drag, lift and pressure map. The roughness "
-                                     "of the layers is taken into account. An estimate to compare designs and orientations."),
-                                width);
-    ImGui::Separator();
+    const float label_w = 9.f * ImGui::GetFontSize();
+    ui::muted(_u8L("Air flowing around the part as printed, with the roughness of the layers. An estimate to compare "
+                   "designs and orientations."), width);
 
-    // Conditions.
+    // ---- Conditions.
+    ui::section(_u8L("Conditions"), width);
     std::vector<std::string> dirs = { _u8L("Towards +X"), _u8L("Towards -X"), _u8L("Towards +Y"), _u8L("Towards -Y"),
                                       _u8L("Upwards (+Z)"), _u8L("Downwards (-Z)"), _u8L("Into the view") };
-    if (ImGuiPureWrap::combo(_u8L("Air flow"), dirs, m_aero_dir, 0, 9.f * ImGui::GetFontSize(), 10.f * ImGui::GetFontSize())) {
+    if (ImGuiPureWrap::combo(_u8L("Air flow"), dirs, m_aero_dir, 0, label_w, width - label_w)) {
         if (m_aero_dir == 6)
             m_aero_view_dir = wxGetApp().plater()->get_camera().get_dir_forward();
     }
-    ImGuiPureWrap::text(_u8L("Speed (m/s)"));
-    ImGui::SameLine(9.f * ImGui::GetFontSize());
+    ui::muted(_u8L("Speed (m/s)"));
+    ImGui::SameLine(label_w);
+    ImGui::PushItemWidth(width - label_w);
     ImGui::InputFloat("##aero_speed", &m_aero_speed, 1.f, 10.f, "%.1f");
+    ImGui::PopItemWidth();
     m_aero_speed = std::clamp(m_aero_speed, 0.1f, 300.f);
-    ImGuiPureWrap::text(GUI::format(_u8L("= %1$.0f km/h"), m_aero_speed * 3.6));
+    ImGui::SameLine(0.f, 0.f);
+    ImGui::NewLine();
+    ui::row("", GUI::format(_u8L("= %1$.0f km/h"), m_aero_speed * 3.6), width);
     std::vector<std::string> qualities = { _u8L("Fast"), _u8L("Normal"), _u8L("High"), _u8L("Friction only (instant)") };
-    ImGuiPureWrap::combo(_u8L("Quality"), qualities, m_aero_quality, 0, 9.f * ImGui::GetFontSize(), 10.f * ImGui::GetFontSize());
+    ImGuiPureWrap::combo(_u8L("Quality"), qualities, m_aero_quality, 0, label_w, width - label_w);
 
+    // ---- The analysis.
+    ImGui::Dummy(ImVec2(0.f, 0.3f * ImGui::GetFontSize()));
     if (m_running) {
-        ImGuiPureWrap::text(GUI::format(_u8L("Simulating the air... %1%%%"), int(m_progress)));
+        ImGui::ProgressBar(float(m_progress.load()) / 100.f, ImVec2(width - 6.f * ImGui::GetFontSize(), 0.f),
+                           GUI::format(_u8L("Simulating the air... %1%%%"), int(m_progress)).c_str());
+        ImGui::SameLine();
         if (ImGuiPureWrap::button(_u8L("Cancel")))
             cancel_analysis();
-    } else if (ImGuiPureWrap::button(_u8L("Analyze the air flow")))
+    } else if (ui::primary_button(_u8L("Analyze the air flow"), width))
         start_aero();
     if (! m_error.empty())
-        ImGuiPureWrap::text_wrapped(m_error, width);
+        ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfLoad)), m_error);
 
     if (! m_aero || ! m_aero->ok || mo == nullptr || m_aero_object != mo->id())
         return;
     const Fea::AeroResult &r = *m_aero;
-    ImGui::Separator();
-    ImGuiPureWrap::text(GUI::format(_u8L("Drag: %1$.3f N"), r.drag));
-    ImGuiPureWrap::text(GUI::format(_u8L("Drag coefficient Cd %1$.2f (pressure %2$.2f + friction %3$.2f)"), r.cd, r.cd_pressure, r.cd_friction));
-    const double lift = std::sqrt(std::max(0., r.force.squaredNorm() - r.drag * r.drag));
-    ImGuiPureWrap::text(GUI::format(_u8L("Force across the flow: %1$.3f N"), lift));
-    ImGuiPureWrap::text(GUI::format(_u8L("Frontal area %1$.0f mm², Reynolds %2$.0f"), r.frontal_area, r.reynolds));
-    ImGuiPureWrap::text(GUI::format(_u8L("Roughness Ra %1$.0f µm: %2$.0f %% of the friction"), r.mean_roughness_ra, 100. * r.roughness_friction_share));
-    if (r.converged && r.sim_reynolds < r.reynolds)
-        ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The pressure was simulated at Reynolds %1$.0f (limit of the resolution)."), r.sim_reynolds), width);
 
-    ImGui::Checkbox(_u8L("Show results").c_str(), &m_show_results);
-    if (ImGui::Checkbox(_u8L("Show the roughness instead of the pressure").c_str(), &m_aero_show_ra))
-        m_aero_models_dirty = true;
-    // Legend.
+    // ---- Result.
+    ui::section(_u8L("Result"), width, r.converged ? std::string() : _u8L("not converged"), ImGuiPureWrap::COL_ORANGE_LIGHT);
+    ui::metrics({ { _u8L("Drag"), GUI::format("%1$.3f N", r.drag) }, { "Cd", GUI::format("%1$.2f", r.cd) } }, width);
+    ui::row(_u8L("Cd pressure / friction"), GUI::format("%1$.2f / %2$.2f", r.cd_pressure, r.cd_friction), width);
+    const double lift = std::sqrt(std::max(0., r.force.squaredNorm() - r.drag * r.drag));
+    ui::row(_u8L("Force across the flow"), GUI::format("%1$.3f N", lift), width);
+    ui::row(_u8L("Frontal area"), GUI::format("%1$.0f mm²", r.frontal_area), width);
+    ui::row(_u8L("Reynolds"), r.converged && r.sim_reynolds < r.reynolds ?
+                GUI::format(_u8L("%1$.0f (simulated %2$.0f)"), r.reynolds, r.sim_reynolds) : GUI::format("%1$.0f", r.reynolds), width);
+    ui::row(_u8L("Roughness Ra"), GUI::format(_u8L("%1$.0f µm (%2$.0f %% of the friction)"), r.mean_roughness_ra,
+                                              100. * r.roughness_friction_share), width);
+
+    // What the colors on the part show.
+    int view = ! m_show_results ? 2 : m_aero_show_ra ? 1 : 0;
+    if (ui::segmented("aero_view", { _u8L("Pressure"), _u8L("Roughness"), _u8L("Hide") }, view, width)) {
+        m_show_results = view != 2;
+        if (m_show_results && m_aero_show_ra != (view == 1)) {
+            m_aero_show_ra = view == 1;
+            m_aero_models_dirty = true;
+        }
+    }
+    if (! m_show_results)
+        return;
     ImDrawList *draw = ImGui::GetWindowDrawList();
     const ImVec2 p = ImGui::GetCursorScreenPos();
     const float  hh = ImGui::GetFrameHeight() * 0.6f;
@@ -1622,9 +1895,7 @@ void GLGizmoEngineering::render_aero_panel(float width)
     ImGui::Dummy(ImVec2(width, hh));
     const std::string lo = m_aero_show_ra ? "0 µm" : _u8L("Cp -1.5 (suction)");
     const std::string hi = m_aero_show_ra ? GUI::format("%1$.0f µm", RA_MAX) : _u8L("1 (stagnation)");
-    ImGuiPureWrap::text(lo);
-    ImGui::SameLine(std::max(0.f, width - ImGuiPureWrap::calc_text_size(hi).x + ImGui::GetStyle().WindowPadding.x));
-    ImGuiPureWrap::text(hi);
+    ui::row(lo, hi, width);
 }
 
 } // namespace GUI

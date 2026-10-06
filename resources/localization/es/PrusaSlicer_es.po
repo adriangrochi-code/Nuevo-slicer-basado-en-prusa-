@@ -32791,3 +32791,159 @@ msgstr "Sin conexión configurada. Agregá una impresora física para enviar el 
 
 msgid "Click to open Device"
 msgstr "Clic para abrir Dispositivo"
+
+msgid " max %1% %%"
+msgstr " máx. %1% %%"
+
+msgid " max %1% mm"
+msgstr " máx. %1% mm"
+
+msgid "%1$.0f (simulated %2$.0f)"
+msgstr "%1$.0f (simulado %2$.0f)"
+
+msgid "%1$.0f µm (%2$.0f %% of the friction)"
+msgstr "%1$.0f µm (%2$.0f %% del rozamiento)"
+
+msgid "%1$.1f g (solid %2$.1f g)"
+msgstr "%1$.1f g (maciza %2$.1f g)"
+
+msgid "%1$.3f mm (limit)"
+msgstr "%1$.3f mm (límite)"
+
+msgid "%1% at %2% °C (x %3$.2f)"
+msgstr "%1% a %2% °C (x %3$.2f)"
+
+msgid "%1% directions"
+msgstr "%1% direcciones"
+
+msgid "1 = at the strength"
+msgstr "1 = en la resistencia"
+
+msgid "Add displacement limit"
+msgstr "Agregar límite de desplazamiento"
+
+msgid "Breaks (stress above the strength)"
+msgstr "Rompe (tensión mayor que la resistencia)"
+
+msgid "Cd pressure / friction"
+msgstr "Cd presión / rozamiento"
+
+msgid "Click on the part to add:"
+msgstr "Clic en la pieza para agregar:"
+
+msgid "Conditions"
+msgstr "Condiciones"
+
+msgid "Curved layers"
+msgstr "Capas curvas"
+
+msgid "Displ."
+msgstr "Despl."
+
+msgid "Displacement limit"
+msgstr "Límite de desplazamiento"
+
+msgid "Estimated mass"
+msgstr "Masa estimada"
+
+msgid "Fixed face %1%"
+msgstr "Cara fija %1%"
+
+msgid "Force across the flow"
+msgstr "Fuerza transversal"
+
+msgid "Frontal area"
+msgstr "Área frontal"
+
+msgid "Hide"
+msgstr "Ocultar"
+
+msgid "Layer adhesion"
+msgstr "Adhesión entre capas"
+
+msgid "Max. displacement"
+msgstr "Desplazamiento máx."
+
+msgid "Max. stress (von Mises)"
+msgstr "Tensión máx. (von Mises)"
+
+msgid "Nothing (rotate)"
+msgstr "Nada (girar vista)"
+
+msgid "Optimize"
+msgstr "Optimizar"
+
+msgid "Pressure"
+msgstr "Presión"
+
+msgid "Remove displacement limit"
+msgstr "Quitar límite de desplazamiento"
+
+msgid "Removes all the fixed faces, loads and limits of the part (Ctrl+Z restores them)"
+msgstr "Quita todas las caras fijas, cargas y límites de la pieza (Ctrl+Z los recupera)"
+
+msgid "Required safety factor"
+msgstr "Factor de seguridad pedido"
+
+msgid "Result"
+msgstr "Resultado"
+
+msgid "Reynolds"
+msgstr "Reynolds"
+
+msgid "Roughness Ra"
+msgstr "Rugosidad Ra"
+
+msgid "Roughness"
+msgstr "Rugosidad"
+
+msgid "Safety"
+msgstr "Seguridad"
+
+msgid "Stress"
+msgstr "Tensión"
+
+msgid "Supports, loads and limits"
+msgstr "Apoyos, cargas y límites"
+
+msgid "Too flexible: a load or a limited zone moves more than its allowed displacement"
+msgstr "Demasiado flexible: una carga o una zona con límite se desplaza más de lo permitido"
+
+msgid "Zone %1%"
+msgstr "Zona %1%"
+
+msgid "max %1% %%"
+msgstr "máx. %1% %%"
+
+msgid "max %1% mm"
+msgstr "máx. %1% mm"
+
+msgid "moves %1$.3f mm of %2$.3f mm allowed"
+msgstr "se desplaza %1$.3f mm de %2$.3f mm permitidos"
+
+msgid "moves %1$.3f mm"
+msgstr "se desplaza %1$.3f mm"
+
+msgid "no limit"
+msgstr "sin límite"
+
+msgid "nominal (nozzle temperature unknown)"
+msgstr "nominal (temperatura de boquilla desconocida)"
+
+msgid "not converged"
+msgstr "sin converger"
+
+msgid "radius %1% mm"
+msgstr "radio %1% mm"
+
+msgid "setup changed: analyze again"
+msgstr "cambió la configuración: analizar de nuevo"
+
+msgid "x %1$.2f (nozzle at %2% °C)"
+msgstr "x %1$.2f (boquilla a %2% °C)"
+
+msgid "Faces which must not move more than this, whatever the loads (a fit, a sealing face, a mechanism). Elsewhere the part may deform more: only its strength is checked there. Click a limited face again to remove it."
+msgstr "Caras que no deben desplazarse más que esto, sean cuales sean las cargas (un encastre, una cara de sellado, un mecanismo). En el resto la pieza puede deformarse más: ahí solo se comprueba que no rompa. Clic de nuevo en una cara con límite para quitarlo."
+
+msgid "Air flowing around the part as printed, with the roughness of the layers. An estimate to compare designs and orientations."
+msgstr "Aire alrededor de la pieza tal como se imprime, con la rugosidad de las capas. Una estimación para comparar diseños y orientaciones."
