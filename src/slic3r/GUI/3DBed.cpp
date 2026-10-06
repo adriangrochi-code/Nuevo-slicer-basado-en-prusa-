@@ -30,10 +30,11 @@
 #include <numeric>
 
 static const float GROUND_Z = -0.02f;
-static const Slic3r::ColorRGBA DEFAULT_MODEL_COLOR             = Slic3r::ColorRGBA::DARK_GRAY();
+// Tisma, Órbita Pro: dark bed (#2B2B31) with a quiet grid.
+static const Slic3r::ColorRGBA DEFAULT_MODEL_COLOR             = { 0.169f, 0.169f, 0.192f, 1.0f };
 static const Slic3r::ColorRGBA PICKING_MODEL_COLOR             = Slic3r::ColorRGBA::BLACK();
-static const Slic3r::ColorRGBA DEFAULT_SOLID_GRID_COLOR        = { 0.9f, 0.9f, 0.9f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_TRANSPARENT_GRID_COLOR  = { 0.9f, 0.9f, 0.9f, 0.6f };
+static const Slic3r::ColorRGBA DEFAULT_SOLID_GRID_COLOR        = { 0.290f, 0.290f, 0.322f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_TRANSPARENT_GRID_COLOR  = { 0.290f, 0.290f, 0.322f, 0.6f };
 static const Slic3r::ColorRGBA DISABLED_MODEL_COLOR            = { 0.6f, 0.6f, 0.6f, 0.75f };
 
 namespace Slic3r {

@@ -1309,78 +1309,91 @@ void ImGuiWrapper::init_input()
 
 void ImGuiWrapper::init_style()
 {
-    // Flat, rounded style with the palette of PrusaSlicer 3.0: dark neutral panels, Prusa orange
-    // as the primary accent and blue for selections.
+    // Tisma, Órbita Pro: graphite panels with a thin border, darker fields, neutral secondary buttons and the
+    // Tisma violet only for what is active or primary.
     ImGuiStyle &style = ImGui::GetStyle();
 
     auto set_color = [&](ImGuiCol_ entity, ImVec4 color) {
         style.Colors[entity] = color;
     };
-    const ImVec4 bg_alternate  = { 0.161f, 0.161f, 0.161f, 1.0f };
-    const ImVec4 bg_hovered    = { 0.212f, 0.212f, 0.212f, 1.0f };
-    const ImVec4 bg_active     = { 0.251f, 0.251f, 0.251f, 1.0f };
-    const ImVec4 accent_blue   = { 0.32f, 0.48f, 0.84f, 1.0f };
-    const ImVec4 selection     = { 0.21f, 0.29f, 0.46f, 1.0f };
+    auto rgb = [](int r, int g, int b, float a = 1.f) { return ImVec4(r / 255.f, g / 255.f, b / 255.f, a); };
+    const ImVec4 panel       = rgb(0x1F, 0x1F, 0x24, 0.97f);
+    const ImVec4 card        = rgb(0x27, 0x27, 0x2D);
+    const ImVec4 card_hover  = rgb(0x33, 0x33, 0x3A);
+    const ImVec4 field       = rgb(0x14, 0x14, 0x17);
+    const ImVec4 field_hover = rgb(0x1A, 0x1A, 0x1F);
+    const ImVec4 field_active= rgb(0x22, 0x22, 0x28);
+    const ImVec4 line        = rgb(0x34, 0x34, 0x3C);
+    const ImVec4 text        = rgb(0xEC, 0xEC, 0xF0);
+    const ImVec4 text_muted  = rgb(0x8A, 0x8A, 0x96);
+    const ImVec4 accent      = rgb(0x7A, 0x24, 0xC9);
+    const ImVec4 accent_text = rgb(0xC9, 0xA2, 0xF5);
+    const ImVec4 selected    = rgb(0x33, 0x26, 0x4A);
 
-    // Geometry
-    style.WindowRounding    = 8.0f;
-    style.ChildRounding     = 6.0f;
-    style.PopupRounding     = 6.0f;
+    // Geometry: small radii, thin borders, more air.
+    style.WindowRounding    = 6.0f;
+    style.ChildRounding     = 4.0f;
+    style.PopupRounding     = 4.0f;
     style.FrameRounding     = 4.0f;
-    style.GrabRounding      = 4.0f;
-    style.ScrollbarRounding = 8.0f;
+    style.GrabRounding      = 3.0f;
+    style.ScrollbarRounding = 6.0f;
     style.TabRounding       = 4.0f;
-    style.WindowBorderSize  = 0.0f;
-    style.PopupBorderSize   = 0.0f;
-    style.FrameBorderSize   = 0.0f;
+    style.WindowBorderSize  = 1.0f;
+    style.PopupBorderSize   = 1.0f;
+    style.FrameBorderSize   = 1.0f;
+    style.WindowPadding     = ImVec2(12.f, 12.f);
+    style.FramePadding      = ImVec2(8.f, 4.f);
+    style.ItemSpacing       = ImVec2(8.f, 6.f);
 
     // Window
-    set_color(ImGuiCol_WindowBg,        ImGuiPureWrap::COL_WINDOW_BACKGROUND);
-    set_color(ImGuiCol_PopupBg,         { 0.08f, 0.08f, 0.08f, 0.96f });
-    set_color(ImGuiCol_TitleBg,         ImGuiPureWrap::COL_WINDOW_BACKGROUND);
-    set_color(ImGuiCol_TitleBgActive,   bg_alternate);
-    set_color(ImGuiCol_Border,          { 0.f, 0.f, 0.f, 0.f });
+    set_color(ImGuiCol_WindowBg,        panel);
+    set_color(ImGuiCol_PopupBg,         rgb(0x1F, 0x1F, 0x24, 0.99f));
+    set_color(ImGuiCol_TitleBg,         panel);
+    set_color(ImGuiCol_TitleBgActive,   card);
+    set_color(ImGuiCol_Border,          line);
+    set_color(ImGuiCol_Text,            text);
+    set_color(ImGuiCol_TextDisabled,    text_muted);
 
-    // Generics
-    set_color(ImGuiCol_FrameBg,         bg_alternate);
-    set_color(ImGuiCol_FrameBgHovered,  bg_hovered);
-    set_color(ImGuiCol_FrameBgActive,   bg_active);
+    // Fields
+    set_color(ImGuiCol_FrameBg,         field);
+    set_color(ImGuiCol_FrameBgHovered,  field_hover);
+    set_color(ImGuiCol_FrameBgActive,   field_active);
 
     // Text selection
-    set_color(ImGuiCol_TextSelectedBg,  { accent_blue.x, accent_blue.y, accent_blue.z, 0.45f });
+    set_color(ImGuiCol_TextSelectedBg,  ImVec4(accent.x, accent.y, accent.z, 0.45f));
 
-    // Buttons
-    set_color(ImGuiCol_Button,          bg_hovered);
-    set_color(ImGuiCol_ButtonHovered,   ImGuiPureWrap::COL_ORANGE_DARK);
-    set_color(ImGuiCol_ButtonActive,    ImGuiPureWrap::COL_ORANGE_LIGHT);
+    // Buttons: neutral; the primary ones push COL_BUTTON_BACKGROUND (violet).
+    set_color(ImGuiCol_Button,          card);
+    set_color(ImGuiCol_ButtonHovered,   card_hover);
+    set_color(ImGuiCol_ButtonActive,    accent);
 
     // Checkbox
-    set_color(ImGuiCol_CheckMark,       ImGuiPureWrap::COL_ORANGE_LIGHT);
+    set_color(ImGuiCol_CheckMark,       accent_text);
 
-    // ComboBox items
-    set_color(ImGuiCol_Header,          selection);
-    set_color(ImGuiCol_HeaderHovered,   { 1.f, 1.f, 1.f, 0.10f });
-    set_color(ImGuiCol_HeaderActive,    accent_blue);
+    // Combo items, selectables and collapsing headers
+    set_color(ImGuiCol_Header,          card);
+    set_color(ImGuiCol_HeaderHovered,   card_hover);
+    set_color(ImGuiCol_HeaderActive,    selected);
 
     // Slider
-    set_color(ImGuiCol_SliderGrab,      ImGuiPureWrap::COL_ORANGE_DARK);
-    set_color(ImGuiCol_SliderGrabActive,ImGuiPureWrap::COL_ORANGE_LIGHT);
+    set_color(ImGuiCol_SliderGrab,      accent);
+    set_color(ImGuiCol_SliderGrabActive,accent_text);
 
     // Separator
-    set_color(ImGuiCol_Separator,       { 0.30f, 0.30f, 0.30f, 1.0f });
+    set_color(ImGuiCol_Separator,       line);
 
     // Tabs
-    set_color(ImGuiCol_Tab,                 bg_alternate);
-    set_color(ImGuiCol_TabHovered,          ImGuiPureWrap::COL_ORANGE_LIGHT);
-    set_color(ImGuiCol_TabActive,           ImGuiPureWrap::COL_ORANGE_DARK);
-    set_color(ImGuiCol_TabUnfocused,        bg_alternate);
-    set_color(ImGuiCol_TabUnfocusedActive,  bg_active);
+    set_color(ImGuiCol_Tab,                 panel);
+    set_color(ImGuiCol_TabHovered,          card_hover);
+    set_color(ImGuiCol_TabActive,           selected);
+    set_color(ImGuiCol_TabUnfocused,        panel);
+    set_color(ImGuiCol_TabUnfocusedActive,  selected);
 
     // Scrollbars
-    set_color(ImGuiCol_ScrollbarBg,         { 0.f, 0.f, 0.f, 0.f });
-    set_color(ImGuiCol_ScrollbarGrab,       { 0.31f, 0.31f, 0.31f, 1.0f });
-    set_color(ImGuiCol_ScrollbarGrabHovered,{ 0.41f, 0.41f, 0.41f, 1.0f });
-    set_color(ImGuiCol_ScrollbarGrabActive, { 0.51f, 0.51f, 0.51f, 1.0f });
+    set_color(ImGuiCol_ScrollbarBg,         ImVec4(0.f, 0.f, 0.f, 0.f));
+    set_color(ImGuiCol_ScrollbarGrab,       line);
+    set_color(ImGuiCol_ScrollbarGrabHovered,card_hover);
+    set_color(ImGuiCol_ScrollbarGrabActive, text_muted);
 }
 
 void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)

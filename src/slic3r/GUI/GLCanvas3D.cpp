@@ -107,8 +107,9 @@ static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.949f, 0.949f, 0.957f
 static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.560f, 0.600f, 1.0f };
 static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.960f, 0.760f, 0.790f, 1.0f };
 // Dark mode.
-static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.235f, 0.235f, 0.255f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.130f, 0.130f, 0.145f, 1.0f };
+// Tisma, Órbita Pro: a dark, quiet view in both color modes (#1C1C21 to #141417).
+static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.110f, 0.110f, 0.129f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.078f, 0.078f, 0.090f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.550f, 0.180f, 0.220f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.300f, 0.100f, 0.120f, 1.0f };
 
@@ -6100,7 +6101,7 @@ void GLCanvas3D::_render_background()
     // Draws a bottom to top gradient over the complete screen.
     glsafe(::glDisable(GL_DEPTH_TEST));
 
-    const bool      dark         = wxGetApp().dark_mode();
+    const bool      dark         = true;   // Tisma: the 3D view is always dark (Órbita Pro).
     const ColorRGBA top_color    = dark ? (use_error_color ? DARK_MODE_ERROR_TOP_COLOR : DARK_MODE_BG_TOP_COLOR) :
                                           (use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR);
     const ColorRGBA bottom_color = dark ? (use_error_color ? DARK_MODE_ERROR_BOTTOM_COLOR : DARK_MODE_BG_BOTTOM_COLOR) :
