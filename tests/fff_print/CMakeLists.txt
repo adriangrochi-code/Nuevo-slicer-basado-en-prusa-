@@ -27,6 +27,7 @@ add_executable(${_TEST_NAME}_tests
     test_seam_scarf.cpp
     test_seam_visibility_cache.cpp
     test_belt_printer.cpp
+    test_vendor_bundles.cpp
     benchmark_seams.cpp
 	test_gcodefindreplace.cpp
 	test_gcodewriter.cpp

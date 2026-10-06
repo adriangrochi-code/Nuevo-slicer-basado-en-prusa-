@@ -67,6 +67,12 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
   GitHub); se tomó de PrusaSlicer master y lo comprobará el CI de Windows al descargarlo.
 - Las recetas se adaptaron de PrusaSlicer master, quitando lo que depende de su nuevo sistema de dependencias.
 
+### Datos de terceros (`resources/profiles/Orca_*`)
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| Perfiles de impresoras, procesos y filamentos de OrcaSlicer (con imágenes y camas) | commit `1d577ea` | AGPL-3.0 | Convertidos con `tools/profiles/convert_orca_profiles.py`. Ver `docs/PRINTER_PROFILES.md`. |
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |
