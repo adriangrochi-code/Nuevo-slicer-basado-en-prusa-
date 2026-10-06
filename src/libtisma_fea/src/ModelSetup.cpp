@@ -19,6 +19,34 @@ const char *LATTICE_NAME       = "Tisma lattice";
 
 static bool starts_with(const std::string &s, const char *prefix) { return s.rfind(prefix, 0) == 0; }
 
+// Width of the perimeters [mm] of a print configuration (with the overrides of the object applied). As in
+// PrusaSlicer, a width in percent is relative to the nozzle diameter, 0 = automatic (1.125 x nozzle).
+static double perimeter_width(const DynamicPrintConfig &cfg)
+{
+    double nozzle = 0.4;
+    if (const ConfigOptionFloats *n = cfg.option<ConfigOptionFloats>("nozzle_diameter"); n && ! n->values.empty())
+        nozzle = n->values.front();
+    auto width = [&](const char *key) {
+        const ConfigOptionFloatOrPercent *opt = cfg.option<ConfigOptionFloatOrPercent>(key);
+        if (opt == nullptr || opt->value <= 0.)
+            return 0.;
+        return opt->percent ? opt->value * 0.01 * nozzle : opt->value;
+    };
+    double w = width("perimeter_extrusion_width");
+    if (w <= 0.)
+        w = width("extrusion_width");
+    if (w <= 0.)
+        w = 1.125 * nozzle;
+    return w;
+}
+
+double line_width(const ModelObject &object, const DynamicPrintConfig &print_config)
+{
+    DynamicPrintConfig cfg = print_config;
+    cfg.apply(object.config.get(), true);
+    return perimeter_width(cfg);
+}
+
 // Walls and infill of the object from the print configuration with the overrides of the object.
 static void infill_from_config(const ModelObject &object, const DynamicPrintConfig &print_config, InfillModel &infill)
 {
@@ -29,20 +57,7 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
         return opt ? opt->getFloat() : def;
     };
     const double layer_height = number("layer_height", 0.2);
-    double nozzle = 0.4;
-    if (const ConfigOptionFloats *n = cfg.option<ConfigOptionFloats>("nozzle_diameter"); n && ! n->values.empty())
-        nozzle = n->values.front();
-    auto width = [&](const char *key) {
-        const ConfigOptionFloatOrPercent *opt = cfg.option<ConfigOptionFloatOrPercent>(key);
-        if (opt == nullptr || opt->value <= 0.)
-            return 0.;
-        return opt->percent ? opt->value * 0.01 * layer_height : opt->value;
-    };
-    double w = width("perimeter_extrusion_width");
-    if (w <= 0.)
-        w = width("extrusion_width");
-    if (w <= 0.)
-        w = 1.125 * nozzle;
+    const double w = perimeter_width(cfg);
     const ConfigOption *perimeters = cfg.option("perimeters");
     const ConfigOption *top        = cfg.option("top_solid_layers");
     const ConfigOption *bottom     = cfg.option("bottom_solid_layers");

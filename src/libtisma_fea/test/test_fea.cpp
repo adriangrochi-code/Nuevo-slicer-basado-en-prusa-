@@ -758,8 +758,9 @@ TEST_CASE("Applied infill reaches the slicing", "[FEA]")
     DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
     config.set_key_value("fill_density", new ConfigOptionPercent(20));
 
+    // The same Print every time, as in the application (the changes are applied incrementally).
+    Print print;
     auto sliced_density = [&]() {
-        Print print;
         print.apply(model, config);
         print.process();
         REQUIRE(print.objects().size() == 1);
@@ -772,6 +773,39 @@ TEST_CASE("Applied infill reaches the slicing", "[FEA]")
     // The lightest uniform infill: the object setting wins over the print profile.
     apply_infill(*object, 0, 0.37, {});
     CHECK(sliced_density() == Approx(37.));
+    // By zones: the zone is in print coordinates (the cube spans 100..130 x 100..120 on the bed); it becomes a
+    // modifier of the object with its own region.
+    InfillZone zone;
+    zone.mesh = its_make_cube(10., 20., 10.);
+    its_translate(zone.mesh, Vec3f(100.f, 100.f, 0.f));
+    zone.density = 0.8;
+    CHECK(apply_infill(*object, 0, 0.15, { zone }) == 1);
+    CHECK(sliced_density() == Approx(80.));
+    // Applying again replaces the modifiers.
+    CHECK(apply_infill(*object, 0, 0.25, {}) == 0);
+    CHECK(sliced_density() == Approx(25.));
+}
+
+TEST_CASE("Line width of the profile", "[FEA]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(10., 10., 10.)));
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("nozzle_diameter", new ConfigOptionFloats({ 0.6 }));
+    config.set_key_value("layer_height", new ConfigOptionFloat(0.3));
+    config.set_key_value("extrusion_width", new ConfigOptionFloatOrPercent(0., false));
+    config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(0.5, false));
+    CHECK(line_width(*object, config) == Approx(0.5));
+    // A percent is of the nozzle diameter, as in PrusaSlicer.
+    config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(112.5, true));
+    CHECK(line_width(*object, config) == Approx(0.675));
+    // Automatic.
+    config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(0., false));
+    CHECK(line_width(*object, config) == Approx(1.125 * 0.6));
+    // The object overrides the profile.
+    object->config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(0.8, false));
+    CHECK(line_width(*object, config) == Approx(0.8));
 }
 
 TEST_CASE("Build direction rotates the weak axis of the material", "[FEA][Orientation]")
@@ -862,4 +896,26 @@ TEST_CASE("Recommended orientation puts the loads along the layers", "[FEA][Orie
     // The rotation lays the chosen axis vertical.
     const Vec3d up = rotation_to_print(res.candidates[res.best].build_direction) * res.candidates[res.best].build_direction;
     CHECK(up.z() == Approx(1.).margin(1e-9));
+}
+
+// Time of the analysis with many voxels (quality Ultra), run with "[.FEA-bench]".
+TEST_CASE("Analysis time with many voxels", "[.FEA-bench]")
+{
+    const indexed_triangle_set its = its_make_cube(100., 50., 50.);
+    Setup setup;
+    setup.material = "PLA";
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -200.);
+    setup.loads.push_back(load);
+    for (double voxels : { 6e4, 2.5e5, 1.2e6 }) {
+        setup.voxel_size = std::cbrt(100. * 50. * 50. / voxels);
+        const auto start = std::chrono::steady_clock::now();
+        const Result r = analyze(its, setup);
+        const double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        std::cout << voxels << " voxels (h " << setup.voxel_size << " mm): " << t << " s, ok " << r.ok << ", sf " << r.safety_factor << std::endl;
+        CHECK(r.ok);
+    }
 }

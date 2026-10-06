@@ -27,6 +27,7 @@
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/MeshUtils.hpp"
+#include "slic3r/GUI/NotificationManager.hpp"
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/Gizmos/GLGizmosCommon.hpp"
@@ -55,6 +56,20 @@ ColorRGBA scale_color(float t)
 }
 
 ImVec4 to_imvec(const ColorRGBA &c) { return { c.r(), c.g(), c.b(), c.a() }; }
+
+// The object changed (infill, modifiers, transformation): the scene, the object list and the slicing are updated.
+void changed_object(ModelObject &object)
+{
+    Plater *plater = wxGetApp().plater();
+    plater->changed_object(object);
+    wxGetApp().obj_list()->update_after_undo_redo();
+}
+
+void notify(const std::string &text)
+{
+    if (NotificationManager *nm = wxGetApp().plater()->get_notification_manager())
+        nm->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::PrintInfoNotificationLevel, text);
+}
 
 std::string verdict_text(Fea::Verdict v)
 {
@@ -120,6 +135,8 @@ void GLGizmoEngineering::on_set_state()
     if (m_state == On) {
         m_regions_dirty = true;
         m_result_models_dirty = true;
+        if (const std::string q = wxGetApp().app_config->get("tisma_fea_quality"); ! q.empty())
+            m_quality = Quality(std::clamp(std::atoi(q.c_str()), 0, 3));
         if (const ModelObject *mo = model_object()) {
             m_edit_temperature = float(mo->engineering.temperature);
             m_edit_safety      = float(mo->engineering.safety_factor);
@@ -315,24 +332,13 @@ std::string GLGizmoEngineering::filament_type(const ModelObject &object) const
 
 void GLGizmoEngineering::start_analysis()
 {
-    const ModelObject *mo = model_object();
-    if (mo == nullptr || m_running)
-        return;
-    if (m_thread.joinable())
-        m_thread.join();
     Fea::ModelAnalysisInput input;
-    std::string error;
-    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
-    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, m_as_printed ? &config : nullptr)) {
-        m_error = error;
+    if (! prepare_input(input, JobSize::Single))
         return;
-    }
-    m_error.clear();
-    m_job_optimize       = false;
-    m_result_material    = input.material;
-    m_result_temperature = input.setup.temperature;
-    m_result_safety      = input.setup.required_safety_factor;
-    m_result_object   = mo->id();
+    // Solid part: the walls and the infill of the profile are not used (its nozzle temperature still is).
+    if (! m_as_printed)
+        input.setup.infill = Fea::InfillModel();
+    m_job_optimize = false;
     m_cancel   = false;
     m_running  = true;
     m_progress = 0;
@@ -355,26 +361,12 @@ void GLGizmoEngineering::start_analysis()
 
 void GLGizmoEngineering::start_optimization()
 {
-    const ModelObject *mo = model_object();
-    if (mo == nullptr || m_running)
-        return;
-    if (m_thread.joinable())
-        m_thread.join();
     Fea::ModelAnalysisInput input;
-    std::string error;
-    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
-    if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, &config)) {
-        m_error = error;
+    if (! prepare_input(input))
         return;
-    }
     // The current infill of the object, to compare.
     m_current_infill_mass = 0.;
-    m_error.clear();
-    m_job_optimize       = true;
-    m_result_material    = input.material;
-    m_result_temperature = input.setup.temperature;
-    m_result_safety      = input.setup.required_safety_factor;
-    m_result_object      = mo->id();
+    m_job_optimize = true;
     m_cancel   = false;
     m_running  = true;
     m_progress = 0;
@@ -412,19 +404,23 @@ void GLGizmoEngineering::apply_optimization(bool zones)
         return;
     const Fea::OptimizeResult &opt = *m_opt;
     Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lightest infill"));
-    if (zones && opt.zones_found)
-        Fea::apply_infill(*mo, size_t(instance_idx()), opt.base_density, opt.zones);
-    else
-        Fea::apply_infill(*mo, size_t(instance_idx()), opt.uniform_density, {});
-    const int obj_idx = m_parent.get_selection().get_object_idx();
-    if (obj_idx >= 0)
-        wxGetApp().plater()->changed_object(obj_idx);
-    wxGetApp().obj_list()->update_after_undo_redo();
+    const bool   by_zones = zones && opt.zones_found;
+    const double density  = by_zones ? opt.base_density : opt.uniform_density;
+    const size_t added    = Fea::apply_infill(*mo, size_t(instance_idx()), density, by_zones ? opt.zones : std::vector<Fea::InfillZone>());
+    changed_object(*mo);
+    // The infill is a setting of the object and modifiers: it is seen in the object list and after slicing again.
+    m_applied_note = added > 0 ?
+        GUI::format(_u8L("Applied: infill %1% %% in \"%2%\" and %3% modifiers \"%4%\" with more infill. Slice again to see it in the preview."),
+                    int(std::round(density * 100.)), mo->name, added, Fea::INFILL_ZONE_NAME) :
+        GUI::format(_u8L("Applied: infill %1% %% in \"%2%\". Slice again to see it in the preview."),
+                    int(std::round(density * 100.)), mo->name);
+    m_applied_object = mo->id();
+    notify(m_applied_note);
     m_regions_dirty = true;
     m_opt_object = mo->id();
 }
 
-bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input)
+bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input, JobSize size)
 {
     const ModelObject *mo = model_object();
     if (mo == nullptr || m_running)
@@ -438,11 +434,62 @@ bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input)
         return false;
     }
     m_error.clear();
+    apply_quality(input, size);
     m_result_material    = input.material;
     m_result_temperature = input.setup.temperature;
     m_result_safety      = input.setup.required_safety_factor;
+    m_result_print_temperature = input.setup.print_temperature;
     m_result_object      = mo->id();
     return true;
+}
+
+namespace {
+// Voxels of the qualities Fast and Normal.
+constexpr size_t FAST_VOXELS   = 20000;
+constexpr size_t NORMAL_VOXELS = 60000;
+// Limits of the number of voxels: one analysis (about a minute with a million voxels on 8 cores) and the jobs of many
+// analyses (the lightest infill runs about 20).
+constexpr double MAX_VOXELS_SINGLE = 1.2e6;
+constexpr double MAX_VOXELS_MANY   = 2.5e5;
+// Voxel of the qualities High and Ultra in line widths.
+double quality_line_widths(int quality) { return quality == 3 ? 1. : 2.; }
+}
+
+void GLGizmoEngineering::estimate_quality(const ModelObject &object, double &h, double &voxels) const
+{
+    const int idx = std::clamp(instance_idx(), 0, int(object.instances.size()) - 1);
+    double volume = 0.;
+    for (const ModelVolume *v : object.volumes)
+        if (v->is_model_part())
+            volume += std::abs((v->mesh().stats().volume >= 0. ? double(v->mesh().stats().volume) : double(its_volume(v->mesh().its))) *
+                               (object.instances[idx]->get_matrix() * v->get_matrix()).matrix().block<3, 3>(0, 0).determinant());
+    volume = std::max(volume, 1e-9);
+    if (m_quality == Quality::Fast || m_quality == Quality::Normal) {
+        voxels = double(m_quality == Quality::Fast ? FAST_VOXELS : NORMAL_VOXELS);
+        h = std::cbrt(volume / voxels);
+    } else {
+        h = quality_line_widths(int(m_quality)) * Fea::line_width(object, wxGetApp().preset_bundle->full_config());
+        voxels = volume / (h * h * h);
+    }
+}
+
+void GLGizmoEngineering::apply_quality(Fea::ModelAnalysisInput &input, JobSize size)
+{
+    m_quality_note.clear();
+    const double max_voxels = size == JobSize::Single ? MAX_VOXELS_SINGLE : MAX_VOXELS_MANY;
+    const double volume = std::max(std::abs(double(its_volume(input.mesh))), 1e-9);
+    double h = 0.;
+    switch (m_quality) {
+    case Quality::Fast:   h = std::cbrt(volume / double(FAST_VOXELS)); break;
+    case Quality::Normal: h = std::cbrt(volume / double(NORMAL_VOXELS)); break;
+    default:              h = quality_line_widths(int(m_quality)) * input.line_width; break;
+    }
+    if (volume / (h * h * h) > max_voxels) {
+        h = std::cbrt(volume / max_voxels);
+        m_quality_note = GUI::format(_u8L("Limited to %1% voxels of %2$.2f mm (%3$.1f line widths)."),
+                                     size_t(max_voxels), h, h / std::max(input.line_width, 1e-3));
+    }
+    input.setup.voxel_size = h;
 }
 
 template<class T> void GLGizmoEngineering::launch(std::function<T()> job, std::optional<T> *pending)
@@ -505,10 +552,7 @@ void GLGizmoEngineering::apply_reinforcement()
     Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply local reinforcement"));
     Fea::apply_reinforcement(*mo, size_t(instance_idx()), m_reinf->with.uniform_density, m_reinf->zone,
                              m_reinf_base_perimeters + std::clamp(m_reinf_perimeters, 0, 10));
-    const int obj_idx = m_parent.get_selection().get_object_idx();
-    if (obj_idx >= 0)
-        wxGetApp().plater()->changed_object(obj_idx);
-    wxGetApp().obj_list()->update_after_undo_redo();
+    changed_object(*mo);
     m_regions_dirty = true;
     m_reinf_object = mo->id();
 }
@@ -520,12 +564,47 @@ void GLGizmoEngineering::apply_lattice()
         return;
     Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lattice"));
     Fea::apply_lattice(*mo, size_t(instance_idx()), m_lattice->mesh, m_lattice->grid.cell);
-    const int obj_idx = m_parent.get_selection().get_object_idx();
-    if (obj_idx >= 0)
-        wxGetApp().plater()->changed_object(obj_idx);
-    wxGetApp().obj_list()->update_after_undo_redo();
+    changed_object(*mo);
     m_regions_dirty = true;
     m_lattice_object = mo->id();
+}
+
+void GLGizmoEngineering::start_orientation()
+{
+    Fea::ModelAnalysisInput input;
+    if (! prepare_input(input))
+        return;
+    if (! m_as_printed)
+        input.setup.infill = Fea::InfillModel();
+    launch<Fea::OrientationResult>([this, input = std::move(input)]() {
+        return Fea::recommend_orientation(input.mesh, input.setup, [this]() { return m_cancel.load(); },
+                                          [this](int p) { m_progress = p; });
+    }, &m_pending_orient);
+}
+
+void GLGizmoEngineering::rotate_to_recommended()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_orient || mo->id() != m_orient_object || m_orient->best == 0 ||
+        m_orient->best >= m_orient->candidates.size())
+        return;
+    // Rotation in print coordinates (as on the bed), about the position of the instance.
+    const Transform3d rotation = Fea::rotation_to_print(m_orient->candidates[m_orient->best].build_direction);
+    ModelInstance *instance = mo->instances[std::clamp(instance_idx(), 0, int(mo->instances.size()) - 1)];
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Rotate to the recommended orientation"));
+    const Transform3d old_matrix = instance->get_matrix();
+    Transform3d new_matrix = rotation * old_matrix;
+    new_matrix.translation() = old_matrix.translation();
+    instance->set_transformation(Geometry::Transformation(new_matrix));
+    // The forces are given in print coordinates: they turn with the part. The faces and points of the supports
+    // and loads are in the coordinates of the object and follow it.
+    for (EngineeringLoad &load : mo->engineering.loads)
+        load.force = rotation.linear() * load.force;
+    mo->invalidate_bounding_box();
+    changed_object(*mo);
+    m_orient.reset();
+    m_regions_dirty = m_result_stale = true;
+    notify(_u8L("Part rotated to print the loads along the layers: analyze again and check the supports of the print."));
 }
 
 void GLGizmoEngineering::cancel_analysis()
@@ -539,6 +618,7 @@ void GLGizmoEngineering::cancel_analysis()
     m_pending_opt.reset();
     m_pending_reinf.reset();
     m_pending_lattice.reset();
+    m_pending_orient.reset();
 }
 
 void GLGizmoEngineering::fetch_result()
@@ -547,12 +627,32 @@ void GLGizmoEngineering::fetch_result()
     std::optional<Fea::OptimizeResult> opt;
     std::optional<Fea::ReinforcementResult> reinf;
     std::optional<Fea::LatticeResult> lattice;
+    std::optional<Fea::OrientationResult> orient;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
+        orient.swap(m_pending_orient);
         res.swap(m_pending);
         opt.swap(m_pending_opt);
         reinf.swap(m_pending_reinf);
         lattice.swap(m_pending_lattice);
+    }
+    if (orient) {
+        if (m_thread.joinable())
+            m_thread.join();
+        if (! orient->ok) {
+            m_error = orient->error == "Cancelled" ? std::string() : orient->error;
+            return;
+        }
+        m_orient        = std::move(*orient);
+        m_orient_object = m_result_object;
+        // Show the analysis of the current orientation.
+        if (! m_orient->candidates.empty()) {
+            m_result = m_orient->candidates.front().result;
+            m_result_is_lattice = false;
+            m_result_stale = false;
+            m_result_models_dirty = true;
+        }
+        return;
     }
     if (reinf || lattice) {
         if (m_thread.joinable())
@@ -983,6 +1083,27 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     edit_value(_u8L("Safety factor"), m_edit_safety, eng.safety_factor, 1.f, 20.f, _u8L("Change safety factor"));
     if (ImGuiPureWrap::checkbox(_u8L("Printed part (walls and infill of the profile)"), m_as_printed))
         m_result_stale = true;
+    {
+        std::vector<std::string> qualities = { _u8L("Fast"), _u8L("Normal"), _u8L("High (voxel 2 line widths)"),
+                                               _u8L("Ultra (voxel 1 line width)") };
+        int q = int(m_quality);
+        if (ImGuiPureWrap::combo(_u8L("Resolution"), qualities, q, 0, 9.f * ImGui::GetFontSize(), 12.f * ImGui::GetFontSize())) {
+            m_quality = Quality(q);
+            wxGetApp().app_config->set("tisma_fea_quality", std::to_string(q));
+            m_result_stale = true;
+        }
+        double h = 0., voxels = 0.;
+        estimate_quality(*mo, h, voxels);
+        if (voxels > MAX_VOXELS_SINGLE)
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT,
+                GUI::format(_u8L("About %1% voxels of %2$.2f mm: too many, limited to %3%."), size_t(voxels), h, size_t(MAX_VOXELS_SINGLE)));
+        else
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_GREY_LIGHT,
+                GUI::format(_u8L("About %1% voxels of %2$.2f mm."), size_t(voxels), h));
+        if (voxels > MAX_VOXELS_MANY)
+            ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
+                                                    size_t(MAX_VOXELS_MANY)), width);
+    }
 
     // Tools.
     ImGui::Separator();
@@ -1081,6 +1202,11 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGui::PopStyleColor();
         ImGuiPureWrap::text(GUI::format(_u8L("Material: %1% at %2% °C (stiffness and strength x %3$.2f)"),
                                    m_result_material, m_result_temperature, r.temperature_factor));
+        if (m_result_print_temperature > 0.)
+            ImGuiPureWrap::text(GUI::format(_u8L("Layer adhesion with the nozzle at %1% °C: x %2$.2f"),
+                                            int(std::round(m_result_print_temperature)), r.layer_adhesion_factor));
+        else
+            ImGuiPureWrap::text(_u8L("Nozzle temperature unknown: nominal layer adhesion."));
         ImGuiPureWrap::text(GUI::format(_u8L("Safety factor: %1$.2f (required %2$.1f)"), r.safety_factor, m_result_safety));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. displacement: %1$.3f mm"), r.max_displacement));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. stress (von Mises): %1$.2f MPa"), r.max_von_mises));
@@ -1104,6 +1230,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text_wrapped(r.density.empty() || r.mass >= r.solid_mass * 0.999 ?
             GUI::format(_u8L("Solid part, %1$.2f mm voxels."), r.h) :
             GUI::format(_u8L("Walls and homogenized infill, %1$.2f mm voxels."), r.h), width);
+        if (! m_quality_note.empty())
+            ImGuiPureWrap::text_wrapped(m_quality_note, width);
     }
 
     // Lightest infill (phase 6).
@@ -1147,6 +1275,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
                 ImGuiPureWrap::text_wrapped(GUI::format(_u8L("%1% analyses. Homogenized infill model: check the result with a printed test part."), o.analyses), width);
             }
         }
+        if (! m_applied_note.empty() && m_applied_object == mo->id())
+            ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::Holds)), m_applied_note);
     }
 
     auto input_float = [&](const std::string &label, float &value, const char *fmt) {
@@ -1213,6 +1343,38 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
                     apply_lattice();
                 ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The infill of the part becomes 0 %%. %1% analyses; homogenized lattice model: check the first print."), l.analyses), width);
             }
+        }
+    }
+
+    // Orientation of the print: the layers hold less across than along.
+    if (ImGui::CollapsingHeader(_u8L("Print orientation").c_str())) {
+        ImGuiPureWrap::text_wrapped(_u8L("The layers are weaker across than along: compares the part printed as it is placed with the part "
+                                         "laid on its X and Y axes, with the same loads, and recommends the strongest."), width);
+        if (ImGuiPureWrap::button(_u8L("Recommend orientation")) && can_run)
+            start_orientation();
+        if (m_orient && m_orient_object == mo->id()) {
+            const Fea::OrientationResult &o = *m_orient;
+            for (size_t i = 0; i < o.candidates.size(); ++ i) {
+                const Fea::OrientationCandidate &c = o.candidates[i];
+                const std::string name = i == 0 ? _u8L("As placed (layers along Z)") :
+                                         GUI::format(_u8L("%1% axis vertical"), c.axis);
+                const std::string text = GUI::format(_u8L("%1%: safety factor %2$.2f, displacement %3$.3f mm"),
+                                                     name, c.result.safety_factor, c.result.max_displacement);
+                if (i == o.best)
+                    ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::Holds)), "> " + text);
+                else
+                    ImGuiPureWrap::text("  " + text);
+            }
+            if (o.best == 0 || o.best >= o.candidates.size())
+                ImGuiPureWrap::text_wrapped(_u8L("The current orientation is already the strongest for these loads."), width);
+            else {
+                const double gain = o.candidates[o.best].result.safety_factor / std::max(o.candidates.front().result.safety_factor, 1e-9);
+                ImGuiPureWrap::text_wrapped(GUI::format(_u8L("Recommended: print with the %1% axis vertical (safety factor x %2$.2f)."),
+                                                        o.candidates[o.best].axis, gain), width);
+                if (ImGuiPureWrap::button(_u8L("Rotate the part")))
+                    rotate_to_recommended();
+            }
+            ImGuiPureWrap::text_wrapped(_u8L("The overhangs and the supports of the new orientation are not checked."), width);
         }
     }
 

@@ -36,6 +36,9 @@ struct ModelAnalysisInput
 bool build_analysis_input(const ModelObject &object, size_t instance_idx, const std::string &filament_type,
                           ModelAnalysisInput &out, std::string &error, const DynamicPrintConfig *print_config = nullptr);
 
+// Width of the perimeter lines [mm] of the object with the print configuration (a percent is of the nozzle diameter).
+double line_width(const ModelObject &object, const DynamicPrintConfig &print_config);
+
 // Name of the infill modifiers created by apply_infill().
 extern const char *INFILL_ZONE_NAME;
 

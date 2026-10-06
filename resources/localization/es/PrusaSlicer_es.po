@@ -32162,3 +32162,72 @@ msgstr "Por píxel"
 
 msgid "Shadows"
 msgstr "Sombras"
+
+msgid "%1% axis vertical"
+msgstr "Eje %1% vertical"
+
+msgid "%1%: safety factor %2$.2f, displacement %3$.3f mm"
+msgstr "%1%: factor de seguridad %2$.2f, desplazamiento %3$.3f mm"
+
+msgid "About %1% voxels of %2$.2f mm."
+msgstr "Unos %1% vóxeles de %2$.2f mm."
+
+msgid "About %1% voxels of %2$.2f mm: too many, limited to %3%."
+msgstr "Unos %1% vóxeles de %2$.2f mm: demasiados, se limita a %3%."
+
+msgid "Applied: infill %1% %% in \"%2%\" and %3% modifiers \"%4%\" with more infill. Slice again to see it in the preview."
+msgstr "Aplicado: relleno del %1% %% en «%2%» y %3% modificadores «%4%» con más relleno. Lamina de nuevo para verlo en la vista previa."
+
+msgid "Applied: infill %1% %% in \"%2%\". Slice again to see it in the preview."
+msgstr "Aplicado: relleno del %1% %% en «%2%». Lamina de nuevo para verlo en la vista previa."
+
+msgid "As placed (layers along Z)"
+msgstr "Como está (capas a lo largo de Z)"
+
+msgid "High (voxel 2 line widths)"
+msgstr "Alta (vóxel de 2 anchos de línea)"
+
+msgid "Layer adhesion with the nozzle at %1% °C: x %2$.2f"
+msgstr "Adherencia entre capas con la boquilla a %1% °C: x %2$.2f"
+
+msgid "Limited to %1% voxels of %2$.2f mm (%3$.1f line widths)."
+msgstr "Limitado a %1% vóxeles de %2$.2f mm (%3$.1f anchos de línea)."
+
+msgid "Nozzle temperature unknown: nominal layer adhesion."
+msgstr "Temperatura de boquilla desconocida: adherencia entre capas nominal."
+
+msgid "Part rotated to print the loads along the layers: analyze again and check the supports of the print."
+msgstr "Pieza rotada para que las cargas vayan a lo largo de las capas: analiza de nuevo y revisa los soportes de la impresión."
+
+msgid "Print orientation"
+msgstr "Orientación de impresión"
+
+msgid "Recommend orientation"
+msgstr "Recomendar orientación"
+
+msgid "Recommended: print with the %1% axis vertical (safety factor x %2$.2f)."
+msgstr "Recomendado: imprimir con el eje %1% vertical (factor de seguridad x %2$.2f)."
+
+msgid "Resolution"
+msgstr "Resolución"
+
+msgid "Rotate the part"
+msgstr "Rotar la pieza"
+
+msgid "Rotate to the recommended orientation"
+msgstr "Rotar a la orientación recomendada"
+
+msgid "The current orientation is already the strongest for these loads."
+msgstr "La orientación actual ya es la más resistente para estas cargas."
+
+msgid "The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."
+msgstr "La búsqueda de relleno, el refuerzo, el lattice y la orientación usan como máximo %1% vóxeles."
+
+msgid "The overhangs and the supports of the new orientation are not checked."
+msgstr "No se comprueban los voladizos ni los soportes de la nueva orientación."
+
+msgid "Ultra (voxel 1 line width)"
+msgstr "Ultra (vóxel de 1 ancho de línea)"
+
+msgid "The layers are weaker across than along: compares the part printed as it is placed with the part laid on its X and Y axes, with the same loads, and recommends the strongest."
+msgstr "Las capas resisten menos a través que a lo largo: compara la pieza impresa como está con la pieza acostada sobre sus ejes X e Y, con las mismas cargas, y recomienda la más resistente."

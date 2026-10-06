@@ -123,6 +123,39 @@ uniforme más ligero del resto de la pieza con la zona puesta y lo compara con e
 - **Búsqueda**: diámetro uniforme mínimo por bisección (entre el mínimo imprimible, 0,9 mm, y 3 mm); luego un
   diámetro por celda según su tensión (sección ∝ utilización) escalado en conjunto hasta cumplir los requisitos.
 
+## Resolución, dirección de impresión y adherencia entre capas
+
+**Resolución** (panel de Ingeniería, se guarda como `tisma_fea_quality`):
+
+| Opción | Vóxel |
+|---|---|
+| Rápida | ~20 000 vóxeles en la pieza |
+| Normal | ~60 000 vóxeles (la anterior) |
+| Alta | 2 anchos de línea del perímetro |
+| Ultra | 1 ancho de línea del perímetro |
+
+El ancho de línea es el de los perímetros del perfil (con los ajustes del objeto; un porcentaje es del diámetro de
+la boquilla, como en PrusaSlicer). Un análisis usa como máximo 1,2 millones de vóxeles (86 s en 4 núcleos con una
+barra de 100×50×50 mm); el relleno mínimo, el refuerzo, el lattice y la orientación hacen muchos análisis y usan
+como máximo 250 000 (~9 s cada uno). Por encima, el vóxel se agranda y el panel lo avisa.
+
+**Dirección de impresión**: el material es transversalmente isótropo con el eje débil en la dirección de
+apilado de las capas (`Setup::build_direction`, Z por defecto). La matriz constitutiva se rota con la matriz de Bond
+(`D' = M D Mᵀ`) y las tensiones se evalúan en el sistema de las capas.
+
+**Adherencia entre capas**: la resistencia a través de las capas se multiplica por
+`layer_adhesion_factor(material, temperatura de boquilla)`: 1 en la mitad del rango de impresión del material,
+1,15 en el máximo, 0,8 en el mínimo y hasta 0,5 a 20 °C por debajo del mínimo. La temperatura es la del perfil de
+filamento del extrusor del objeto. Es un modelo aproximado: validar con probetas impresas.
+
+**Orientación recomendada**: «Recomendar orientación» analiza la pieza con las capas a lo largo de Z (como está),
+X e Y, con las mismas cargas, y recomienda la de mayor factor de seguridad si mejora más de un 5 %. «Rotar la
+pieza» gira la instancia y las fuerzas de las cargas (las caras y puntos siguen a la pieza). No se comprueban
+voladizos ni soportes de la nueva orientación.
+
+**Aplicar el relleno mínimo**: el relleno se aplica como ajuste del objeto (`fill_density`) y modificadores
+«Tisma infill zone» por zona; el panel y una notificación indican lo aplicado. Hay que laminar de nuevo.
+
 ## Validación (pruebas automáticas)
 
 | Caso | Resultado | Referencia |
