@@ -1,0 +1,30 @@
+# Tisma Slicer: registro de cambios
+
+Numeración propia de Tisma (`TISMA_VERSION` en `version.inc`), con el formato MAYOR.MENOR.PARCHE:
+
+- **MAYOR**: 1 cuando las funciones principales estén validadas en impresoras reales; después, cambios grandes.
+- **MENOR**: funciones nuevas.
+- **PARCHE**: correcciones.
+
+Las compilaciones de prueba del CI muestran además `+<ejecución>-<commit>` (por ejemplo `TismaSlicer-0.9.0+57-1a2b3c4`).
+`SLIC3R_VERSION` sigue siendo la versión de PrusaSlicer en la que se basa (2.9.6): la usan los perfiles, los 3MF y
+las instantáneas de configuración para la compatibilidad, y no cambia con las versiones de Tisma.
+
+## 0.9.0 (beta, sin validar todavía en impresoras reales)
+
+Base: PrusaSlicer 2.9.6.
+
+- **Ingeniería**: análisis estructural (FEA) con relleno y paredes, relleno mínimo, refuerzos locales, lattice 3D,
+  calidad de vóxeles, adherencia según temperatura, orientación recomendada; el material sigue las capas curvas.
+- **Capas no planares**: ondas y cónico, caudal uniforme, límites del eje Z, comprobación de colisiones del cabezal
+  con el perfil medido.
+- **Calibraciones**: temperatura, pressure advance, retracción, velocidad volumétrica, VFA, aceleración, esquinas,
+  input shaping, primera capa por zonas, flujo en porcentaje, y no planar (galga estática por alturas, pendiente
+  máxima, velocidad Z, galga del cabezal y asistente en dos pasos); aplicar resultados a los perfiles.
+- **Impresoras**: 902 perfiles convertidos desde OrcaSlicer (63 fabricantes) que laminan; selector por marca con
+  buscador; impresoras de cinta con ángulo configurable.
+- **Interfaz**: render con luz por píxel y sombras, panel derecho con ajustes rápidos, página de Dispositivos (USB y
+  red con la interfaz web de la impresora), impresión por USB.
+- **Rendimiento y correcciones**: laminado 30–45 % más rápido; correcciones de PrusaSlicer 3.0 portadas (SPE-2783,
+  SPE-3329, SPE-3488, SPE-3866, SPE-3377, SPE-3414, #15768 y otras); sin envío de datos del sistema a Prusa.
+- **Windows**: instalador (Inno Setup) y firma preparada con SignPath.

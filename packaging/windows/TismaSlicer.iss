@@ -1,7 +1,7 @@
 ; Tisma Slicer: Windows installer (Inno Setup 6).
 ;
 ; Built by .github/workflows/build_windows.yml:
-;   ISCC.exe /DSourceDir=<package folder> /DAppVersion=2.9.6 /DBuildNumber=<run> /DOutputDir=<folder> TismaSlicer.iss
+;   ISCC.exe /DSourceDir=<package folder> /DAppVersion=0.9.0 /DBuildNumber=<run> /DOutputDir=<folder> TismaSlicer.iss
 ;
 ; Inno Setup is free software (Inno Setup License, permissive, commercial use allowed); it is only used to build the
 ; installer and is not distributed with Tisma.
@@ -12,7 +12,7 @@
   #define SourceDir "..\..\TismaSlicer"
 #endif
 #ifndef AppVersion
-  #define AppVersion "2.9.6"
+  #define AppVersion "0.9.0"
 #endif
 #ifndef BuildNumber
   #define BuildNumber "0"

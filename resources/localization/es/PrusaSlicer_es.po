@@ -32566,3 +32566,6 @@ msgstr "Perfil medido del cabezal (no planar)"
 
 msgid "Free angle of the print head measured with the static gauge at several heights, as height:angle pairs separated by semicolons (for example 2:45;5:30;10:20). Near the nozzle tip the head allows steep but low rises, farther away only gentler ones. When set, the collision check of the non-planar layers uses it instead of the head clearance height. Filled by the non-planar calibration assistant."
 msgstr "Ángulo libre del cabezal medido con la galga estática a varias alturas, como pares altura:ángulo separados por punto y coma (por ejemplo 2:45;5:30;10:20). Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves. Si está definido, la comprobación de colisiones de las capas no planares lo usa en lugar de la altura libre del cabezal. Lo completa el asistente de calibración no planar."
+
+msgid "based on PrusaSlicer %1%"
+msgstr "basado en PrusaSlicer %1%"
