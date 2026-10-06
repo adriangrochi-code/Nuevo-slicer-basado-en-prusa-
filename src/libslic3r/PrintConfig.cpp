@@ -294,7 +294,8 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "nonplanar_slope",  int(CalibMode::NonPlanarSlope) },
     { "nonplanar_z_speed", int(CalibMode::NonPlanarZSpeed) },
     { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
-    { "flow_rate",        int(CalibMode::FlowRate) }
+    { "flow_rate",        int(CalibMode::FlowRate) },
+    { "coasting",         int(CalibMode::Coasting) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
 
@@ -1591,6 +1592,19 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Enter your filament cost per kg here. This is only for statistical information.");
     def->sidetext = L("money/kg");
     def->min = 0;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_coast_distance", coFloats);
+    def->label = L("Coasting distance");
+    def->tooltip = L("Stops extruding this many millimeters before the end of each extrusion and travels the rest with the "
+                     "nozzle still moving, so the pressure left in the nozzle finishes the line (as coasting in Simplify3D). "
+                     "It reduces blobs and zits at the seam and stringing; too much leaves a gap at the seam. Paths shorter "
+                     "than three times this distance are not affected. 0 turns it off. Calibrate it with Calibration > "
+                     "Coasting distance.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 5;
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
     def = this->add("filament_spool_weight", coFloats);
@@ -4148,7 +4162,8 @@ void PrintConfigDef::init_fff_params()
         { "nonplanar_slope",  L("Non-planar: maximum layer slope") },
         { "nonplanar_z_speed", L("Non-planar: Z axis speed") },
         { "first_layer_offset", L("First layer Z offset") },
-        { "flow_rate",        L("Flow rate") }
+        { "flow_rate",        L("Flow rate") },
+        { "coasting",         L("Coasting distance") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
 

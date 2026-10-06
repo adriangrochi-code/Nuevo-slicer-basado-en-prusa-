@@ -202,6 +202,7 @@ static std::string slice_patches(const std::string &mode, double start, double e
         { "fill_density",      "100%" },
         { "skirts",            0 },
         { "use_relative_e_distances", true },
+        { "gcode_comments",    true },
     });
     Model model;
     ModelObject *object = model.add_object();
@@ -271,4 +272,69 @@ TEST_CASE("Calibration: flow rate in percent by patches", "[Calibration]")
     const double e2 = e_and_length[2].first / e_and_length[2].second;
     CHECK(e1 / e0 == Approx(100. / 90.).epsilon(0.01));
     CHECK(e2 / e0 == Approx(110. / 90.).epsilon(0.01));
+}
+
+// Coasting (Tisma): XY length moved without extruding at the end of the external perimeter loops,
+// by patch of 25 mm along X (patch 0 when there is a single object), and the number of loops.
+static std::map<int, std::pair<double, int>> coasting_by_patch(const std::string &gcode)
+{
+    std::map<int, std::pair<double, int>> out;
+    double x0 = std::numeric_limits<double>::max();
+    {
+        GCodeReader parser;
+        parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+            if (line.extruding(self) && line.dist_XY(self) > 0.)
+                x0 = std::min(x0, double(std::min(self.x(), line.new_X(self))));
+        });
+    }
+    std::string type;
+    bool in_coast = false;
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (line.comment().rfind("TYPE:", 0) == 0)
+            type = std::string(line.comment().substr(5));
+        if (!line.cmd_is("G1") || type != "External perimeter")
+            return;
+        const int patch = int(std::floor((0.5 * (self.x() + line.new_X(self)) - x0 + 1.) / 25.));
+        // Coasting moves (G-code comments on): G1 with X / Y, without E, commented "coasting".
+        if (!line.has_e() && line.comment().find("coasting") != std::string_view::npos && line.dist_XY(self) > 0.) {
+            out[patch].first += line.dist_XY(self);
+            if (!in_coast)
+                ++out[patch].second;
+            in_coast = true;
+        } else if (line.extruding(self))
+            in_coast = false;
+    });
+    return out;
+}
+
+TEST_CASE("Coasting at the end of the perimeters", "[Calibration][Coasting]")
+{
+    auto slice = [](double coast) {
+        DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+            { "filament_coast_distance", ConfigOptionFloats{ coast }.serialize() },
+            { "layer_height", 0.2 }, { "first_layer_height", 0.2 }, { "perimeters", 1 }, { "fill_density", "0%" },
+            { "top_solid_layers", 0 }, { "bottom_solid_layers", 1 }, { "skirts", 0 }, { "use_relative_e_distances", true },
+            { "gcode_comments", true },
+        });
+        return Test::slice({ Test::TestMesh::cube_20x20x20 }, config);
+    };
+    CHECK(coasting_by_patch(slice(0.)).empty());
+    const auto coast = coasting_by_patch(slice(0.8));
+    REQUIRE(coast.size() == 1);
+    const auto [length, loops] = coast.begin()->second;
+    // One loop per layer, each ending with 0.8 mm without extruding.
+    CHECK(loops == 100);
+    CHECK(length / loops == Approx(0.8).epsilon(0.02));
+}
+
+TEST_CASE("Calibration: coasting distance by towers", "[Calibration][Coasting]")
+{
+    // 0, 0.5 and 1 mm from left to right.
+    const auto coast = coasting_by_patch(slice_patches("coasting", 0., 1., 0.5, 3, 4.));
+    CHECK(coast.count(0) == 0);
+    REQUIRE(coast.count(1) == 1);
+    REQUIRE(coast.count(2) == 1);
+    CHECK(coast.at(1).first / coast.at(1).second == Approx(0.5).epsilon(0.03));
+    CHECK(coast.at(2).first / coast.at(2).second == Approx(1.0).epsilon(0.03));
 }

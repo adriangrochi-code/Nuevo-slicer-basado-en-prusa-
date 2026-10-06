@@ -1062,7 +1062,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Tisma calibration tests whose steps go along X: where they start (G-code coordinates of the first object).
     m_calib_x0.reset();
     if (const CalibMode mode = print.config().calib_mode.value;
-        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate) && ! print.objects().empty() &&
+        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate || mode == CalibMode::Coasting) && ! print.objects().empty() &&
         ! print.objects().front()->instances().empty()) {
         const PrintObject &object = *print.objects().front();
         BoundingBoxf3 bbox;
@@ -3213,9 +3213,37 @@ std::string GCodeGenerator::extrude_smooth_path(
 ) {
     std::string gcode;
 
+    // Coasting: the last coast mm of the path are travelled without extruding (not in spiral vase, where the path goes on).
+    double coast = 0.;
+    if (m_writer.extruder() != nullptr && !m_spiral_vase && !smooth_path.empty() && !smooth_path.front().path.empty()) {
+        coast = m_config.filament_coast_distance.get_at(m_writer.extruder()->id());
+        if (m_calib_x0 && m_config.calib_mode.value == CalibMode::Coasting &&
+            smooth_path.front().path_attributes.role != ExtrusionRole::Skirt) {
+            // Calibration: the distance of the tower under the path.
+            if (const std::optional<double> value = this->calib_value_along_x(smooth_path.front().path); value)
+                coast = std::max(0., *value);
+        }
+    }
+    std::vector<double> element_lengths;
+    double coast_from = -1.;
+    if (coast > 0.) {
+        double total = 0.;
+        for (const GCode::SmoothPathElement &el : smooth_path) {
+            double len = 0.;
+            for (size_t i = 1; i < el.path.size(); ++i)
+                len += unscaled<double>((el.path[i].point - el.path[i - 1].point).cast<double>().norm());
+            element_lengths.push_back(len);
+            total += len;
+        }
+        // Short paths (gap fill, small details) keep their extrusion.
+        if (total >= 3. * coast)
+            coast_from = total - coast;
+    }
+
     // Extrude along the smooth path.
     bool          is_bridge_extruded = false;
     EmitModifiers emit_modifiers     = EmitModifiers::create_with_disabled_emits();
+    double        length_before      = 0.;
     for (auto el_it = smooth_path.begin(); el_it != smooth_path.end(); ++el_it) {
         const auto next_el_it = next(el_it);
 
@@ -3240,7 +3268,13 @@ std::string GCodeGenerator::extrude_smooth_path(
             emit_modifiers.emit_fan_speed_reset = true;
         }
 
+        if (coast_from >= 0.) {
+            const double len = element_lengths[el_it - smooth_path.begin()];
+            m_coast_start = length_before + len > coast_from ? std::max(0., coast_from - length_before) : -1.;
+            length_before += len;
+        }
         gcode += this->_extrude(el_it->path_attributes, el_it->path, description, speed, emit_modifiers);
+        m_coast_start = -1.;
     }
 
     // reset acceleration
@@ -3750,6 +3784,8 @@ std::string GCodeGenerator::_extrude(
     Vec2d prev = GCodeFormatter::quantize(prev_exact);
     auto  it   = path.begin();
     auto  end  = path.end();
+    // Coasting: length extruded so far along this path.
+    double done = 0.;
     for (++ it; it != end; ++ it) {
         Vec2d p_exact = this->point_to_gcode(it->point);
         Vec2d p = GCodeFormatter::quantize(p_exact);
@@ -3776,11 +3812,32 @@ std::string GCodeGenerator::_extrude(
                 // Extrude line segment.
                 if (const double line_length = (p - prev).norm(); line_length > 0) {
                     double extrusion_amount{e_per_mm * line_length * it->e_fraction};
+                    if (m_coast_start >= 0.) {
+                        if (done >= m_coast_start)
+                            extrusion_amount = 0.;
+                        else if (done + line_length > m_coast_start) {
+                            const double fraction = (m_coast_start - done) / line_length;
+                            if (it->height_fraction >= 1.0 && std::prev(it)->height_fraction >= 1.0) {
+                                // Extrude up to where coasting starts, then go on without extruding.
+                                const Vec2d split = GCodeFormatter::quantize(Vec2d(prev + (p - prev) * fraction));
+                                if (split != prev && split != p) {
+                                    gcode += m_writer.extrude_to_xy(split, extrusion_amount * fraction, comment);
+                                    extrusion_amount = 0.;
+                                } else if (split == p) {
+                                    // Coasting starts at the end of this segment.
+                                } else
+                                    extrusion_amount = 0.;
+                            } else
+                                extrusion_amount *= fraction;
+                        }
+                        done += line_length;
+                    }
+                    const bool coasting = m_coast_start >= 0. && extrusion_amount == 0.;
                     if (it->height_fraction < 1.0 || std::prev(it)->height_fraction < 1.0) {
                         const Vec3d destination{to_3d(p, this->m_last_layer_z + (it->height_fraction - 1) * m_last_height)};
-                        gcode += m_writer.extrude_to_xyz(destination, extrusion_amount);
+                        gcode += coasting ? m_writer.coast_to_xyz(destination, "coasting") : m_writer.extrude_to_xyz(destination, extrusion_amount);
                     } else {
-                        gcode += m_writer.extrude_to_xy(p, extrusion_amount, comment);
+                        gcode += coasting ? m_writer.coast_to_xy(p, "coasting") : m_writer.extrude_to_xy(p, extrusion_amount, comment);
                     }
                 }
             } else {
@@ -3789,7 +3846,13 @@ std::string GCodeGenerator::_extrude(
                 const double line_length = angle * std::abs(radius);
                 const double dE          = e_per_mm * line_length;
                 assert(dE > 0);
-                gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
+                if (m_coast_start >= 0. && done >= m_coast_start)
+                    // Coasting: a chord without extruding (arcs are short, the chord is close enough).
+                    gcode += m_writer.coast_to_xy(p, "coasting");
+                else
+                    gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
+                if (m_coast_start >= 0.)
+                    done += line_length;
             }
             prev = p;
             prev_exact = p_exact;

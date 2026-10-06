@@ -2341,6 +2341,7 @@ void TabFilament::build()
         optgroup->append_line(line);
 
         optgroup->append_single_option_line("filament_infill_max_speed", "max-simple-infill-speed");
+        optgroup->append_single_option_line("filament_coast_distance");
         optgroup->append_single_option_line("filament_infill_max_crossing_speed", "max-crossing-infill-speed");
 
         optgroup = page->new_optgroup(L("Shrinkage compensation"));

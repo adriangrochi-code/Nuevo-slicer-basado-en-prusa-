@@ -329,6 +329,27 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "flow_rate";
 
+    tests.push_back({ _L("Coasting distance"),
+        _L("Prints a row of hollow towers in one go, each with a different coasting distance (from left to right): "
+           "the extruder stops this many millimeters before the end of each loop and the nozzle finishes it with the "
+           "pressure left inside. The seams are aligned at the back of the towers."),
+        _L("Look at the seams at the back: choose the tower with the cleanest seam, without a blob or zit and without "
+           "a gap or a missing piece where the loop closes. Its distance is start + step × tower number (from the left, "
+           "starting at 0): it is the coasting distance of the filament (Calibration > Apply a calibration result). "
+           "Tune pressure advance and retraction first: coasting is a fine correction on top of them."),
+        _L("mm"), CalibMode::Coasting, { 0., 1., 0.2, 20. }, 2, 0.05, 3.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                add_box(obj, i * p.band, 0, 0, p.band - 6., 15., 20.);
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "top_solid_layers", "0");
+            set(obj, "bottom_solid_layers", "3");
+            set(obj, "fill_density", "0%");
+            set(obj, "seam_position", "rear");
+        }, _L("Width of each step") });
+    tests.back().key = "coasting";
+
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
@@ -592,6 +613,9 @@ static std::vector<ResultTarget> result_targets()
     out.push_back({ CalibMode::FlowRate, _L("Flow rate (%)"), "%", Preset::TYPE_FILAMENT,
         [set_all](DynamicPrintConfig& c, double v) { set_all(c, "extrusion_multiplier", v / 100.); },
         [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "extrusion_multiplier") * 100.; } });
+    out.push_back({ CalibMode::Coasting, _L("Coasting distance"), _L("mm"), Preset::TYPE_FILAMENT,
+        [set_all](DynamicPrintConfig& c, double v) { set_all(c, "filament_coast_distance", v); },
+        [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "filament_coast_distance"); } });
     out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
         [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
         [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });

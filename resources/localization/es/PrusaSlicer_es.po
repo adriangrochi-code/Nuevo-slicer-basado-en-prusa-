@@ -32692,3 +32692,15 @@ msgstr "Falló la subida a la impresora: %1%"
 
 msgid "The file was uploaded but the print did not start: %1%"
 msgstr "El archivo se subió pero la impresión no empezó: %1%"
+
+msgid "Coasting distance"
+msgstr "Distancia de coasting"
+
+msgid "Stops extruding this many millimeters before the end of each extrusion and travels the rest with the nozzle still moving, so the pressure left in the nozzle finishes the line (as coasting in Simplify3D). It reduces blobs and zits at the seam and stringing; too much leaves a gap at the seam. Paths shorter than three times this distance are not affected. 0 turns it off. Calibrate it with Calibration > Coasting distance."
+msgstr "Deja de extruir esta cantidad de milímetros antes del final de cada extrusión y recorre el resto con la boquilla en movimiento, para que la presión que queda en la boquilla termine la línea (como el coasting de Simplify3D). Reduce las gotas y granos en la costura y los hilos; demasiado deja un hueco en la costura. No afecta a los recorridos de menos de tres veces esta distancia. 0 lo desactiva. Se calibra con Calibración > Distancia de coasting."
+
+msgid "Prints a row of hollow towers in one go, each with a different coasting distance (from left to right): the extruder stops this many millimeters before the end of each loop and the nozzle finishes it with the pressure left inside. The seams are aligned at the back of the towers."
+msgstr "Imprime de una vez una fila de torres huecas, cada una con una distancia de coasting distinta (de izquierda a derecha): el extrusor se detiene esa cantidad de milímetros antes del final de cada vuelta y la boquilla la termina con la presión que queda dentro. Las costuras quedan alineadas en la parte de atrás de las torres."
+
+msgid "Look at the seams at the back: choose the tower with the cleanest seam, without a blob or zit and without a gap or a missing piece where the loop closes. Its distance is start + step × tower number (from the left, starting at 0): it is the coasting distance of the filament (Calibration > Apply a calibration result). Tune pressure advance and retraction first: coasting is a fine correction on top of them."
+msgstr "Mira las costuras de atrás: elige la torre con la costura más limpia, sin gota ni grano y sin hueco ni faltante donde se cierra la vuelta. Su distancia es inicio + paso × número de torre (desde la izquierda, empezando en 0): es la distancia de coasting del filamento (Calibración > Aplicar un resultado de calibración). Ajusta primero el pressure advance y la retracción: el coasting es una corrección fina encima de ellos."

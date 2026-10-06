@@ -185,7 +185,7 @@ enum class NonPlanarMode { Disabled, Wave, Conical };
 
 // Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
 enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,
-                       NonPlanarSlope, NonPlanarZSpeed, FirstLayerOffset, FlowRate };
+                       NonPlanarSlope, NonPlanarZSpeed, FirstLayerOffset, FlowRate, Coasting };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
 enum class NonPlanarFlowPolicy { Preserve, Uniform, Off };
 
@@ -886,6 +886,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBools,               filament_soluble))
     ((ConfigOptionBools,               filament_abrasive))
     ((ConfigOptionFloats,              filament_cost))
+    ((ConfigOptionFloats,              filament_coast_distance))
     ((ConfigOptionFloats,              filament_spool_weight))
     ((ConfigOptionFloats,              filament_max_volumetric_speed))
     ((ConfigOptionFloats,              filament_infill_max_speed))

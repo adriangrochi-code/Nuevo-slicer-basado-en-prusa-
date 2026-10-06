@@ -478,6 +478,8 @@ private:
     double                              m_calib_value { 0. };
     // Calibration tests along X (first layer offset, flow): G-code X where the steps start.
     std::optional<double>               m_calib_x0;
+    // Coasting (Tisma): distance along the path passed to _extrude() from which it stops extruding, < 0 = never.
+    double                              m_coast_start{ -1. };
     // Value of the step of the calibration along X under the start of the path, if any.
     std::optional<double>               calib_value_along_x(const Geometry::ArcWelder::Path &path) const;
     std::string                         emit_calibration_step(const Print &print, double print_z, bool force);

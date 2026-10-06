@@ -136,6 +136,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "filament_density",
         "filament_notes",
         "filament_cost",
+        "filament_coast_distance",
         "filament_seam_gap_distance",
         "filament_spool_weight",
         "filament_flush_volume",
