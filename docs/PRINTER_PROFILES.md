@@ -3,6 +3,22 @@
 Tisma trae los perfiles de PrusaSlicer (35 fabricantes en `resources/profiles` más los del repositorio en línea de
 Prusa) y, además, los de **OrcaSlicer** convertidos al formato de Tisma.
 
+## Selección de impresoras en el asistente
+
+La página «Impresoras» del asistente de configuración (antes de las páginas de cada fabricante) reemplaza la lista
+de casillas de fabricantes:
+
+- **Marcas**: todas las marcas de los perfiles que tiene Tisma, en orden alfabético. Los paquetes convertidos de
+  otros laminadores se muestran bajo la marca (por ejemplo, «Creality» junta los perfiles de Prusa y los de
+  OrcaSlicer). Entre paréntesis, cuántas impresoras de la marca están marcadas.
+- **Impresoras**: los modelos de la marca elegida, uno por boquilla, con casillas; al elegir uno se ve su foto.
+- **Buscador**: filtra por nombre en todas las marcas (todas las palabras deben coincidir, sin distinguir
+  mayúsculas). Con una búsqueda, la primera entrada de «Marcas» es «Todos los resultados».
+
+Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`ConfigWizard::priv::pick_printer`): la
+página del fabricante aparece en el índice para elegir más boquillas o ver las fotos, y desaparece al desmarcar todas
+sus impresoras. El resto del asistente (filamentos, perfiles instalados) no cambia.
+
 ## Perfiles de OrcaSlicer
 
 - Origen: `resources/profiles` de [OrcaSlicer](https://github.com/SoftFever/OrcaSlicer) (commit indicado en la cabecera

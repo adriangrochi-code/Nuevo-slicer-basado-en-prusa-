@@ -32387,3 +32387,26 @@ msgstr "La impresora no tiene dirección de red: edítala."
 
 msgid "Sending %1% to %2%."
 msgstr "Enviando %1% a %2%."
+
+msgid "Printer Selection"
+msgstr "Selección de impresoras"
+
+msgid "Choose the brand of your printer and check your printers, or search them by name. You can choose printers of several brands."
+msgstr "Elige la marca de tu impresora y marca tus impresoras, o búscalas por nombre. Puedes elegir impresoras de varias marcas."
+
+msgid "Search printer by name"
+msgstr "Buscar impresora por nombre"
+
+msgid "Brands"
+msgstr "Marcas"
+
+msgid "All results (%1%)"
+msgstr "Todos los resultados (%1%)"
+
+msgid "No printer selected."
+msgstr "Ninguna impresora seleccionada."
+
+msgid "%1% printer selected. Next: their settings and filaments."
+msgid_plural "%1% printers selected. Next: their settings and filaments."
+msgstr[0] "%1% impresora seleccionada. Siguiente: sus ajustes y filamentos."
+msgstr[1] "%1% impresoras seleccionadas. Siguiente: sus ajustes y filamentos."

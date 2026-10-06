@@ -13,6 +13,7 @@
 #include "ConfigWizardWebViewPage.hpp"
 
 #include <algorithm>
+#include <sstream>
 #include <numeric>
 #include <utility>
 #include <unordered_map>
@@ -519,6 +520,20 @@ std::set<std::string> PrinterPicker::get_selected_models() const
             ret_set.emplace(cb->model);
 
     return ret_set;
+}
+
+bool PrinterPicker::set_variant(const std::string &model, const std::string &variant, bool select)
+{
+    for (const std::vector<Checkbox*> *list : { &cboxes, &cboxes_alt })
+        for (Checkbox *cb : *list)
+            if (cb->model == model && cb->variant == variant) {
+                if (cb->GetValue() != select) {
+                    cb->SetValue(select);
+                    on_checkbox(cb, select);
+                }
+                return true;
+            }
+    return false;
 }
 
 void PrinterPicker::on_checkbox(const Checkbox *cbox, bool checked)
@@ -1919,33 +1934,10 @@ PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptySt
                     }
                 }
 
-                wxString    user_presets_list{ wxString() };
-                int         user_presets_cnt { 0 };
-                
-                // Check if some of preset doesn't exist as a user_preset
-                // to avoid rewrite those user_presets by new installed system presets
-                const PresetCollection& presets = wizard_p()->bundles.at(vendor->id).preset_bundle.get()->printers;
-                for (const Preset& preset : presets)
-                    if (!preset.is_default && boost::filesystem::exists(preset.file)) {
-                        user_presets_list += " * " + from_u8(preset.name) + "\n";
-                        user_presets_cnt++;
-                    }
-
-                if (!user_presets_list.IsEmpty()) {
-                    wxString message = format_wxstr(_L_PLURAL("Existing user preset '%2%' has the same name as one of new system presets from vendor '%1%'.\n"
-                                                              "Please note that this user preset will be rewritten by the system preset.\n\n"
-                                                              "Do you still wish to add presets from vendor '%1%'?",
-                                                              "Existing user presets (%2%) have the same names as some of new system presets from vendor '%1%'.\n"
-                                                              "Please note that these user presets will be rewritten by the system presets.\n\n"
-                                                              "Do you still wish to add presets from vendor '%1%'?",
-                                                    user_presets_cnt), vendor->name, user_presets_list);
-
-                    MessageDialog msg(this->GetParent(), message, _L("Notice"), wxYES_NO);
-                    if (msg.ShowModal() == wxID_NO) {
-                        // uncheck checked ckeckbox
-                        cbox->SetValue(false);
-                        return;
-                    }
+                if (!wizard_p()->confirm_vendor_install(vendor)) {
+                    // uncheck checked ckeckbox
+                    cbox->SetValue(false);
+                    return;
                 }
             }
 
@@ -1961,6 +1953,290 @@ PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptySt
 
         append(cbox);
     }
+}
+
+// Tisma Slicer: printer browser by brand with a search by name.
+
+// The picture of a printer model, as in PrinterPicker (empty if it has none).
+static wxString model_thumbnail(const VendorProfile &vendor, const VendorProfile::PrinterModel &model)
+{
+    if (model.thumbnail.empty())
+        return wxString();
+    for (const fs::path &dir : { fs::path(resources_dir()) / "profiles", fs::path(Slic3r::data_dir()) / "vendor",
+                                 fs::path(Slic3r::data_dir()) / "cache" }) {
+        const fs::path path = (dir / vendor.id / model.thumbnail).make_preferred();
+        if (fs::exists(path))
+            return from_u8(path.string());
+    }
+    return wxString();
+}
+
+static std::wstring lower(const wxString &text)
+{
+    return boost::algorithm::to_lower_copy(text.ToStdWstring());
+}
+
+PageBrands::PageBrands(ConfigWizard *parent)
+    : ConfigWizardPage(parent, _L("Printer Selection"), _L("Printers"))
+{
+    auto *p = wizard_p();
+
+    // Brands: the bundles of the repositories shown by the wizard. The bundles converted from OrcaSlicer, named
+    // "<brand> (OrcaSlicer)" when there is another bundle of the brand, are listed under the brand.
+    static const std::string CONVERTED = " (OrcaSlicer)";
+    std::map<std::wstring, size_t> brand_by_name;
+    for (const auto &repo : p->repositories)
+        for (const auto &[id, bundle] : p->bundles) {
+            const VendorProfile *vendor = bundle.vendor_profile;
+            if (vendor == nullptr || vendor->repo_id != repo.id_name || vendor->templates_profile || vendor->models.empty())
+                continue;
+            std::string name = vendor->name;
+            const bool converted = boost::algorithm::ends_with(name, CONVERTED);
+            if (converted)
+                name.erase(name.size() - CONVERTED.size());
+            const auto [it, added] = brand_by_name.emplace(lower(from_u8(name)), m_brands.size());
+            if (added)
+                m_brands.push_back({ from_u8(name), {} });
+            Brand &brand = m_brands[it->second];
+            if (! converted)
+                brand.name = from_u8(name);
+
+            for (const VendorProfile::PrinterModel &model : vendor->models)
+                for (const VendorProfile::PrinterVariant &variant : model.variants) {
+                    Entry entry { repo.id_name, vendor, &model, variant.name };
+                    entry.label = from_u8(model.name);
+                    if (model.technology == ptFFF)
+                        entry.label += "  -  " + format_wxstr("%1% %2% %3%", variant.name, _L("mm"), _L("nozzle"));
+                    brand.entries.push_back(m_entries.size());
+                    m_entries.push_back(std::move(entry));
+                }
+        }
+
+    std::sort(m_brands.begin(), m_brands.end(), [](const Brand &a, const Brand &b) { return lower(a.name) < lower(b.name); });
+    for (Brand &brand : m_brands) {
+        // The brand in the search results, unless the model name has it.
+        const std::wstring brand_lower = lower(brand.name);
+        for (size_t i : brand.entries) {
+            Entry &entry = m_entries[i];
+            entry.full_label = lower(entry.label).find(brand_lower) == std::wstring::npos ?
+                brand.name + "  " + entry.label : entry.label;
+            entry.search_text = brand_lower + L" " + lower(entry.label) + L" " + lower(from_u8(entry.vendor->name));
+        }
+        // Models in alphabetic order, the nozzles of a model in the order of the vendor.
+        std::stable_sort(brand.entries.begin(), brand.entries.end(), [this](size_t a, size_t b) {
+            return lower(from_u8(m_entries[a].model->name)) < lower(from_u8(m_entries[b].model->name));
+        });
+    }
+
+    append_text(_L("Choose the brand of your printer and check your printers, or search them by name. "
+                   "You can choose printers of several brands."));
+
+    m_search = new wxSearchCtrl(this, wxID_ANY);
+    m_search->ShowCancelButton(true);
+    m_search->SetDescriptiveText(_L("Search printer by name"));
+    wxGetApp().UpdateDarkUI(m_search);
+    append(m_search, 0, wxEXPAND | wxTOP | wxBOTTOM, 5);
+
+    const int em = wxGetApp().em_unit();
+    auto *lists = new wxBoxSizer(wxHORIZONTAL);
+
+    auto *brands_sizer = new wxBoxSizer(wxVERTICAL);
+    auto *brands_label = new wxStaticText(this, wxID_ANY, _L("Brands"));
+    brands_label->SetFont(brands_label->GetFont().Bold());
+    brands_sizer->Add(brands_label, 0, wxBOTTOM, 3);
+    m_brands_list = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxSize(18 * em, 32 * em), 0, nullptr, wxLB_SINGLE);
+    wxGetApp().UpdateDarkUI(m_brands_list);
+    brands_sizer->Add(m_brands_list, 1, wxEXPAND);
+    lists->Add(brands_sizer, 0, wxEXPAND | wxRIGHT, em);
+
+    auto *printers_sizer = new wxBoxSizer(wxVERTICAL);
+    auto *printers_label = new wxStaticText(this, wxID_ANY, _L("Printers"));
+    printers_label->SetFont(printers_label->GetFont().Bold());
+    printers_sizer->Add(printers_label, 0, wxBOTTOM, 3);
+    m_printers_list = new wxCheckListBox(this, wxID_ANY, wxDefaultPosition, wxSize(30 * em, 32 * em));
+    wxGetApp().UpdateDarkUI(m_printers_list);
+    printers_sizer->Add(m_printers_list, 1, wxEXPAND);
+    lists->Add(printers_sizer, 1, wxEXPAND | wxRIGHT, em);
+
+    auto *preview_sizer = new wxBoxSizer(wxVERTICAL);
+    m_preview = new wxStaticBitmap(this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize(20 * em, 20 * em));
+    preview_sizer->Add(m_preview, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 5);
+    m_preview_name = new wxStaticText(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(20 * em, -1), wxALIGN_CENTER_HORIZONTAL | wxST_NO_AUTORESIZE);
+    m_preview_name->SetFont(m_preview_name->GetFont().Bold());
+    preview_sizer->Add(m_preview_name, 0, wxEXPAND);
+    lists->Add(preview_sizer, 0);
+
+    append(lists, 1, wxEXPAND | wxTOP | wxBOTTOM, 5);
+
+    m_summary = append_text(wxEmptyString);
+
+    m_search->Bind(wxEVT_TEXT, [this](wxCommandEvent &) { update_brands(); });
+    m_search->Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, [this](wxCommandEvent &) { m_search->Clear(); });
+    m_brands_list->Bind(wxEVT_LISTBOX, [this](wxCommandEvent &) { update_printers(); });
+    m_printers_list->Bind(wxEVT_LISTBOX, [this](wxCommandEvent &) { update_preview(); });
+    m_printers_list->Bind(wxEVT_CHECKLISTBOX, [this](wxCommandEvent &evt) { on_check(evt.GetInt()); });
+
+    update_brands();
+}
+
+void PageBrands::on_activate()
+{
+    // The printers may have been changed in the pages of the vendors.
+    update_brands();
+}
+
+bool PageBrands::is_selected(const Entry &entry) const
+{
+    return wizard_p()->appconfig_new.get_variant(entry.vendor->id, entry.model->id, entry.variant);
+}
+
+size_t PageBrands::selected_count(const Brand &brand) const
+{
+    return std::count_if(brand.entries.begin(), brand.entries.end(), [this](size_t i) { return is_selected(m_entries[i]); });
+}
+
+bool PageBrands::matches(const Entry &entry) const
+{
+    // All the words of the search.
+    std::wistringstream words(lower(m_search->GetValue()));
+    std::wstring word;
+    while (words >> word)
+        if (entry.search_text.find(word) == std::wstring::npos)
+            return false;
+    return true;
+}
+
+void PageBrands::update_brands()
+{
+    const bool searching = ! m_search->GetValue().Trim().IsEmpty();
+    const int  old_row   = m_brands_list->GetSelection();
+    const int  old_brand = old_row == wxNOT_FOUND || old_row >= int(m_shown_brands.size()) ? -2 : m_shown_brands[old_row];
+
+    wxArrayString rows;
+    m_shown_brands.clear();
+    size_t results = 0;
+    for (size_t i = 0; i < m_brands.size(); ++ i) {
+        const Brand &brand = m_brands[i];
+        if (searching) {
+            const size_t n = std::count_if(brand.entries.begin(), brand.entries.end(), [this](size_t e) { return matches(m_entries[e]); });
+            if (n == 0)
+                continue;
+            results += n;
+        }
+        const size_t selected = selected_count(brand);
+        rows.Add(selected == 0 ? brand.name : format_wxstr("%1%  (%2%)", brand.name, selected));
+        m_shown_brands.push_back(int(i));
+    }
+    if (searching) {
+        rows.Insert(format_wxstr(_L("All results (%1%)"), results), 0);
+        m_shown_brands.insert(m_shown_brands.begin(), -1);
+    }
+
+    m_brands_list->Freeze();
+    m_brands_list->Set(rows);
+    // Keep the brand selected, or show the results of the search.
+    int row = searching ? 0 : wxNOT_FOUND;
+    if (! searching || old_brand != -1)
+        for (size_t i = 0; i < m_shown_brands.size(); ++ i)
+            if (m_shown_brands[i] == old_brand && old_brand >= 0)
+                row = int(i);
+    if (row == wxNOT_FOUND && ! m_shown_brands.empty())
+        row = 0;
+    if (row != wxNOT_FOUND)
+        m_brands_list->SetSelection(row);
+    m_brands_list->Thaw();
+
+    update_printers();
+    update_summary();
+}
+
+void PageBrands::update_printers()
+{
+    const int row = m_brands_list->GetSelection();
+    const bool searching = ! m_search->GetValue().Trim().IsEmpty();
+
+    m_shown_entries.clear();
+    if (row != wxNOT_FOUND && row < int(m_shown_brands.size())) {
+        if (m_shown_brands[row] < 0) {
+            for (const Brand &brand : m_brands)
+                for (size_t i : brand.entries)
+                    if (matches(m_entries[i]))
+                        m_shown_entries.push_back(i);
+        } else {
+            for (size_t i : m_brands[m_shown_brands[row]].entries)
+                if (! searching || matches(m_entries[i]))
+                    m_shown_entries.push_back(i);
+        }
+    }
+    const bool all_brands = row != wxNOT_FOUND && row < int(m_shown_brands.size()) && m_shown_brands[row] < 0;
+
+    wxArrayString rows;
+    for (size_t i : m_shown_entries)
+        rows.Add(all_brands ? m_entries[i].full_label : m_entries[i].label);
+    m_printers_list->Freeze();
+    m_printers_list->Set(rows);
+    for (size_t r = 0; r < m_shown_entries.size(); ++ r)
+        m_printers_list->Check(int(r), is_selected(m_entries[m_shown_entries[r]]));
+    if (! m_shown_entries.empty())
+        m_printers_list->SetSelection(0);
+    m_printers_list->Thaw();
+
+    update_preview();
+}
+
+void PageBrands::update_preview()
+{
+    const int row = m_printers_list->GetSelection();
+    if (row == wxNOT_FOUND || row >= int(m_shown_entries.size())) {
+        m_preview->SetBitmap(wxNullBitmap);
+        m_preview_name->SetLabel(wxEmptyString);
+        return;
+    }
+    const Entry &entry = m_entries[m_shown_entries[row]];
+    wxString file = model_thumbnail(*entry.vendor, *entry.model);
+    if (file.IsEmpty())
+        file = from_u8(Slic3r::var(PrinterPicker::PRINTER_PLACEHOLDER));
+    wxImage image;
+    if (image.LoadFile(file, wxBITMAP_TYPE_PNG) && image.IsOk()) {
+        const int size = m_preview->GetMinSize().GetWidth();
+        const double scale = std::min(double(size) / image.GetWidth(), double(size) / image.GetHeight());
+        if (scale < 1.)
+            image.Rescale(std::max(1, int(image.GetWidth() * scale)), std::max(1, int(image.GetHeight() * scale)), wxIMAGE_QUALITY_HIGH);
+        m_preview->SetBitmap(wxBitmap(image));
+    } else
+        m_preview->SetBitmap(wxNullBitmap);
+    m_preview_name->SetLabel(from_u8(entry.model->name));
+    m_preview_name->Wrap(m_preview->GetMinSize().GetWidth());
+    Layout();
+}
+
+void PageBrands::update_summary()
+{
+    size_t selected = 0;
+    for (const Brand &brand : m_brands)
+        selected += selected_count(brand);
+    m_summary->SetLabel(selected == 0 ? _L("No printer selected.") :
+        format_wxstr(_L_PLURAL("%1% printer selected. Next: their settings and filaments.",
+                               "%1% printers selected. Next: their settings and filaments.", selected), selected));
+}
+
+void PageBrands::on_check(int row)
+{
+    if (row < 0 || row >= int(m_shown_entries.size()))
+        return;
+    const Entry &entry = m_entries[m_shown_entries[row]];
+    const bool enable = m_printers_list->IsChecked(row);
+    if (! wizard_p()->pick_printer(entry.vendor, *entry.model, entry.variant, enable))
+        m_printers_list->Check(row, ! enable);
+
+    // The counts of the brands.
+    for (size_t r = 0; r < m_shown_brands.size(); ++ r)
+        if (m_shown_brands[r] >= 0) {
+            const Brand &brand = m_brands[m_shown_brands[r]];
+            const size_t selected = selected_count(brand);
+            m_brands_list->SetString(int(r), selected == 0 ? brand.name : format_wxstr("%1%  (%2%)", brand.name, selected));
+        }
+    update_summary();
 }
 
 PageFirmware::PageFirmware(ConfigWizard *parent)
@@ -2576,6 +2852,10 @@ void ConfigWizard::priv::load_pages()
 
     if (is_config_from_archive) {
 
+        // Tisma Slicer: the printers by brand and the search, then the pages of the vendors.
+        if (page_brands)
+            index->add_page(page_brands);
+
         // Printers
         if (!only_sla_mode)
             for (const auto page : pages_fff)
@@ -2589,7 +2869,10 @@ void ConfigWizard::priv::load_pages()
             for (const auto& repos : repositories) {
                 if (!repos.vendors_page)
                     continue;
-                index->add_page(repos.vendors_page);
+                // Tisma Slicer: PageBrands replaces the list of vendors (still created: it installs the pages of
+                // the vendors already in use).
+                if (!page_brands)
+                    index->add_page(repos.vendors_page);
 
                 // Copy pages names from map to vector, so we can sort it without case sensitivity
                 std::vector<std::pair<std::wstring, std::string>> sorted_vendors;
@@ -2644,7 +2927,7 @@ void ConfigWizard::priv::load_pages()
 
     if (former_active != page_update_manager) {
         if (pages_fff.empty() && pages_msla.empty() && installed_multivendors_repos())
-            index->go_to(repositories[0].vendors_page); // Activate Vendor page, if no one printer is selected
+            index->go_to(page_brands ? static_cast<ConfigWizardPage*>(page_brands) : repositories[0].vendors_page); // Activate Vendor page, if no one printer is selected
         else
             index->go_to(former_active);   // Will restore the active item/page if possible
     }
@@ -2758,7 +3041,7 @@ void ConfigWizard::priv::load_vendors()
 
 void ConfigWizard::priv::add_page(ConfigWizardPage *page)
 {
-    const int proportion = (page == page_login || page == page_filaments || page == page_sla_materials);
+    const int proportion = (page == page_login || page == page_filaments || page == page_sla_materials || page == page_brands);
     hscroll_sizer->Add(page, proportion, wxEXPAND);
     all_pages.push_back(page);
 }
@@ -3051,6 +3334,88 @@ void ConfigWizard::priv::select_default_materials_for_printer_models(Technology 
 
     update_materials(technology);
     ((technology & T_FFF) ? page_filaments : page_sla_materials)->reload_presets();
+}
+
+bool ConfigWizard::priv::confirm_vendor_install(const VendorProfile *vendor)
+{
+    wxString    user_presets_list{ wxString() };
+    int         user_presets_cnt { 0 };
+
+    // Check if some of preset doesn't exist as a user_preset
+    // to avoid rewrite those user_presets by new installed system presets
+    const PresetCollection& presets = bundles.at(vendor->id).preset_bundle.get()->printers;
+    for (const Preset& preset : presets)
+        if (!preset.is_default && boost::filesystem::exists(preset.file)) {
+            user_presets_list += " * " + from_u8(preset.name) + "\n";
+            user_presets_cnt++;
+        }
+
+    if (!user_presets_list.IsEmpty()) {
+        wxString message = format_wxstr(_L_PLURAL("Existing user preset '%2%' has the same name as one of new system presets from vendor '%1%'.\n"
+                                                  "Please note that this user preset will be rewritten by the system preset.\n\n"
+                                                  "Do you still wish to add presets from vendor '%1%'?",
+                                                  "Existing user presets (%2%) have the same names as some of new system presets from vendor '%1%'.\n"
+                                                  "Please note that these user presets will be rewritten by the system presets.\n\n"
+                                                  "Do you still wish to add presets from vendor '%1%'?",
+                                        user_presets_cnt), vendor->name, user_presets_list);
+
+        MessageDialog msg(q, message, _L("Notice"), wxYES_NO);
+        if (msg.ShowModal() == wxID_NO)
+            return false;
+    }
+    return true;
+}
+
+PagePrinters* ConfigWizard::priv::vendor_printers_page(const VendorProfile *vendor, Technology technology)
+{
+    Repository *repo = get_repo(vendor->repo_id);
+    if (repo == nullptr)
+        return nullptr;
+    auto pages = repo->printers_pages.find(vendor->id);
+    if (pages == repo->printers_pages.end()) {
+        wxWindowUpdateLocker freeze_guard(q);
+        create_vendor_printers_page(vendor->repo_id, vendor);
+        pages = repo->printers_pages.find(vendor->id);
+        if (pages == repo->printers_pages.end())
+            return nullptr;
+    }
+    return (technology & T_SLA) ? pages->second.second : pages->second.first;
+}
+
+bool ConfigWizard::priv::pick_printer(const VendorProfile *vendor, const VendorProfile::PrinterModel &model, const std::string &variant, bool enable)
+{
+    PagePrinters *page = vendor_printers_page(vendor, model.technology == ptSLA ? T_SLA : T_FFF);
+    if (page == nullptr)
+        return false;
+    // The pages of single vendor repositories (Prusa) are always shown, the others when their vendor is installed.
+    const bool always_shown = std::find(pages_fff.begin(), pages_fff.end(), page) != pages_fff.end() ||
+                              std::find(pages_msla.begin(), pages_msla.end(), page) != pages_msla.end();
+    bool reload = false;
+    if (enable && ! always_shown && ! page->install) {
+        if (! confirm_vendor_install(vendor))
+            return false;
+        page->install = true;
+        reload = true;
+    }
+
+    bool found = false;
+    for (PrinterPicker *picker : page->printer_pickers)
+        if (picker->set_variant(model.id, variant, enable)) {
+            found = true;
+            break;
+        }
+    if (! found)
+        return false;
+    // The picker updates appconfig_new from a pending event, PageBrands reads it now.
+    appconfig_new.set_variant(vendor->id, model.id, variant, enable);
+
+    if (! enable && ! always_shown && page->install && ! page->any_selected()) {
+        page->install = false;
+        reload = true;
+    }
+    if (reload)
+        load_pages();
+    return true;
 }
 
 void ConfigWizard::priv::on_3rdparty_install(const VendorProfile *vendor, bool install)
@@ -3817,6 +4182,13 @@ void ConfigWizard::priv::clear_printer_pages()
         }
     }
     repositories.clear();
+
+    if (page_brands) {
+        hscroll->RemoveChild(page_brands);
+        all_pages.erase(std::remove(all_pages.begin(), all_pages.end(), page_brands), all_pages.end());
+        page_brands->Destroy();
+        page_brands = nullptr;
+    }
 }
 
 bool ConfigWizard::priv::installed_multivendors_repos()
@@ -3897,6 +4269,9 @@ void ConfigWizard::priv::load_pages_from_archive()
     if (only_sla_mode && installed_multivendors_repos()) {
         only_sla_mode = false;
     }
+
+    if (!repositories.empty())
+        add_page(page_brands = new PageBrands(q));
 
     if (!only_sla_mode) {
         add_page(page_custom = new PageCustom(q));
