@@ -59,6 +59,8 @@ private:
     PrinterWebViewPanel *m_web        { nullptr };
     bool                 m_web_created{ false };
     std::string          m_url;
+    // Bambu Lab printers: the status request in flight (older answers are ignored).
+    int                  m_status_request{ 0 };
 };
 
 } // namespace GUI

@@ -376,6 +376,10 @@ set(SLIC3R_GUI_SOURCES
     Utils/Jwt.hpp
     Utils/Moonraker.cpp
     Utils/Moonraker.hpp
+    Utils/BambuLan.cpp
+    Utils/BambuLan.hpp
+    Utils/BambuLanClient.cpp
+    Utils/BambuLanClient.hpp
     Utils/OctoPrint.cpp
     Utils/OctoPrint.hpp
     Utils/Duet.cpp

@@ -17,6 +17,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
   propios por plancha (orden de impresión, jarrón en espiral y temperaturas de cama) que solo cambian su G-code.
   Etiqueta con botones en cada plancha y menú Editar > Ajustes de plancha; se guardan en el 3MF
   (`Metadata/Tisma_plates.xml`) y el G-code exportado lleva el nombre de la plancha.
+- **Impresoras Bambu Lab por LAN** (modo Solo LAN + Desarrollador) sin el plugin cerrado de Bambu: estado en
+  Dispositivos, prueba de conexión, envío e inicio de la impresión (MQTT y FTPS sobre TLS, según OpenBambuAPI).
+  curl de Windows compilado con FTP.
 - La comprobación de versión ya no anuncia versiones de PrusaSlicer como actualizaciones de Tisma.
 
 ## 0.9.0 (beta, sin validar todavía en impresoras reales)

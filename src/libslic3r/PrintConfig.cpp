@@ -110,6 +110,7 @@ static const t_config_enum_values s_keys_map_PrintHostType {
     { "repetier",       htRepetier },
     { "mks",            htMKS },
     { "prusaconnectnew", htPrusaConnectNew },
+    { "bambulab",       htBambuLan },
 
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrintHostType)
@@ -553,6 +554,13 @@ void PrintConfigDef::init_common_params()
     def->label = L("Ignore HTTPS certificate revocation checks");
     def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
                      "One may want to enable this option for self signed certificates if connection fails.");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("bambu_use_ams", coBool);
+    def->label = L("Print from the AMS");
+    def->tooltip = L("Bambu Lab printers: take the filament from the AMS instead of the external spool.");
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionBool(false));
@@ -2630,7 +2638,8 @@ void PrintConfigDef::init_fff_params()
         { "flashair",       "FlashAir" },
         { "astrobox",       "AstroBox" },
         { "repetier",       "Repetier" },
-        { "mks",            "MKS" }
+        { "mks",            "MKS" },
+        { "bambulab",       "Bambu Lab (LAN)" }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;

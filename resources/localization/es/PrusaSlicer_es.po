@@ -32635,3 +32635,60 @@ msgstr "Bloquear plancha"
 
 msgid "Unlock plate"
 msgstr "Desbloquear plancha"
+
+msgid "Print from the AMS"
+msgstr "Imprimir desde el AMS"
+
+msgid "Bambu Lab printers: take the filament from the AMS instead of the external spool."
+msgstr "Impresoras Bambu Lab: tomar el filamento del AMS en lugar de la bobina externa."
+
+msgid "Bambu Lab (LAN)"
+msgstr "Bambu Lab (LAN)"
+
+msgid "Bambu Lab: on the printer turn on LAN only mode and Developer mode (Settings > LAN only). Hostname = IP address of the printer, API key = access code shown there. The serial number is read from the printer."
+msgstr "Bambu Lab: en la impresora activa el modo Solo LAN y el modo Desarrollador (Ajustes > Solo LAN). Nombre de host = dirección IP de la impresora, clave API = código de acceso que se muestra ahí. El número de serie se lee de la impresora."
+
+msgid "Bambu Lab printer in LAN mode: asking for its status..."
+msgstr "Impresora Bambu Lab en modo LAN: consultando su estado..."
+
+msgid "Could not read the status of the printer: %1%"
+msgstr "No se pudo leer el estado de la impresora: %1%"
+
+msgid "the printer rejected the access code"
+msgstr "la impresora rechazó el código de acceso"
+
+msgid "Serial number %1%. State: %2%."
+msgstr "Número de serie %1%. Estado: %2%."
+
+msgid "Nozzle %1% °C, bed %2% °C."
+msgstr "Boquilla %1% °C, cama %2% °C."
+
+msgid "Progress %1% %%, %2% min left."
+msgstr "Progreso %1% %%, faltan %2% min."
+
+msgid "Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."
+msgstr "Selecciónala de nuevo para actualizar. Tisma todavía no muestra la cámara de las impresoras Bambu Lab."
+
+msgid "The printer rejected the access code."
+msgstr "La impresora rechazó el código de acceso."
+
+msgid "Printer %1%, state %2%."
+msgstr "Impresora %1%, estado %2%."
+
+msgid "Connection to the Bambu Lab printer works correctly."
+msgstr "La conexión con la impresora Bambu Lab funciona correctamente."
+
+msgid "Could not connect to the Bambu Lab printer"
+msgstr "No se pudo conectar con la impresora Bambu Lab"
+
+msgid "The printer must be in LAN only mode with Developer mode on, and the access code is the one shown on its screen (Settings > LAN only)."
+msgstr "La impresora debe estar en modo Solo LAN con el modo Desarrollador activado, y el código de acceso es el que muestra su pantalla (Ajustes > Solo LAN)."
+
+msgid "Bambu Lab printers need text G-code: turn off binary G-code for this printer."
+msgstr "Las impresoras Bambu Lab necesitan G-code de texto: desactiva el G-code binario para esta impresora."
+
+msgid "Upload to the printer failed: %1%"
+msgstr "Falló la subida a la impresora: %1%"
+
+msgid "The file was uploaded but the print did not start: %1%"
+msgstr "El archivo se subió pero la impresión no empezó: %1%"

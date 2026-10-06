@@ -30,6 +30,9 @@
 #include "WebViewPanel.hpp"
 #include "format.hpp"
 #include "../Utils/PrintHost.hpp"
+#include "../Utils/BambuLan.hpp"
+
+#include <thread>
 
 namespace Slic3r {
 namespace GUI {
@@ -179,6 +182,40 @@ void DevicesPanel::on_select()
         m_web->Hide();
         m_url.clear();
         Layout();
+        return;
+    }
+    if (host_type == htBambuLan) {
+        // No web interface: the status comes from the MQTT reports of the printer.
+        m_web->Hide();
+        m_url.clear();
+        m_btn_browser->Enable(false);
+        m_hint->SetLabel(_L("Bambu Lab printer in LAN mode: asking for its status..."));
+        Layout();
+        const int request = ++m_status_request;
+        DynamicPrintConfig config = cfg;
+        std::thread([this, request, config]() mutable {
+            BambuLan host(&config);
+            BambuStatus status;
+            std::string error;
+            const bool ok = host.client().query_status(status, error);
+            wxGetApp().CallAfter([this, request, ok, status, error]() {
+                if (request != m_status_request)
+                    return;
+                wxString text;
+                if (!ok)
+                    text = format_wxstr(_L("Could not read the status of the printer: %1%"),
+                                        error == "access code" ? _L("the printer rejected the access code") : from_u8(error));
+                else {
+                    text = format_wxstr(_L("Serial number %1%. State: %2%."), from_u8(status.serial), from_u8(status.gcode_state));
+                    if (status.nozzle_temp >= 0. && status.bed_temp >= 0.)
+                        text += " " + format_wxstr(_L("Nozzle %1% °C, bed %2% °C."), int(status.nozzle_temp + 0.5), int(status.bed_temp + 0.5));
+                    if (status.gcode_state == "RUNNING" || status.gcode_state == "PAUSE")
+                        text += " " + format_wxstr(_L("Progress %1% %%, %2% min left."), status.percent, status.remaining_min);
+                }
+                m_hint->SetLabel(text + "\n" + _L("Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."));
+                Layout();
+            });
+        }).detach();
         return;
     }
     m_hint->SetLabel(_L("Web interface of the printer: camera, temperatures, console and the calibrations of its firmware "
