@@ -8,6 +8,12 @@
 >
 > Identidad visual: los logos oficiales están en `resources-src/branding/originals/`; los iconos, la pantalla de inicio y la paleta (violeta `#7A24C9`) se generan con `python3 resources-src/branding/make_tisma_assets.py`.
 
+## Descargas y firma de código
+
+Las versiones para Windows están en la [página de versiones](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/releases).
+Se compilan solo con GitHub Actions desde este repositorio público. La firma de código está descrita en la
+[política de firma de código](docs/CODE_SIGNING_POLICY.md) (Code signing policy).
+
 ## PrusaSlicer
 
 You may want to check the [PrusaSlicer project page](https://www.prusa3d.com/prusaslicer/).
