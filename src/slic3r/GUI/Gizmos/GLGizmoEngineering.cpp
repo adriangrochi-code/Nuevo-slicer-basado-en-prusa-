@@ -41,7 +41,7 @@ namespace {
 const ColorRGBA FIXTURE_COLOR   { 0.20f, 0.55f, 1.00f, 0.85f };
 const ColorRGBA FACE_LOAD_COLOR { 1.00f, 0.55f, 0.10f, 0.85f };
 const ColorRGBA LOAD_COLOR      { 0.95f, 0.25f, 0.20f, 1.00f };
-const ColorRGBA LIMIT_COLOR     { 0.79f, 0.64f, 0.96f, 0.85f };
+const ColorRGBA LIMIT_COLOR     { 0.20f, 0.85f, 0.70f, 0.85f };
 constexpr int   COLOR_STEPS = 16;
 // Where the material breaks (stress above the strength): black, after the red of the scale, which only means that
 // a limit is reached (the safety factor 1, or the allowed displacement).
@@ -1231,11 +1231,12 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     if (m_running)
         m_imgui->set_requires_extra_frame();
 
-    // The panel never grows beyond the canvas: it scrolls.
-    ImGui::SetNextWindowSizeConstraints(ImVec2(0.f, 0.f), ImVec2(FLT_MAX, std::max(200.f, bottom_limit - 10.f)));
+    // A fixed place under the main toolbar, so that the buttons do not move while items are added; the panel scrolls
+    // when the canvas is not tall enough.
+    const float top = std::min(y, m_parent.get_main_toolbar_height() + 0.5f * ImGui::GetFontSize());
+    ImGui::SetNextWindowPos(ImVec2(x, top), ImGuiCond_Always);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.f, 0.f), ImVec2(FLT_MAX, std::max(200.f, bottom_limit - top - 10.f)));
     ImGuiPureWrap::begin(get_name(false), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-    const float win_h = ImGui::GetWindowHeight();
-    ImGui::SetWindowPos(ImVec2(x, std::min(y, bottom_limit - win_h)), ImGuiCond_Always);
     const float width   = 24.f * ImGui::GetFontSize();
     const float label_w = 9.f * ImGui::GetFontSize();
     ImGui::PushItemWidth(10.f * ImGui::GetFontSize());
@@ -1285,7 +1286,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ui::muted(material->note, width);
 
     auto edit_value = [&](const std::string &label, float &buffer, double &target, float lo, float hi, const std::string &snapshot_name) {
-        ui::muted(label);
+        ImGui::TextUnformatted(label.c_str());
         ImGui::SameLine(label_w);
         ImGui::PushItemWidth(width - label_w);
         ImGui::InputFloat(("##" + label).c_str(), &buffer, 0.f, 0.f, "%.1f");
@@ -1350,7 +1351,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         }
     }
     auto limit_inputs = [&](const char *id, float &mm, float &percent) {
-        ui::muted(_u8L("Max. displacement"));
+        ImGuiPureWrap::text(_u8L("Max. displacement"));
         ImGui::SameLine(label_w);
         const float w = 0.5f * (width - label_w - ImGui::GetStyle().ItemSpacing.x);
         ImGui::PushItemWidth(w);
@@ -1362,13 +1363,13 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         percent = std::max(0.f, percent);
     };
     if (m_tool == Tool::FaceLoad || m_tool == Tool::PointLoad) {
-        ui::muted(_u8L("Force X, Y, Z [N]"));
+        ImGuiPureWrap::text(_u8L("Force X, Y, Z [N]"));
         ImGui::PushItemWidth(width);
         ImGui::InputFloat3("##force", m_new_force, "%.1f");
         ImGui::PopItemWidth();
         limit_inputs("load", m_new_limit_mm, m_new_limit_percent);
         if (m_tool == Tool::PointLoad) {
-            ui::muted(_u8L("Load radius [mm]"));
+            ImGuiPureWrap::text(_u8L("Load radius [mm]"));
             ImGui::SameLine(label_w);
             ImGui::PushItemWidth(width - label_w);
             ImGui::InputFloat("##radius", &m_new_radius, 0.f, 0.f, "%.1f");
@@ -1389,6 +1390,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGui::Dummy(ImVec2(0.f, 0.2f * ImGui::GetFontSize()));
     for (size_t i = 0; i < eng.fixtures.size(); ++ i) {
         ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(FIXTURE_COLOR));
+        ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(GUI::format(_u8L("Fixed face %1%"), i + 1).c_str());
         ImGui::PopStyleColor();
         if (ui::remove_button(("fixture" + std::to_string(i)).c_str(), width)) {
@@ -1401,6 +1403,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     for (size_t i = 0; i < eng.loads.size(); ++ i) {
         const EngineeringLoad &l = eng.loads[i];
         ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(l.type == EngineeringLoad::Type::Faces ? FACE_LOAD_COLOR : LOAD_COLOR));
+        ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(GUI::format("%1%: (%2%, %3%, %4%) N", l.name, l.force.x(), l.force.y(), l.force.z()).c_str());
         ImGui::PopStyleColor();
         if (ui::remove_button(("load" + std::to_string(i)).c_str(), width)) {
@@ -1431,6 +1434,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             text += GUI::format(_u8L(" max %1% %%"), l.max_displacement_percent);
         if (l.max_displacement <= 0. && l.max_displacement_percent <= 0.)
             text += " " + _u8L("no limit");
+        ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(text.c_str());
         ImGui::PopStyleColor();
         if (ui::remove_button(("limit" + std::to_string(i)).c_str(), width)) {
@@ -1834,7 +1838,7 @@ void GLGizmoEngineering::render_aero_panel(float width)
         if (m_aero_dir == 6)
             m_aero_view_dir = wxGetApp().plater()->get_camera().get_dir_forward();
     }
-    ui::muted(_u8L("Speed (m/s)"));
+    ImGuiPureWrap::text(_u8L("Speed (m/s)"));
     ImGui::SameLine(label_w);
     ImGui::PushItemWidth(width - label_w);
     ImGui::InputFloat("##aero_speed", &m_aero_speed, 1.f, 10.f, "%.1f");
