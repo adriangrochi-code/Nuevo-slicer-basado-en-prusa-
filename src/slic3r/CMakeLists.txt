@@ -252,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdateDialogs.hpp
     GUI/FirmwareDialog.cpp
     GUI/USBPrintDialog.cpp
+    GUI/DevicesPanel.cpp
+    GUI/DevicesPanel.hpp
     GUI/USBPrintDialog.hpp
     GUI/FirmwareDialog.hpp
     GUI/PrintHostDialogs.cpp

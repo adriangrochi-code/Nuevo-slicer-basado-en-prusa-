@@ -61,6 +61,7 @@
 #include "TopBar.hpp"
 #include "NavRail.hpp"
 #include "USBPrintDialog.hpp"
+#include "DevicesPanel.hpp"
 #include "CalibrationDialog.hpp"
 #include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
@@ -890,10 +891,16 @@ void MainFrame::create_nav_rail()
     m_nav_rail->add_item(calib);
 
     NavRail::Item usb;
-    usb.label    = _L("Device");
-    usb.tooltip  = _L("Print via USB");
-    usb.icon     = "plug";
-    usb.on_click = [this]() { USBPrintDialog::run(this); };
+    usb.label       = _L("Device");
+    usb.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
+    usb.icon        = "plug";
+    usb.on_click    = [this, select_page]() {
+        if (m_devices_panel)
+            select_page(m_devices_panel);
+        else
+            USBPrintDialog::run(this);
+    };
+    usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
     m_nav_rail->add_item(usb);
 
     if (m_printables_webview) {
@@ -957,6 +964,9 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
     
     m_printables_webview = new PrintablesWebViewPanel(m_tabpanel);
+    // Tisma: Devices page (selected from the navigation column).
+    m_devices_panel = new DevicesPanel(m_tabpanel);
+    m_tabpanel->AddNewPage(m_devices_panel, _L("Devices"), "");
     add_printables_webview_tab();
    
     m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
@@ -1457,6 +1467,8 @@ void MainFrame::on_sys_color_changed()
         m_connect_webview->sys_color_changed();
     if (m_printer_webview)
         m_printer_webview->sys_color_changed();
+    if (m_devices_panel)
+        m_devices_panel->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 

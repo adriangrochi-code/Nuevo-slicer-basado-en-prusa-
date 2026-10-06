@@ -7040,6 +7040,11 @@ void Plater::send_gcode()
     send_gcode_inner(physical_printer_config);
 }
 
+std::string Plater::sliced_gcode_path() const
+{
+    return p->printer_technology == ptFFF ? p->background_process.sliced_gcode_path() : std::string();
+}
+
 void Plater::usb_print()
 {
     if (p->printer_technology != ptFFF)

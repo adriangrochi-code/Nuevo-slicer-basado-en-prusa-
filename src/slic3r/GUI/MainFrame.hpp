@@ -49,6 +49,7 @@ class GalleryDialog;
 class ConnectWebViewPanel; 
 class PrinterWebViewPanel;
 class PrintablesWebViewPanel;
+class DevicesPanel;
 
 enum QuickSlice
 {
@@ -104,6 +105,8 @@ class MainFrame : public DPIFrame
     ConnectWebViewPanel*    m_connect_webview{ nullptr };
     bool                    m_connect_webview_added{ false };
     PrintablesWebViewPanel* m_printables_webview{ nullptr };
+    // Tisma: Devices workspace (USB and network printers, their web interface).
+    DevicesPanel*           m_devices_panel{ nullptr };
     bool                    m_printables_webview_added{ false };
     PrinterWebViewPanel*    m_printer_webview{ nullptr };
     bool                    m_printer_webview_added{ false };

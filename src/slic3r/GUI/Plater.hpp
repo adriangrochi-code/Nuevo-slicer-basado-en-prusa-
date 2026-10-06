@@ -258,6 +258,8 @@ public:
     void send_gcode();
     // Tisma: prints the sliced G-code on the USB printer saved in the "Print via USB" window.
     void usb_print();
+    // Tisma: the G-code of the finished slicing (a temporary file), empty if the plate is not sliced.
+    std::string sliced_gcode_path() const;
     void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
 

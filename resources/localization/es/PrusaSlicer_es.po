@@ -32333,3 +32333,57 @@ msgstr "Ángulo entre el cabezal (el plano de impresión) y la cinta. La mayorí
 
 msgid "Belt printer: the analysis uses the layers inclined by the gantry. The recommended orientation is only available for flat beds."
 msgstr "Impresora de cinta: el análisis usa las capas inclinadas por el cabezal. La orientación recomendada solo está disponible para camas planas."
+
+msgid "Devices"
+msgstr "Dispositivos"
+
+msgid "Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code"
+msgstr "Impresoras por USB y Wi-Fi: interfaz web (cámara, temperaturas, calibraciones) y envío del G-code"
+
+msgid "Add network printer"
+msgstr "Agregar impresora de red"
+
+msgid "OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, Repetier, MKS, FlashAir, AstroBox. The printers of the local network can be searched in the dialog."
+msgstr "OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, Repetier, MKS, FlashAir, AstroBox. En el diálogo se pueden buscar las impresoras de la red local."
+
+msgid "Edit printer"
+msgstr "Editar impresora"
+
+msgid "Start printing"
+msgstr "Iniciar la impresión"
+
+msgid "Send sliced G-code"
+msgstr "Enviar el G-code laminado"
+
+msgid "Open in browser"
+msgstr "Abrir en el navegador"
+
+msgid "USB printer (not connected yet)"
+msgstr "Impresora USB (todavía sin conectar)"
+
+msgid "USB printer (%1%)"
+msgstr "Impresora USB (%1%)"
+
+msgid "USB printer"
+msgstr "Impresora USB"
+
+msgid "The USB printer is controlled from the \"Print via USB\" window: connection, temperatures, console and printing. Add a network printer to see its web interface here (camera, temperatures, calibrations)."
+msgstr "La impresora USB se controla desde la ventana «Imprimir por USB»: conexión, temperaturas, consola e impresión. Agrega una impresora de red para ver aquí su interfaz web (cámara, temperaturas, calibraciones)."
+
+msgid "Prusa Connect printers are shown in the Prusa Connect page; the G-code can be sent from here."
+msgstr "Las impresoras de Prusa Connect se ven en la página de Prusa Connect; el G-code se puede enviar desde aquí."
+
+msgid "Web interface of the printer: camera, temperatures, console and the calibrations of its firmware (for example input shaping in Klipper)."
+msgstr "Interfaz web de la impresora: cámara, temperaturas, consola y las calibraciones de su firmware (por ejemplo, el input shaping de Klipper)."
+
+msgid "Slice the plate first: there is no sliced G-code to send."
+msgstr "Primero lamina la placa: no hay G-code laminado para enviar."
+
+msgid "Cannot copy the G-code: %1%"
+msgstr "No se puede copiar el G-code: %1%"
+
+msgid "The printer has no network address: edit it."
+msgstr "La impresora no tiene dirección de red: edítala."
+
+msgid "Sending %1% to %2%."
+msgstr "Enviando %1% a %2%."
