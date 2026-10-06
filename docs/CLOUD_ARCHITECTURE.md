@@ -67,8 +67,13 @@ con más RAM, puede correr un FEA y un laminado a la vez.
 - **CGNAT**: si el proveedor no da IP pública real no se pueden abrir puertos. Solución: Cloudflare Tunnel o un VPS
   barato con WireGuard como entrada.
 - **IP dinámica**: DNS dinámico.
-- **Subida**: los modelos, el G-code y las cámaras (unas 150 impresoras con una foto cada 10 s ≈ 10 Mbps continuos)
-  pueden limitar antes que los procesadores.
+- **Ancho de banda (dato del usuario: 32 Mbps de subida, 220 Mbps de bajada).** Lo que entra al servidor (modelos que
+  suben los usuarios, fotos de las cámaras: unas 150 impresoras con una foto cada 10 s ≈ 10 Mbps) usa la bajada y
+  sobra. Lo que sale (G-code, resultados del FEA, vista de cámara en vivo) usa la subida de 32 Mbps ≈ 4 MB/s:
+  - G-code binario (`.bgcode`, ~1/3 del texto) y resultados del FEA comprimidos: un G-code de 10 MB tarda ~2,5 s.
+  - En el panel de granja, fotos cada pocos segundos en lugar de video en vivo (un video de 720p usa 1–2 Mbps por
+    espectador); limitar los videos simultáneos.
+  - Reservar parte de la subida para la API (límite de velocidad por descarga).
 
 ## Componentes y licencias
 
