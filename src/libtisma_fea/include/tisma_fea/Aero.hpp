@@ -39,7 +39,7 @@ struct AeroSetup
     // Lateral free space around the part, in frontal sizes on each side (blockage).
     double lateral_margin { 1.5 };
     // Flow-through times of the domain to simulate (the force is averaged over the last third).
-    double flow_throughs  { 3. };
+    double flow_throughs  { 2.5 };
     // Upper limit of the simulated Reynolds number (stability at the given resolution); 0 = automatic.
     double max_sim_reynolds { 0. };
     // false: skin friction and roughness only (quick estimate, no simulation of the pressure).

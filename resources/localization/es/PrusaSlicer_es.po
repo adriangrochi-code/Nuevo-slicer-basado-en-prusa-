@@ -32704,3 +32704,78 @@ msgstr "Imprime de una vez una fila de torres huecas, cada una con una distancia
 
 msgid "Look at the seams at the back: choose the tower with the cleanest seam, without a blob or zit and without a gap or a missing piece where the loop closes. Its distance is start + step × tower number (from the left, starting at 0): it is the coasting distance of the filament (Calibration > Apply a calibration result). Tune pressure advance and retraction first: coasting is a fine correction on top of them."
 msgstr "Mira las costuras de atrás: elige la torre con la costura más limpia, sin gota ni grano y sin hueco ni faltante donde se cierra la vuelta. Su distancia es inicio + paso × número de torre (desde la izquierda, empezando en 0): es la distancia de coasting del filamento (Calibración > Aplicar un resultado de calibración). Ajusta primero el pressure advance y la retracción: el coasting es una corrección fina encima de ellos."
+
+msgid "Structural"
+msgstr "Estructural"
+
+msgid "Aerodynamics"
+msgstr "Aerodinámica"
+
+msgid "Air flowing around the part as printed: drag, lift and pressure map. The roughness of the layers is taken into account. An estimate to compare designs and orientations."
+msgstr "Aire alrededor de la pieza tal como se imprime: arrastre, sustentación y mapa de presión. Tiene en cuenta la rugosidad de las capas. Es una estimación para comparar diseños y orientaciones."
+
+msgid "Towards +X"
+msgstr "Hacia +X"
+
+msgid "Towards -X"
+msgstr "Hacia -X"
+
+msgid "Towards +Y"
+msgstr "Hacia +Y"
+
+msgid "Towards -Y"
+msgstr "Hacia -Y"
+
+msgid "Upwards (+Z)"
+msgstr "Hacia arriba (+Z)"
+
+msgid "Downwards (-Z)"
+msgstr "Hacia abajo (-Z)"
+
+msgid "Into the view"
+msgstr "Hacia adentro de la vista"
+
+msgid "Air flow"
+msgstr "Flujo de aire"
+
+msgid "Speed (m/s)"
+msgstr "Velocidad (m/s)"
+
+msgid "= %1$.0f km/h"
+msgstr "= %1$.0f km/h"
+
+msgid "Friction only (instant)"
+msgstr "Solo rozamiento (instantáneo)"
+
+msgid "Simulating the air... %1%%%"
+msgstr "Simulando el aire... %1%%%"
+
+msgid "Analyze the air flow"
+msgstr "Analizar el flujo de aire"
+
+msgid "Drag: %1$.3f N"
+msgstr "Arrastre: %1$.3f N"
+
+msgid "Drag coefficient Cd %1$.2f (pressure %2$.2f + friction %3$.2f)"
+msgstr "Coeficiente de arrastre Cd %1$.2f (presión %2$.2f + rozamiento %3$.2f)"
+
+msgid "Force across the flow: %1$.3f N"
+msgstr "Fuerza transversal al flujo: %1$.3f N"
+
+msgid "Frontal area %1$.0f mm², Reynolds %2$.0f"
+msgstr "Área frontal %1$.0f mm², Reynolds %2$.0f"
+
+msgid "Roughness Ra %1$.0f µm: %2$.0f %% of the friction"
+msgstr "Rugosidad Ra %1$.0f µm: %2$.0f %% del rozamiento"
+
+msgid "The pressure was simulated at Reynolds %1$.0f (limit of the resolution)."
+msgstr "La presión se simuló a Reynolds %1$.0f (límite de la resolución)."
+
+msgid "Show the roughness instead of the pressure"
+msgstr "Mostrar la rugosidad en lugar de la presión"
+
+msgid "Cp -1.5 (suction)"
+msgstr "Cp -1,5 (succión)"
+
+msgid "1 (stagnation)"
+msgstr "1 (estancamiento)"

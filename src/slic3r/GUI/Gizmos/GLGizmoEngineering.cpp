@@ -620,6 +620,7 @@ void GLGizmoEngineering::cancel_analysis()
     m_pending_reinf.reset();
     m_pending_lattice.reset();
     m_pending_orient.reset();
+    m_pending_aero.reset();
 }
 
 void GLGizmoEngineering::fetch_result()
@@ -843,9 +844,17 @@ void GLGizmoEngineering::update_result_models()
 void GLGizmoEngineering::on_render()
 {
     fetch_result();
+    fetch_aero();
     const ModelObject *mo = model_object();
     if (mo == nullptr)
         return;
+    if (m_mode == Mode::Aero) {
+        const bool results = m_show_results && m_aero && m_aero->ok && m_aero_object == mo->id();
+        show_object(! results);
+        if (results)
+            render_aero();
+        return;
+    }
 
     const bool results = m_show_results && m_result && m_result_object == mo->id();
     show_object(! results);
@@ -1039,6 +1048,25 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     ImGui::PushItemWidth(10.f * ImGui::GetFontSize());
 
     ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, mo->name);
+
+    // Two tabs: each shows only its own controls.
+    if (ImGui::BeginTabBar("##engineering_mode")) {
+        if (ImGui::BeginTabItem(_u8L("Structural").c_str())) {
+            m_mode = Mode::Structural;
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(_u8L("Aerodynamics").c_str())) {
+            m_mode = Mode::Aero;
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+    if (m_mode == Mode::Aero) {
+        render_aero_panel(width);
+        ImGui::PopItemWidth();
+        ImGuiPureWrap::end();
+        return;
+    }
 
     // Material.
     const std::string filament = filament_type(*mo);
@@ -1411,6 +1439,192 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
 
     ImGui::PopItemWidth();
     ImGuiPureWrap::end();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Aerodynamics.
+
+namespace {
+// Pressure coefficient shown from strong suction to stagnation.
+constexpr float CP_MIN = -1.5f;
+constexpr float CP_MAX = 1.f;
+// Ra shown up to 60 µm.
+constexpr float RA_MAX = 60.f;
+}
+
+Vec3d GLGizmoEngineering::aero_flow_direction() const
+{
+    static const Vec3d dirs[6] = { Vec3d::UnitX(), -Vec3d::UnitX(), Vec3d::UnitY(), -Vec3d::UnitY(), Vec3d::UnitZ(), -Vec3d::UnitZ() };
+    return m_aero_dir >= 0 && m_aero_dir < 6 ? dirs[m_aero_dir] : m_aero_view_dir;
+}
+
+void GLGizmoEngineering::start_aero()
+{
+    const ModelObject *mo = model_object();
+    if (mo == nullptr || m_running)
+        return;
+    if (m_thread.joinable())
+        m_thread.join();
+    // The part as printed, in world coordinates (all its model parts).
+    const Transform3d instance_trafo = mo->instances[instance_idx()]->get_transformation().get_matrix();
+    indexed_triangle_set mesh;
+    for (const ModelVolume *v : mo->volumes)
+        if (v->is_model_part()) {
+            indexed_triangle_set its = v->mesh().its;
+            its_transform(its, instance_trafo * v->get_matrix());
+            its_merge(mesh, its);
+        }
+    if (mesh.indices.empty())
+        return;
+    Fea::AeroSetup setup;
+    setup.flow_direction = aero_flow_direction();
+    setup.speed          = std::max(0.1, double(m_aero_speed));
+    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
+    setup.layer_height   = config.has("layer_height") ? config.opt_float("layer_height") : 0.2;
+    static const int resolutions[3] = { 16, 24, 32 };
+    setup.resolution        = resolutions[std::clamp(m_aero_quality, 0, 2)];
+    setup.simulate_pressure = m_aero_quality != 3;
+    setup.cancel   = [this]() { return m_cancel.load(); };
+    setup.progress = [this](int p) { m_progress = p; };
+    m_aero_mesh   = mesh;
+    m_aero_object = mo->id();
+    m_error.clear();
+    launch<Fea::AeroResult>([mesh = std::move(mesh), setup]() { return Fea::analyze_aero(mesh, setup); }, &m_pending_aero);
+}
+
+void GLGizmoEngineering::fetch_aero()
+{
+    std::optional<Fea::AeroResult> res;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        res.swap(m_pending_aero);
+    }
+    if (! res)
+        return;
+    if (m_thread.joinable())
+        m_thread.join();
+    if (! res->ok) {
+        m_error = res->error == "Cancelled" ? std::string() : res->error;
+        return;
+    }
+    m_aero = std::move(*res);
+    m_aero_models_dirty = true;
+}
+
+void GLGizmoEngineering::render_aero()
+{
+    if (m_aero_models_dirty) {
+        m_aero_models_dirty = false;
+        m_aero_models.clear();
+        std::vector<GLModel::Geometry> geos(COLOR_STEPS);
+        for (GLModel::Geometry &g : geos)
+            g.format = { GLModel::Geometry::EPrimitiveType::Triangles, GLModel::Geometry::EVertexLayout::P3N3 };
+        const Fea::AeroResult &r = *m_aero;
+        for (size_t t = 0; t < m_aero_mesh.indices.size(); ++ t) {
+            const Vec3i32 &tri = m_aero_mesh.indices[t];
+            float value;
+            if (m_aero_show_ra)
+                value = t < r.triangle_ra.size() ? r.triangle_ra[t] / RA_MAX : 0.f;
+            else {
+                float cp = 0.f;
+                for (int k = 0; k < 3; ++ k)
+                    cp += size_t(tri[k]) < r.vertex_cp.size() ? r.vertex_cp[tri[k]] : 0.f;
+                value = (cp / 3.f - CP_MIN) / (CP_MAX - CP_MIN);
+            }
+            const int step = std::clamp(int(value * (COLOR_STEPS - 1) + 0.5f), 0, COLOR_STEPS - 1);
+            GLModel::Geometry &g = geos[step];
+            const Vec3f &a = m_aero_mesh.vertices[tri[0]], &b = m_aero_mesh.vertices[tri[1]], &c = m_aero_mesh.vertices[tri[2]];
+            const Vec3f n = (b - a).cross(c - a).normalized();
+            const unsigned int base = unsigned(g.vertices_count());
+            g.add_vertex(a, n);
+            g.add_vertex(b, n);
+            g.add_vertex(c, n);
+            g.add_triangle(base, base + 1, base + 2);
+        }
+        m_aero_models.resize(COLOR_STEPS);
+        for (int s = 0; s < COLOR_STEPS; ++ s)
+            if (! geos[s].is_empty()) {
+                m_aero_models[s].init_from(std::move(geos[s]));
+                m_aero_models[s].set_color(scale_color(float(s) / float(COLOR_STEPS - 1)));
+            }
+    }
+    GLShaderProgram *shader = wxGetApp().get_shader("gouraud_light");
+    if (shader == nullptr)
+        return;
+    shader->start_using();
+    const Camera &camera = wxGetApp().plater()->get_camera();
+    shader->set_uniform("projection_matrix", camera.get_projection_matrix());
+    const Transform3d view_model = camera.get_view_matrix();
+    shader->set_uniform("view_model_matrix", view_model);
+    shader->set_uniform("view_normal_matrix", Matrix3d(view_model.matrix().block(0, 0, 3, 3).inverse().transpose()));
+    glsafe(::glEnable(GL_DEPTH_TEST));
+    for (GLModel &m : m_aero_models)
+        if (m.is_initialized())
+            m.render();
+    shader->stop_using();
+}
+
+void GLGizmoEngineering::render_aero_panel(float width)
+{
+    const ModelObject *mo = model_object();
+    ImGuiPureWrap::text_wrapped(_u8L("Air flowing around the part as printed: drag, lift and pressure map. The roughness "
+                                     "of the layers is taken into account. An estimate to compare designs and orientations."),
+                                width);
+    ImGui::Separator();
+
+    // Conditions.
+    std::vector<std::string> dirs = { _u8L("Towards +X"), _u8L("Towards -X"), _u8L("Towards +Y"), _u8L("Towards -Y"),
+                                      _u8L("Upwards (+Z)"), _u8L("Downwards (-Z)"), _u8L("Into the view") };
+    if (ImGuiPureWrap::combo(_u8L("Air flow"), dirs, m_aero_dir, 0, 9.f * ImGui::GetFontSize(), 10.f * ImGui::GetFontSize())) {
+        if (m_aero_dir == 6)
+            m_aero_view_dir = wxGetApp().plater()->get_camera().get_dir_forward();
+    }
+    ImGuiPureWrap::text(_u8L("Speed (m/s)"));
+    ImGui::SameLine(9.f * ImGui::GetFontSize());
+    ImGui::InputFloat("##aero_speed", &m_aero_speed, 1.f, 10.f, "%.1f");
+    m_aero_speed = std::clamp(m_aero_speed, 0.1f, 300.f);
+    ImGuiPureWrap::text(GUI::format(_u8L("= %1$.0f km/h"), m_aero_speed * 3.6));
+    std::vector<std::string> qualities = { _u8L("Fast"), _u8L("Normal"), _u8L("High"), _u8L("Friction only (instant)") };
+    ImGuiPureWrap::combo(_u8L("Quality"), qualities, m_aero_quality, 0, 9.f * ImGui::GetFontSize(), 10.f * ImGui::GetFontSize());
+
+    if (m_running) {
+        ImGuiPureWrap::text(GUI::format(_u8L("Simulating the air... %1%%%"), int(m_progress)));
+        if (ImGuiPureWrap::button(_u8L("Cancel")))
+            cancel_analysis();
+    } else if (ImGuiPureWrap::button(_u8L("Analyze the air flow")))
+        start_aero();
+    if (! m_error.empty())
+        ImGuiPureWrap::text_wrapped(m_error, width);
+
+    if (! m_aero || ! m_aero->ok || mo == nullptr || m_aero_object != mo->id())
+        return;
+    const Fea::AeroResult &r = *m_aero;
+    ImGui::Separator();
+    ImGuiPureWrap::text(GUI::format(_u8L("Drag: %1$.3f N"), r.drag));
+    ImGuiPureWrap::text(GUI::format(_u8L("Drag coefficient Cd %1$.2f (pressure %2$.2f + friction %3$.2f)"), r.cd, r.cd_pressure, r.cd_friction));
+    const double lift = std::sqrt(std::max(0., r.force.squaredNorm() - r.drag * r.drag));
+    ImGuiPureWrap::text(GUI::format(_u8L("Force across the flow: %1$.3f N"), lift));
+    ImGuiPureWrap::text(GUI::format(_u8L("Frontal area %1$.0f mm², Reynolds %2$.0f"), r.frontal_area, r.reynolds));
+    ImGuiPureWrap::text(GUI::format(_u8L("Roughness Ra %1$.0f µm: %2$.0f %% of the friction"), r.mean_roughness_ra, 100. * r.roughness_friction_share));
+    if (r.converged && r.sim_reynolds < r.reynolds)
+        ImGuiPureWrap::text_wrapped(GUI::format(_u8L("The pressure was simulated at Reynolds %1$.0f (limit of the resolution)."), r.sim_reynolds), width);
+
+    ImGui::Checkbox(_u8L("Show results").c_str(), &m_show_results);
+    if (ImGui::Checkbox(_u8L("Show the roughness instead of the pressure").c_str(), &m_aero_show_ra))
+        m_aero_models_dirty = true;
+    // Legend.
+    ImDrawList *draw = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float  hh = ImGui::GetFrameHeight() * 0.6f;
+    for (int i = 0; i < 32; ++ i)
+        draw->AddRectFilled(ImVec2(p.x + width * i / 32, p.y), ImVec2(p.x + width * (i + 1) / 32 + 1.f, p.y + hh),
+                            ImGui::GetColorU32(to_imvec(scale_color(float(i) / 31.f))));
+    ImGui::Dummy(ImVec2(width, hh));
+    const std::string lo = m_aero_show_ra ? "0 µm" : _u8L("Cp -1.5 (suction)");
+    const std::string hi = m_aero_show_ra ? GUI::format("%1$.0f µm", RA_MAX) : _u8L("1 (stagnation)");
+    ImGuiPureWrap::text(lo);
+    ImGui::SameLine(std::max(0.f, width - ImGuiPureWrap::calc_text_size(hi).x + ImGui::GetStyle().WindowPadding.x));
+    ImGuiPureWrap::text(hi);
 }
 
 } // namespace GUI

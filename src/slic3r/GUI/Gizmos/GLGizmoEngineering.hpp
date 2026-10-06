@@ -15,6 +15,7 @@
 #include "slic3r/GUI/GLModel.hpp"
 
 #include <libslic3r/ObjectID.hpp>
+#include <tisma_fea/Aero.hpp>
 #include <tisma_fea/Analysis.hpp>
 #include <tisma_fea/Optimize.hpp>
 #include <tisma_fea/Structures.hpp>
@@ -99,7 +100,15 @@ private:
     void render_loads();
     void render_results();
     void render_legend(float width);
+    // Aerodynamics tab.
+    void start_aero();
+    void fetch_aero();
+    void render_aero_panel(float width);
+    void render_aero();
+    Vec3d aero_flow_direction() const;
 
+    enum class Mode { Structural, Aero };
+    Mode  m_mode { Mode::Structural };
     Tool  m_tool { Tool::None };
     Field m_field { Field::Safety };
     bool  m_show_results { true };
@@ -178,6 +187,19 @@ private:
     GLModel                  m_sphere;
     GLModel                  m_arrow;
     bool                     m_object_hidden { false };
+    // Aerodynamics: flow direction (+X, -X, +Y, -Y, +Z, -Z, from the view), speed, quality (fast, normal, high,
+    // friction only), result and its pressure map on the part (world coordinates).
+    int                      m_aero_dir { 0 };
+    float                    m_aero_speed { 10.f };
+    int                      m_aero_quality { 1 };
+    Vec3d                    m_aero_view_dir { 1., 0., 0. };
+    std::optional<Fea::AeroResult> m_pending_aero;
+    std::optional<Fea::AeroResult> m_aero;
+    ObjectID                 m_aero_object;
+    indexed_triangle_set     m_aero_mesh;
+    std::vector<GLModel>     m_aero_models;
+    bool                     m_aero_models_dirty { true };
+    bool                     m_aero_show_ra { false };
     ObjectID                 m_hidden_object;
 };
 

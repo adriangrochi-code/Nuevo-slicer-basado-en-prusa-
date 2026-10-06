@@ -105,10 +105,10 @@ AeroResult analyze_aero(const indexed_triangle_set &mesh_in, const AeroSetup &se
         return res;
     }
 
-    // Lattice: 1.5 frontal sizes upstream, 4 downstream, lateral margin on the sides.
+    // Lattice: 1.5 frontal sizes upstream, 3 downstream, lateral margin on the sides.
     const double D = res.frontal_size;
     double dx = D / double(std::max(setup.resolution, 4));
-    const double up = 1.5 * D, down = 4. * D, side = std::max(setup.lateral_margin, 0.5) * D;
+    const double up = 1.5 * D, down = 3. * D, side = std::max(setup.lateral_margin, 0.5) * D;
     int nx = 0, ny = 0, nz = 0;
     for (;;) {
         nx = int(std::ceil((extent.x() + up + down) / dx));
@@ -177,7 +177,8 @@ AeroResult analyze_aero(const indexed_triangle_set &mesh_in, const AeroSetup &se
     // Reynolds numbers and lattice parameters.
     const double nu   = setup.air_viscosity / setup.air_density;
     res.reynolds      = setup.speed * D * 1e-3 / nu;
-    const float  U    = 0.05f;
+    // Lattice speed: low enough to stay nearly incompressible (Mach 0.17), high enough for few steps.
+    const float  U    = 0.1f;
     const double D_lb = D / dx;
     const double re_cap = setup.max_sim_reynolds > 0. ? setup.max_sim_reynolds : 40. * D_lb;
     res.sim_reynolds  = std::min(res.reynolds, re_cap);
@@ -200,6 +201,14 @@ AeroResult analyze_aero(const indexed_triangle_set &mesh_in, const AeroSetup &se
     std::vector<double> face_rho_sum(faces.size(), 0.);
     int averaged = 0;
 
+    // Linear offset of the neighbor in each direction of the lattice.
+    std::array<std::ptrdiff_t, Q> offsets_signed;
+    for (int q = 0; q < Q; ++q)
+        offsets_signed[q] = CX[q] + std::ptrdiff_t(nx) * (CY[q] + std::ptrdiff_t(ny) * CZ[q]);
+    std::array<size_t, Q> offsets;
+    for (int q = 0; q < Q; ++q)
+        offsets[q] = size_t(offsets_signed[q]);   // c - offsets[q] wraps correctly with unsigned arithmetic
+
     for (int step = 0; step < steps; ++step) {
         if (cancelled()) {
             res.error = "Cancelled";
@@ -214,7 +223,13 @@ AeroResult analyze_aero(const indexed_triangle_set &mesh_in, const AeroSetup &se
                         const size_t c = idx(i, j, k);
                         if (solid[c])
                             continue;
-                        // Pull streaming.
+                        // Pull streaming. Interior cells (most of them): fixed offsets to the neighbors.
+                        if (i > 0 && j > 0 && k > 0 && i < nx - 1 && j < ny - 1 && k < nz - 1) {
+                            for (int q = 0; q < Q; ++q) {
+                                const size_t s = c - offsets[q];
+                                fin[q] = solid[s] ? f[OPP[q] * N + c] : f[q * N + s];   // halfway bounce-back
+                            }
+                        } else
                         for (int q = 0; q < Q; ++q) {
                             int si = i - CX[q];
                             int sj = j - CY[q];

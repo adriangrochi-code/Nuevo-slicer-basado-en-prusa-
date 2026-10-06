@@ -20,6 +20,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 - **Impresoras Bambu Lab por LAN** (modo Solo LAN + Desarrollador) sin el plugin cerrado de Bambu: estado en
   Dispositivos, prueba de conexión, envío e inicio de la impresión (MQTT y FTPS sobre TLS, según OpenBambuAPI).
   curl de Windows compilado con FTP.
+- **Análisis aerodinámico** en Ingeniería (pestaña propia, separada de la estructural): arrastre, fuerza transversal y
+  mapa de presión con una simulación lattice Boltzmann propia, más rozamiento con la rugosidad de las capas por cara.
+  Validado con placa, cubo y prismas (`docs/AERO.md`).
 - **Coasting** (como Simplify3D): ajuste de filamento «Distancia de coasting»; los últimos milímetros de cada
   recorrido se hacen sin extruir (`G1 X Y` sin E) para que la presión de la boquilla cierre la línea. No afecta a
   recorridos de menos de 3 veces la distancia ni al modo jarrón. Calibración «Distancia de coasting»: fila de torres
