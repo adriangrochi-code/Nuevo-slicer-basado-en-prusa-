@@ -871,6 +871,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                binary_gcode))
     ((ConfigOptionBool,                belt_printer))
     ((ConfigOptionFloat,               belt_angle))
+    ((ConfigOptionFloat,               nonplanar_head_clearance_height))
+    ((ConfigOptionFloat,               nonplanar_head_clearance_radius))
     ((ConfigOptionFloats,              deretract_speed))
     ((ConfigOptionString,              end_gcode))
     ((ConfigOptionStrings,             end_filament_gcode))

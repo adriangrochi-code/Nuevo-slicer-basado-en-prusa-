@@ -11,6 +11,8 @@
 #include <admesh/stl.h>
 
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
 namespace NonPlanar {
@@ -201,6 +203,83 @@ double Deformation::max_offset(const BoundingBoxf3 &bbox) const
             const double y = bbox.min.y() + (bbox.max.y() - bbox.min.y()) * j / N;
             out = std::max(out, m_field.bound(x, y));
         }
+    return out;
+}
+
+// -------------------------------------------------------------------- Print head collisions
+
+HeadCollision check_head_collision(const Deformation &deformation, const indexed_triangle_set &mesh, const HeadClearance &head)
+{
+    HeadCollision out;
+    if (! deformation.enabled() || head.height <= 0. || head.radius <= 0. || mesh.vertices.empty())
+        return out;
+
+    double z_min = std::numeric_limits<double>::max();
+    double z_max = std::numeric_limits<double>::lowest();
+    for (const stl_vertex &v : mesh.vertices) {
+        z_min = std::min(z_min, double(v.z()));
+        z_max = std::max(z_max, double(v.z()));
+    }
+
+    constexpr int LEVELS = 24; // printing heights
+    constexpr int GRID   = 24; // nozzle positions per height
+    constexpr int RINGS  = 6;  // samples around the nozzle
+    constexpr int SPOKES = 24;
+    double worst = -std::numeric_limits<double>::max();
+
+    for (int level = 1; level <= LEVELS; ++ level) {
+        const double s = z_min + (z_max - z_min) * level / LEVELS;
+        // Cross section at s (where the nozzle prints) and everything below s (already printed).
+        Points section, printed;
+        for (const stl_vertex &v : mesh.vertices)
+            if (v.z() <= s)
+                printed.emplace_back(scaled<coord_t>(v.x()), scaled<coord_t>(v.y()));
+        for (const stl_triangle_vertex_indices &f : mesh.indices)
+            for (int i = 0; i < 3; ++ i) {
+                const stl_vertex &a = mesh.vertices[f[i]];
+                const stl_vertex &b = mesh.vertices[f[(i + 1) % 3]];
+                if ((a.z() - s) * (b.z() - s) <= 0. && a.z() != b.z()) {
+                    const double t = (s - a.z()) / (b.z() - a.z());
+                    const Point pt(scaled<coord_t>(a.x() + t * (b.x() - a.x())), scaled<coord_t>(a.y() + t * (b.y() - a.y())));
+                    section.emplace_back(pt);
+                    printed.emplace_back(pt);
+                }
+            }
+        if (section.size() < 3)
+            continue;
+        const Polygon section_hull = Geometry::convex_hull(std::move(section));
+        const Polygon printed_hull = Geometry::convex_hull(std::move(printed));
+        if (section_hull.size() < 3)
+            continue;
+        const BoundingBox bb = section_hull.bounding_box();
+        for (int i = 0; i <= GRID; ++ i)
+            for (int j = 0; j <= GRID; ++ j) {
+                const Point pp(bb.min.x() + coord_t(double(bb.max.x() - bb.min.x()) * i / GRID),
+                               bb.min.y() + coord_t(double(bb.max.y() - bb.min.y()) * j / GRID));
+                if (! section_hull.contains(pp))
+                    continue;
+                const Vec2d  p      = unscaled(pp);
+                const double z_tip  = deformation.offset(p.x(), p.y(), s);
+                for (int ring = 1; ring <= RINGS; ++ ring) {
+                    const double r = head.radius * ring / RINGS;
+                    for (int spoke = 0; spoke < SPOKES; ++ spoke) {
+                        const double a = TWO_PI * spoke / SPOKES;
+                        const Vec2d  q = p + r * Vec2d(std::cos(a), std::sin(a));
+                        if (! printed_hull.contains(Point(scaled<coord_t>(q.x()), scaled<coord_t>(q.y()))))
+                            continue;
+                        // Top of the part printed so far at q: the current layer surface.
+                        const double rise = deformation.offset(q.x(), q.y(), s) - z_tip;
+                        if (rise - head.height > worst) {
+                            worst        = rise - head.height;
+                            out.rise     = rise;
+                            out.distance = r;
+                            out.nozzle   = Vec3d(p.x(), p.y(), s + z_tip);
+                        }
+                    }
+                }
+            }
+    }
+    out.collides = worst > 0.;
     return out;
 }
 

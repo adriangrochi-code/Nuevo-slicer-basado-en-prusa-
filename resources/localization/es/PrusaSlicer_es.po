@@ -32410,3 +32410,27 @@ msgid "%1% printer selected. Next: their settings and filaments."
 msgid_plural "%1% printers selected. Next: their settings and filaments."
 msgstr[0] "%1% impresora seleccionada. Siguiente: sus ajustes y filamentos."
 msgstr[1] "%1% impresoras seleccionadas. Siguiente: sus ajustes y filamentos."
+
+msgid "Head clearance height"
+msgstr "Altura libre del cabezal"
+
+msgid "Print head clearance height (non-planar)"
+msgstr "Altura libre del cabezal (no planar)"
+
+msgid "Vertical distance from the nozzle tip to the lowest point of the print head around it (heater block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers are refused if the part already printed would rise higher than this within the head clearance radius. 0 disables the check."
+msgstr "Distancia vertical desde la punta de la boquilla hasta el punto más bajo del cabezal a su alrededor (bloque calefactor con su funda, ducto de ventilación de la pieza, sensor). Mídela en tu impresora. Las capas no planares se rechazan si la pieza ya impresa sube más que esto dentro del radio libre del cabezal. 0 desactiva la comprobación."
+
+msgid "Head clearance radius"
+msgstr "Radio libre del cabezal"
+
+msgid "Print head clearance radius (non-planar)"
+msgstr "Radio libre del cabezal (no planar)"
+
+msgid "Horizontal distance from the nozzle to the farthest point of the print head parts that are lower than the head clearance height above the nozzle tip (heater block, cooling duct)."
+msgstr "Distancia horizontal desde la boquilla hasta el punto más lejano de las partes del cabezal que quedan por debajo de la altura libre sobre la punta (bloque calefactor, ducto de ventilación)."
+
+msgid "Print head (non-planar layers)"
+msgstr "Cabezal (capas no planares)"
+
+msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the head clearance height of %4% mm (Printer Settings > General > Print head). Reduce the wave amplitude or the cone angle, or check the measurements of the print head."
+msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que la altura libre del cabezal de %4% mm (Ajustes de la impresora > General > Cabezal). Reduce la amplitud de las ondas o el ángulo del cono, o revisa las medidas del cabezal."

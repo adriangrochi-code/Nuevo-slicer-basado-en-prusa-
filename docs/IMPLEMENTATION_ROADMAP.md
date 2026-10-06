@@ -218,7 +218,7 @@ Orden indicado por el usuario: primero modernizar (render, rendimiento, bugs), d
 |---|---|---|
 | 7 | Render moderno: luz por píxel y sombras (técnicas de PrusaSlicer 3.0), ver `docs/RENDER.md` | 7a y 7b hechas; 7c (oclusión ambiental) y 7d (PBR) sin autorizar |
 | 8 | Rendimiento del laminado y bugs conocidos: banco de pruebas (`build-utils/benchmark_slicing.sh`), perfil, optimizaciones medidas sin cambiar el G-code, bugs de upstream 2.9.6 y propios | En curso |
-| 9 | Laminado no planar | Pendiente |
+| 9 | Laminado no planar | 9a: colisiones del cabezal (altura y radio libres en el perfil de impresora, comprobación antes de laminar). Siguen: Curved Z sobre la superficie superior real y una vista previa más fiel |
 | 10 | Laminado en la nube: el mismo motor sin interfaz (la línea de comandos ya lamina sin GUI) en los servidores propios, con cola de trabajos | Arquitectura propuesta en `docs/CLOUD_ARCHITECTURE.md` (i5 central y pesado, dos i7 livianos), sin implementar |
 | 11 | App de teléfono y FEA en la nube: subir el modelo, elegir perfil y material, analizar, laminar y descargar o enviar el G-code; suscripción (idea inicial: 10 USD/mes con un número de trabajos) | Planes propuestos en `docs/CLOUD_ARCHITECTURE.md` (créditos; Básico 10 USD, Business con varios usuarios), sin decidir |
 | — | Aceleración del FEA: multigrid y después GPU con Vulkan (precisión mixta) | Propuesta, sin autorizar |

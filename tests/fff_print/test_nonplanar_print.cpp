@@ -82,3 +82,25 @@ TEST_CASE("Non-planar layers are rejected with incompatible settings", "[NonPlan
     Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
     REQUIRE(! print.validate().empty());
 }
+
+TEST_CASE("Non-planar layers are rejected when the print head would hit the part", "[NonPlanar]")
+{
+    DynamicPrintConfig config = nonplanar_config("wave");
+    config.set_deserialize_strict({ { "nonplanar_amplitude", 2 }, { "nonplanar_wavelength", 40 },
+                                    { "nonplanar_max_slope", 89 }, { "nonplanar_ramp_height", 15 } });
+    {
+        Print print;
+        Model model;
+        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+        const std::string error = print.validate();
+        REQUIRE(error.find("print head") != std::string::npos);
+    }
+    // A head with more room below it.
+    config.set_deserialize_strict({ { "nonplanar_head_clearance_height", 6 } });
+    {
+        Print print;
+        Model model;
+        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+        REQUIRE(print.validate().find("print head") == std::string::npos);
+    }
+}

@@ -2302,6 +2302,29 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(45.));
 
+    // Tisma: geometry of the print head for the collision check of non-planar layers.
+    def = this->add("nonplanar_head_clearance_height", coFloat);
+    def->label = L("Head clearance height");
+    def->full_label = L("Print head clearance height (non-planar)");
+    def->tooltip = L("Vertical distance from the nozzle tip to the lowest point of the print head around it (heater "
+                     "block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers "
+                     "are refused if the part already printed would rise higher than this within the head clearance "
+                     "radius. 0 disables the check.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(3.));
+
+    def = this->add("nonplanar_head_clearance_radius", coFloat);
+    def->label = L("Head clearance radius");
+    def->full_label = L("Print head clearance radius (non-planar)");
+    def->tooltip = L("Horizontal distance from the nozzle to the farthest point of the print head parts that are "
+                     "lower than the head clearance height above the nozzle tip (heater block, cooling duct).");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(15.));
+
     def = this->add("machine_limits_usage", coEnum);
     def->label = L("How to apply limits");
     def->full_label = L("Purpose of Machine Limits");

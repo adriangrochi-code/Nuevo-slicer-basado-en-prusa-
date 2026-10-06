@@ -120,6 +120,30 @@ private:
 constexpr double J_MIN = 0.6;
 constexpr double J_MAX = 1.4;
 
+// Print head around the nozzle (Tisma): its lowest parts (heater block, cooling duct) are `height` above the nozzle
+// tip and reach `radius` around the nozzle. The nozzle cone itself is covered by the maximum layer slope.
+struct HeadClearance
+{
+    double height { 0. };
+    double radius { 0. };
+};
+
+struct HeadCollision
+{
+    bool   collides { false };
+    // Highest rise of the part already printed above the nozzle tip within the head radius.
+    double rise     { 0. };
+    // Horizontal distance from the nozzle to that point.
+    double distance { 0. };
+    // Nozzle tip position where it happens (object coordinates, real Z).
+    Vec3d  nozzle   { Vec3d::Zero() };
+};
+
+// Checks whether the print head would hit the part already printed while printing the curved layers. The part
+// already printed when printing at a height is bounded by the convex hull of the mesh below that height and by the
+// current layer surface (conservative). mesh: object coordinates, real (not deformed) space.
+HeadCollision check_head_collision(const Deformation &deformation, const indexed_triangle_set &mesh, const HeadClearance &head);
+
 // Splits the mesh so that no edge is longer than max_edge (watertight, no T-junctions)
 // and moves its vertices to slice space.
 void deform_mesh(indexed_triangle_set &its, const Deformation &deformation, double max_edge);

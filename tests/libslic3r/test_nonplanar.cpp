@@ -180,3 +180,52 @@ TEST_CASE("Non-planar G-code filter", "[NonPlanar]")
         }
     }
 }
+
+// Tisma: collisions of the print head (heater block, cooling duct) with the part already printed.
+static indexed_triangle_set centered_box(float size_xy, float height)
+{
+    indexed_triangle_set its = its_make_cube(size_xy, size_xy, height);
+    its_translate(its, Vec3f(-0.5f * size_xy, -0.5f * size_xy, 0.f));
+    return its;
+}
+
+TEST_CASE("Non-planar print head collisions", "[NonPlanar]")
+{
+    const HeadClearance head{ 3., 15. };
+
+    SECTION("Low waves leave room for the head") {
+        const HeadCollision c = check_head_collision(make(Mode::Wave), centered_box(20.f, 20.f), head);
+        REQUIRE(! c.collides);
+        // Peak to peak of the waves: 2 x 0.6 mm.
+        REQUIRE(c.rise <= 1.2 + 1e-6);
+    }
+    SECTION("High waves within the head radius collide") {
+        FieldParams f;
+        f.mode = Mode::Wave;
+        f.amplitude = 2.;
+        f.wavelength = 16.;
+        Ramp r;
+        const HeadCollision c = check_head_collision(Deformation(f, r), centered_box(40.f, 20.f), head);
+        REQUIRE(c.collides);
+        REQUIRE(c.rise > head.height);
+        REQUIRE(c.distance <= head.radius + 1e-9);
+    }
+    SECTION("A cone rising outwards hits the head while printing its center") {
+        FieldParams f;
+        f.mode = Mode::Conical;
+        f.cone_angle_deg = 15.;
+        Ramp r;
+        // Over the 15 mm radius the cone rises (15 - 2) * tan(15°) = 3.5 mm > 3 mm.
+        const HeadCollision big = check_head_collision(Deformation(f, r), centered_box(60.f, 30.f), head);
+        REQUIRE(big.collides);
+        // A narrow part: nothing printed far enough from the nozzle to rise that much.
+        const HeadCollision narrow = check_head_collision(Deformation(f, r), centered_box(8.f, 30.f), head);
+        REQUIRE(! narrow.collides);
+    }
+    SECTION("No head geometry, no check") {
+        FieldParams f;
+        f.mode = Mode::Conical;
+        f.cone_angle_deg = 15.;
+        REQUIRE(! check_head_collision(Deformation(f, Ramp{}), centered_box(60.f, 30.f), HeadClearance{ 0., 15. }).collides);
+    }
+}

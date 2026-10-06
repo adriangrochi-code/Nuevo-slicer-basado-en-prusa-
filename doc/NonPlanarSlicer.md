@@ -24,6 +24,13 @@ al final, el G-code se transforma punto a punto para que las capas queden curvas
   - la pendiente de capa supera `nonplanar_max_slope`;
   - hay más de una instancia;
   - está activo el modo vaso, los arcos G2/G3 o la E absoluta.
+- **Colisiones del cabezal (Tisma):** en `Printer Settings > General > Print head` se indican la altura libre
+  bajo el cabezal (de la punta de la boquilla a lo más bajo del bloque calefactor, el ducto o el sensor) y el radio
+  de esa zona. Antes de laminar se recorren las capas curvas: en cada punto, la pieza ya impresa (casco convexo de
+  la malla hasta esa altura, con la superficie de la capa actual como techo) no puede subir más que la altura libre
+  dentro de ese radio. Si sube, se rechaza con la altura, la subida y la distancia. Valores por defecto: 3 mm y
+  15 mm (conservadores; conviene medir la impresora). Con altura 0 no se comprueba. La boquilla misma la cubre la
+  pendiente máxima de capa.
 
 ## Impresión por USB (`Configuration > Print via USB...`)
 

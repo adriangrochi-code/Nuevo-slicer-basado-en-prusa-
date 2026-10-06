@@ -2834,6 +2834,11 @@ void TabPrinter::build_fff()
         optgroup->append_single_option_line("belt_printer");
         optgroup->append_single_option_line("belt_angle");
 
+        // Tisma: print head geometry for the collision check of non-planar layers.
+        optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
+        optgroup->append_single_option_line("nonplanar_head_clearance_height");
+        optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
                 if (opt_key == "thumbnails" && m_config->has("thumbnails_format")) {
