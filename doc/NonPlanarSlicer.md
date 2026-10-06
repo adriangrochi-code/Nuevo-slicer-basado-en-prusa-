@@ -38,9 +38,13 @@ Lo que el laminado no planar necesita saber de la impresora se mide con estas pr
 curvas usan su propia deformación, no los ajustes no planares del perfil). El **asistente de calibración no planar**
 las ordena y aplica los resultados a los perfiles:
 
-- **Pendiente máxima en dos pasos.** Paso 1: **galga estática de ángulo libre**, impresa plana: rampas de 30 mm cuyo
-  ángulo crece por pasos; con la impresora fría se baja la boquilla sobre cada rampa (la rampa está libre si solo la
-  toca la punta) y se repite con la galga girada 90°, 180° y 270°. Paso 2: la prueba impresa de pendiente, preparada
+- **Pendiente máxima en dos pasos.** Paso 1: **galga estática de ángulo libre**, impresa plana: filas de rampas de 2,
+  5 y 10 mm de altura (con una meseta de 25 mm detrás) cuyo ángulo crece por pasos. Cerca de la punta el cabezal
+  admite subidas empinadas pero bajas y, más lejos, solo más suaves (según el hotend), por eso hay varias alturas. Con
+  la impresora fría se apoya la punta al pie de cada rampa (está libre si nada más toca la rampa ni la meseta) y se
+  repite con la galga girada 90°, 180° y 270°. Los tres ángulos forman el **perfil medido del cabezal**
+  (`nonplanar_head_profile`, por ejemplo `2:45;5:30;10:20`): la comprobación de colisiones lo usa en lugar de la
+  altura libre (a cada distancia de la punta, la subida admitida es la de las rampas libres y sus mesetas). Paso 2: la prueba impresa de pendiente, preparada
   por el asistente de 10° por debajo a 5° por encima del ángulo libre, cada 2,5°. Se aplica el menor de los dos
   valores menos la tolerancia (3° por defecto); con solo el paso 1, el asistente avisa que no está confirmado.
 

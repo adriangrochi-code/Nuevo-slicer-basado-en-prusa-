@@ -248,10 +248,47 @@ double Deformation::max_offset(const BoundingBoxf3 &bbox) const
 
 // -------------------------------------------------------------------- Print head collisions
 
+double HeadClearance::allowed_rise(double distance) const
+{
+    if (this->profile.empty())
+        return this->height;
+    // Each measured ramp was free: rising at its angle up to its height, then flat (the plateau behind it).
+    double out = 0.;
+    for (const auto &[h, angle_deg] : this->profile) {
+        const double t     = std::tan(std::clamp(angle_deg, 0.1, 89.) * M_PI / 180.);
+        const double reach = h / t;
+        out = std::max(out, distance <= reach ? distance * t : h);
+    }
+    return out;
+}
+
+std::vector<std::pair<double, double>> parse_head_profile(const std::string &text)
+{
+    std::vector<std::pair<double, double>> out;
+    size_t start = 0;
+    while (start <= text.size()) {
+        size_t end = text.find(';', start);
+        if (end == std::string::npos)
+            end = text.size();
+        const std::string item = text.substr(start, end - start);
+        if (const size_t colon = item.find(':'); colon != std::string::npos) {
+            char *e1 = nullptr, *e2 = nullptr;
+            const std::string hs = item.substr(0, colon), as = item.substr(colon + 1);
+            const double h = std::strtod(hs.c_str(), &e1);
+            const double a = std::strtod(as.c_str(), &e2);
+            if (e1 != hs.c_str() && e2 != as.c_str() && h > 0. && a > 0. && a < 90.)
+                out.emplace_back(h, a);
+        }
+        start = end + 1;
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
 HeadCollision check_head_collision(const Deformation &deformation, const indexed_triangle_set &mesh, const HeadClearance &head)
 {
     HeadCollision out;
-    if (! deformation.enabled() || head.height <= 0. || head.radius <= 0. || mesh.vertices.empty())
+    if (! deformation.enabled() || (head.height <= 0. && head.profile.empty()) || head.radius <= 0. || mesh.vertices.empty())
         return out;
 
     double z_min = std::numeric_limits<double>::max();
@@ -309,8 +346,9 @@ HeadCollision check_head_collision(const Deformation &deformation, const indexed
                             continue;
                         // Top of the part printed so far at q: the current layer surface.
                         const double rise = deformation.offset(q.x(), q.y(), s) - z_tip;
-                        if (rise - head.height > worst) {
-                            worst        = rise - head.height;
+                        const double over = rise - head.allowed_rise(r);
+                        if (over > worst) {
+                            worst        = over;
                             out.rise     = rise;
                             out.distance = r;
                             out.nozzle   = Vec3d(p.x(), p.y(), s + z_tip);

@@ -2319,6 +2319,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(3.));
 
+    def = this->add("nonplanar_head_profile", coString);
+    def->label = L("Measured head profile");
+    def->full_label = L("Measured print head profile (non-planar)");
+    def->tooltip = L("Free angle of the print head measured with the static gauge at several heights, as "
+                     "height:angle pairs separated by semicolons (for example 2:45;5:30;10:20). Near the nozzle tip the "
+                     "head allows steep but low rises, farther away only gentler ones. When set, the collision check of "
+                     "the non-planar layers uses it instead of the head clearance height. Filled by the non-planar "
+                     "calibration assistant.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("nonplanar_head_clearance_radius", coFloat);
     def->label = L("Head clearance radius");
     def->full_label = L("Print head clearance radius (non-planar)");

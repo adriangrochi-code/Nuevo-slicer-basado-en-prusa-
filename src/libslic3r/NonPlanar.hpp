@@ -138,7 +138,16 @@ struct HeadClearance
 {
     double height { 0. };
     double radius { 0. };
+    // Measured profile (static gauge): (height of the ramp, free angle in degrees), sorted by height. A ramp of that
+    // angle up to that height, with a plateau behind, did not touch the head. Empty = use height.
+    std::vector<std::pair<double, double>> profile;
+
+    // Highest rise of the part allowed at a horizontal distance from the nozzle tip (within the radius).
+    double allowed_rise(double distance) const;
 };
+
+// Parses "height:angle;height:angle..." (nonplanar_head_profile); invalid pairs are skipped.
+std::vector<std::pair<double, double>> parse_head_profile(const std::string &text);
 
 struct HeadCollision
 {

@@ -5,6 +5,7 @@
 ///|/
 #include "CalibrationDialog.hpp"
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <optional>
@@ -131,6 +132,29 @@ void add_heightfield_block(ModelObject& obj, double size_x, double size_y, doubl
     for (int j = 0; j + 1 < ny; ++j) {
         wall(v(nx - 1, j), v(nx - 1, j + 1));            // x = size_x
         wall(v(0, j + 1), v(0, j));                      // x = 0
+    }
+    obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Heights of the rows of the static gauge of the free nozzle angle [mm].
+constexpr double NONPLANAR_GAUGE_HEIGHTS[3] = { 2., 5., 10. };
+
+// Prism along X (from x, width dx) of a convex profile in the YZ plane (counter-clockwise seen from +X), shifted by y0.
+void add_prism_x(ModelObject& obj, double x, double dx, double y0, const std::vector<Vec2d>& profile)
+{
+    indexed_triangle_set its;
+    const int n = int(profile.size());
+    for (int side = 0; side < 2; ++side)
+        for (const Vec2d& p : profile)
+            its.vertices.emplace_back(float(x + side * dx), float(y0 + p.x()), float(p.y()));
+    for (int i = 1; i + 1 < n; ++i) {
+        its.indices.emplace_back(0, i + 1, i);             // face x = x (normal -X)
+        its.indices.emplace_back(n, n + i, n + i + 1);     // face x = x + dx (normal +X)
+    }
+    for (int i = 0; i < n; ++i) {
+        const int j = (i + 1) % n;
+        its.indices.emplace_back(i, j, n + j);
+        its.indices.emplace_back(i, n + j, n + i);
     }
     obj.add_volume(TriangleMesh(std::move(its)));
 }
@@ -308,27 +332,33 @@ std::vector<Test> make_tests()
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
-        _L("Prints, with normal flat layers, a gauge of ramps whose angle grows in steps (from left to right). It is "
-           "measured with the printer cold, nothing curved is printed: the first, safe step of the calibration of the "
-           "maximum layer slope."),
-        _L("With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle onto the middle "
-           "of a ramp until it touches. The ramp is free if only the nozzle tip touches it: no other part of the nozzle, "
-           "the heater block, its sock, the cooling duct or the probe. The steepest free ramp is the free angle: start + "
-           "step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the "
-           "print head is not symmetric) and keep the smallest. Enter it in the non-planar calibration assistant."),
+        _L("Prints, with normal flat layers, a gauge of ramps in rows of 2, 5 and 10 mm of height; along each row the "
+           "angle grows in steps (from left to right). Each ramp has a plateau behind it. It is measured with the "
+           "printer cold, nothing curved is printed: the first, safe step of the calibration. Near the nozzle tip the "
+           "head allows steep but low rises, farther away only gentler ones: that is why there are several heights."),
+        _L("With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip "
+           "touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: "
+           "no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the "
+           "steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting "
+           "at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the "
+           "smallest. Enter the three angles in the non-planar calibration assistant."),
         "°", CalibMode::Disabled, { 15., 50., 5., 12. }, 0, 1., 75.,
         [](ModelObject& obj, const Params& p, const Machine& m) {
-            // Ramps 30 mm long (longer than the nozzle and the heater block), 2 mm apart, rising along Y.
-            const double length = 30., base = 1.5, gap = 2.;
-            for (int i = 0; i < p.steps(); ++i) {
-                const double angle = std::clamp(p.start + i * p.signed_step(), 1., 75.);
-                const double top   = base + length * std::tan(angle * M_PI / 180.);
-                indexed_triangle_set its = its_make_cube(p.band - gap, length, base);
-                for (stl_vertex& v : its.vertices)
-                    if (v.y() > float(0.5 * length) && v.z() > float(0.5 * base))
-                        v.z() = float(top);
-                its_translate(its, Vec3f(float(i * p.band), 0.f, 0.f));
-                obj.add_volume(TriangleMesh(std::move(its)));
+            // Rows from the front: ramp from the bed up to the height of the row, then a 25 mm plateau.
+            const double heights[] = { NONPLANAR_GAUGE_HEIGHTS[0], NONPLANAR_GAUGE_HEIGHTS[1], NONPLANAR_GAUGE_HEIGHTS[2] };
+            const double plateau = 25., base = 1., gap = 2., row_gap = 4.;
+            double y0 = 0.;
+            for (double h : heights) {
+                double row_depth = 0.;
+                for (int i = 0; i < p.steps(); ++i) {
+                    const double angle = std::clamp(p.start + i * p.signed_step(), 1., 75.);
+                    const double reach = h / std::tan(angle * M_PI / 180.);
+                    row_depth = std::max(row_depth, reach + plateau);
+                    // Profile in the YZ plane, extruded along X.
+                    add_prism_x(obj, i * p.band, p.band - gap, y0,
+                                { { 0., 0. }, { reach + plateau, 0. }, { reach + plateau, base + h }, { reach, base + h }, { 0., base } });
+                }
+                y0 += row_depth + row_gap;
             }
             set_layer_height(obj, m.layer);
             set(obj, "perimeters", "2");
@@ -722,10 +752,15 @@ public:
                                 [print_test]() { print_test("nonplanar_head_gauge", {}); });
         m_head_radius = add_row(_L("Head clearance radius"), printer.opt_float("nonplanar_head_clearance_radius"), 0., 100., 0.5, 1,
                                 _L("mm"), wxString(), nullptr);
-        // Maximum slope, step 1: static gauge.
-        m_free_angle = add_row(_L("Step 1: free angle on the static gauge"), stored("nonplanar_calib_free_angle", 0.), 0., 75., 1., 0,
-                               "°", _L("Print the gauge"),
-                               [print_test]() { print_test("nonplanar_free_angle", {}); });
+        // Maximum slope, step 1: static gauge, one free angle per height of its rows.
+        for (size_t i = 0; i < 3; ++i) {
+            const std::string key = "nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i]));
+            m_free_angles[i] = add_row(format_wxstr(_L("Step 1: free angle on the static gauge at %1% mm"), int(NONPLANAR_GAUGE_HEIGHTS[i])),
+                                       stored(key.c_str(), 0.), 0., 75., 1., 0, "°",
+                                       i == 0 ? _L("Print the gauge") : wxString(),
+                                       i == 0 ? std::function<void()>([print_test]() { print_test("nonplanar_free_angle", {}); }) : nullptr);
+        }
+        m_free_angle = m_free_angles[0];
         // Step 2: printed test around the free angle.
         m_printed_angle = add_row(_L("Step 2: steepest good step of the printed test"), stored("nonplanar_calib_printed_angle", 0.), 0., 75., 0.5, 1,
                                   "°", _L("Print the test"), [this, print_test]() {
@@ -759,7 +794,7 @@ public:
         buttons->Add(new wxButton(this, wxID_CANCEL, _L("Close")));
         main->Add(buttons, 0, wxALIGN_RIGHT | wxALL, em);
 
-        for (wxSpinCtrlDouble* ctrl : { m_free_angle, m_printed_angle, m_tolerance }) {
+        for (wxSpinCtrlDouble* ctrl : { m_free_angles[0], m_free_angles[1], m_free_angles[2], m_printed_angle, m_tolerance }) {
             ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_result(); });
             ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_result(); });
         }
@@ -797,7 +832,9 @@ private:
     void save()
     {
         AppConfig& app = *wxGetApp().app_config;
-        app.set("nonplanar_calib_free_angle",    float_to_string_decimal_point(m_free_angle->GetValue(), 1));
+        for (size_t i = 0; i < 3; ++i)
+            app.set("nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i])),
+                    float_to_string_decimal_point(m_free_angles[i]->GetValue(), 1));
         app.set("nonplanar_calib_printed_angle", float_to_string_decimal_point(m_printed_angle->GetValue(), 1));
         app.set("nonplanar_calib_tolerance",     float_to_string_decimal_point(m_tolerance->GetValue(), 1));
     }
@@ -808,6 +845,14 @@ private:
             DynamicPrintConfig conf = *tab->get_config();
             conf.set_key_value("nonplanar_head_clearance_height", new ConfigOptionFloat(m_head_height->GetValue()));
             conf.set_key_value("nonplanar_head_clearance_radius", new ConfigOptionFloat(m_head_radius->GetValue()));
+            // Measured profile of the head: the free angle at each height of the static gauge.
+            std::string profile;
+            for (size_t i = 0; i < 3; ++i)
+                if (m_free_angles[i]->GetValue() > 0.)
+                    profile += (profile.empty() ? "" : ";") + float_to_string_decimal_point(NONPLANAR_GAUGE_HEIGHTS[i], 0) + ":" +
+                               float_to_string_decimal_point(m_free_angles[i]->GetValue(), 1);
+            if (! profile.empty())
+                conf.set_key_value("nonplanar_head_profile", new ConfigOptionString(profile));
             if (m_z_speed->GetValue() > 0.)
                 // Normal and silent (stealth) modes.
                 conf.set_key_value("machine_max_feedrate_z", new ConfigOptionFloats({ m_z_speed->GetValue(), m_z_speed->GetValue() }));
@@ -827,7 +872,8 @@ private:
 
     wxSpinCtrlDouble* m_head_height   { nullptr };
     wxSpinCtrlDouble* m_head_radius   { nullptr };
-    wxSpinCtrlDouble* m_free_angle    { nullptr };
+    wxSpinCtrlDouble* m_free_angle    { nullptr };   // the lowest height (the nozzle cone): the slope
+    std::array<wxSpinCtrlDouble*, 3> m_free_angles { nullptr, nullptr, nullptr };
     wxSpinCtrlDouble* m_printed_angle { nullptr };
     wxSpinCtrlDouble* m_tolerance     { nullptr };
     wxSpinCtrlDouble* m_z_speed       { nullptr };

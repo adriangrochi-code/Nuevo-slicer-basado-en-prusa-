@@ -32432,8 +32432,8 @@ msgstr "Distancia horizontal desde la boquilla hasta el punto más lejano de las
 msgid "Print head (non-planar layers)"
 msgstr "Cabezal (capas no planares)"
 
-msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the head clearance height of %4% mm (Printer Settings > General > Print head). Reduce the wave amplitude or the cone angle, or check the measurements of the print head."
-msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que la altura libre del cabezal de %4% mm (Ajustes de la impresora > General > Cabezal). Reduce la amplitud de las ondas o el ángulo del cono, o revisa las medidas del cabezal."
+msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the %4% mm the print head allows there (Printer Settings > General > Print head). Reduce the wave amplitude or the cone angle, or check the measurements of the print head."
+msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que los %4% mm que admite el cabezal ahí (Ajustes de la impresora > General > Cabezal). Reduce la amplitud de las ondas o el ángulo del cono, o revisa las medidas del cabezal."
 
 msgid "Curved (non-planar) layers: the material follows them (%1% directions)."
 msgstr "Capas curvas (no planares): el material las sigue (%1% direcciones)."
@@ -32474,12 +32474,6 @@ msgstr "%1% pasos, %2% mm de largo."
 msgid "Non-planar: free nozzle angle gauge (static)"
 msgstr "No planar: galga de ángulo libre de la boquilla (estática)"
 
-msgid "Prints, with normal flat layers, a gauge of ramps whose angle grows in steps (from left to right). It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration of the maximum layer slope."
-msgstr "Imprime, con capas planas normales, una galga de rampas cuyo ángulo crece por pasos (de izquierda a derecha). Se mide con la impresora fría y no se imprime nada curvo: es el primer paso, seguro, de la calibración de la pendiente máxima de capa."
-
-msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle onto the middle of a ramp until it touches. The ramp is free if only the nozzle tip touches it: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. The steepest free ramp is the free angle: start + step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the smallest. Enter it in the non-planar calibration assistant."
-msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla sobre el medio de una rampa hasta que toque. La rampa está libre si solo la toca la punta de la boquilla: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. La rampa libre más empinada es el ángulo libre: inicio + paso × número de rampa (desde la izquierda, empezando en 0). Compruébalo con la galga girada 90°, 180° y 270° (el cabezal no es simétrico) y quédate con el menor. Ingrésalo en el asistente de calibración no planar."
-
 msgid "Non-planar calibration assistant"
 msgstr "Asistente de calibración no planar"
 
@@ -32494,9 +32488,6 @@ msgstr "Imprimir la galga"
 
 msgid "Print the test"
 msgstr "Imprimir la prueba"
-
-msgid "Step 1: free angle on the static gauge"
-msgstr "Paso 1: ángulo libre en la galga estática"
 
 msgid "Step 2: steepest good step of the printed test"
 msgstr "Paso 2: paso bueno más empinado de la prueba impresa"
@@ -32557,3 +32548,21 @@ msgstr "Offset Z de la primera capa (se suma)"
 
 msgid "Current value: %1%"
 msgstr "Valor actual: %1%"
+
+msgid "Prints, with normal flat layers, a gauge of ramps in rows of 2, 5 and 10 mm of height; along each row the angle grows in steps (from left to right). Each ramp has a plateau behind it. It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration. Near the nozzle tip the head allows steep but low rises, farther away only gentler ones: that is why there are several heights."
+msgstr "Imprime, con capas planas normales, una galga de rampas en filas de 2, 5 y 10 mm de altura; a lo largo de cada fila el ángulo crece por pasos (de izquierda a derecha). Cada rampa tiene una meseta detrás. Se mide con la impresora fría y no se imprime nada curvo: es el primer paso, seguro, de la calibración. Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves: por eso hay varias alturas."
+
+msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the smallest. Enter the three angles in the non-planar calibration assistant."
+msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla hasta que su punta toque la cama al pie de una rampa. La rampa está libre si nada más toca la rampa ni su meseta: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. En cada fila, la rampa libre más empinada es el ángulo libre a esa altura: inicio + paso × número de rampa (desde la izquierda, empezando en 0). Compruébalo con la galga girada 90°, 180° y 270° (el cabezal no es simétrico) y quédate con el menor. Ingresa los tres ángulos en el asistente de calibración no planar."
+
+msgid "Step 1: free angle on the static gauge at %1% mm"
+msgstr "Paso 1: ángulo libre en la galga estática a %1% mm"
+
+msgid "Measured head profile"
+msgstr "Perfil medido del cabezal"
+
+msgid "Measured print head profile (non-planar)"
+msgstr "Perfil medido del cabezal (no planar)"
+
+msgid "Free angle of the print head measured with the static gauge at several heights, as height:angle pairs separated by semicolons (for example 2:45;5:30;10:20). Near the nozzle tip the head allows steep but low rises, farther away only gentler ones. When set, the collision check of the non-planar layers uses it instead of the head clearance height. Filled by the non-planar calibration assistant."
+msgstr "Ángulo libre del cabezal medido con la galga estática a varias alturas, como pares altura:ángulo separados por punto y coma (por ejemplo 2:45;5:30;10:20). Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves. Si está definido, la comprobación de colisiones de las capas no planares lo usa en lugar de la altura libre del cabezal. Lo completa el asistente de calibración no planar."

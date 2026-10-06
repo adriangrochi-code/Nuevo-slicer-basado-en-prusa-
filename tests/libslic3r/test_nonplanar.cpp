@@ -229,3 +229,32 @@ TEST_CASE("Non-planar print head collisions", "[NonPlanar]")
         REQUIRE(! check_head_collision(Deformation(f, Ramp{}), centered_box(60.f, 30.f), HeadClearance{ 0., 15. }).collides);
     }
 }
+
+TEST_CASE("Non-planar measured print head profile", "[NonPlanar]")
+{
+    // Free 45° up to 2 mm, 30° up to 5 mm, 20° up to 10 mm (heights unsorted and a broken pair on purpose).
+    HeadClearance head;
+    head.radius  = 40.;
+    head.profile = parse_head_profile("5:30; 2:45;oops;10:20");
+    REQUIRE(head.profile.size() == 3);
+    CHECK(head.profile.front().first == Approx(2.));
+
+    // Close to the tip the steepest ramp limits: 45° up to 2 mm.
+    CHECK(head.allowed_rise(1.) == Approx(1.));
+    // Farther away the low ramps end in their plateaus; the gentle tall ramp keeps rising.
+    CHECK(head.allowed_rise(4.) == Approx(std::max({ 2., 4. * std::tan(30. * M_PI / 180.), 4. * std::tan(20. * M_PI / 180.) })));
+    CHECK(head.allowed_rise(40.) == Approx(10.));
+
+    SECTION("The profile replaces the clearance height") {
+        FieldParams f;
+        f.mode = Mode::Conical;
+        f.cone_angle_deg = 15.;
+        // The cone rises 3.5 mm over 15 mm: too much for a 3 mm clearance height, fine with a head free up to 10 mm
+        // at 20° (tan 15° < tan 20°).
+        HeadClearance cylinder{ 3., 15. };
+        REQUIRE(check_head_collision(Deformation(f, Ramp{}), centered_box(60.f, 30.f), cylinder).collides);
+        HeadClearance measured{ 3., 15. };
+        measured.profile = parse_head_profile("2:45;5:30;10:20");
+        CHECK(! check_head_collision(Deformation(f, Ramp{}), centered_box(60.f, 30.f), measured).collides);
+    }
+}

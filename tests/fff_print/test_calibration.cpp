@@ -221,9 +221,10 @@ static std::string slice_patches(const std::string &mode, double start, double e
 
 // Extrusions by patch (from the left), using the X of the G-code relative to the leftmost extrusion.
 template<typename F>
-static void for_each_patch_extrusion(const std::string &gcode, F &&f)
+static void for_each_patch_extrusion(const std::string &gcode, F &&f, const std::string &type = std::string())
 {
     double x0 = std::numeric_limits<double>::max();
+    std::string current_type;
     GCodeReader parser;
     parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.extruding(self) && line.dist_XY(self) > 0.)
@@ -231,7 +232,9 @@ static void for_each_patch_extrusion(const std::string &gcode, F &&f)
     });
     GCodeReader parser2;
     parser2.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
-        if (line.extruding(self) && line.dist_XY(self) > 0.) {
+        if (line.comment().rfind("TYPE:", 0) == 0)
+            current_type = std::string(line.comment().substr(5));
+        if (line.extruding(self) && line.dist_XY(self) > 0. && (type.empty() || current_type == type)) {
             const double x = 0.5 * (self.x() + line.new_X(self));
             f(int(std::floor((x - x0 + 1.) / 25.)), self, line);
         }
@@ -258,12 +261,10 @@ TEST_CASE("Calibration: flow rate in percent by patches", "[Calibration]")
     const std::string gcode = slice_patches("flow_rate", 90., 110., 10., 3, 1.);
     std::map<int, std::pair<double, double>> e_and_length;
     for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
-        // Solid infill lines of the upper layers (same width and height in all the patches).
-        if (self.z() > 0.5) {
-            e_and_length[patch].first  += line.dist_E(self);
-            e_and_length[patch].second += line.dist_XY(self);
-        }
-    });
+        // Top solid infill (same width and height in all the patches).
+        e_and_length[patch].first  += line.dist_E(self);
+        e_and_length[patch].second += line.dist_XY(self);
+    }, "Top solid infill");
     REQUIRE(e_and_length.size() == 3);
     const double e0 = e_and_length[0].first / e_and_length[0].second;
     const double e1 = e_and_length[1].first / e_and_length[1].second;

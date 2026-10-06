@@ -2838,6 +2838,7 @@ void TabPrinter::build_fff()
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
         optgroup->append_single_option_line("nonplanar_head_clearance_height");
         optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+        optgroup->append_single_option_line("nonplanar_head_profile");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {

@@ -88,6 +88,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "nonplanar_max_slope",
         "nonplanar_head_clearance_height",
         "nonplanar_head_clearance_radius",
+        "nonplanar_head_profile",
         "nonplanar_segment_length",
         "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
@@ -542,9 +543,10 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                                "wavelength or a smaller amplitude / cone angle."),
                           int(std::round(check.max_slope_deg)), int(std::round(m_config.nonplanar_max_slope.value)));
         // Tisma: the print head (heater block, cooling duct) must not hit the part already printed.
-        const NonPlanar::HeadClearance head{ m_config.nonplanar_head_clearance_height.value,
-                                             m_config.nonplanar_head_clearance_radius.value };
-        if (head.height > 0. && head.radius > 0.) {
+        NonPlanar::HeadClearance head{ m_config.nonplanar_head_clearance_height.value,
+                                       m_config.nonplanar_head_clearance_radius.value };
+        head.profile = NonPlanar::parse_head_profile(m_config.nonplanar_head_profile.value);
+        if ((head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
             indexed_triangle_set mesh;
             for (const ModelVolume *model_volume : object.model_object()->volumes)
                 if (model_volume->is_model_part()) {
@@ -556,12 +558,12 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (collision.collides)
                 return format(_u8L("Non-planar layers: the print head would hit the part. At %1% mm of height, the part "
                                    "already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the "
-                                   "head clearance height of %4% mm (Printer Settings > General > Print head). Reduce "
+                                   "%4% mm the print head allows there (Printer Settings > General > Print head). Reduce "
                                    "the wave amplitude or the cone angle, or check the measurements of the print head."),
                               float_to_string_decimal_point(collision.nozzle.z() - bbox.min.z(), 1),
                               float_to_string_decimal_point(collision.rise, 1),
                               float_to_string_decimal_point(collision.distance, 1),
-                              float_to_string_decimal_point(head.height, 1));
+                              float_to_string_decimal_point(head.allowed_rise(collision.distance), 1));
         }
     }
 
