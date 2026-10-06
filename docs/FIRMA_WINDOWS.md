@@ -23,7 +23,9 @@ Condiciones que ya se cumplen en el repositorio:
 
 Pasos del dueño del repositorio:
 
-1. Publicar una versión en GitHub Releases (SignPath pide un proyecto ya publicado y con mantenimiento).
+1. Publicar una versión en GitHub Releases (SignPath pide un proyecto ya publicado y con mantenimiento): crear y
+   subir una etiqueta `v<versión>` (por ejemplo `v0.9.0`). El flujo de trabajo de Windows compila, prueba el
+   instalador y publica la versión con el instalador, el zip y las notas de esa versión de `CHANGELOG.md`.
 2. Activar la verificación en dos pasos en GitHub.
 3. Pedir el alta en <https://signpath.org/apply> con el enlace al repositorio y a la política de firma.
 4. Cuando lo aprueben, en SignPath: proyecto `tisma-slicer`, política `release-signing` y dos configuraciones de
@@ -31,8 +33,25 @@ Pasos del dueño del repositorio:
 5. En GitHub > Settings > Secrets and variables > Actions:
    - secreto `SIGNPATH_API_TOKEN`;
    - variable `SIGNPATH_ORGANIZATION_ID`.
-6. Crear una etiqueta de versión (por ejemplo `v0.9.0`). La firma solo se hace en etiquetas y en `main`, y cada
-   pedido de firma se aprueba a mano en SignPath.
+6. Crear la etiqueta de la versión siguiente (por ejemplo `v0.10.0`): esa ya sale firmada. La firma solo se hace
+   en etiquetas y en `main`, y cada pedido de firma se aprueba a mano en SignPath.
+
+### Datos para la solicitud (en inglés)
+
+- **Project name:** Tisma Slicer
+- **Repository:** https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-
+- **Download page:** https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/releases
+- **Code signing policy:** https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/blob/<rama principal>/docs/CODE_SIGNING_POLICY.md
+- **License:** GNU AGPL v3 or later (OSI approved), no dual licensing.
+- **Description:** Tisma Slicer is a free and open source 3D printing slicer for FFF printers, a fork of
+  PrusaSlicer 2.9 (which publishes signed Windows releases). It adds non-planar slicing, structural and
+  aerodynamic analysis of the parts, infill optimization, calibration tests, multiple plates, USB printing and
+  LAN printing to Bambu Lab printers. The fork is clearly named Tisma Slicer in the binaries, installer and UI.
+- **Build:** Windows binaries and the Inno Setup installer are built only by GitHub Actions
+  (`.github/workflows/build_windows.yml`) from the public repository; no manual builds are signed.
+- **What to sign:** `prusa-slicer.exe`, `prusa-slicer-console.exe`, `prusa-gcodeviewer.exe`, `PrusaSlicer*.dll`,
+  `OCCTWrapper.dll` and `TismaSlicer-<version>-build<n>-setup.exe`. Third party DLLs are not signed.
+- **Team:** single maintainer (committer, reviewer and approver), MFA enabled on GitHub and SignPath.
 
 ## Alternativa paga: certificado propio a tu nombre
 

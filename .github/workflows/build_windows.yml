@@ -16,6 +16,8 @@ concurrency:
 jobs:
   build_win:
     runs-on: windows-2022
+    permissions:
+      contents: write   # publish the GitHub release of a version tag
     timeout-minutes: 360
     env:
       # Short paths: the dependency builds hit the Windows path length limit otherwise.
@@ -214,3 +216,29 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "The uninstaller failed ($($p.ExitCode))" }
           # The signature, when signed.
           Get-AuthenticodeSignature $setup.FullName | Format-List Status, SignerCertificate
+
+      # A version tag (v0.9.0, ...) publishes a GitHub release with the installer and the zip, signed when SignPath is
+      # set up. The notes are the section of CHANGELOG.md for that version.
+      - name: Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $zip = "TismaSlicer-$version-windows.zip"
+          Compress-Archive -Path TismaSlicer/* -DestinationPath $zip
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern "^## .*\b$([regex]::Escape($version))\b" | Select-Object -First 1).LineNumber
+          $notes = "Tisma Slicer $version"
+          if ($start) {
+            $rest = $lines[$start..($lines.Count - 1)]
+            $end = ($rest | Select-String -Pattern '^## ' | Select-Object -First 1).LineNumber
+            $notes = ($(if ($end) { $rest[0..($end - 2)] } else { $rest }) -join "`n")
+          }
+          $notes += "`n`nPolítica de firma de código: https://github.com/${{ github.repository }}/blob/$tag/docs/CODE_SIGNING_POLICY.md"
+          Set-Content -Path release-notes.md -Value $notes -Encoding utf8
+          $setup = Get-ChildItem installer/*.exe | Select-Object -First 1
+          gh release create $tag $setup.FullName $zip --title "Tisma Slicer $version" --notes-file release-notes.md --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
