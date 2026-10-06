@@ -34,8 +34,15 @@ al final, el G-code se transforma punto a punto para que las capas queden curvas
 
 ### Calibración (menú Calibración, Tisma)
 
-Lo que el laminado no planar necesita saber de la impresora se mide con tres pruebas (usan sus propias capas
-curvas, no los ajustes no planares del perfil):
+Lo que el laminado no planar necesita saber de la impresora se mide con estas pruebas (las impresas con capas
+curvas usan su propia deformación, no los ajustes no planares del perfil). El **asistente de calibración no planar**
+las ordena y aplica los resultados a los perfiles:
+
+- **Pendiente máxima en dos pasos.** Paso 1: **galga estática de ángulo libre**, impresa plana: rampas de 30 mm cuyo
+  ángulo crece por pasos; con la impresora fría se baja la boquilla sobre cada rampa (la rampa está libre si solo la
+  toca la punta) y se repite con la galga girada 90°, 180° y 270°. Paso 2: la prueba impresa de pendiente, preparada
+  por el asistente de 10° por debajo a 5° por encima del ángulo libre, cada 2,5°. Se aplica el menor de los dos
+  valores menos la tolerancia (3° por defecto); con solo el paso 1, el asistente avisa que no está confirmado.
 
 - **Pendiente máxima de capa** (`calib_mode = nonplanar_slope`): bloque con crestas de 8 mm de longitud de onda cuya
   pendiente crece por pasos a lo largo de X. El último paso sin raspado ni líneas despegadas da

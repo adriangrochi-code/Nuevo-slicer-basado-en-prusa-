@@ -32470,3 +32470,57 @@ msgstr "Ancho de cada paso"
 
 msgid "%1% steps, %2% mm long."
 msgstr "%1% pasos, %2% mm de largo."
+
+msgid "Non-planar: free nozzle angle gauge (static)"
+msgstr "No planar: galga de ángulo libre de la boquilla (estática)"
+
+msgid "Prints, with normal flat layers, a gauge of ramps whose angle grows in steps (from left to right). It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration of the maximum layer slope."
+msgstr "Imprime, con capas planas normales, una galga de rampas cuyo ángulo crece por pasos (de izquierda a derecha). Se mide con la impresora fría y no se imprime nada curvo: es el primer paso, seguro, de la calibración de la pendiente máxima de capa."
+
+msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle onto the middle of a ramp until it touches. The ramp is free if only the nozzle tip touches it: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. The steepest free ramp is the free angle: start + step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the smallest. Enter it in the non-planar calibration assistant."
+msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla sobre el medio de una rampa hasta que toque. La rampa está libre si solo la toca la punta de la boquilla: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. La rampa libre más empinada es el ángulo libre: inicio + paso × número de rampa (desde la izquierda, empezando en 0). Compruébalo con la galga girada 90°, 180° y 270° (el cabezal no es simétrico) y quédate con el menor. Ingrésalo en el asistente de calibración no planar."
+
+msgid "Non-planar calibration assistant"
+msgstr "Asistente de calibración no planar"
+
+msgid "Measures and applies the maximum layer slope (in two steps), the print head clearance and the Z speed."
+msgstr "Mide y aplica la pendiente máxima de capa (en dos pasos), la altura libre del cabezal y la velocidad Z."
+
+msgid "Measure what the non-planar layers need to know about your printer. The maximum layer slope is found in two steps: first a static gauge measured with the printer cold, then a printed test in small steps around that value. The result is applied with a safety tolerance."
+msgstr "Mide lo que las capas no planares necesitan saber de tu impresora. La pendiente máxima de capa se obtiene en dos pasos: primero una galga estática medida con la impresora fría, después una prueba impresa con pasos pequeños alrededor de ese valor. El resultado se aplica con una tolerancia de seguridad."
+
+msgid "Print the gauge"
+msgstr "Imprimir la galga"
+
+msgid "Print the test"
+msgstr "Imprimir la prueba"
+
+msgid "Step 1: free angle on the static gauge"
+msgstr "Paso 1: ángulo libre en la galga estática"
+
+msgid "Step 2: steepest good step of the printed test"
+msgstr "Paso 2: paso bueno más empinado de la prueba impresa"
+
+msgid "Safety tolerance"
+msgstr "Tolerancia de seguridad"
+
+msgid "Fastest good Z speed of the printed test"
+msgstr "Velocidad Z buena más rápida de la prueba impresa"
+
+msgid "Measure the free angle on the static gauge first (step 1)."
+msgstr "Mide primero el ángulo libre en la galga estática (paso 1)."
+
+msgid "Apply to the presets"
+msgstr "Aplicar a los perfiles"
+
+msgid "Maximum layer slope: not measured yet."
+msgstr "Pendiente máxima de capa: todavía sin medir."
+
+msgid "Maximum layer slope to apply: %1%° (now %2%°)."
+msgstr "Pendiente máxima de capa a aplicar: %1%° (ahora %2%°)."
+
+msgid "Not confirmed with the printed test (step 2) yet."
+msgstr "Todavía sin confirmar con la prueba impresa (paso 2)."
+
+msgid "The values were applied to the print and printer settings. Save the presets to keep them."
+msgstr "Los valores se aplicaron a los ajustes de impresión y de impresora. Guarda los perfiles para conservarlos."
