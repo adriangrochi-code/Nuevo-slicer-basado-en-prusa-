@@ -3873,6 +3873,12 @@ void GUI_App::app_version_check(bool from_user)
         }
     }
     std::string version_check_url = app_config->version_check_url();
+    if (version_check_url.empty()) {
+        // Tisma has no version server yet: show its releases page when the user asks.
+        if (from_user)
+            open_browser_with_warning_dialog("https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/releases");
+        return;
+    }
     m_app_updater->sync_version(version_check_url, from_user);
 }
 
