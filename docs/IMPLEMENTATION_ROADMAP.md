@@ -219,8 +219,12 @@ Orden indicado por el usuario: primero modernizar (render, rendimiento, bugs), d
 | 7 | Render moderno: luz por píxel y sombras (técnicas de PrusaSlicer 3.0), ver `docs/RENDER.md` | 7a y 7b hechas; 7c (oclusión ambiental) y 7d (PBR) sin autorizar |
 | 8 | Rendimiento del laminado y bugs conocidos: banco de pruebas (`build-utils/benchmark_slicing.sh`), perfil, optimizaciones medidas sin cambiar el G-code, bugs de upstream 2.9.6 y propios | En curso |
 | 9 | Laminado no planar | Pendiente |
-| 10 | Laminado en la nube: el mismo motor sin interfaz (la línea de comandos ya lamina sin GUI) en los servidores propios, con cola de trabajos | Idea del usuario, sin diseñar |
-| 11 | App de teléfono y FEA en la nube: subir el modelo, elegir perfil y material, analizar, laminar y descargar o enviar el G-code; suscripción (idea inicial: 10 USD/mes con un número de trabajos) | Idea del usuario, sin diseñar |
+| 10 | Laminado en la nube: el mismo motor sin interfaz (la línea de comandos ya lamina sin GUI) en los servidores propios, con cola de trabajos | Arquitectura propuesta en `docs/CLOUD_ARCHITECTURE.md` (i5 central y pesado, dos i7 livianos), sin implementar |
+| 11 | App de teléfono y FEA en la nube: subir el modelo, elegir perfil y material, analizar, laminar y descargar o enviar el G-code; suscripción (idea inicial: 10 USD/mes con un número de trabajos) | Planes propuestos en `docs/CLOUD_ARCHITECTURE.md` (créditos; Básico 10 USD, Business con varios usuarios), sin decidir |
+| — | Aceleración del FEA: multigrid y después GPU con Vulkan (precisión mixta) | Propuesta, sin autorizar |
+| — | Detección de fallas con cámara (servidor de Obico como servicio aparte, cámara en la impresión por USB, panel de granja en Business) | Propuesta; verificar la licencia de los pesos del modelo |
+| — | Rediseño del panel derecho (ajustes rápidos de impresión, filamento e impresora con buscador) | Propuesta, sin autorizar |
+| — | Impresoras de cinta (método de Cura BlackBelt reimplementado; FEA con capas inclinadas) | Propuesta, esperando modelo de impresora y ángulo |
 
 Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
 - Licencia: con la AGPL, el código del servidor modificado que se ofrece por red debe estar disponible para sus
