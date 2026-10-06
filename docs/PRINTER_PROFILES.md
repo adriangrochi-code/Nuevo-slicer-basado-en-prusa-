@@ -65,11 +65,16 @@ sus impresoras. El resto del asistente (filamentos, perfiles instalados) no camb
 
 - `tests/fff_print/test_vendor_bundles.cpp`: cada paquete carga en Tisma como perfil del sistema, sin sustituciones.
 - `tools/profiles/validate_bundles.py`: lamina un cubo con cada impresora (su proceso y filamento por defecto).
-  Resultado: **886 de 902 impresoras laminan (98,2 %)**. Las 16 restantes:
-  - Cambiadores de herramientas y MMU (Prusa CORE One INDX, Prusa MK4 MMU3, Snapmaker U1): su G-code usa funciones
-    de varios cabezales de Orca. (Las Prusa MMU3 están en los perfiles originales de Prusa.)
-  - Torre de purga con E absoluta o con soportes de otro extrusor (Flashforge Adventurer 3, M3D Enabler, iQ TiQ8).
-  - Boquilla de 0,2 mm con capas de 0,2 mm (LONGER LK10, Creality K2 Pro 0,2): bajar la altura de capa.
+  Resultado: **902 de 902 impresoras laminan**. Correcciones del convertidor que lo hicieron posible (antes 886):
+  - Variables de Orca con mayúsculas (`required_nozzle_HRC`) y con índices anidados
+    (`nozzle_volume_type[filament_map[0]-1]`) en el G-code de Prusa CORE One INDX, MK4 MMU3 y Snapmaker U1.
+  - Extrusor de soportes: Orca usa 0 («el actual») por defecto y Tisma 1; con torre de purga y soportes no solubles
+    Tisma exige 0 (M3D Enabler, iQ TiQ8).
+  - Impresoras de varios extrusores con E absoluta: pasan a E relativa, que exige la torre de purga de Tisma
+    (Flashforge Adventurer 3); las de un extrusor que heredan de ellas no heredan el `G92 E0` por capa (UltiMaker S5).
+  - Proceso por defecto: si el de Orca no sirve (primera capa más gruesa que la boquilla o capa de más del 80 % de
+    la boquilla), el compatible de capa más gruesa que sí sirva, también entre los procesos unificados (boquillas de
+    0,2 mm de Creality K2 Pro y LONGER LK10).
 - Bambu Lab: se pueden laminar y exportar; el envío por red de Bambu usa un componente cerrado y no está disponible.
 
 ### Regenerar

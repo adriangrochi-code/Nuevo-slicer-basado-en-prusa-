@@ -222,6 +222,7 @@ KEYWORDS = {'if', 'elsif', 'else', 'endif', 'true', 'false', 'and', 'or', 'not',
 ORCA_LITERAL_DEFAULTS = {
     'print_sequence': 'by layer', 'timelapse_type': '0', 'bed_mesh_algo': 'bicubic', 'bed_mesh_probe_count': '5,5',
     'bed_mesh_probe_distance': '50,50', 'adaptive_bed_mesh_margin': '0', 'plate_name': 'plate',
+    'nozzle_volume_type': '0', 'filament_map': '1',
 }
 # Names shown in the configuration wizard for the vendor folders of Orca with a short name.
 VENDOR_DISPLAY_NAMES = {'BBL': 'Bambu Lab'}
@@ -229,9 +230,10 @@ BED_TYPES = ['Default Plate', 'Cool Plate', 'Engineering Plate', 'High Temp Plat
              'Textured Cool Plate', 'Supertack Plate']
 
 # Defaults of Orca which differ from Tisma, applied when a profile does not set the option (the profiles rely on them).
+ORCA_KEY_OF = {'before_layer_gcode': 'before_layer_change_gcode', 'layer_gcode': 'layer_change_gcode'}
 ORCA_DEFAULTS = {
     'printer': {'use_relative_e_distances': '1'},
-    'print': {},
+    'print': {'support_material_extruder': '0', 'support_material_interface_extruder': '0'},
     'filament': {},
 }
 
@@ -356,7 +358,7 @@ class Converter:
             if re.match(r'^[a-z_][a-z0-9_]*\[', lit):
                 return '{' + lit + '}'  # an indexed variable: only in an expression
             return lit.strip('"')
-        text = re.sub(r'\[([a-z_][a-z0-9_]*)(\[(\d+|[a-z_]+)\])?\]', legacy, text)
+        text = re.sub(r'\[([A-Za-z_][A-Za-z0-9_]*)(\[(\d+|[a-z_]+)\])?\]', legacy, text)
 
         def expression(block):
             body = block.group(0)
@@ -375,7 +377,7 @@ class Converter:
                         self.unknown.add(name)
                         return m.group(0)
                     return lit + (m.group(4) or '')
-                out.append(re.sub(r'(?<![A-Za-z0-9_.])([a-z_][a-z0-9_]*)(\[([^\]]*)\])?(\(?)', ident, part))
+                out.append(re.sub(r'(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_]*)(\[((?:[^\[\]]|\[[^\[\]]*\])*)\])?(\(?)', ident, part))
             return ''.join(out)
         return re.sub(r'\{[^{}]*\}', expression, text)
 
@@ -506,6 +508,12 @@ class Converter:
             fz = str(first(flat.get('fuzzy_skin', '')))
             if fz:
                 out['fuzzy_skin'] = 'all' if fz.startswith('all') else ('external' if fz in ('external', 'outer') else 'none')
+            # The wipe tower of Tisma prints non-soluble supports only with the current extruder.
+            if str(first(flat.get('enable_prime_tower', '0'))).lower() in ('1', 'true') and \
+                    to_float(first(flat.get('support_top_z_distance', '0.2')), 0.2) > 0:
+                for k in ('support_material_extruder', 'support_material_interface_extruder'):
+                    if k in out:
+                        out[k] = '0'
             seam = str(first(flat.get('seam_position', '')))
             if seam:
                 out['seam_position'] = SEAM.get(seam, seam) if SEAM.get(seam, seam) in ('random', 'nearest', 'aligned', 'rear') else 'aligned'
@@ -513,11 +521,19 @@ class Converter:
             flavor = out.get('gcode_flavor', 'marlin')
             relative = out.get('use_relative_e_distances', '0') == '1'
             # Rules of Tisma (PrusaSlicer) which Orca does not enforce.
+            if not relative and len(str(out.get('nozzle_diameter', '0.4')).split(',')) > 1:
+                # The wipe tower of Tisma (on for several extruders) needs relative E.
+                out['use_relative_e_distances'] = '1'
+                relative = True
             reset = re.compile(r'(^|\\n)\s*G92 E0(\.0*)?(?=\s|;|\\n|$)')
             if relative and not reset.search(out.get('layer_gcode', '')) and not reset.search(out.get('before_layer_gcode', '')):
                 out['layer_gcode'] = (out.get('layer_gcode', '') + '\\nG92 E0').lstrip('\\n') if out.get('layer_gcode') else 'G92 E0'
             if not relative:
                 for k in ('before_layer_gcode', 'layer_gcode'):
+                    if k not in out:
+                        # Inherited: the parent may have added the G92 E0 of relative E, so set it here.
+                        orca_value = str(first(flat.get(ORCA_KEY_OF[k], '')))
+                        out[k] = escape(self.gcode(orca_value, flat)) if orca_value else ''
                     if k in out:
                         out[k] = re.sub(r'(^|\\n)G92 E0(?=\\n|$| *;)', r'\1', out[k])
             if out.get('use_firmware_retraction') == '1':
@@ -574,7 +590,7 @@ def tisma_option_types(tisma_root):
     """Option types, enumerations and their values of Tisma, parsed from src/libslic3r/PrintConfig.cpp."""
     src = open(os.path.join(tisma_root, 'src', 'libslic3r', 'PrintConfig.cpp'), encoding='utf-8').read()
     types = {}
-    for m in re.finditer(r'this->add(?:_nullable)?\("([a-z0-9_]+)",\s*(co\w+)\)', src):
+    for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*(co\w+)\)', src):
         types.setdefault(m.group(1), m.group(2))
     enums = {}
     for m in re.finditer(r'this->add\("([a-z0-9_]+)",\s*coEnum\);(.{0,3000}?)(?=this->add\(|\Z)', src, re.S):
@@ -585,7 +601,7 @@ def tisma_option_types(tisma_root):
     for m in re.finditer(r'static const t_config_enum_values s_keys_map_(\w+)\s*=?\s*\{(.*?)\};', src, re.S):
         values[m.group(1)] = re.findall(r'\{\s*"([^"]+)"', m.group(2))
     limits = {}
-    for m in re.finditer(r'this->add(?:_nullable)?\("([a-z0-9_]+)",\s*co\w+\);(.{0,2500}?)(?=this->add|\Z)', src, re.S):
+    for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*co\w+\);(.{0,2500}?)(?=this->add|\Z)', src, re.S):
         lo = re.search(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
         hi = re.search(r'def->max\s*=\s*(-?[0-9.]+)', m.group(2))
         if lo or hi:
@@ -609,7 +625,7 @@ def orca_option_defaults(orca_profiles):
         return {'values': {}, 'types': {}}
     src = open(path, encoding='utf-8', errors='ignore').read()
     values, types = {}, {}
-    for m in re.finditer(r'this->add(?:_nullable)?\("([a-z0-9_]+)",\s*(co\w+)\);(.{0,3000}?)(?=this->add|\Z)', src, re.S):
+    for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*(co\w+)\);(.{0,3000}?)(?=this->add|\Z)', src, re.S):
         types[m.group(1)] = m.group(2)
         d = re.search(r'set_default_value\(new ConfigOption\w+\s*[({]\s*\{?\s*([^)}]*)', m.group(3))
         if not d:
@@ -646,6 +662,8 @@ def main():
     conv = Converter(tisma_option_types(args.tisma_root), orca_option_defaults(args.orca_profiles))
     orca = args.orca_profiles
     out_dir = args.tisma_profiles
+    if not os.path.isdir(orca) or not any(f.endswith('.json') and os.path.isdir(os.path.join(orca, f[:-5])) for f in os.listdir(orca)):
+        sys.exit('error: %s is not the resources/profiles directory of OrcaSlicer (no vendor .json files)' % orca)
 
     # Existing bundles and preset names of Tisma (not converted from Orca).
     existing_vendors = set()
@@ -953,8 +971,17 @@ def main():
                 def first_layer_ok(print_name):
                     pd = presets.get(('print', print_name))
                     if pd is None:
-                        return True
-                    return to_float(get_converted('print', print_name, pd).get('first_layer_height', '0.2'), 0.2) <= nozzle + 1e-6
+                        # Merged into another process: check that one.
+                        target = rename.get(('print', print_name))
+                        print_name = next((n for (k, n) in presets if k == 'print' and n != print_name and
+                                           rename.get(('print', n)) == target), None)
+                        if print_name is None:
+                            return True
+                        pd = presets[('print', print_name)]
+                    conv_print = get_converted('print', print_name, pd)
+                    # Tisma refuses a first layer thicker than the nozzle and layers about as thick as the line.
+                    return to_float(conv_print.get('first_layer_height', '0.2'), 0.2) <= nozzle + 1e-6 and \
+                        to_float(conv_print.get('layer_height', '0.2'), 0.2) <= 0.8 * nozzle + 1e-6
                 def usable(print_name):
                     pd = presets.get(('print', print_name))
                     if pd is None:
@@ -962,11 +989,14 @@ def main():
                     target = rename.get(('print', print_name), '')
                     return bool(target) and not target.startswith('*') and first_layer_ok(print_name)
                 if not usable(str(first(flat.get('default_print_profile', '')))):
-                    for (k2, n2), d2 in sorted(presets.items(), key=lambda x: x[0][1]):
-                        if k2 == 'print' and str(d2.get('instantiation', 'true')).lower() != 'false' and \
-                                name in as_list(flatten(vendor, 'print', d2).get('compatible_printers', [])) and first_layer_ok(n2):
-                            flat['default_print_profile'] = n2
-                            break
+                    # Another compatible process: the one with the thickest layers that Tisma accepts.
+                    candidates = [n2 for (k2, n2), d2 in sorted(presets.items(), key=lambda x: x[0][1])
+                                  if k2 == 'print' and str(d2.get('instantiation', 'true')).lower() != 'false' and
+                                  name in merged_compat.get(('print', n2), as_list(flatten(vendor, 'print', d2).get('compatible_printers', []))) and
+                                  usable(n2)]
+                    if candidates:
+                        flat['default_print_profile'] = max(candidates, key=lambda n2: to_float(
+                            get_converted('print', n2, presets[('print', n2)]).get('layer_height', '0.2'), 0.2))
                 for key, target_kind in (('default_print_profile', 'print'), ('default_filament_profile', 'filament')):
                     ref = str(first(flat.get(key, '')))
                     if ref:
