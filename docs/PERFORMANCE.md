@@ -66,11 +66,15 @@ las rutas y el código reorganizados. Se portaron las que aplican a la 2.9.6:
 | SPE-3488: aceleración de viajes cortos emitida con la aceleración de viaje desactivada (no volvía a la normal) | `GCode.cpp` |
 | #15768: precalentamiento `M104` con una herramienta que no se interpreta o no existe (índice −1 en las temperaturas) | `GCode/GCodeProcessor.cpp` |
 | Memoria: caché de trayectorias suavizadas por capa reservada de antemano y liberada al terminar cada capa | `GCode.cpp` |
+| SPE-3866: sin torre de purga, un cambio de herramienta al empezar la capa iba precedido del viaje (con rampa) hasta la pieza siguiente, y la boquilla vieja goteaba encima (prueba en `test_multi.cpp`, falla sin la corrección) | `GCode.cpp` |
+| SPE-3377: la velocidad dinámica del ventilador se limita a [`min_fan_speed`, `max_fan_speed`] (por debajo del mínimo, apagado) | `GCode/CoolingBuffer.cpp` |
 
 Revisadas y no necesarias en la 2.9.6 (el código ya estaba corregido o no existe): SPE-3973 (casco convexo vacío),
 SPE-3792 (anclaje de puentes), SPE-3853 (prefijo de cambio de herramienta), SPE-3691 (ralentización multi
 herramienta), invalidación de `nozzle_diameter`. Las de la nueva arquitectura de la 3.0 (validación de
-`layer_config_ranges`, `Print::update`) no aplican.
+`layer_config_ranges`, `Print::update`, SPE-3760 en `PrintApply`, la excepción del hilo de laminado en segundo plano)
+no aplican. SPE-3414 (el extrusor por defecto de una pieza totalmente pintada se cuenta como usado) en la 2.9.6 solo
+afecta a la lista de extrusores usados (precalentamiento), no a los cambios de herramienta; queda pendiente.
 
 ## Perfil después de la optimización (Benchy)
 

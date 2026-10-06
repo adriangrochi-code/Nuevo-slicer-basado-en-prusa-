@@ -286,7 +286,7 @@ private:
         coordf_t previous_layer_z,
         coordf_t print_z,
         bool vase_mode,
-        const Point &first_point,
+        const std::optional<Point> first_point,
         const bool first_layer
     );
     std::string extrude_smooth_path(
