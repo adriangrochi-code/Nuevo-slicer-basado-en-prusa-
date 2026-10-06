@@ -368,6 +368,8 @@ bool cad_retessellate_volume(ModelVolume &volume, double linear_deflection, doub
         for (EngineeringLoad &load : object->engineering.loads)
             if (load.type == EngineeringLoad::Type::Faces)
                 remap_region(load.faces);
+        for (EngineeringLimit &limit : object->engineering.limits)
+            remap_region(limit.faces);
     }
 
     volume.set_mesh(std::move(new_mesh));

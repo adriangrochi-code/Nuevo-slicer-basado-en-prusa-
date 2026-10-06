@@ -257,6 +257,13 @@ TEST_CASE("Engineering setup is kept in the 3MF", "[FEA]")
 {
     Model model = bar_model();
     model.objects.front()->engineering.material = "PET";
+    EngineeringLimit limit;
+    limit.name                     = "fit";
+    limit.faces.volume             = 0;
+    limit.faces.triangles          = side(model.objects.front()->volumes.front()->mesh().its, 0, true);
+    limit.max_displacement         = 0.25;
+    limit.max_displacement_percent = 1.5;
+    model.objects.front()->engineering.limits.push_back(limit);
     const std::string path = (boost::filesystem::temp_directory_path() / "tisma_engineering_test.3mf").string();
     REQUIRE(store_3mf(path.c_str(), &model, nullptr, false));
     Model                     loaded;
@@ -275,6 +282,7 @@ TEST_CASE("Engineering setup is kept in the 3MF", "[FEA]")
     CHECK(b.loads.front().name == "end");
     CHECK((b.loads.front().point - a.loads.front().point).norm() < 1e-6);
     CHECK((b.loads.front().force - a.loads.front().force).norm() < 1e-6);
+    CHECK(b.limits == a.limits);
 }
 
 TEST_CASE("Analysis of an object of the model", "[FEA]")
@@ -343,6 +351,66 @@ TEST_CASE("Deformation limit", "[FEA]")
     REQUIRE(! stiff.alternatives.empty());
     for (const auto &[key, sf] : stiff.alternatives)
         CHECK(find_material(key)->E_xy >= 2. * find_material("PLA")->E_xy);
+}
+
+TEST_CASE("Displacement limit of a zone", "[FEA]")
+{
+    // The load has no limit of its own: only the zone (the end face of the bar) limits the deformation.
+    Model model = bar_model();
+    model.objects.front()->engineering.temperature = 23.;
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    input.setup.voxel_size = 2.;
+    const Result free = analyze(input.mesh, input.setup);
+    REQUIRE(free.ok);
+    CHECK(free.limit_displacement.empty());
+    CHECK(free.verdict == Verdict::Holds);
+
+    EngineeringLimit limit;
+    limit.name            = "end";
+    limit.faces.volume    = 0;
+    limit.faces.triangles = side(model.objects.front()->volumes.front()->mesh().its, 0, true);
+    // A zone without a limit is ignored.
+    model.objects.front()->engineering.limits.push_back(limit);
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    CHECK(input.setup.limits.empty());
+
+    // The end face moves as much as the load on it (the largest displacement of the bar).
+    model.objects.front()->engineering.limits.front().max_displacement = 100.;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    input.setup.voxel_size = 2.;
+    const Result loose = analyze(input.mesh, input.setup);
+    REQUIRE(loose.ok);
+    REQUIRE(loose.limit_displacement.size() == 1);
+    const double d = loose.limit_displacement.front();
+    CHECK(d > 0.);
+    CHECK(d == Approx(free.max_displacement).epsilon(0.3));
+    CHECK(loose.verdict == Verdict::Holds);
+
+    // Half of it, as % of the length (60 mm): too flexible, while the safety factor is the same.
+    model.objects.front()->engineering.limits.front().max_displacement         = 0.;
+    model.objects.front()->engineering.limits.front().max_displacement_percent = 100. * 0.5 * d / 60.;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    REQUIRE(input.setup.limits.size() == 1);
+    CHECK(input.setup.limits.front().max_displacement == Approx(0.5 * d));
+    input.setup.voxel_size = 2.;
+    const Result stiff = analyze(input.mesh, input.setup);
+    REQUIRE(stiff.ok);
+    CHECK(stiff.verdict == Verdict::TooFlexible);
+    CHECK(stiff.safety_factor == Approx(free.safety_factor));
+    CHECK(! meets_requirements(stiff));
+
+    // A limit on the clamped face is met whatever its value.
+    model.objects.front()->engineering.limits.front().faces.triangles = side(model.objects.front()->volumes.front()->mesh().its, 0, false);
+    model.objects.front()->engineering.limits.front().max_displacement_percent = 0.;
+    model.objects.front()->engineering.limits.front().max_displacement = 1e-3;
+    REQUIRE(build_analysis_input(*model.objects.front(), 0, "PLA", input, error));
+    input.setup.voxel_size = 2.;
+    const Result clamped = analyze(input.mesh, input.setup);
+    REQUIRE(clamped.ok);
+    CHECK(clamped.limit_displacement.front() < 1e-3);
+    CHECK(clamped.verdict == Verdict::Holds);
 }
 
 // Bar 80 x 10 x 10 mm clamped at x = 0 with a load on the end face, printed with walls and infill.

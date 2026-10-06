@@ -14,7 +14,7 @@ factor de seguridad y un **veredicto**:
 | Aguanta | factor de seguridad ≥ el pedido en toda la pieza |
 | Margen bajo | factor de seguridad entre 1 y el pedido en algún punto |
 | Fuera de carga | la tensión supera la resistencia del material a esa temperatura en algún punto |
-| Demasiado flexible | aguanta, pero una carga se desplaza más que su límite de deformación (mm o % de la mayor dimensión de la pieza) |
+| Demasiado flexible | aguanta, pero una carga o una zona con límite se desplaza más de lo permitido (mm o % de la mayor dimensión de la pieza) |
 | Fuera de temperatura | la temperatura supera la temperatura máxima de servicio del material |
 | No aplicable | material elástomero (TPU): el análisis lineal no lo describe |
 
@@ -23,6 +23,16 @@ límites de deformación, que sean lo bastante rígidos: el desplazamiento se es
 
 El límite de deformación se mide como el mayor desplazamiento de los nodos donde se aplica cada carga. Buscar el
 relleno mínimo que lo cumpla es el objetivo de la Fase 6 (ver la hoja de ruta).
+
+**Zonas con límite de desplazamiento.** Además del factor de seguridad, se pueden marcar caras que no deben
+desplazarse más que un valor (mm o % de la mayor dimensión), sean cuales sean las cargas: un encastre, una cara de
+sellado, un mecanismo. Donde no hay límite la pieza puede deformarse mucho; ahí solo se comprueba que no rompa. Cada
+zona se mide como el mayor desplazamiento de los nodos sobre sus caras y entra en el veredicto, así que el relleno
+mínimo, los refuerzos, el lattice y la orientación recomendada también la respetan.
+
+**Colores.** En las vistas de resultados el rojo es llegar al límite (factor de seguridad 1, o el desplazamiento
+permitido más chico de las cargas y zonas en la vista de desplazamiento) y el negro es donde el material rompe
+(tensión mayor que la resistencia).
 
 No hay conducción térmica: la temperatura solo cambia las propiedades del material (decisión del usuario).
 
@@ -35,11 +45,14 @@ No hay conducción térmica: la temperatura solo cambia las propiedades del mate
 4. «Carga en una cara» o «Carga en un punto»: fuerza X, Y, Z en N (Z hacia arriba, como en la cama), límite de
    deformación opcional y, para cargas puntuales, el radio en el que se reparte (3 mm por defecto: una carga real
    actúa sobre un área; con radios muy pequeños la tensión local crece sin límite).
-5. «Calcular»: el análisis corre en segundo plano (cancelable) y muestra el veredicto, el factor de seguridad, el
+5. «Límite de desplazamiento»: clic en las caras que no deben moverse más que el valor indicado (mm y/o %; con los
+   dos vale el menor). Otro clic en la misma cara lo quita. Después del análisis cada zona muestra cuánto se
+   desplazó, en rojo si superó su límite.
+6. «Analizar»: el análisis corre en segundo plano (cancelable) y muestra el veredicto, el factor de seguridad, el
    desplazamiento y el mapa de colores sobre la pieza.
 
-6. «Pieza impresa» (activada por defecto): el análisis usa las paredes, techos, suelos y el relleno del perfil.
-7. **Relleno mínimo** (también desde el botón Estructuras): busca el relleno uniforme más bajo y, si ahorra
+7. «Pieza impresa» (activada por defecto): el análisis usa las paredes, techos, suelos y el relleno del perfil.
+8. **Relleno mínimo** (también desde el botón Estructuras): busca el relleno uniforme más bajo y, si ahorra
    material, el relleno por zonas; muestra la masa frente al relleno actual y los aplica al objeto con un clic
    (densidad del objeto + modificadores «Tisma infill zone»). La vista «Relleno» oculta la capa maciza para ver el
    interior.

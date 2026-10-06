@@ -1422,6 +1422,14 @@ namespace Slic3r {
                         load.max_displacement_percent = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement_percent", "0"));
                         load.faces  = read_region(l);
                         setup.loads.emplace_back(std::move(load));
+                    } else if (child.first == "limit") {
+                        const pt::ptree& l = child.second;
+                        EngineeringLimit limit;
+                        limit.name                     = l.get<std::string>("<xmlattr>.name", "");
+                        limit.max_displacement         = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement", "0"));
+                        limit.max_displacement_percent = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement_percent", "0"));
+                        limit.faces = read_region(l);
+                        setup.limits.emplace_back(std::move(limit));
                     }
                 }
                 m_engineering[object_id] = std::move(setup);
@@ -3785,6 +3793,13 @@ namespace Slic3r {
                 l.put("<xmlattr>.max_displacement_percent", float_to_string_decimal_point(load.max_displacement_percent));
                 put_region(l, load.faces);
                 l.put("<xmlattr>.volume", load.type == EngineeringLoad::Type::Faces ? load.faces.volume : load.volume);
+            }
+            for (const EngineeringLimit& limit : setup.limits) {
+                pt::ptree& l = o.add("limit", "");
+                l.put("<xmlattr>.name", limit.name);
+                l.put("<xmlattr>.max_displacement", float_to_string_decimal_point(limit.max_displacement));
+                l.put("<xmlattr>.max_displacement_percent", float_to_string_decimal_point(limit.max_displacement_percent));
+                put_region(l, limit.faces);
             }
         }
         if (! any)

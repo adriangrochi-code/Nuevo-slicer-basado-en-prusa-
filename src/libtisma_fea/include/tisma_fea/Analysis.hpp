@@ -41,6 +41,15 @@ struct Load
     double           max_displacement { 0. };
 };
 
+// Faces of the part which must not move more than a limit, whatever the loads (a fit, a sealing face, a
+// mechanism). Other places may move more: the rest of the part is only checked for strength.
+struct DisplacementLimit
+{
+    std::vector<int> triangles;
+    // Largest allowed displacement of the faces [mm] (> 0).
+    double           max_displacement { 0. };
+};
+
 // Region of the part with its own infill density (an infill modifier), in the coordinates of the setup.
 struct InfillZone
 {
@@ -95,6 +104,8 @@ struct Setup
     double               required_safety_factor { 2. };
     std::vector<Fixture> fixtures;
     std::vector<Load>    loads;
+    // Faces with their own displacement limit.
+    std::vector<DisplacementLimit> limits;
     // Edge of the voxels [mm], 0 = automatic (about target_voxels voxels inside the part).
     double               voxel_size { 0. };
     size_t               target_voxels { 60000 };
@@ -120,7 +131,7 @@ enum class Verdict
     LowMargin,
     // The stresses exceed the strength of the material somewhere.
     OutOfLoad,
-    // The part holds, but a load moves more than its allowed displacement.
+    // The part holds, but a load or a limited zone moves more than its allowed displacement.
     TooFlexible,
     // The temperature is above the maximum service temperature of the material.
     OutOfTemperature,
@@ -162,6 +173,8 @@ struct Result
     double              layer_adhesion_factor { 1. };
     // Largest displacement of the nodes of each load [mm], in the order of Setup::loads.
     std::vector<double> load_displacement;
+    // Largest displacement of the faces of each limited zone [mm], in the order of Setup::limits.
+    std::vector<double> limit_displacement;
     Verdict             verdict { Verdict::Holds };
     // Materials of the table that would hold with the required safety factor at the temperature (and keep the
     // displacements within the limits), with the safety factor estimated from the same stresses (exact for

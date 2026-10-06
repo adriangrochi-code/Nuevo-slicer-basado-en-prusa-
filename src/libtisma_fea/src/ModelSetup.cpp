@@ -252,6 +252,21 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
         }
         setup.loads.emplace_back(std::move(load));
     }
+    for (const EngineeringLimit &elimit : eng.limits) {
+        DisplacementLimit limit;
+        limit.max_displacement = elimit.max_displacement;
+        if (elimit.max_displacement_percent > 0.) {
+            const double from_percent = elimit.max_displacement_percent * 0.01 * largest_dimension;
+            limit.max_displacement = limit.max_displacement > 0. ? std::min(limit.max_displacement, from_percent) : from_percent;
+        }
+        if (limit.max_displacement <= 0.)
+            continue;
+        if (! region_triangles(elimit.faces, limit.triangles)) {
+            error = "The zone \"" + elimit.name + "\" refers to a part that changed or was removed: select it again";
+            return false;
+        }
+        setup.limits.emplace_back(std::move(limit));
+    }
     return true;
 }
 
@@ -278,6 +293,8 @@ static void remove_modifiers(ModelObject &object, std::initializer_list<const ch
         remap(l.volume);
         remap(l.faces.volume);
     }
+    for (EngineeringLimit &l : object.engineering.limits)
+        remap(l.faces.volume);
 }
 
 // Adds a modifier with a mesh in print coordinates of the instance.

@@ -53,6 +53,23 @@ struct EngineeringLoad
     template<class Archive> void serialize(Archive &ar) { ar(type, name, volume, point, radius, faces, force, max_displacement, max_displacement_percent); }
 };
 
+// Faces which must not move more than a limit (a fit, a sealing face): elsewhere the part may deform more.
+struct EngineeringLimit
+{
+    std::string       name;
+    EngineeringRegion faces;
+    // Largest allowed displacement: in mm and in % of the largest dimension of the object (0 = not used; with both,
+    // the smaller one applies).
+    double            max_displacement { 0. };
+    double            max_displacement_percent { 0. };
+
+    bool operator==(const EngineeringLimit &rhs) const {
+        return name == rhs.name && faces == rhs.faces && max_displacement == rhs.max_displacement &&
+               max_displacement_percent == rhs.max_displacement_percent;
+    }
+    template<class Archive> void serialize(Archive &ar) { ar(name, faces, max_displacement, max_displacement_percent); }
+};
+
 // Working conditions of an object: where it is held, the loads, the ambient temperature and the material.
 struct EngineeringSetup
 {
@@ -62,14 +79,15 @@ struct EngineeringSetup
     double                         safety_factor { 2. };
     std::vector<EngineeringRegion> fixtures;
     std::vector<EngineeringLoad>   loads;
+    std::vector<EngineeringLimit>  limits;
 
-    bool empty() const { return fixtures.empty() && loads.empty() && material.empty() && temperature == 23. && safety_factor == 2.; }
+    bool empty() const { return fixtures.empty() && loads.empty() && limits.empty() && material.empty() && temperature == 23. && safety_factor == 2.; }
     bool operator==(const EngineeringSetup &rhs) const {
         return material == rhs.material && temperature == rhs.temperature && safety_factor == rhs.safety_factor &&
-               fixtures == rhs.fixtures && loads == rhs.loads;
+               fixtures == rhs.fixtures && loads == rhs.loads && limits == rhs.limits;
     }
     bool operator!=(const EngineeringSetup &rhs) const { return ! (*this == rhs); }
-    template<class Archive> void serialize(Archive &ar) { ar(material, temperature, safety_factor, fixtures, loads); }
+    template<class Archive> void serialize(Archive &ar) { ar(material, temperature, safety_factor, fixtures, loads, limits); }
 };
 
 } // namespace Slic3r

@@ -392,7 +392,7 @@ const char* verdict_name(Verdict verdict)
     case Verdict::Holds:            return "The part holds";
     case Verdict::LowMargin:        return "The part holds with a low safety margin";
     case Verdict::OutOfLoad:        return "Out of load: the stresses exceed the strength of the material";
-    case Verdict::TooFlexible:      return "Too flexible: a load moves more than the allowed deformation";
+    case Verdict::TooFlexible:      return "Too flexible: a load or a limited zone moves more than the allowed deformation";
     case Verdict::OutOfTemperature: return "Out of temperature: the material is not structural at this temperature";
     case Verdict::NotApplicable:    return "The linear analysis does not describe this material";
     }
@@ -503,6 +503,15 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     for (size_t d = 0; d < n_dofs; ++ d)
         if (fixed[d])
             f[d] = 0.;
+    // Nodes of the faces with a displacement limit.
+    std::vector<std::vector<int>> limit_nodes;
+    for (const DisplacementLimit &limit : setup.limits) {
+        limit_nodes.emplace_back(nodes_near_triangles(mesh, limit.triangles, node_pos, surface_dist));
+        if (limit_nodes.back().empty()) {
+            res.error = "A zone with a displacement limit is not on the part (or is too small for the voxel size)";
+            return res;
+        }
+    }
 
     // 4) Element matrix: the same for all the voxels.
     res.temperature_factor = temperature_factor(*material, setup.temperature);
@@ -717,6 +726,16 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         if (setup.loads[l].max_displacement > 0.) {
             stiffness_needed = std::max(stiffness_needed, d / setup.loads[l].max_displacement);
             too_flexible |= d > setup.loads[l].max_displacement;
+        }
+    }
+    for (size_t l = 0; l < setup.limits.size(); ++ l) {
+        double d = 0.;
+        for (int n : limit_nodes[l])
+            d = std::max(d, Vec3d(u[3 * n], u[3 * n + 1], u[3 * n + 2]).norm());
+        res.limit_displacement.push_back(d);
+        if (setup.limits[l].max_displacement > 0.) {
+            stiffness_needed = std::max(stiffness_needed, d / setup.limits[l].max_displacement);
+            too_flexible |= d > setup.limits[l].max_displacement;
         }
     }
 
