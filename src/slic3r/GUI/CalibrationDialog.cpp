@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <wx/button.h>
+#include <wx/choice.h>
 #include <wx/dialog.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
@@ -56,6 +57,7 @@ struct Machine
     double layer    { 0.2 };
     // Non-planar tests: height where the curved layers are complete (NonPlanar::nonplanar_test_start_height()).
     double nonplanar_start { 8.6 };
+    double first_layer     { 0.2 };
 };
 
 using ModelBuilder = std::function<void(ModelObject&, const Params&, const Machine&)>;
@@ -264,6 +266,45 @@ std::vector<Test> make_tests()
             set(obj, "external_perimeter_speed", "150");
         } });
 
+    tests.push_back({ _L("First layer Z offset"),
+        _L("Prints a row of single layer patches in one go. Each patch is printed with the nozzle at a different "
+           "height (Z offset), from left to right, so the first layer is calibrated in a single print instead of "
+           "printing, adjusting and printing again."),
+        _L("Choose the patch with the best first layer: smooth and closed, lines joined but not ridged, and well stuck. "
+           "Too high: separate round lines with gaps. Too low: rough, transparent or ridged surface. Its offset is "
+           "start + step × patch number (from the left, starting at 0): add it to the Z offset of the printer "
+           "(Calibration > Apply a calibration result)."),
+        _L("mm"), CalibMode::FirstLayerOffset, { -0.10, 0.10, 0.05, 25. }, 2, 0.01, 1.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                add_box(obj, i * p.band, 0, 0, p.band - 4., 30., m.first_layer);
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "1");
+            set(obj, "top_solid_layers", "1");
+            set(obj, "bottom_solid_layers", "1");
+            set(obj, "fill_density", "100%");
+        }, _L("Width of each step") });
+    tests.back().key = "first_layer_offset";
+
+    tests.push_back({ _L("Flow rate (%)"),
+        _L("Prints a row of solid patches in one go, each with a different flow in percent (from left to right). The "
+           "value of the best patch is the flow to use, no calculation needed."),
+        _L("Look at the top surface: choose the smoothest patch, with the lines just touching (no gaps, no ridges nor "
+           "bulging). Its flow is start + step × patch number (from the left, starting at 0), in percent: it is the "
+           "extrusion multiplier of the filament (Calibration > Apply a calibration result)."),
+        "%", CalibMode::FlowRate, { 90., 110., 5., 25. }, 1, 0.5, 200.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                add_box(obj, i * p.band, 0, 0, p.band - 4., 30., 2.);
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "top_solid_layers", "5");
+            set(obj, "bottom_solid_layers", "3");
+            set(obj, "fill_density", "100%");
+            set(obj, "top_fill_pattern", "monotonic");
+        }, _L("Width of each step") });
+    tests.back().key = "flow_rate";
+
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
@@ -388,8 +429,10 @@ public:
             grid->Add(new wxStaticText(this, wxID_ANY, unit), 0, wxALIGN_CENTER_VERTICAL);
             return ctrl;
         };
-        m_start = add_field(_L("Start value"),         defaults.start, 0., test.max_value, test.increment, test.digits, test.unit);
-        m_end   = add_field(_L("End value"),           defaults.end,   0., test.max_value, test.increment, test.digits, test.unit);
+        // Offsets may be negative.
+        const double min_value = test.mode == CalibMode::FirstLayerOffset ? - test.max_value : 0.;
+        m_start = add_field(_L("Start value"),         defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
+        m_end   = add_field(_L("End value"),           defaults.end,   min_value, test.max_value, test.increment, test.digits, test.unit);
         m_step  = add_field(_L("Step"),                defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
         m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
                             defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
@@ -451,6 +494,8 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
     if (const ConfigOptionFloats* nozzle = printer.option<ConfigOptionFloats>("nozzle_diameter"); nozzle && !nozzle->values.empty())
         machine.nozzle = nozzle->values.front();
     machine.layer = std::round(machine.nozzle * 50.) / 100.; // half of the nozzle diameter, rounded to 0.01 mm
+    if (const ConfigOptionFloatOrPercent* fl = wxGetApp().preset_bundle->prints.get_edited_preset().config.option<ConfigOptionFloatOrPercent>("first_layer_height"))
+        machine.first_layer = fl->get_abs_value(machine.nozzle);
     {
         PrintConfig print_config;
         print_config.apply(wxGetApp().preset_bundle->full_config(), true);
@@ -485,6 +530,135 @@ const Test* find_test(const std::string& key)
             return &t;
     return nullptr;
 }
+
+// --- Apply a calibration result ------------------------------------------------------------------------------
+// The value read on the print goes to the setting it calibrates, without calculations.
+
+struct ResultTarget
+{
+    CalibMode    mode;
+    wxString     name;
+    wxString     unit;
+    Preset::Type preset;
+    std::function<void(DynamicPrintConfig&, double)> apply;
+    std::function<double(const DynamicPrintConfig&)> current;
+};
+
+static std::vector<ResultTarget> result_targets()
+{
+    auto floats_first = [](const DynamicPrintConfig& c, const char* key) {
+        const ConfigOptionFloats* o = c.option<ConfigOptionFloats>(key);
+        return o && ! o->values.empty() ? o->values.front() : 0.;
+    };
+    auto set_all = [](DynamicPrintConfig& c, const char* key, double v) {
+        if (ConfigOptionFloats* o = c.option<ConfigOptionFloats>(key, true); o != nullptr) {
+            if (o->values.empty())
+                o->values.push_back(v);
+            for (double& x : o->values)
+                x = v;
+        }
+    };
+    std::vector<ResultTarget> out;
+    out.push_back({ CalibMode::FlowRate, _L("Flow rate (%)"), "%", Preset::TYPE_FILAMENT,
+        [set_all](DynamicPrintConfig& c, double v) { set_all(c, "extrusion_multiplier", v / 100.); },
+        [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "extrusion_multiplier") * 100.; } });
+    out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
+        [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
+        [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });
+    out.push_back({ CalibMode::Temperature, _L("Nozzle temperature"), "°C", Preset::TYPE_FILAMENT,
+        [](DynamicPrintConfig& c, double v) {
+            if (ConfigOptionInts* o = c.option<ConfigOptionInts>("temperature", true))
+                for (int& x : o->values) x = int(std::round(v));
+        },
+        [](const DynamicPrintConfig& c) {
+            const ConfigOptionInts* o = c.option<ConfigOptionInts>("temperature");
+            return o && ! o->values.empty() ? double(o->values.front()) : 0.;
+        } });
+    out.push_back({ CalibMode::Retraction, _L("Retraction length"), _L("mm"), Preset::TYPE_PRINTER,
+        [set_all](DynamicPrintConfig& c, double v) { set_all(c, "retract_length", v); },
+        [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "retract_length"); } });
+    out.push_back({ CalibMode::VolumetricSpeed, _L("Maximum volumetric speed"), _L("mm³/s"), Preset::TYPE_FILAMENT,
+        [set_all](DynamicPrintConfig& c, double v) { set_all(c, "filament_max_volumetric_speed", v); },
+        [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "filament_max_volumetric_speed"); } });
+    return out;
+}
+
+class ApplyResultDialog : public wxDialog
+{
+public:
+    explicit ApplyResultDialog(wxWindow* parent)
+        : wxDialog(parent, wxID_ANY, _L("Apply a calibration result"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+        , m_targets(result_targets())
+    {
+        wxGetApp().UpdateDlgDarkUI(this);
+        const int em = wxGetApp().em_unit();
+        auto main = new wxBoxSizer(wxVERTICAL);
+        auto info = new wxStaticText(this, wxID_ANY, _L("Enter the value read on the calibration print: it is written to "
+                                                         "the setting it calibrates (save the preset afterwards)."));
+        info->Wrap(40 * em);
+        main->Add(info, 0, wxALL, em);
+
+        wxArrayString names;
+        for (const ResultTarget& t : m_targets)
+            names.Add(t.name);
+        m_choice = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, names);
+        // The test loaded last, if it is one of them.
+        int selection = 0;
+        if (const auto* mode = wxGetApp().preset_bundle->project_config.option<ConfigOptionEnum<CalibMode>>("calib_mode"))
+            for (size_t i = 0; i < m_targets.size(); ++i)
+                if (m_targets[i].mode == mode->value)
+                    selection = int(i);
+        m_choice->SetSelection(selection);
+        main->Add(m_choice, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
+
+        auto row = new wxBoxSizer(wxHORIZONTAL);
+        m_value = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(12 * em, -1), wxSP_ARROW_KEYS, -1000., 1000., 0., 0.01);
+        m_value->SetDigits(2);
+        row->Add(m_value, 0, wxRIGHT, em / 2);
+        m_unit = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        row->Add(m_unit, 0, wxALIGN_CENTER_VERTICAL);
+        main->Add(row, 0, wxALL, em);
+        m_current = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        main->Add(m_current, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
+
+        if (wxSizer* btns = CreateStdDialogButtonSizer(wxOK | wxCANCEL))
+            main->Add(btns, 0, wxEXPAND | wxALL, em);
+        m_choice->Bind(wxEVT_CHOICE, [this](wxCommandEvent&) { update(); });
+        update();
+        SetSizerAndFit(main);
+        CenterOnParent();
+    }
+
+    void apply_result()
+    {
+        const ResultTarget& t = m_targets[size_t(std::max(0, m_choice->GetSelection()))];
+        if (Tab* tab = wxGetApp().get_tab(t.preset)) {
+            DynamicPrintConfig conf = *tab->get_config();
+            t.apply(conf, m_value->GetValue());
+            tab->load_config(conf);
+        }
+    }
+
+private:
+    void update()
+    {
+        const ResultTarget& t = m_targets[size_t(std::max(0, m_choice->GetSelection()))];
+        m_unit->SetLabel(t.unit);
+        double current = 0.;
+        if (Tab* tab = wxGetApp().get_tab(t.preset))
+            current = t.current(*tab->get_config());
+        m_current->SetLabel(format_wxstr(_L("Current value: %1%"), wxString::Format("%.3g %s", current, t.unit)));
+        // A sensible start: the current value, except for the offset which is added.
+        m_value->SetValue(t.mode == CalibMode::FirstLayerOffset ? 0. : current);
+        Layout();
+    }
+
+    std::vector<ResultTarget> m_targets;
+    wxChoice*         m_choice  { nullptr };
+    wxSpinCtrlDouble* m_value   { nullptr };
+    wxStaticText*     m_unit    { nullptr };
+    wxStaticText*     m_current { nullptr };
+};
 
 // --- Non-planar calibration assistant ------------------------------------------------------------------------
 // Two steps for the maximum layer slope: a static gauge measured with the printer cold (safe), then the printed test
@@ -684,6 +858,14 @@ wxMenu* create_calibration_menu(wxWindow* parent)
         menu->Append(id, all[i].title + dots, all[i].description);
         menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) { run_test(parent, tests()[i]); }, id);
     }
+    menu->AppendSeparator();
+    const int apply_id = wxWindow::NewControlId();
+    menu->Append(apply_id, _L("Apply a calibration result") + dots, _L("Writes the value read on a calibration print to its setting."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
+        ApplyResultDialog dlg(parent);
+        if (dlg.ShowModal() == wxID_OK)
+            dlg.apply_result();
+    }, apply_id);
     return menu;
 }
 

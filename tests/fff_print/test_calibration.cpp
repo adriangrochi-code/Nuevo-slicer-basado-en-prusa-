@@ -186,3 +186,88 @@ TEST_CASE("Calibration: disabled by default", "[Calibration]")
     REQUIRE(gcode.find("; calibration") == std::string::npos);
     REQUIRE(gcode.find("M117") == std::string::npos);
 }
+
+// Tisma: calibrations whose steps go along X, one patch per step, printed in one go.
+static std::string slice_patches(const std::string &mode, double start, double end, double step, int patches, double height)
+{
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "calib_mode",        mode },
+        { "calib_start",       start },
+        { "calib_end",         end },
+        { "calib_step",        step },
+        { "calib_band_height", 25. },
+        { "layer_height",      0.2 },
+        { "first_layer_height", 0.2 },
+        { "perimeters",        1 },
+        { "fill_density",      "100%" },
+        { "skirts",            0 },
+        { "use_relative_e_distances", true },
+    });
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "patches";
+    for (int i = 0; i < patches; ++ i) {
+        indexed_triangle_set its = its_make_cube(21., 30., height);
+        its_translate(its, Vec3f(float(25. * i), 0.f, 0.f));
+        object->add_volume(TriangleMesh(std::move(its)));
+    }
+    object->add_instance();
+    object->ensure_on_bed();
+    Print print;
+    print.apply(model, config);
+    print.validate();
+    return Test::gcode(print);
+}
+
+// Extrusions by patch (from the left), using the X of the G-code relative to the leftmost extrusion.
+template<typename F>
+static void for_each_patch_extrusion(const std::string &gcode, F &&f)
+{
+    double x0 = std::numeric_limits<double>::max();
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (line.extruding(self) && line.dist_XY(self) > 0.)
+            x0 = std::min(x0, double(std::min(self.x(), line.new_X(self))));
+    });
+    GCodeReader parser2;
+    parser2.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (line.extruding(self) && line.dist_XY(self) > 0.) {
+            const double x = 0.5 * (self.x() + line.new_X(self));
+            f(int(std::floor((x - x0 + 1.) / 25.)), self, line);
+        }
+    });
+}
+
+TEST_CASE("Calibration: first layer Z offset by patches", "[Calibration]")
+{
+    const std::string gcode = slice_patches("first_layer_offset", -0.1, 0.1, 0.1, 3, 0.2);
+    std::map<int, std::set<double>> z_by_patch;
+    for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        z_by_patch[patch].insert(std::round(line.new_Z(self) * 1000.) / 1000.);
+    });
+    REQUIRE(z_by_patch.size() == 3);
+    // Single layer patches: each at the first layer height plus its offset.
+    CHECK(z_by_patch[0] == std::set<double>{ 0.1 });
+    CHECK(z_by_patch[1] == std::set<double>{ 0.2 });
+    CHECK(z_by_patch[2] == std::set<double>{ 0.3 });
+}
+
+TEST_CASE("Calibration: flow rate in percent by patches", "[Calibration]")
+{
+    // 90 %, 100 %, 110 %, absolute: the extrusion multiplier of the filament does not matter.
+    const std::string gcode = slice_patches("flow_rate", 90., 110., 10., 3, 1.);
+    std::map<int, std::pair<double, double>> e_and_length;
+    for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        // Solid infill lines of the upper layers (same width and height in all the patches).
+        if (self.z() > 0.5) {
+            e_and_length[patch].first  += line.dist_E(self);
+            e_and_length[patch].second += line.dist_XY(self);
+        }
+    });
+    REQUIRE(e_and_length.size() == 3);
+    const double e0 = e_and_length[0].first / e_and_length[0].second;
+    const double e1 = e_and_length[1].first / e_and_length[1].second;
+    const double e2 = e_and_length[2].first / e_and_length[2].second;
+    CHECK(e1 / e0 == Approx(100. / 90.).epsilon(0.01));
+    CHECK(e2 / e0 == Approx(110. / 90.).epsilon(0.01));
+}

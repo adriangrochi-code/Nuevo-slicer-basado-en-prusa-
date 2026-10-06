@@ -1059,6 +1059,20 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     if (print.config().spiral_vase.value)
         m_spiral_vase = make_unique<SpiralVase>(print.config());
 
+    // Tisma calibration tests whose steps go along X: where they start (G-code coordinates of the first object).
+    m_calib_x0.reset();
+    if (const CalibMode mode = print.config().calib_mode.value;
+        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate) && ! print.objects().empty() &&
+        ! print.objects().front()->instances().empty()) {
+        const PrintObject &object = *print.objects().front();
+        BoundingBoxf3 bbox;
+        for (const ModelVolume *model_volume : object.model_object()->volumes)
+            if (model_volume->is_model_part())
+                bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
+        if (bbox.defined)
+            m_calib_x0 = unscaled<double>(object.instances().front().shift.x()) + bbox.min.x();
+    }
+
     m_nonplanar.reset();
     m_nonplanar_deformation.reset();
     if (NonPlanar::enabled(print.config()) && ! print.objects().empty() && ! print.objects().front()->instances().empty()) {
@@ -3563,6 +3577,23 @@ std::string GCodeGenerator::_extrude(
         // gcfNoExtrusion
         e_per_mm = 0;
 
+    // Tisma calibration tests along X: each step of the test is a patch of the object.
+    if (m_calib_x0 && path_attr.role != ExtrusionRole::Skirt) {
+        const std::optional<double> value = this->calib_value_along_x(path);
+        if (m_config.calib_mode.value == CalibMode::FlowRate && value) {
+            // The value is the flow in percent (absolute, not relative to the extrusion multiplier of the filament).
+            const double multiplier = m_config.extrusion_multiplier.get_at(m_writer.extruder()->id());
+            if (multiplier > 0.)
+                e_per_mm *= *value / 100. / multiplier;
+        } else if (m_config.calib_mode.value == CalibMode::FirstLayerOffset && this->on_first_layer()) {
+            // The value is added to the Z of the first layer (negative: closer to the bed).
+            const double base   = m_last_layer_z + m_config.z_offset.value;
+            const double target = std::max(0.05, base + value.value_or(0.));
+            if (std::abs(m_writer.get_position().z() - target) > 1e-4)
+                gcode += m_writer.travel_to_z(target, "calibration: first layer offset");
+        }
+    }
+
     // set speed
     if (speed == -1) {
         if (path_attr.role == ExtrusionRole::Perimeter) {
@@ -4177,6 +4208,21 @@ Point GCodeGenerator::gcode_to_point(const Vec2d &point) const
     return scaled<coord_t>(pt);
 }
 
+
+std::optional<double> GCodeGenerator::calib_value_along_x(const Geometry::ArcWelder::Path &path) const
+{
+    const PrintConfig &cfg = m_config;
+    if (! m_calib_x0 || path.empty() || cfg.calib_band_height.value <= 0.)
+        return std::nullopt;
+    const double x    = this->point_to_gcode(path.front().point).x();
+    const int    step = int(std::floor((x - *m_calib_x0) / cfg.calib_band_height.value));
+    const double lo   = std::min(cfg.calib_start.value, cfg.calib_end.value);
+    const double hi   = std::max(cfg.calib_start.value, cfg.calib_end.value);
+    const double value = cfg.calib_start.value + step * cfg.calib_step.value;
+    if (step < 0 || value < lo - 1e-9 || value > hi + 1e-9)
+        return std::nullopt;
+    return value;
+}
 
 // Tisma calibration tests: the value of the test changes every calib_band_height millimeters.
 // Speeds and accelerations are applied when extruding (see _extrude()), the other values are sent here.

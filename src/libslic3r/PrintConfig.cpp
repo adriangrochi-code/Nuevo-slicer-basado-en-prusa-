@@ -291,7 +291,9 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "cornering",        int(CalibMode::Cornering) },
     { "input_shaping",    int(CalibMode::InputShaping) },
     { "nonplanar_slope",  int(CalibMode::NonPlanarSlope) },
-    { "nonplanar_z_speed", int(CalibMode::NonPlanarZSpeed) }
+    { "nonplanar_z_speed", int(CalibMode::NonPlanarZSpeed) },
+    { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
+    { "flow_rate",        int(CalibMode::FlowRate) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
 
@@ -4124,7 +4126,9 @@ void PrintConfigDef::init_fff_params()
         { "cornering",        L("Cornering (jerk / square corner velocity)") },
         { "input_shaping",    L("Input shaping frequency") },
         { "nonplanar_slope",  L("Non-planar: maximum layer slope") },
-        { "nonplanar_z_speed", L("Non-planar: Z axis speed") }
+        { "nonplanar_z_speed", L("Non-planar: Z axis speed") },
+        { "first_layer_offset", L("First layer Z offset") },
+        { "flow_rate",        L("Flow rate") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
 

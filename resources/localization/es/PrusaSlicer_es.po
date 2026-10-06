@@ -32524,3 +32524,36 @@ msgstr "Todavía sin confirmar con la prueba impresa (paso 2)."
 
 msgid "The values were applied to the print and printer settings. Save the presets to keep them."
 msgstr "Los valores se aplicaron a los ajustes de impresión y de impresora. Guarda los perfiles para conservarlos."
+
+msgid "First layer Z offset"
+msgstr "Offset Z de la primera capa"
+
+msgid "Flow rate (%)"
+msgstr "Flujo (%)"
+
+msgid "Prints a row of single layer patches in one go. Each patch is printed with the nozzle at a different height (Z offset), from left to right, so the first layer is calibrated in a single print instead of printing, adjusting and printing again."
+msgstr "Imprime de una vez una fila de parches de una sola capa. Cada parche se imprime con la boquilla a una altura distinta (offset Z), de izquierda a derecha, así la primera capa se calibra en una sola impresión en lugar de imprimir, ajustar y volver a imprimir."
+
+msgid "Choose the patch with the best first layer: smooth and closed, lines joined but not ridged, and well stuck. Too high: separate round lines with gaps. Too low: rough, transparent or ridged surface. Its offset is start + step × patch number (from the left, starting at 0): add it to the Z offset of the printer (Calibration > Apply a calibration result)."
+msgstr "Elige el parche con la mejor primera capa: lisa y cerrada, con las líneas unidas pero sin crestas, y bien pegada. Demasiado alta: líneas redondas separadas, con huecos. Demasiado baja: superficie áspera, transparente o con crestas. Su offset es inicio + paso × número de parche (desde la izquierda, empezando en 0): súmalo al offset Z de la impresora (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Prints a row of solid patches in one go, each with a different flow in percent (from left to right). The value of the best patch is the flow to use, no calculation needed."
+msgstr "Imprime de una vez una fila de parches sólidos, cada uno con un flujo distinto en porcentaje (de izquierda a derecha). El valor del mejor parche es el flujo a usar, sin cálculos."
+
+msgid "Look at the top surface: choose the smoothest patch, with the lines just touching (no gaps, no ridges nor bulging). Its flow is start + step × patch number (from the left, starting at 0), in percent: it is the extrusion multiplier of the filament (Calibration > Apply a calibration result)."
+msgstr "Mira la superficie superior: elige el parche más liso, con las líneas justo tocándose (sin huecos, sin crestas ni abultamientos). Su flujo es inicio + paso × número de parche (desde la izquierda, empezando en 0), en porcentaje: es el multiplicador de extrusión del filamento (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Apply a calibration result"
+msgstr "Aplicar un resultado de calibración"
+
+msgid "Writes the value read on a calibration print to its setting."
+msgstr "Escribe el valor leído en una impresión de calibración en su ajuste."
+
+msgid "Enter the value read on the calibration print: it is written to the setting it calibrates (save the preset afterwards)."
+msgstr "Ingresa el valor leído en la impresión de calibración: se escribe en el ajuste que calibra (guarda el perfil después)."
+
+msgid "First layer Z offset (added)"
+msgstr "Offset Z de la primera capa (se suma)"
+
+msgid "Current value: %1%"
+msgstr "Valor actual: %1%"
