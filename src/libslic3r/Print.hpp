@@ -377,6 +377,8 @@ public:
 
     // returns 0-based indices of extruders used to print the object (without brim, support and other helper extrusions)
     std::vector<unsigned int>   object_extruders() const;
+    // Regions which print something: not the own regions of a part painted entirely with other extruders.
+    std::vector<const PrintRegion*> printing_regions() const;
 
     // Called by make_perimeters()
     void slice();

@@ -333,3 +333,44 @@ TEST_CASE("Tool change without a wipe tower is not preceded by a travel to anoth
     }
     CHECK(checked > 0);
 }
+
+// Upstream SPE-3414 (ported by Tisma): the default extruder of a part painted entirely with another extruder is not used.
+TEST_CASE("Default extruder of a fully painted part is not used", "[Multi]")
+{
+    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
+    config.set_deserialize_strict({
+        { "nozzle_diameter", "0.4,0.4,0.4" },
+        { "wipe_tower",      false },
+        { "skirts",          0 },
+        { "support_material", false },
+    });
+
+    auto extruders_used = [&config](TriangleStateType paint, bool all_facets, double max_width) {
+        DynamicPrintConfig cfg = config;
+        cfg.set_key_value("mmu_segmented_region_max_width", new ConfigOptionFloat(max_width));
+        Model model;
+        ModelObject *object = model.add_object();
+        object->name = "object.stl";
+        ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
+        volume->config.set("extruder", 1);
+        TriangleSelector selector(volume->mesh());
+        for (int i = all_facets ? 0 : 1; i < int(volume->mesh().facets_count()); ++ i)
+            selector.set_facet(i, paint);
+        volume->mm_segmentation_facets.set(selector);
+        object->add_instance();
+        object->ensure_on_bed();
+        Print print;
+        print.apply(model, cfg);
+        print.validate();
+        return print.extruders();
+    };
+
+    // 0-based extruders.
+    CHECK(extruders_used(TriangleStateType::Extruder2, true, 0.) == std::vector<unsigned int>{ 1 });
+    // A facet keeps the default extruder.
+    CHECK(extruders_used(TriangleStateType::Extruder2, false, 0.) == std::vector<unsigned int>{ 0, 1 });
+    // The painting reaches only 2 mm deep: the inside keeps the default extruder.
+    CHECK(extruders_used(TriangleStateType::Extruder2, true, 2.) == std::vector<unsigned int>{ 0, 1 });
+    // Painted with an extruder the printer doesn't have: printed with the default one.
+    CHECK(extruders_used(TriangleStateType(5), true, 0.) == std::vector<unsigned int>{ 0 });
+}

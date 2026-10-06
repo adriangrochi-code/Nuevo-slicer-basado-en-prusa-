@@ -368,8 +368,8 @@ std::vector<unsigned int> Print::object_extruders() const
     std::vector<unsigned int> extruders;
     extruders.reserve(m_print_regions.size() * m_objects.size() * 3);
     for (const PrintObject *object : m_objects)
-		for (const PrintRegion &region : object->all_regions())
-        	region.collect_object_printing_extruders(*this, extruders);
+        for (const PrintRegion *region : object->printing_regions())
+            region->collect_object_printing_extruders(*this, extruders);
     sort_remove_duplicates(extruders);
 
     // Expand virtual extruder IDs to their physical components.

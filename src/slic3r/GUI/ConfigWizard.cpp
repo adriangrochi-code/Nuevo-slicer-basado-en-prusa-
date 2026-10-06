@@ -2145,6 +2145,8 @@ void PageBrands::update_brands()
     if (row != wxNOT_FOUND)
         m_brands_list->SetSelection(row);
     m_brands_list->Thaw();
+    if (row != wxNOT_FOUND)
+        m_brands_list->EnsureVisible(row);
 
     update_printers();
     update_summary();
@@ -2180,6 +2182,8 @@ void PageBrands::update_printers()
     if (! m_shown_entries.empty())
         m_printers_list->SetSelection(0);
     m_printers_list->Thaw();
+    if (! m_shown_entries.empty())
+        m_printers_list->EnsureVisible(0);
 
     update_preview();
 }
