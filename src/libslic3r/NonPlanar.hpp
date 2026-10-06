@@ -30,7 +30,8 @@ class PrintConfig;
 
 namespace NonPlanar {
 
-enum class Mode { Disabled, Wave, Conical };
+// SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
+enum class Mode { Disabled, Wave, Conical, SlopeTest };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 
@@ -46,6 +47,15 @@ struct FieldParams
     double  cone_tip_radius  { 2. };    // conical: smoothing of the cone tip
     // Center of the field (object coordinates).
     Vec2d   center           { Vec2d::Zero() };
+    // SlopeTest: the slope of the ridges (wavelength above, along Y) is slope_start_deg + i * slope_step_deg in
+    // the band i of width slope_band from slope_x0 along X, up to slope_end_deg.
+    double  slope_x0         { 0. };
+    double  slope_band       { 10. };
+    double  slope_start_deg  { 10. };
+    double  slope_step_deg   { 5. };
+    double  slope_end_deg    { 40. };
+    // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
+    std::pair<double, double> slope_test_tangent(double x) const;
 };
 
 // Shape of the layers g(x, y, z) and its derivatives.
@@ -162,6 +172,14 @@ struct GCodeFilterParams
     double z_max_speed       { 0. };     // mm/s, 0 = no limit
     double z_max_accel       { 0. };     // mm/s^2, 0 = no limit
     double max_volumetric    { 0. };     // mm^3/s, 0 = no limit
+    // Calibration of the Z speed: above the object bottom, z_max_speed is z_speed_test_start + i * z_speed_test_step
+    // in the band i of height z_speed_test_band (0 = no test).
+    double z_speed_test_start { 0. };
+    double z_speed_test_step  { 0. };
+    double z_speed_test_end   { 0. };
+    double z_speed_test_band  { 0. };
+    // Height above the object bottom where the bands start (after the flat layers and the transition).
+    double z_speed_test_offset { 0. };
     FlowPolicy flow_policy   { FlowPolicy::Preserve };
     double uniform_flow      { 0. };     // mm^3/s for FlowPolicy::Uniform
     std::vector<std::string> uniform_exclude { "External perimeter", "Overhang perimeter", "Bridge infill", "Gap fill" };
@@ -223,6 +241,12 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
 double mesh_max_edge(const PrintConfig &config);
 GCodeFilterParams make_filter_params(const PrintConfig &config);
 bool enabled(const PrintConfig &config);
+// The calibration test of the non-planar layers (calib_mode), which replaces the non-planar settings.
+bool calibration_test(const PrintConfig &config);
+// Field of the calibration of the maximum slope (relative to x0 = 0 and the center set by the caller).
+FieldParams slope_test_field(double start_deg, double step_deg, double end_deg, double band);
+// Height above the bottom of the object where the calibration tests reach their full deformation.
+double nonplanar_test_start_height(const PrintConfig &config);
 
 } // namespace NonPlanar
 } // namespace Slic3r

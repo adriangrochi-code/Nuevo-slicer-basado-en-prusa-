@@ -84,11 +84,6 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
     // or they are only notes not influencing the generated G-code.
     static std::unordered_set<std::string> steps_gcode = {
         "autoemit_temperature_commands",
-        "calib_band_height",
-        "calib_end",
-        "calib_mode",
-        "calib_start",
-        "calib_step",
         "nonplanar_flow_policy",
         "nonplanar_max_slope",
         "nonplanar_head_clearance_height",
@@ -248,6 +243,12 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "nonplanar_flat_below"
             || opt_key == "nonplanar_ramp_height"
             || opt_key == "nonplanar_flat_top"
+            // Calibration tests of the non-planar layers deform the mesh (see NonPlanar::calibration_test()).
+            || opt_key == "calib_mode"
+            || opt_key == "calib_start"
+            || opt_key == "calib_end"
+            || opt_key == "calib_step"
+            || opt_key == "calib_band_height"
             || opt_key == "filament_shrinkage_compensation_xy"
             || opt_key == "filament_shrinkage_compensation_z"
             || opt_key == "prefer_clockwise_movements") {
@@ -534,7 +535,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                                "wave amplitude / cone angle."),
                           int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
                           int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
-        if (check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
+        // The calibration of the maximum slope prints steeper layers on purpose.
+        if (m_config.calib_mode.value != CalibMode::NonPlanarSlope && check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
             return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the maximum layer "
                                "slope of %2%° the nozzle can print without colliding with the part. Use a longer "
                                "wavelength or a smaller amplitude / cone angle."),

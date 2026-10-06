@@ -19,6 +19,7 @@
 #include <wx/stattext.h>
 
 #include "libslic3r/Model.hpp"
+#include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/TriangleMesh.hpp"
@@ -51,6 +52,8 @@ struct Machine
 {
     double nozzle   { 0.4 };
     double layer    { 0.2 };
+    // Non-planar tests: height where the curved layers are complete (NonPlanar::nonplanar_test_start_height()).
+    double nonplanar_start { 8.6 };
 };
 
 using ModelBuilder = std::function<void(ModelObject&, const Params&, const Machine&)>;
@@ -67,6 +70,8 @@ struct Test
     double        increment;
     double        max_value;
     ModelBuilder  build;
+    // Meaning of the band: height of each step for the towers, width for the tests along X.
+    wxString      band_label { wxString() };
 };
 
 // --- Geometry helpers ----------------------------------------------------------------------------------------
@@ -82,6 +87,45 @@ void add_cylinder(ModelObject& obj, double cx, double cy, double z, double r, do
 {
     indexed_triangle_set its = its_make_cylinder(r, h);
     its_translate(its, Vec3f(float(cx), float(cy), float(z)));
+    obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Block [0, size_x] x [0, size_y] whose top is at height + top(x, y): a closed mesh on a grid of the given step.
+void add_heightfield_block(ModelObject& obj, double size_x, double size_y, double step, const std::function<double(double, double)>& top)
+{
+    const int nx = std::max(2, int(std::ceil(size_x / step)) + 1);
+    const int ny = std::max(2, int(std::ceil(size_y / step)) + 1);
+    indexed_triangle_set its;
+    // Top grid, then bottom grid.
+    for (int level = 0; level < 2; ++level)
+        for (int j = 0; j < ny; ++j)
+            for (int i = 0; i < nx; ++i) {
+                const double x = size_x * i / (nx - 1), y = size_y * j / (ny - 1);
+                its.vertices.emplace_back(float(x), float(y), level == 0 ? float(top(x, y)) : 0.f);
+            }
+    const int bottom = nx * ny;
+    auto v = [nx](int i, int j) { return j * nx + i; };
+    for (int j = 0; j + 1 < ny; ++j)
+        for (int i = 0; i + 1 < nx; ++i) {
+            // Top faces up, bottom faces down.
+            its.indices.emplace_back(v(i, j), v(i + 1, j), v(i + 1, j + 1));
+            its.indices.emplace_back(v(i, j), v(i + 1, j + 1), v(i, j + 1));
+            its.indices.emplace_back(bottom + v(i, j), bottom + v(i + 1, j + 1), bottom + v(i + 1, j));
+            its.indices.emplace_back(bottom + v(i, j), bottom + v(i, j + 1), bottom + v(i + 1, j + 1));
+        }
+    // Side walls, outwards.
+    auto wall = [&](int a, int b) { // a -> b along the boundary, counter-clockwise seen from above
+        its.indices.emplace_back(a, bottom + a, bottom + b);
+        its.indices.emplace_back(a, bottom + b, b);
+    };
+    for (int i = 0; i + 1 < nx; ++i) {
+        wall(v(i, 0), v(i + 1, 0));                      // y = 0
+        wall(v(i + 1, ny - 1), v(i, ny - 1));            // y = size_y
+    }
+    for (int j = 0; j + 1 < ny; ++j) {
+        wall(v(nx - 1, j), v(nx - 1, j + 1));            // x = size_x
+        wall(v(0, j + 1), v(0, j));                      // x = 0
+    }
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
@@ -216,6 +260,64 @@ std::vector<Test> make_tests()
             set(obj, "external_perimeter_speed", "150");
         } });
 
+    // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
+
+    tests.push_back({ _L("Non-planar: maximum layer slope"),
+        _L("Prints a block whose top layers are curved ridges. The slope of the ridges grows in steps along X "
+           "(from left to right). Uses its own curved layers, not the non-planar settings of the print."),
+        _L("Look at the top surface from the left: find the first step where the nozzle scrapes or drags the "
+           "surface, or the lines stop sticking. The step before it is the steepest one your nozzle prints well: "
+           "its slope is start + step × step number (from the left, starting at 0). Enter it as \"Maximum layer "
+           "slope\" (Print Settings > Non-planar)."),
+        "°", CalibMode::NonPlanarSlope, { 10., 40., 5., 10. }, 0, 1., 60.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            // The top follows the curved layers of the test, so that the last layers are whole curved layers.
+            const double size_x = std::max(20., p.steps() * p.band), size_y = 24., height = m.nonplanar_start + 4.;
+            NonPlanar::FieldParams field = NonPlanar::slope_test_field(p.start, p.signed_step(), p.end, p.band);
+            field.center   = Vec2d(0.5 * size_x, 0.5 * size_y);
+            field.slope_x0 = 0.;
+            const NonPlanar::Field f(field);
+            add_heightfield_block(obj, size_x, size_y, 0.4, [&](double x, double y) { return height + f.g(x, y, height); });
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "15%");
+            set(obj, "top_solid_layers", "4");
+        }, _L("Width of each step") });
+
+    tests.push_back({ _L("Non-planar: Z axis speed"),
+        _L("Prints a cylinder with wavy layers. The Z speed allowed to the curved moves grows at each step above "
+           "the transition (about 9 mm). Uses its own curved layers, not the non-planar settings of the print."),
+        _L("Find the first step where the layers look squashed or shifted, the wall gets rough, or the Z motor "
+           "skips (the top ends lower than the rest). The step before it is the fastest Z speed that works: start + "
+           "step × floor((height − 9 mm) / step height). Enter it as the maximum Z feed rate of the machine limits "
+           "(Printer Settings > Machine limits). If the firmware limits Z (M203), the steps above that limit look "
+           "the same."),
+        "mm/s", CalibMode::NonPlanarZSpeed, { 2., 12., 2., 5. }, 1, 0.5, 100.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            add_cylinder(obj, 0, 0, 0, 20., m.nonplanar_start + p.height());
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "15%");
+            set(obj, "perimeter_speed", "60");
+            set(obj, "infill_speed", "80");
+        } });
+
+    tests.push_back({ _L("Non-planar: print head clearance gauge"),
+        _L("Prints a staircase gauge (nothing is printed near the print head). Put it on the cold bed with the nozzle "
+           "touching the bed and slide it under the print head."),
+        _L("The highest step that fits under the lowest point of the print head (heater block with its sock, cooling "
+           "duct, probe) without touching it is the head clearance height: start + step × step number (from the "
+           "lowest, starting at 0). Measure also the farthest point of those parts from the nozzle: it is the head "
+           "clearance radius. Enter both in Printer Settings > General > Print head."),
+        "mm", CalibMode::Disabled, { 1., 8., 1., 8. }, 1, 0.5, 30.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                add_box(obj, i * p.band, 0, 0, p.band, 25., p.start + i * p.signed_step());
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "20%");
+        }, _L("Width of each step") });
+
     return tests;
 }
 
@@ -249,9 +351,11 @@ public:
         m_start = add_field(_L("Start value"),         test.defaults.start, 0., test.max_value, test.increment, test.digits, test.unit);
         m_end   = add_field(_L("End value"),           test.defaults.end,   0., test.max_value, test.increment, test.digits, test.unit);
         m_step  = add_field(_L("Step"),                test.defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
-        m_band  = add_field(_L("Height of each step"), test.defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
+        m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
+                            test.defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
         main->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
 
+        m_along_x = ! test.band_label.empty();
         m_summary = new wxStaticText(this, wxID_ANY, "");
         main->Add(m_summary, 0, wxALL, em);
 
@@ -277,7 +381,9 @@ private:
     void update_summary()
     {
         const Params p = params();
-        m_summary->SetLabel(format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height())));
+        m_summary->SetLabel(m_along_x ?
+            format_wxstr(_L("%1% steps, %2% mm long."), p.steps(), wxString::Format("%.1f", p.height())) :
+            format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height())));
         Layout();
     }
 
@@ -286,6 +392,7 @@ private:
     wxSpinCtrlDouble* m_step  { nullptr };
     wxSpinCtrlDouble* m_band  { nullptr };
     wxStaticText*     m_summary { nullptr };
+    bool              m_along_x { false };
 };
 
 void run_test(wxWindow* parent, const Test& test)
@@ -304,6 +411,11 @@ void run_test(wxWindow* parent, const Test& test)
     if (const ConfigOptionFloats* nozzle = printer.option<ConfigOptionFloats>("nozzle_diameter"); nozzle && !nozzle->values.empty())
         machine.nozzle = nozzle->values.front();
     machine.layer = std::round(machine.nozzle * 50.) / 100.; // half of the nozzle diameter, rounded to 0.01 mm
+    {
+        PrintConfig print_config;
+        print_config.apply(wxGetApp().preset_bundle->full_config(), true);
+        machine.nonplanar_start = NonPlanar::nonplanar_test_start_height(print_config);
+    }
 
     Model model;
     ModelObject* obj = model.add_object();

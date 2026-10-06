@@ -32,6 +32,24 @@ al final, el G-code se transforma punto a punto para que las capas queden curvas
   15 mm (conservadores; conviene medir la impresora). Con altura 0 no se comprueba. La boquilla misma la cubre la
   pendiente máxima de capa.
 
+### Calibración (menú Calibración, Tisma)
+
+Lo que el laminado no planar necesita saber de la impresora se mide con tres pruebas (usan sus propias capas
+curvas, no los ajustes no planares del perfil):
+
+- **Pendiente máxima de capa** (`calib_mode = nonplanar_slope`): bloque con crestas de 8 mm de longitud de onda cuya
+  pendiente crece por pasos a lo largo de X. El último paso sin raspado ni líneas despegadas da
+  `nonplanar_max_slope`. La comprobación de pendiente no se aplica a esta prueba; las de espesor de capa y colisión
+  del cabezal sí.
+- **Velocidad del eje Z** (`calib_mode = nonplanar_z_speed`): cilindro con ondas; la velocidad Z permitida a los
+  movimientos curvos sube por pasos desde donde las ondas están completas (capas planas + 8 mm de transición). El
+  último paso sin capas aplastadas ni pasos perdidos da la velocidad máxima de Z de los límites de la máquina.
+- **Galga de altura libre del cabezal**: escalera (sin capas curvas) que se desliza bajo el cabezal frío con la
+  boquilla apoyada en la cama: da `nonplanar_head_clearance_height`; el radio se mide con una regla.
+
+Siguiente (pendiente): probetas plana y no planar para medir la ganancia real de resistencia entre capas y
+calibrar con ella el análisis de Ingeniería.
+
 ## Impresión por USB (`Configuration > Print via USB...`)
 
 Envío por puerto serie con el protocolo de host de Marlin:

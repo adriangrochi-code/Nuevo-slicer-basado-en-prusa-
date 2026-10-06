@@ -32437,3 +32437,36 @@ msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura
 
 msgid "Curved (non-planar) layers: the material follows them (%1% directions)."
 msgstr "Capas curvas (no planares): el material las sigue (%1% direcciones)."
+
+msgid "Non-planar: maximum layer slope"
+msgstr "No planar: pendiente máxima de capa"
+
+msgid "Non-planar: Z axis speed"
+msgstr "No planar: velocidad del eje Z"
+
+msgid "Non-planar: print head clearance gauge"
+msgstr "No planar: galga de altura libre del cabezal"
+
+msgid "Prints a block whose top layers are curved ridges. The slope of the ridges grows in steps along X (from left to right). Uses its own curved layers, not the non-planar settings of the print."
+msgstr "Imprime un bloque cuyas capas superiores son crestas curvas. La pendiente de las crestas crece por pasos a lo largo de X (de izquierda a derecha). Usa sus propias capas curvas, no los ajustes no planares de la impresión."
+
+msgid "Look at the top surface from the left: find the first step where the nozzle scrapes or drags the surface, or the lines stop sticking. The step before it is the steepest one your nozzle prints well: its slope is start + step × step number (from the left, starting at 0). Enter it as \"Maximum layer slope\" (Print Settings > Non-planar)."
+msgstr "Mira la superficie superior desde la izquierda: busca el primer paso donde la boquilla raspa o arrastra la superficie, o las líneas dejan de pegarse. El paso anterior es el más empinado que tu boquilla imprime bien: su pendiente es inicio + paso × número de paso (desde la izquierda, empezando en 0). Ingrésala como «Pendiente máxima de capa» (Ajustes de impresión > No planar)."
+
+msgid "Prints a cylinder with wavy layers. The Z speed allowed to the curved moves grows at each step above the transition (about 9 mm). Uses its own curved layers, not the non-planar settings of the print."
+msgstr "Imprime un cilindro con capas onduladas. La velocidad Z permitida a los movimientos curvos crece en cada paso por encima de la transición (unos 9 mm). Usa sus propias capas curvas, no los ajustes no planares de la impresión."
+
+msgid "Find the first step where the layers look squashed or shifted, the wall gets rough, or the Z motor skips (the top ends lower than the rest). The step before it is the fastest Z speed that works: start + step × floor((height − 9 mm) / step height). Enter it as the maximum Z feed rate of the machine limits (Printer Settings > Machine limits). If the firmware limits Z (M203), the steps above that limit look the same."
+msgstr "Busca el primer paso donde las capas se ven aplastadas o desplazadas, la pared queda áspera o el motor Z pierde pasos (la parte de arriba termina más baja). El paso anterior es la velocidad Z más rápida que funciona: inicio + paso × piso((altura − 9 mm) / altura del paso). Ingrésala como velocidad máxima de Z en los límites de la máquina (Ajustes de la impresora > Límites de la máquina). Si el firmware limita Z (M203), los pasos por encima de ese límite se ven iguales."
+
+msgid "Prints a staircase gauge (nothing is printed near the print head). Put it on the cold bed with the nozzle touching the bed and slide it under the print head."
+msgstr "Imprime una galga escalonada (no se imprime nada cerca del cabezal). Ponla sobre la cama fría con la boquilla tocando la cama y deslízala por debajo del cabezal."
+
+msgid "The highest step that fits under the lowest point of the print head (heater block with its sock, cooling duct, probe) without touching it is the head clearance height: start + step × step number (from the lowest, starting at 0). Measure also the farthest point of those parts from the nozzle: it is the head clearance radius. Enter both in Printer Settings > General > Print head."
+msgstr "El escalón más alto que entra debajo del punto más bajo del cabezal (bloque calefactor con su funda, ducto de ventilación, sensor) sin tocarlo es la altura libre del cabezal: inicio + paso × número de escalón (desde el más bajo, empezando en 0). Mide también el punto más lejano de esas partes a la boquilla: es el radio libre del cabezal. Ingresa ambos en Ajustes de la impresora > General > Cabezal."
+
+msgid "Width of each step"
+msgstr "Ancho de cada paso"
+
+msgid "%1% steps, %2% mm long."
+msgstr "%1% pasos, %2% mm de largo."

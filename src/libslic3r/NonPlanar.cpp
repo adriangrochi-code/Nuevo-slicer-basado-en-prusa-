@@ -29,6 +29,25 @@ double Field::theta(double z) const
     return t;
 }
 
+std::pair<double, double> FieldParams::slope_test_tangent(double x) const
+{
+    const double band = std::max(1., slope_band);
+    const double t    = (x - slope_x0) / band;
+    const int    i    = int(std::floor(t));
+    auto tangent = [this](int band_idx) {
+        const double lo = std::min(slope_start_deg, slope_end_deg), hi = std::max(slope_start_deg, slope_end_deg);
+        const double deg = std::clamp(slope_start_deg + std::max(0, band_idx) * slope_step_deg, lo, hi);
+        return std::tan(std::clamp(deg, 0., 80.) * M_PI / 180.);
+    };
+    // Constant inside the band, smooth transition over the last 20 % of it.
+    const double f  = t - i;
+    const double s  = std::clamp((f - 0.8) / 0.2, 0., 1.);
+    const double w  = s * s * (3. - 2. * s);
+    const double dw = (s > 0. && s < 1.) ? 6. * s * (1. - s) / (0.2 * band) : 0.;
+    const double a = tangent(i), b = tangent(i + 1);
+    return { a + (b - a) * w, (b - a) * dw };
+}
+
 double Field::g(double x, double y, double z) const
 {
     const double dx = x - m_params.center.x();
@@ -39,6 +58,11 @@ double Field::g(double x, double y, double z) const
     case Mode::Conical: {
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         return std::tan(m_params.cone_angle_deg * M_PI / 180.) * (r - m_params.cone_tip_radius);
+    }
+    case Mode::SlopeTest: {
+        // Ridges along X: amplitude = tangent / k gives the tangent as the steepest slope.
+        const double k = TWO_PI / m_params.wavelength;
+        return m_params.slope_test_tangent(x).first / k * std::sin(k * dy);
     }
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
@@ -62,6 +86,11 @@ Vec2d Field::grad(double x, double y, double z) const
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         const double t = std::tan(m_params.cone_angle_deg * M_PI / 180.);
         return { t * dx / r, t * dy / r };
+    }
+    case Mode::SlopeTest: {
+        const double k = TWO_PI / m_params.wavelength;
+        const auto [tangent, dtangent] = m_params.slope_test_tangent(x);
+        return { dtangent / k * std::sin(k * dy), tangent * std::cos(k * dy) };
     }
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
@@ -93,6 +122,8 @@ double Field::bound(double x, double y) const
 {
     if (m_params.mode == Mode::Wave && m_params.pattern == Pattern::Twisted)
         return std::abs(m_params.amplitude);
+    if (m_params.mode == Mode::SlopeTest)
+        return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
     return std::abs(this->g(x, y, 0.));
 }
 
@@ -472,9 +503,17 @@ double GCodeFilter::z_limit(double feed, double seg_xy, double seg3, double dz, 
 {
     double cap = std::numeric_limits<double>::max();
     const double ratio = seg_xy > 0. ? seg3 / seg_xy : 1.;
-    if (m_params.z_max_speed > 0. && std::abs(dz) > 1e-9)
-        cap = std::min(cap, seg_xy > 0. ? m_params.z_max_speed * seg_xy / std::abs(dz) * ratio * 60. :
-                                          m_params.z_max_speed * 60.);
+    double z_max_speed = m_params.z_max_speed;
+    if (m_params.z_speed_test_band > 0.) {
+        // Calibration: the Z speed allowed in the band of the current height.
+        const int    band = std::max(0, int(std::floor((m_z - m_params.z_base - m_params.z_speed_test_offset) / m_params.z_speed_test_band)));
+        const double lo   = std::min(m_params.z_speed_test_start, m_params.z_speed_test_end);
+        const double hi   = std::max(m_params.z_speed_test_start, m_params.z_speed_test_end);
+        z_max_speed = std::clamp(m_params.z_speed_test_start + band * m_params.z_speed_test_step, lo, hi);
+    }
+    if (z_max_speed > 0. && std::abs(dz) > 1e-9)
+        cap = std::min(cap, seg_xy > 0. ? z_max_speed * seg_xy / std::abs(dz) * ratio * 60. :
+                                          z_max_speed * 60.);
     if (m_params.z_max_accel > 0. && curvature > 1e-9 && seg_xy > 0.)
         cap = std::min(cap, std::sqrt(m_params.z_max_accel / curvature) * ratio * 60.);
     // 2 % margin: the coordinates are rounded when written.
@@ -706,9 +745,37 @@ void GCodeFilter::process_move(const std::string &line, std::string &out)
 
 // ----------------------------------------------------------- From config
 
+bool calibration_test(const PrintConfig &config)
+{
+    return config.calib_mode.value == CalibMode::NonPlanarSlope || config.calib_mode.value == CalibMode::NonPlanarZSpeed;
+}
+
 bool enabled(const PrintConfig &config)
 {
-    return config.nonplanar_mode.value != NonPlanarMode::Disabled;
+    return config.nonplanar_mode.value != NonPlanarMode::Disabled || calibration_test(config);
+}
+
+// Fields of the calibration tests (CalibrationDialog.cpp builds the matching objects).
+static constexpr double SLOPE_TEST_WAVELENGTH = 8.;
+static constexpr double Z_SPEED_TEST_AMPLITUDE = 0.8;
+static constexpr double Z_SPEED_TEST_WAVELENGTH = 16.;
+static constexpr double TEST_RAMP_HEIGHT = 8.;
+
+FieldParams slope_test_field(double start_deg, double step_deg, double end_deg, double band)
+{
+    FieldParams p;
+    p.mode            = Mode::SlopeTest;
+    p.wavelength      = SLOPE_TEST_WAVELENGTH;
+    p.slope_band      = band;
+    p.slope_start_deg = start_deg;
+    p.slope_step_deg  = step_deg;
+    p.slope_end_deg   = end_deg;
+    return p;
+}
+
+double nonplanar_test_start_height(const PrintConfig &config)
+{
+    return config.nonplanar_flat_below.value + TEST_RAMP_HEIGHT;
 }
 
 static FieldParams field_params(const PrintConfig &config)
@@ -729,25 +796,43 @@ static FieldParams field_params(const PrintConfig &config)
     p.angle_deg        = config.nonplanar_angle.value;
     p.twist_deg_per_mm = config.nonplanar_twist.value;
     p.cone_angle_deg   = config.nonplanar_cone_angle.value;
+    if (config.calib_mode.value == CalibMode::NonPlanarSlope) {
+        p = slope_test_field(config.calib_start.value, config.calib_step.value, config.calib_end.value,
+                             config.calib_band_height.value);
+    } else if (config.calib_mode.value == CalibMode::NonPlanarZSpeed) {
+        p.mode       = Mode::Wave;
+        p.pattern    = Pattern::Egg;
+        p.amplitude  = Z_SPEED_TEST_AMPLITUDE;
+        p.wavelength = Z_SPEED_TEST_WAVELENGTH;
+    }
     return p;
 }
 
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox)
 {
     FieldParams field = field_params(config);
-    if (object_bbox.defined)
-        field.center = 0.5 * (object_bbox.min.head<2>() + object_bbox.max.head<2>());
+    if (object_bbox.defined) {
+        field.center   = 0.5 * (object_bbox.min.head<2>() + object_bbox.max.head<2>());
+        field.slope_x0 = object_bbox.min.x();
+    }
     Ramp ramp;
     ramp.z_flat     = config.nonplanar_flat_below.value;
     ramp.z_ramp     = std::max(0.1, config.nonplanar_ramp_height.value);
     ramp.z_ramp_top = ramp.z_ramp;
-    if (config.nonplanar_flat_top.value && object_bbox.defined)
+    if (calibration_test(config)) {
+        // Gentle transition (the layer thickness stays within J_MIN..J_MAX), curved up to the top.
+        ramp.z_ramp = ramp.z_ramp_top = TEST_RAMP_HEIGHT;
+    } else if (config.nonplanar_flat_top.value && object_bbox.defined)
         ramp.z_top = object_bbox.max.z();
     return Deformation(field, ramp);
 }
 
 double mesh_max_edge(const PrintConfig &config)
 {
+    if (config.calib_mode.value == CalibMode::NonPlanarSlope)
+        return SLOPE_TEST_WAVELENGTH / 10.;
+    if (config.calib_mode.value == CalibMode::NonPlanarZSpeed)
+        return Z_SPEED_TEST_WAVELENGTH / 10.;
     if (config.nonplanar_mode.value == NonPlanarMode::Wave)
         return std::clamp(config.nonplanar_wavelength.value / 10., 0.3, 1.5);
     return 2.;
@@ -778,6 +863,13 @@ GCodeFilterParams make_filter_params(const PrintConfig &config)
     if (p.flow_policy == FlowPolicy::Uniform && p.uniform_flow <= 0.)
         // Automatic: 80 % of what the hotend melts, if known, otherwise keep PrusaSlicer's flow.
         p.uniform_flow = max_volumetric > 0. ? 0.8 * max_volumetric : 0.;
+    if (config.calib_mode.value == CalibMode::NonPlanarZSpeed) {
+        p.z_speed_test_start = config.calib_start.value;
+        p.z_speed_test_step  = config.calib_step.value;
+        p.z_speed_test_end   = config.calib_end.value;
+        p.z_speed_test_band  = config.calib_band_height.value;
+        p.z_speed_test_offset = nonplanar_test_start_height(config);
+    }
     return p;
 }
 

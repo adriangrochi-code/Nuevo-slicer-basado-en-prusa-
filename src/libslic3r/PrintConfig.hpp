@@ -184,7 +184,8 @@ enum class LabelObjectsStyle {
 enum class NonPlanarMode { Disabled, Wave, Conical };
 
 // Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
-enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping };
+enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,
+                       NonPlanarSlope, NonPlanarZSpeed };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
 enum class NonPlanarFlowPolicy { Preserve, Uniform, Off };
 
