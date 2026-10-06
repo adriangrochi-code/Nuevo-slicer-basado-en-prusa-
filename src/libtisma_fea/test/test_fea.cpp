@@ -797,9 +797,9 @@ TEST_CASE("Line width of the profile", "[FEA]")
     config.set_key_value("extrusion_width", new ConfigOptionFloatOrPercent(0., false));
     config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(0.5, false));
     CHECK(line_width(*object, config) == Approx(0.5));
-    // A percent is of the nozzle diameter, as in PrusaSlicer.
-    config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(112.5, true));
-    CHECK(line_width(*object, config) == Approx(0.675));
+    // A percent is of the layer height, as in PrusaSlicer (Flow::extrusion_width).
+    config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(150., true));
+    CHECK(line_width(*object, config) == Approx(0.45));
     // Automatic.
     config.set_key_value("perimeter_extrusion_width", new ConfigOptionFloatOrPercent(0., false));
     CHECK(line_width(*object, config) == Approx(1.125 * 0.6));

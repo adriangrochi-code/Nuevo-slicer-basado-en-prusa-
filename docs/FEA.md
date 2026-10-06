@@ -134,8 +134,8 @@ uniforme más ligero del resto de la pieza con la zona puesta y lo compara con e
 | Alta | 2 anchos de línea del perímetro |
 | Ultra | 1 ancho de línea del perímetro |
 
-El ancho de línea es el de los perímetros del perfil (con los ajustes del objeto; un porcentaje es del diámetro de
-la boquilla, como en PrusaSlicer). Un análisis usa como máximo 1,2 millones de vóxeles (86 s en 4 núcleos con una
+El ancho de línea es el de los perímetros del perfil (con los ajustes del objeto; un porcentaje es de la altura de
+capa, como en el motor de PrusaSlicer, `Flow::extrusion_width`). Un análisis usa como máximo 1,2 millones de vóxeles (86 s en 4 núcleos con una
 barra de 100×50×50 mm); el relleno mínimo, el refuerzo, el lattice y la orientación hacen muchos análisis y usan
 como máximo 250 000 (~9 s cada uno). Por encima, el vóxel se agranda y el panel lo avisa.
 
