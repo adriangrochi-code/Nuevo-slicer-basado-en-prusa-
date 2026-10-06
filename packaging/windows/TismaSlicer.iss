@@ -114,5 +114,5 @@ Root: HKA; Subkey: "Software\Classes\.bgcode\OpenWithProgids"; ValueType: string
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
-; The settings, profiles and projects of the user (%APPDATA%\PrusaSlicer, see SLIC3R_APP_KEY in version.inc) are kept on
+; The settings, profiles and projects of the user (%APPDATA%\TismaSlicer, own folder: SLIC3R_APP_FULL_NAME) are kept on
 ; uninstall.

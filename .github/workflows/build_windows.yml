@@ -26,6 +26,10 @@ jobs:
       # Without them the binaries and the installer are not signed. See packaging/windows/README.md.
       SIGN_PFX_BASE64: ${{ secrets.WINDOWS_SIGN_PFX_BASE64 }}
       SIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGN_PFX_PASSWORD }}
+      # Or SignPath Foundation (free for open source): API token secret and organization id variable, see
+      # packaging/windows/README.md. Only the runs of the main branch and tags are signed (signing policy).
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -110,10 +114,34 @@ jobs:
           Remove-Item $pfx
 
       - uses: actions/upload-artifact@v4
+        id: upload-package
         with:
           name: TismaSlicer-windows
           path: TismaSlicer
           retention-days: 30
+
+      # SignPath signs the executables and our DLLs inside the package (artifact configuration "package") and returns it;
+      # the installer is then built from the signed files.
+      - name: Sign package (SignPath)
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: tisma-slicer
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: package
+          github-artifact-id: ${{ steps.upload-package.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: TismaSlicer
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        with:
+          name: TismaSlicer-windows
+          path: TismaSlicer
+          retention-days: 30
+          overwrite: true
 
       - name: Installer
         shell: pwsh
@@ -134,6 +162,40 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
             Remove-Item $pfx
           }
+          Get-ChildItem installer
+
+      - uses: actions/upload-artifact@v4
+        id: upload-installer
+        with:
+          name: TismaSlicer-windows-installer
+          path: installer
+          retention-days: 30
+
+      - name: Sign installer (SignPath)
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: tisma-slicer
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: installer
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        with:
+          name: TismaSlicer-windows-installer
+          path: installer
+          retention-days: 30
+          overwrite: true
+
+      - name: Test installer
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem installer/*.exe | Select-Object -First 1
           # Smoke test: silent installation for the current user, the installed program starts, silent uninstallation.
           $dir = Join-Path $env:RUNNER_TEMP "tisma-install"
           $p = Start-Process $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER", "/DIR=$dir", "/TASKS=assocmodels" -Wait -PassThru
@@ -142,10 +204,5 @@ jobs:
           if ($help -notmatch "Usage:") { Write-Output $help; throw "The installed program did not start" }
           $p = Start-Process "$dir/unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The uninstaller failed ($($p.ExitCode))" }
-          Get-ChildItem installer
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: TismaSlicer-windows-installer
-          path: installer
-          retention-days: 30
+          # The signature, when signed.
+          Get-AuthenticodeSignature $setup.FullName | Format-List Status, SignerCertificate

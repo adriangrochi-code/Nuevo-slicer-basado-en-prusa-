@@ -29,10 +29,19 @@ Secrets and variables → Actions):
 
 Opciones para obtener el certificado (la decisión y el trámite de identidad son del titular del proyecto):
 
-1. **SignPath Foundation** (gratuito para proyectos de código abierto): exige licencia OSI (AGPL lo es), repositorio
-   público, proyecto mantenido y ya publicado, y compilación en runners de GitHub. El publicador que muestra Windows es
-   «SignPath Foundation». Se integra con su acción de GitHub (`signpath/github-action-submit-signing-request`) en lugar
-   del paso con `.pfx`.
+1. **SignPath Foundation** (gratuito para proyectos de código abierto, **elegido**): exige licencia OSI (AGPL lo es),
+   repositorio público, proyecto mantenido y ya publicado, y compilación en runners de GitHub. El publicador que muestra
+   Windows es «SignPath Foundation». Ya está integrado en el CI (pasos «Sign package (SignPath)» y «Sign installer
+   (SignPath)»); se activa solo en la rama `main` y en etiquetas de versión. Pasos para activarlo:
+   1. Hacer público el repositorio y publicar una primera versión (GitHub Release) con el instalador sin firmar.
+   2. Solicitar el proyecto en https://signpath.org (formulario para proyectos de código abierto), con el enlace a
+      `docs/CODE_SIGNING_POLICY.md`.
+   3. Cuando lo aprueben, en SignPath: proyecto `tisma-slicer`, política `release-signing`, configuraciones de
+      artefacto `package` (firma los `.exe` y nuestras `.dll` dentro del zip) e `installer` (firma el `.exe` del
+      instalador), y el repositorio de GitHub como sistema de compilación de confianza.
+   4. En GitHub (Settings → Secrets and variables → Actions): secreto `SIGNPATH_API_TOKEN` y variable
+      `SIGNPATH_ORGANIZATION_ID`.
+   Cada firma de versión la aprueba el titular en SignPath.
 2. **Certificado OV comprado** (Certum, Sectigo, SSL.com, etc.): el publicador es el titular. Desde 2023 la clave debe
    estar en un token o un servicio en la nube (HSM); para el CI hace falta firma en la nube (por ejemplo eSigner de
    SSL.com o SimplySign de Certum) y el paso de firma se adapta a ese servicio.
