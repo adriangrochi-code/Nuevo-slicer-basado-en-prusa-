@@ -22,6 +22,10 @@ jobs:
       DEPS_BUILD: C:/d
       DEPS_DEST: C:/dd
       APP_BUILD: C:/b
+      # Code signing (optional): a PFX code signing certificate in base64 and its password, as repository secrets.
+      # Without them the binaries and the installer are not signed. See packaging/windows/README.md.
+      SIGN_PFX_BASE64: ${{ secrets.WINDOWS_SIGN_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGN_PFX_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -92,8 +96,56 @@ jobs:
           if ($help -notmatch "Usage:") { Write-Output $help; throw "prusa-slicer-console.exe did not start (PrusaSlicer.dll not loaded?)" }
           Write-Output ($help -split "`n" | Select-Object -First 4)
 
+      - name: Sign binaries
+        if: ${{ env.SIGN_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "sign.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+          $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          # Only our own binaries (the runtime and the third party DLLs keep their own signatures).
+          $files = Get-ChildItem TismaSlicer -File | Where-Object { $_.Name -match '^(prusa-.*\.exe|PrusaSlicer.*\.dll|OCCTWrapper\.dll)$' }
+          & $signtool.FullName sign /f $pfx /p $env:SIGN_PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 $files.FullName
+          if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+          Remove-Item $pfx
+
       - uses: actions/upload-artifact@v4
         with:
           name: TismaSlicer-windows
           path: TismaSlicer
+          retention-days: 30
+
+      - name: Installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup could not be installed" }
+          $iscc = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          $version = (Select-String -Path version.inc -Pattern 'set\(SLIC3R_VERSION "([^"]+)"\)').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force installer | Out-Null
+          & $iscc "/DSourceDir=$PWD/TismaSlicer" "/DAppVersion=$version" "/DBuildNumber=${{ github.run_number }}" "/DOutputDir=$PWD/installer" packaging/windows/TismaSlicer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+          $setup = Get-ChildItem installer/*.exe | Select-Object -First 1
+          if ($env:SIGN_PFX_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP "sign.pfx"
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+            $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+            & $signtool.FullName sign /f $pfx /p $env:SIGN_PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 $setup.FullName
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+            Remove-Item $pfx
+          }
+          # Smoke test: silent installation for the current user, the installed program starts, silent uninstallation.
+          $dir = Join-Path $env:RUNNER_TEMP "tisma-install"
+          $p = Start-Process $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER", "/DIR=$dir", "/TASKS=assocmodels" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The installer failed ($($p.ExitCode))" }
+          $help = & "$dir/prusa-slicer-console.exe" --help 2>&1 | Out-String
+          if ($help -notmatch "Usage:") { Write-Output $help; throw "The installed program did not start" }
+          $p = Start-Process "$dir/unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The uninstaller failed ($($p.ExitCode))" }
+          Get-ChildItem installer
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TismaSlicer-windows-installer
+          path: installer
           retention-days: 30
