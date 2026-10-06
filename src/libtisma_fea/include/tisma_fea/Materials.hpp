@@ -36,6 +36,10 @@ struct Material
     std::string note;
     // Density of the solid material [g/cm³], for the estimation of the mass.
     double      density { 1.2 };
+    // Recommended nozzle temperature range [°C] (typical data sheet values). strength_z is the layer adhesion
+    // printed in the middle of the range.
+    double      print_temperature_min { 0. };
+    double      print_temperature_max { 0. };
 };
 
 // Reference temperature of the properties.
@@ -53,6 +57,12 @@ const Material*              material_for_filament_type(const std::string &filam
 double temperature_factor(const Material &material, double temperature);
 // The temperature is above the maximum service temperature of the material.
 bool   out_of_temperature(const Material &material, double temperature);
+
+// Factor applied to the strength across the layers (layer adhesion) printed with the nozzle at print_temperature.
+// The adhesion grows with the temperature of the melt (the layers weld better). Simplified model, to calibrate with
+// printed specimens: 1 in the middle of the recommended range, 1.15 at its maximum (no gain above it), 0.8 at its
+// minimum, down to 0.5 at 20 °C below it. 1 when the temperature or the range is unknown.
+double layer_adhesion_factor(const Material &material, double print_temperature);
 
 } // namespace Fea
 } // namespace Slic3r

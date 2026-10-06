@@ -61,6 +61,37 @@ Matrix6d constitutive(const Material &m, double factor)
     return s.inverse();
 }
 
+// Rotation from the material frame (Z = build direction, across the layers) to the frame of the setup.
+Eigen::Matrix3d material_rotation(const Vec3d &build_direction)
+{
+    const Vec3d z = build_direction.norm() > 1e-9 ? build_direction.normalized() : Vec3d::UnitZ();
+    return Eigen::Quaterniond::FromTwoVectors(Vec3d::UnitZ(), z).toRotationMatrix();
+}
+
+// Bond matrix: stress (xx, yy, zz, yz, xz, xy) in the frame rotated by r from the stress in the original frame;
+// D' = M D M^T rotates a stiffness matrix with engineering shear strains.
+Matrix6d bond_matrix(const Eigen::Matrix3d &a)
+{
+    Matrix6d m;
+    const int p[3][2] = { { 1, 2 }, { 0, 2 }, { 0, 1 } };
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 3; ++ j)
+            m(i, j) = a(i, j) * a(i, j);
+        for (int j = 0; j < 3; ++ j)
+            m(i, 3 + j) = 2. * a(i, p[j][0]) * a(i, p[j][1]);
+    }
+    for (int i = 0; i < 3; ++ i) {
+        const int r0 = p[i][0], r1 = p[i][1];
+        for (int j = 0; j < 3; ++ j)
+            m(3 + i, j) = a(r0, j) * a(r1, j);
+        for (int j = 0; j < 3; ++ j) {
+            const int c0 = p[j][0], c1 = p[j][1];
+            m(3 + i, 3 + j) = a(r0, c0) * a(r1, c1) + a(r0, c1) * a(r1, c0);
+        }
+    }
+    return m;
+}
+
 // Strain-displacement matrix of the unit cube at the local point (xi, eta, zeta) in [-1, 1]^3, for an edge h.
 Matrix6x24d strain_matrix(double xi, double eta, double zeta, double h)
 {
@@ -475,7 +506,12 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
 
     // 4) Element matrix: the same for all the voxels.
     res.temperature_factor = temperature_factor(*material, setup.temperature);
-    const Matrix6d  c  = constitutive(*material, res.temperature_factor);
+    res.layer_adhesion_factor = layer_adhesion_factor(*material, setup.print_temperature);
+    // Transversely isotropic material with its axis along the build direction.
+    const Eigen::Matrix3d to_setup   = material_rotation(setup.build_direction);
+    const Matrix6d        to_setup_m = bond_matrix(to_setup);
+    const Matrix6d        to_layers  = bond_matrix(to_setup.transpose());
+    const Matrix6d  c  = to_setup_m * constitutive(*material, res.temperature_factor) * to_setup_m.transpose();
     const Matrix24d ke = element_stiffness(c, h);
 
     // Groups of voxels without shared nodes, for the parallel product.
@@ -582,7 +618,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     // Stress measures for the safety factors of the other materials.
     std::vector<double> sz_tension(n_el), tau_z(n_el), vm_eff(n_el);
     const double s_xy = material->strength_xy * res.temperature_factor;
-    const double s_z  = material->strength_z  * res.temperature_factor;
+    const double s_z  = material->strength_z  * res.temperature_factor * res.layer_adhesion_factor;
     for (size_t e = 0; e < n_el; ++ e) {
         Eigen::Matrix<double, 24, 1> ue;
         Vec3d disp = Vec3d::Zero();
@@ -592,7 +628,8 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                 disp[k] += 0.125 * ue[3 * a + k];
             }
         // Homogenized stress of the voxel; the strength of the voxel is scaled the same way as the material.
-        const Eigen::Matrix<double, 6, 1> s = double(vm_mat.stiffness[e]) * (c * (b0 * ue));
+        // Stress in the frame of the layers: z across the layers, yz and xz the shear between the layers.
+        const Eigen::Matrix<double, 6, 1> s = to_layers * (double(vm_mat.stiffness[e]) * (c * (b0 * ue)));
         const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
         const double vm = std::sqrt(0.5 * ((s[0] - s[1]) * (s[0] - s[1]) + (s[1] - s[2]) * (s[1] - s[2]) + (s[2] - s[0]) * (s[2] - s[0]))
                                     + 3. * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));

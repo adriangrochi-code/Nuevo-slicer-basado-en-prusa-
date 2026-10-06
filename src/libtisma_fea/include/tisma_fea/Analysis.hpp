@@ -99,6 +99,11 @@ struct Setup
     double               tolerance { 1e-7 };
     // Walls and infill of the print; disabled = solid part.
     InfillModel          infill;
+    // Direction in which the layers are stacked (the Z of the printer) in the coordinates of the setup. The
+    // material is weaker across the layers (stiffness E_z, layer adhesion strength_z).
+    Vec3d                build_direction { Vec3d::UnitZ() };
+    // Nozzle temperature of the print [°C], 0 = unknown: scales the layer adhesion (layer_adhesion_factor()).
+    double               print_temperature { 0. };
 };
 
 enum class Verdict
@@ -147,6 +152,8 @@ struct Result
     // Position of the most loaded voxel.
     Vec3d               critical_point { Vec3d::Zero() };
     double              temperature_factor { 1. };
+    // Factor of the layer adhesion for the nozzle temperature of the print (1 when unknown).
+    double              layer_adhesion_factor { 1. };
     // Largest displacement of the nodes of each load [mm], in the order of Setup::loads.
     std::vector<double> load_displacement;
     Verdict             verdict { Verdict::Holds };

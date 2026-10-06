@@ -25,6 +25,10 @@ struct ModelAnalysisInput
     Setup                setup;
     // Material actually used (the chosen one or the one of the filament).
     std::string          material;
+    // Width of the perimeter lines and layer height of the print [mm] (defaults without print configuration). The
+    // quality of the analysis is given as voxels of a multiple of the line width.
+    double               line_width { 0.45 };
+    double               layer_height { 0.2 };
 };
 
 // print_config: the full print configuration; when given, the analysis takes into account the walls, the top and

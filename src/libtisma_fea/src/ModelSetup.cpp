@@ -153,6 +153,21 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
     setup.material               = out.material;
     setup.temperature            = eng.temperature;
     setup.required_safety_factor = eng.safety_factor;
+    if (print_config != nullptr) {
+        DynamicPrintConfig cfg = *print_config;
+        cfg.apply(object.config.get(), true);
+        if (const ConfigOptionFloat *lh = cfg.option<ConfigOptionFloat>("layer_height"); lh && lh->value > 0.)
+            out.layer_height = lh->value;
+        // Nozzle temperature of the extruder of the object (layer adhesion).
+        if (const ConfigOptionInts *t = cfg.option<ConfigOptionInts>("temperature"); t && ! t->values.empty()) {
+            int extruder = 1;
+            if (const ConfigOption *e = cfg.option("extruder"); e && e->getInt() > 0)
+                extruder = e->getInt();
+            setup.print_temperature = double(t->get_at(size_t(extruder - 1)));
+        }
+    }
+    if (infill.enabled && infill.perimeter_width > 0.)
+        out.line_width = infill.perimeter_width;
     setup.infill                 = std::move(infill);
     for (const EngineeringRegion &region : eng.fixtures) {
         Fixture fixture;

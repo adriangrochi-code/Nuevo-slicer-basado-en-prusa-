@@ -12,9 +12,12 @@
 #include "tisma_fea/ModelSetup.hpp"
 #include "tisma_fea/Optimize.hpp"
 #include "tisma_fea/Structures.hpp"
+#include "tisma_fea/Orientation.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
+#include <libslic3r/Print.hpp>
+#include <libslic3r/Layer.hpp>
 
 #include <boost/filesystem/operations.hpp>
 
@@ -743,4 +746,120 @@ TEST_CASE("Reinforcement and lattice applied to an object", "[FEA]")
     // The struts overlap at the nodes (less material than the formula) and the walls cut the outer struts.
     CHECK(applied.mass == Approx(expected.mass).epsilon(0.25));
     CHECK(applied.safety_factor > 0.7 * expected.safety_factor);
+}
+
+TEST_CASE("Applied infill reaches the slicing", "[FEA]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(30., 20., 10.)));
+    object->add_instance();
+    object->instances.front()->set_offset(Vec3d(100., 100., 0.));
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("fill_density", new ConfigOptionPercent(20));
+
+    auto sliced_density = [&]() {
+        Print print;
+        print.apply(model, config);
+        print.process();
+        REQUIRE(print.objects().size() == 1);
+        double density = -1.;
+        for (const LayerRegion *region : print.objects().front()->layers()[5]->regions())
+            density = std::max(density, region->region().config().fill_density.value);
+        return density;
+    };
+    CHECK(sliced_density() == Approx(20.));
+    // The lightest uniform infill: the object setting wins over the print profile.
+    apply_infill(*object, 0, 0.37, {});
+    CHECK(sliced_density() == Approx(37.));
+}
+
+TEST_CASE("Build direction rotates the weak axis of the material", "[FEA][Orientation]")
+{
+    // A bar pulled along X: printed with the layers stacked along Z it is pulled along the layers; with the
+    // layers stacked along X it is pulled across them (weaker and softer).
+    const indexed_triangle_set its = its_make_cube(40., 10., 10.);
+    Setup setup;
+    setup.material   = "PA-CF";
+    setup.voxel_size = 2.;
+    setup.tolerance  = 1e-9;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(500., 0., 0.);
+    setup.loads.push_back(load);
+    const Result along = analyze(its, setup);
+    setup.build_direction = Vec3d::UnitX();
+    const Result across = analyze(its, setup);
+    REQUIRE(along.ok);
+    REQUIRE(across.ok);
+    const Material &m = *find_material("PA-CF");
+    // Same as the bar built vertically and pulled along Z (test "Layers are softer across than along").
+    CHECK(end_displacement(across, 0, 0) / end_displacement(along, 0, 0) == Approx(m.E_xy / m.E_z).epsilon(0.05));
+    // Tension of 5 MPa (higher at the clamped end): limited by the layer adhesion across, by the strength along the
+    // layers. The clamp concentrates the stresses, so only the ratio is close to the ratio of the strengths.
+    CHECK(along.safety_factor < m.strength_xy / 5.);
+    CHECK(across.safety_factor < along.safety_factor);
+    const double ratio = along.safety_factor / across.safety_factor;
+    CHECK(ratio > 0.8 * m.strength_xy / m.strength_z);
+    CHECK(ratio < 1.1 * m.strength_xy / m.strength_z);
+}
+
+TEST_CASE("Layer adhesion depends on the nozzle temperature", "[FEA][Orientation]")
+{
+    const Material &pla = *find_material("PLA");
+    CHECK(layer_adhesion_factor(pla, 0.) == 1.);
+    CHECK(layer_adhesion_factor(pla, 205.) == Approx(1.));
+    CHECK(layer_adhesion_factor(pla, 190.) == Approx(0.8));
+    CHECK(layer_adhesion_factor(pla, 230.) == Approx(1.15));
+    CHECK(layer_adhesion_factor(pla, 150.) == Approx(0.5));
+    CHECK(layer_adhesion_factor(pla, 197.5) < layer_adhesion_factor(pla, 212.5));
+
+    // A bar pulled across the layers is stronger printed hotter.
+    const indexed_triangle_set its = its_make_cube(10., 10., 40.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 2.;
+    setup.fixtures.push_back({ side(its, 2, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 2, true);
+    load.force     = Vec3d(0., 0., 500.);
+    setup.loads.push_back(load);
+    setup.print_temperature = 190.;
+    const Result cold = analyze(its, setup);
+    setup.print_temperature = 220.;
+    const Result hot = analyze(its, setup);
+    REQUIRE(cold.ok);
+    REQUIRE(hot.ok);
+    CHECK(hot.layer_adhesion_factor == Approx(1.15));
+    CHECK(hot.safety_factor / cold.safety_factor == Approx(1.15 / 0.8).epsilon(0.02));
+}
+
+TEST_CASE("Recommended orientation puts the loads along the layers", "[FEA][Orientation]")
+{
+    // A vertical post pulled along Z: printed upright the load is across the layers. Laid on a side it is stronger.
+    const indexed_triangle_set its = its_make_cube(10., 10., 40.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 2.;
+    setup.fixtures.push_back({ side(its, 2, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 2, true);
+    load.force     = Vec3d(0., 0., 600.);
+    setup.loads.push_back(load);
+    const OrientationResult res = recommend_orientation(its, setup);
+    REQUIRE(res.ok);
+    REQUIRE(res.candidates.size() == 3);
+    CHECK(res.candidates[0].axis == "Z");
+    CHECK(res.best != 0);
+    const Material &m = *find_material("PLA");
+    const double gain = res.candidates[res.best].result.safety_factor / res.candidates[0].result.safety_factor;
+    CHECK(gain > 0.8 * m.strength_xy / m.strength_z);
+    CHECK(gain < 1.1 * m.strength_xy / m.strength_z);
+    // The rotation lays the chosen axis vertical.
+    const Vec3d up = rotation_to_print(res.candidates[res.best].build_direction) * res.candidates[res.best].build_direction;
+    CHECK(up.z() == Approx(1.).margin(1e-9));
 }
