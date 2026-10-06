@@ -43,6 +43,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <wx/spinctrl.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/button.h>
@@ -1543,6 +1544,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
             this->model.get_custom_gcode_per_print_z_vector() = model.get_custom_gcode_per_print_z_vector();
             this->model.get_wipe_tower_vector()               = model.get_wipe_tower_vector();
+            this->model.plates                                = model.plates;
             this->model.get_virtual_extruders()               = model.get_virtual_extruders();
 
             FullSpectrum::remap_full_spectrum_on_import(
@@ -2195,6 +2197,8 @@ void Plater::priv::reset()
     // Stop and reset the Print content.
     this->background_process.reset();
     model.clear_objects();
+    // A new project starts with default plates.
+    std::fill(model.plates.begin(), model.plates.end(), ModelPlate{});
     update();
     // Delete object from Sidebar list. Do it after update, so that the GLScene selection is updated with the modified model.
     sidebar->obj_list()->delete_all_objects_from_list();
@@ -2380,7 +2384,12 @@ std::vector<Print::ApplyStatus> apply_to_inactive_beds(
         }
         using MultipleBedsUtils::with_single_bed_model_fff;
         with_single_bed_model_fff(model, bed_index, [&](){
-            result[bed_index] = print->apply(model, config);
+            if (model.plate(bed_index).has_overrides()) {
+                DynamicPrintConfig plate_config{config};
+                model.plate(bed_index).apply_to(plate_config);
+                result[bed_index] = print->apply(model, plate_config);
+            } else
+                result[bed_index] = print->apply(model, config);
         });
     }
     return result;
@@ -2495,7 +2504,9 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     // Apply new config to the possibly running background task and give the user feedback on warnings.
     if (printer_technology == ptFFF) {
         with_single_bed_model_fff(q->model(), s_multiple_beds.get_active_bed(), [&](){
-            invalidated = background_process.apply(q->model(), full_config, &warnings);
+            DynamicPrintConfig plate_config{full_config};
+            q->model().plate(s_multiple_beds.get_active_bed()).apply_to(plate_config);
+            invalidated = background_process.apply(q->model(), plate_config, &warnings);
             apply_statuses[s_multiple_beds.get_active_bed()] = invalidated;
         });
     } else if (printer_technology == ptSLA) {
@@ -5661,6 +5672,16 @@ void Plater::increase_instances(size_t num, int obj_idx, int inst_idx)
     sidebar().obj_list()->increase_object_instances(obj_idx, was_one_instance ? num + 1 : num);
 
     p->selection_changed();
+
+    // Tisma: copies of an object on a locked plate go to another plate.
+    if (const auto it = s_multiple_beds.get_inst_map().find(model_instance->id());
+        it != s_multiple_beds.get_inst_map().end() && model().plate(it->second).locked && printer_technology() == ptFFF &&
+        !(p->config->has("complete_objects") && p->config->opt_bool("complete_objects"))) {
+        UIThreadWorker w;
+        arrange(w, ArrangeSelectionMode::SelectionOnly);
+        w.wait_for_idle();
+    }
+
     this->p->schedule_background_process();
 }
 
@@ -5749,6 +5770,11 @@ void Plater::set_number_of_copies()
 
 void Plater::fill_bed_with_instances()
 {
+    if (model().plate(s_multiple_beds.get_active_bed()).locked) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("This plate is locked. Unlock it in the plate settings to arrange it."));
+        return;
+    }
     auto &w = get_ui_job_worker();
     if (w.is_idle()) {
 
@@ -6160,8 +6186,7 @@ void Plater::export_all_gcodes(bool prefer_removable) {
 
         const fs::path filename{
             default_filename.stem().string()
-            + "_bed"
-            + std::to_string(print_index + 1)
+            + plate_file_suffix(this->model().plates, int(print_index))
             + default_filename.extension().string()
         };
         const fs::path output_file{output_dir / filename};
@@ -6961,8 +6986,7 @@ void Plater::connect_gcode_all() {
 
         const fs::path filename_fixed{
             default_filename.stem().string()
-            + "_bed"
-            + std::to_string(print_index + 1)
+            + plate_file_suffix(this->model().plates, int(print_index))
             + default_filename.extension().string()
         };
         paths.emplace_back(print_index, filename_fixed);
@@ -7521,8 +7545,124 @@ static std::string concat_strings(const std::set<std::string> &strings,
         });
 }
 
+namespace {
+class PlateSettingsDialog : public DPIDialog
+{
+public:
+    PlateSettingsDialog(wxWindow *parent, int bed_index, const ModelPlate &plate)
+        : DPIDialog(parent, wxID_ANY, format_wxstr(_L("Plate %1% settings"), bed_index + 1), wxDefaultPosition, wxDefaultSize,
+                    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    {
+        const int em = em_unit();
+        auto *grid = new wxFlexGridSizer(2, em / 2, em);
+        grid->AddGrowableCol(1);
+        auto add = [this, grid](const wxString &label, wxWindow *ctrl) {
+            grid->Add(new wxStaticText(this, wxID_ANY, label), 0, wxALIGN_CENTER_VERTICAL);
+            grid->Add(ctrl, 1, wxEXPAND);
+        };
+
+        m_name = new wxTextCtrl(this, wxID_ANY, from_u8(plate.name));
+        m_name->SetHint(format_wxstr(_L("Plate %1%"), bed_index + 1));
+        add(_L("Name") + ":", m_name);
+
+        m_sequence = new wxChoice(this, wxID_ANY);
+        m_sequence->Append(_L("As in the print settings"));
+        m_sequence->Append(_L("By layer"));
+        m_sequence->Append(_L("By object"));
+        m_sequence->SetSelection(int(plate.print_sequence));
+        add(_L("Print sequence") + ":", m_sequence);
+
+        m_vase = new wxChoice(this, wxID_ANY);
+        m_vase->Append(_L("As in the print settings"));
+        m_vase->Append(_L("On"));
+        m_vase->Append(_L("Off"));
+        m_vase->SetSelection(int(plate.spiral_vase));
+        add(_L("Spiral vase") + ":", m_vase);
+
+        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
+        add(_L("First layer bed temperature (°C)") + ":", m_first_layer_bed);
+        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
+        add(_L("Bed temperature (°C)") + ":", m_bed);
+
+        m_locked = new wxCheckBox(this, wxID_ANY, _L("Lock the plate: arrange does not move its objects or put others on it"));
+        m_locked->SetValue(plate.locked);
+
+        auto *note = new wxStaticText(this, wxID_ANY, _L("A bed temperature of 0 uses the filament settings. These settings apply only to the G-code of this plate."));
+        note->Wrap(40 * em);
+
+        auto *sizer = new wxBoxSizer(wxVERTICAL);
+        sizer->Add(grid, 0, wxEXPAND | wxALL, em);
+        sizer->Add(m_locked, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
+        sizer->Add(note, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
+        sizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, em);
+        SetSizerAndFit(sizer);
+        m_name->SetFocus();
+    }
+
+    ModelPlate plate() const
+    {
+        ModelPlate p;
+        p.name = into_u8(m_name->GetValue().Strip(wxString::both));
+        p.locked = m_locked->GetValue();
+        p.print_sequence = ModelPlate::Sequence(std::max(0, m_sequence->GetSelection()));
+        p.spiral_vase = ModelPlate::Toggle(std::max(0, m_vase->GetSelection()));
+        p.first_layer_bed_temperature = m_first_layer_bed->GetValue();
+        p.bed_temperature = m_bed->GetValue();
+        return p;
+    }
+
+protected:
+    void on_dpi_changed(const wxRect &) override { Fit(); }
+
+private:
+    wxTextCtrl *m_name;
+    wxChoice   *m_sequence;
+    wxChoice   *m_vase;
+    wxSpinCtrl *m_first_layer_bed;
+    wxSpinCtrl *m_bed;
+    wxCheckBox *m_locked;
+};
+} // namespace
+
+std::vector<size_t> Plater::instances_on_plate(int bed_index) const
+{
+    std::vector<size_t> ids;
+    for (const auto &[id, bed] : s_multiple_beds.get_inst_map())
+        if (bed == bed_index)
+            ids.push_back(id.id);
+    return ids;
+}
+
+void Plater::edit_plate_settings(int bed_index)
+{
+    if (bed_index < 0 || bed_index >= int(model().plates.size()))
+        return;
+    PlateSettingsDialog dlg(this, bed_index, model().plate(bed_index));
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+    const ModelPlate plate = dlg.plate();
+    if (plate == model().plate(bed_index))
+        return;
+    take_snapshot(_L("Plate settings"));
+    const bool was_locked = model().plate(bed_index).locked;
+    std::vector<size_t> locked_instances = model().plate(bed_index).locked_instances;
+    model().plate(bed_index) = plate;
+    model().plate(bed_index).locked_instances = !plate.locked ? std::vector<size_t>{} :
+                                                was_locked   ? std::move(locked_instances) : instances_on_plate(bed_index);
+    // The overrides change the G-code of the plate: reslice it.
+    s_print_statuses[bed_index] = PrintStatus::idle;
+    p->update_restart_background_process(false, false);
+    canvas3D()->set_as_dirty();
+    canvas3D()->request_extra_frame();
+}
+
 void Plater::arrange(bool current_bed_only)
 {
+    if (current_bed_only && model().plate(s_multiple_beds.get_active_bed()).locked) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("This plate is locked. Unlock it in the plate settings to arrange it."));
+        return;
+    }
     ArrangeSelectionMode mode;
     if (current_bed_only)
         mode = wxGetKeyState(WXK_SHIFT) ? ArrangeSelectionMode::CurrentBedSelectionOnly : ArrangeSelectionMode::CurrentBedFull;

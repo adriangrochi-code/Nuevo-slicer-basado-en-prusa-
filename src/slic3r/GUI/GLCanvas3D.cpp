@@ -2248,6 +2248,8 @@ void GLCanvas3D::render()
 
     _render_bed_selector();
 
+    _render_plate_labels();
+
     if (wxGetApp().plater()->is_render_statistic_dialog_visible()) {
         ImGuiPureWrap::begin(std::string("Render statistics"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         ImGuiPureWrap::text("FPS (SwapBuffers() calls per second):");
@@ -6589,6 +6591,77 @@ bool button_with_icon(const wchar_t icon, const std::string& tooltip, bool is_ac
         ImGui::SetTooltip("%s", tooltip.c_str());
 
     return pressed;
+}
+
+void Slic3r::GUI::GLCanvas3D::_render_plate_labels()
+{
+    Plater *plater = wxGetApp().plater();
+    if (plater == nullptr || !wxGetApp().is_editor() || plater->is_preview_shown() || plater->canvas3D() != this ||
+        m_model == nullptr || current_printer_technology() != ptFFF || m_gizmos.get_current_type() != GLGizmosManager::Undefined ||
+        is_layers_editing_enabled())
+        return;
+
+    const Camera &camera = plater->get_camera();
+    // Full 4x4 product: Transform3d is affine and would drop the perspective row.
+    const Matrix4d world_to_clip = camera.get_projection_matrix().matrix() * camera.get_view_matrix().matrix();
+    const std::array<int, 4> &viewport = camera.get_viewport();
+    const BoundingBoxf bb = m_bed.build_volume().bounding_volume2d();
+
+    for (int i = 0; i < s_multiple_beds.get_number_of_beds() && i < int(m_model->plates.size()); ++i) {
+        // Back left corner of the plate, where the label sits like in OrcaSlicer.
+        const Vec3d corner = s_multiple_beds.get_bed_translation(i) + Vec3d(bb.min.x(), bb.max.y(), 0.);
+        const Vec4d clip = world_to_clip * Vec4d(corner.x(), corner.y(), corner.z(), 1.);
+        if (clip.w() <= 0.)
+            continue;
+        const double x = (0.5 + 0.5 * clip.x() / clip.w()) * viewport[2];
+        const double y = (0.5 - 0.5 * clip.y() / clip.w()) * viewport[3];
+        if (x < 0. || x > viewport[2] || y < 0. || y > viewport[3])
+            continue;
+
+        const ModelPlate &plate = m_model->plate(i);
+        ImGui::SetNextWindowPos(ImVec2(float(x), float(y)), ImGuiCond_Always, ImVec2(0.f, 1.f));
+        ImGui::SetNextWindowBgAlpha(0.7f);
+        const std::string window_name = "##plate_label_" + std::to_string(i);
+        ImGui::Begin(window_name.c_str(), nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+        const std::string title = std::to_string(i + 1) + (plate.name.empty() ? std::string() : " - " + plate.name);
+        ImGuiPureWrap::text(title);
+        ImGui::SameLine();
+        const std::string lock_label = (plate.locked ? _u8L("Locked") : _u8L("Lock")) + "##lock" + std::to_string(i);
+        if (plate.locked)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGuiPureWrap::COL_ORANGE_DARK);
+        const bool lock_clicked = ImGui::SmallButton(lock_label.c_str());
+        if (plate.locked)
+            ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", (plate.locked ? _u8L("Unlock the plate") : _u8L("Lock the plate: arrange does not move its objects or put others on it")).c_str());
+        ImGui::SameLine();
+        const std::string settings_label = _u8L("Settings") + "##settings" + std::to_string(i);
+        const bool settings_clicked = ImGui::SmallButton(settings_label.c_str());
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", (plate.has_overrides() ? _u8L("This plate overrides some print settings") : _u8L("Name and print settings of this plate")).c_str());
+        if (plate.has_overrides()) {
+            ImGui::SameLine();
+            ImGuiPureWrap::text("*");
+        }
+        ImGui::End();
+
+        if (lock_clicked) {
+            wxGetApp().CallAfter([plater, i]() {
+                ModelPlate plate = plater->model().plate(i);
+                plate.locked = !plate.locked;
+                plate.locked_instances = plate.locked ? plater->instances_on_plate(i) : std::vector<size_t>{};
+                plater->take_snapshot(plate.locked ? _L("Lock plate") : _L("Unlock plate"));
+                plater->model().plate(i) = plate;
+                plater->canvas3D()->set_as_dirty();
+                plater->canvas3D()->request_extra_frame();
+            });
+        }
+        if (settings_clicked)
+            wxGetApp().CallAfter([plater, i]() { plater->edit_plate_settings(i); });
+    }
 }
 
 void Slic3r::GUI::GLCanvas3D::_render_bed_selector()

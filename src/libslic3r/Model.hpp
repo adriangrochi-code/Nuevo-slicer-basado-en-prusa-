@@ -26,6 +26,7 @@
 #include "EmbossShape.hpp"
 #include "TriangleSelector.hpp"
 #include "CadSource.hpp"
+#include "ModelPlate.hpp"
 #include "Engineering.hpp"
 #include "Feature/FullSpectrum/VirtualExtruder.hpp"
 
@@ -1310,6 +1311,11 @@ public:
     const CustomGCode::Info& custom_gcode_per_print_z() const;
     std::vector<CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }
 
+    // Tisma: per plate name, lock and setting overrides, indexed by bed.
+    std::vector<ModelPlate> plates = std::vector<ModelPlate>(MAX_NUMBER_OF_BEDS);
+    ModelPlate&       plate(int bed_index)       { return plates[bed_index]; }
+    const ModelPlate& plate(int bed_index) const { return plates[bed_index]; }
+
     std::string sla_workflow_uuid; // This is a temporary place to put this, just for the 2.9.x series.
     // It is probably the less invasive way to make this propagate from the frontend to the backend.
 
@@ -1400,7 +1406,7 @@ private:
 	friend class cereal::access;
 	friend class UndoRedo::StackImpl;
 	template<class Archive> void serialize(Archive &ar) {
-		ar(materials, objects, wipe_tower_vector);
+		ar(materials, objects, wipe_tower_vector, plates);
     }
 };
 

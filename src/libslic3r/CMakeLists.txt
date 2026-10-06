@@ -418,6 +418,8 @@ set(SLIC3R_SOURCES
     miniz_extension.cpp
     MarchingSquares.hpp
     MultipleBeds.cpp
+    ModelPlate.cpp
+    ModelPlate.hpp
     MultipleBeds.hpp
     Execution/Execution.hpp
     Execution/ExecutionSeq.hpp

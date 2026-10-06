@@ -32569,3 +32569,69 @@ msgstr "Ángulo libre del cabezal medido con la galga estática a varias alturas
 
 msgid "based on PrusaSlicer %1%"
 msgstr "basado en PrusaSlicer %1%"
+
+msgid "Plate %1% settings"
+msgstr "Ajustes de la plancha %1%"
+
+msgid "Plate %1%"
+msgstr "Plancha %1%"
+
+msgid "Print sequence"
+msgstr "Orden de impresión"
+
+msgid "As in the print settings"
+msgstr "Como en los ajustes de impresión"
+
+msgid "By layer"
+msgstr "Por capa"
+
+msgid "By object"
+msgstr "Por objeto"
+
+msgid "On"
+msgstr "Activado"
+
+msgid "First layer bed temperature (°C)"
+msgstr "Temperatura de cama en la primera capa (°C)"
+
+msgid "Bed temperature (°C)"
+msgstr "Temperatura de cama (°C)"
+
+msgid "Lock the plate: arrange does not move its objects or put others on it"
+msgstr "Bloquear la plancha: organizar no mueve sus objetos ni pone otros en ella"
+
+msgid "A bed temperature of 0 uses the filament settings. These settings apply only to the G-code of this plate."
+msgstr "Una temperatura de cama de 0 usa la del filamento. Estos ajustes solo se aplican al G-code de esta plancha."
+
+msgid "Plate settings"
+msgstr "Ajustes de plancha"
+
+msgid "&Plate Settings"
+msgstr "Ajustes de &plancha"
+
+msgid "Name, lock and print settings of the current plate"
+msgstr "Nombre, bloqueo y ajustes de impresión de la plancha actual"
+
+msgid "This plate is locked. Unlock it in the plate settings to arrange it."
+msgstr "Esta plancha está bloqueada. Desbloquéala en sus ajustes para organizarla."
+
+msgid "Locked"
+msgstr "Bloqueada"
+
+msgid "Lock"
+msgstr "Bloquear"
+
+msgid "Unlock the plate"
+msgstr "Desbloquear la plancha"
+
+msgid "This plate overrides some print settings"
+msgstr "Esta plancha cambia algunos ajustes de impresión"
+
+msgid "Name and print settings of this plate"
+msgstr "Nombre y ajustes de impresión de esta plancha"
+
+msgid "Lock plate"
+msgstr "Bloquear plancha"
+
+msgid "Unlock plate"
+msgstr "Desbloquear plancha"

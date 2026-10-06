@@ -24,6 +24,7 @@ add_executable(${_TEST_NAME}_tests
 	test_mutable_polygon.cpp
 	test_mutable_priority_queue.cpp
 	test_nonplanar.cpp
+	test_model_plate.cpp
 	test_stl.cpp
 	test_meshboolean.cpp
 	test_marchingsquares.cpp

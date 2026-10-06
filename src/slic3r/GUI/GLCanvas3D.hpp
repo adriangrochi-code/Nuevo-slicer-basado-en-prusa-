@@ -1021,6 +1021,8 @@ private:
     void _check_and_update_toolbar_icon_scale();
     void _render_overlays();
     void _render_bed_selector();
+    // Tisma: name, lock and settings buttons of every plate in the 3D view.
+    void _render_plate_labels();
     void _render_volumes_for_picking(const Camera& camera) const;
     void _render_current_gizmo() const { m_gizmos.render_current_gizmo(); }
     void _render_gizmos_overlay();

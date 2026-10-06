@@ -322,6 +322,10 @@ public:
     void render_sliders(GLCanvas3D& canvas);
 
     void arrange(bool current_bed_only);
+    // Tisma: dialog with the name, lock and setting overrides of a plate.
+    void edit_plate_settings(int bed_index);
+    // ObjectID values of the instances on a plate.
+    std::vector<size_t> instances_on_plate(int bed_index) const;
     void arrange(Worker &w, const ArrangeSelectionMode &selected);
 
     void set_current_canvas_as_dirty();

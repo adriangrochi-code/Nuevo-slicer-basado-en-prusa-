@@ -173,8 +173,94 @@ struct WTH : public arr2::WipeTowerHandler
     }
 };
 
+// Tisma: arrange leaves locked plates alone. Their instances and wipe towers are never selected (so
+// they stay where they are) and a fixed item covering the whole plate keeps everything else away.
+class LockedPlatesMask : public arr2::SelectionMask
+{
+    std::unique_ptr<arr2::SelectionMask> m_base;
+    const Model                         &m_model;
+    const std::map<ObjectID, int>       &m_beds;
+    std::set<int>                        m_locked;
+
+public:
+    LockedPlatesMask(std::unique_ptr<arr2::SelectionMask> base, const Model &model,
+                     const std::map<ObjectID, int> &beds, std::set<int> locked)
+        : m_base{std::move(base)}, m_model{model}, m_beds{beds}, m_locked{std::move(locked)} {}
+
+    std::vector<bool> selected_objects() const override
+    {
+        std::vector<bool> ret(m_model.objects.size(), false);
+        for (size_t i = 0; i < ret.size(); ++i) {
+            const std::vector<bool> inst = selected_instances(int(i));
+            ret[i] = std::find(inst.begin(), inst.end(), true) != inst.end();
+        }
+        return ret;
+    }
+
+    std::vector<bool> selected_instances(int obj_id) const override
+    {
+        if (obj_id < 0 || obj_id >= int(m_model.objects.size()))
+            return {};
+        const ModelObject *object = m_model.objects[obj_id];
+        std::vector<bool> ret = m_base ? m_base->selected_instances(obj_id) : std::vector<bool>(object->instances.size(), true);
+        for (size_t i = 0; i < ret.size() && i < object->instances.size(); ++i)
+            if (auto it = m_beds.find(object->instances[i]->id()); it != m_beds.end() && m_locked.count(it->second)) {
+                const std::vector<size_t> &fixed = m_model.plate(it->second).locked_instances;
+                if (fixed.empty() || std::find(fixed.begin(), fixed.end(), object->instances[i]->id().id) != fixed.end())
+                    ret[i] = false;
+            }
+        return ret;
+    }
+
+    bool is_wipe_tower_selected(int bed_index) const override
+    {
+        return !m_locked.count(bed_index) && (m_base ? m_base->is_wipe_tower_selected(bed_index) : true);
+    }
+};
+
+struct LockedPlateHandler : public arr2::WipeTowerHandler
+{
+    ObjectID oid;
+    Polygon  poly;
+    int      bed_index;
+
+    LockedPlateHandler(const ObjectID &id, Polygon p, int bed) : oid{id}, poly{std::move(p)}, bed_index{bed} {}
+
+    void visit(std::function<void(arr2::Arrangeable &)> fn) override
+    {
+        arr2::ArrangeableWipeTowerBase a{oid, poly, bed_index};
+        fn(a);
+    }
+    void visit(std::function<void(const arr2::Arrangeable &)> fn) const override
+    {
+        const arr2::ArrangeableWipeTowerBase a{oid, poly, bed_index};
+        fn(a);
+    }
+    // Never selected: the plate cover is always a fixed item.
+    void set_selection_predicate(std::function<bool(int)>) override {}
+    ObjectID get_id() const override { return oid; }
+};
+
+static ObjectID locked_plate_id(int bed_index)
+{
+    struct LockedPlateId : public ObjectBase { using ObjectBase::ObjectBase; };
+    static std::vector<LockedPlateId> ids(MAX_NUMBER_OF_BEDS);
+    return ids[bed_index].id();
+}
+
+std::set<int> locked_plates(const Model &model)
+{
+    std::set<int> locked;
+    for (int i = 0; i < s_multiple_beds.get_number_of_beds() && i < int(model.plates.size()); ++i)
+        if (model.plate(i).locked)
+            locked.insert(i);
+    return locked;
+}
+
 arr2::SceneBuilder build_scene(Plater &plater, ArrangeSelectionMode mode)
 {
+    const std::set<int> locked = locked_plates(plater.model());
+
     arr2::SceneBuilder builder;
 
     const int current_bed{s_multiple_beds.get_active_bed()};
@@ -199,7 +285,10 @@ arr2::SceneBuilder build_scene(Plater &plater, ArrangeSelectionMode mode)
                 }
             }
         }
-        builder.set_selection(std::move(gui_selection));
+        if (locked.empty())
+            builder.set_selection(std::move(gui_selection));
+        else
+            builder.set_selection(std::make_unique<LockedPlatesMask>(std::move(gui_selection), plater.model(), beds_map, locked));
         builder.set_considered_instances(std::move(considered_instances));
     } else if (mode == ArrangeSelectionMode::CurrentBedSelectionOnly) {
         auto gui_selection{std::make_unique<GUISelectionMask>(&plater.get_selection())};
@@ -243,6 +332,9 @@ arr2::SceneBuilder build_scene(Plater &plater, ArrangeSelectionMode mode)
         builder.set_considered_instances(std::move(instances_on_bed));
     }
 
+    if (mode == ArrangeSelectionMode::Full && !locked.empty())
+        builder.set_selection(std::make_unique<LockedPlatesMask>(nullptr, plater.model(), beds_map, locked));
+
     builder.set_arrange_settings(plater.canvas3D()->get_arrange_settings_view());
 
     const auto wipe_tower_infos = plater.canvas3D()->get_wipe_tower_infos();
@@ -260,6 +352,13 @@ arr2::SceneBuilder build_scene(Plater &plater, ArrangeSelectionMode mode)
             }
             handlers.push_back(std::move(handler));
         }
+    }
+
+    if (plater.config() && (mode == ArrangeSelectionMode::Full || mode == ArrangeSelectionMode::SelectionOnly)) {
+        BoundingBox plate_bb{get_bed_shape(*plater.config())};
+        plate_bb.offset(-scaled(1.));
+        for (int bed : locked)
+            handlers.push_back(std::make_unique<LockedPlateHandler>(locked_plate_id(bed), Polygon{plate_bb.polygon()}, bed));
     }
 
     if (plater.config()) {

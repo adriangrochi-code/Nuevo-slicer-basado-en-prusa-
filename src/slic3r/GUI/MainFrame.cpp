@@ -10,6 +10,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "MainFrame.hpp"
+#include "libslic3r/MultipleBeds.hpp"
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -1819,6 +1820,11 @@ void MainFrame::init_menubar_as_editor()
             "", nullptr, [this]() {return reload_item_condition_cb(); }, this);
 #endif // __APPLE__
 
+        editMenu->AppendSeparator();
+        append_menu_item(editMenu, wxID_ANY, _L("&Plate Settings") + dots,
+            _L("Name, lock and print settings of the current plate"),
+            [this](wxCommandEvent&) { m_plater->edit_plate_settings(s_multiple_beds.get_active_bed()); },
+            "", nullptr, [this]() { return m_plater != nullptr && m_plater->printer_technology() == ptFFF; }, this);
         editMenu->AppendSeparator();
         append_menu_item(editMenu, wxID_ANY, _L("Searc&h") + "\tCtrl+F",
             _L("Search in settings"), [this](wxCommandEvent&) {

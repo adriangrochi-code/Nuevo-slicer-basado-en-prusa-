@@ -367,7 +367,10 @@ bool process_actions(Data& cli, const DynamicPrintConfig& print_config, std::vec
             update_instances_outside_state(model, print_config);
             MultipleBedsUtils::with_single_bed_model_fff(model, 0, [&print, &model, &print_config]()
             {
-                print->apply(model, print_config);
+                // Overrides of the first plate stored in a project.
+                DynamicPrintConfig plate_config{print_config};
+                model.plate(0).apply_to(plate_config);
+                print->apply(model, plate_config);
             });
 
             std::string err = print->validate();

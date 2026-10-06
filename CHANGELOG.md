@@ -10,6 +10,15 @@ Las compilaciones de prueba del CI muestran además `+<ejecución>-<commit>` (po
 `SLIC3R_VERSION` sigue siendo la versión de PrusaSlicer en la que se basa (2.9.6): la usan los perfiles, los 3MF y
 las instantáneas de configuración para la compatibilidad, y no cambia con las versiones de Tisma.
 
+## Sin publicar (0.10.0)
+
+- **Planchas al estilo de OrcaSlicer** (sobre las varias camas de PrusaSlicer 2.9): nombre por plancha, bloqueo
+  (organizar no mueve lo que había al bloquear ni pone nada más; las copias con «+» van a otra plancha) y ajustes
+  propios por plancha (orden de impresión, jarrón en espiral y temperaturas de cama) que solo cambian su G-code.
+  Etiqueta con botones en cada plancha y menú Editar > Ajustes de plancha; se guardan en el 3MF
+  (`Metadata/Tisma_plates.xml`) y el G-code exportado lleva el nombre de la plancha.
+- La comprobación de versión ya no anuncia versiones de PrusaSlicer como actualizaciones de Tisma.
+
 ## 0.9.0 (beta, sin validar todavía en impresoras reales)
 
 Base: PrusaSlicer 2.9.6.

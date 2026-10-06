@@ -98,6 +98,8 @@ const std::string SLA_SUPPORT_POINTS_FILE = "Metadata/Slic3r_PE_sla_support_poin
 const std::string SLA_DRAIN_HOLES_FILE = "Metadata/Slic3r_PE_sla_drain_holes.txt";
 const std::string CUSTOM_GCODE_PER_PRINT_Z_FILE = "Metadata/Prusa_Slicer_custom_gcode_per_print_z.xml";
 const std::string WIPE_TOWER_INFORMATION_FILE = "Metadata/Prusa_Slicer_wipe_tower_information.xml";
+// Tisma: per plate names, locks and setting overrides.
+const std::string PLATES_FILE = "Metadata/Tisma_plates.xml";
 const std::string CUT_INFORMATION_FILE = "Metadata/Prusa_Slicer_cut_information.xml";
 // Tisma: B-Rep origin of the volumes imported from STEP (face of every triangle) and the STEP files themselves.
 // Other slicers ignore these entries.
@@ -917,6 +919,14 @@ namespace Slic3r {
                 else if (boost::algorithm::iequals(name, WIPE_TOWER_INFORMATION_FILE)) {
                     // extract wipe tower information file
                     _extract_wipe_tower_information_from_archive(archive, stat, model);
+                }
+                else if (boost::algorithm::iequals(name, PLATES_FILE)) {
+                    if (stat.m_uncomp_size > 0) {
+                        std::string buffer((size_t)stat.m_uncomp_size, 0);
+                        if (mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0) == 0 ||
+                            !plates_from_xml(buffer, model.plates))
+                            add_error("Error while reading the plate settings");
+                    }
                 }
                 else if (boost::algorithm::iequals(name, MODEL_CONFIG_FILE)) {
                     // extract slic3r model config file
@@ -3173,6 +3183,15 @@ namespace Slic3r {
 
         // Adds wipe tower information ("Metadata/Prusa_Slicer_wipe_tower_information.xml").
         if (!_add_wipe_tower_information_file_to_archive(archive, model)) {
+            close_zip_writer(&archive);
+            boost::filesystem::remove(filename);
+            return false;
+        }
+
+        // Adds the plate settings ("Metadata/Tisma_plates.xml"), when any plate has them.
+        if (const std::string plates = plates_to_xml(model.plates, s_multiple_beds.get_number_of_beds()); !plates.empty() &&
+            !mz_zip_writer_add_mem(&archive, PLATES_FILE.c_str(), (const void*)plates.data(), plates.length(), MZ_DEFAULT_COMPRESSION)) {
+            add_error("Unable to add the plate settings file to archive");
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
