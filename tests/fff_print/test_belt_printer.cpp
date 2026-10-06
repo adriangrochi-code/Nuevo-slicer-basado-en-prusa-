@@ -6,6 +6,8 @@
 #include <libslic3r/Print.hpp>
 
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <sstream>
 
 #include "test_data.hpp"

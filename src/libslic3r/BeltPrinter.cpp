@@ -5,6 +5,7 @@
 #include "BeltPrinter.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -19,8 +20,8 @@ namespace Belt {
 
 Frame::Frame(double angle_deg, double c_offset) :
     angle(std::clamp(angle_deg, 10., 80.)),
-    sin_a(std::sin(angle * M_PI / 180.)),
-    cos_a(std::cos(angle * M_PI / 180.)),
+    sin_a(std::sin(angle * PI / 180.)),
+    cos_a(std::cos(angle * PI / 180.)),
     c_offset(c_offset)
 {}
 
@@ -143,7 +144,7 @@ void GCodeTransform::process_line(std::string_view line, std::string &out)
         while (k < code.size() && code[k] != ' ' && code[k] != '\t')
             ++ k;
         const std::string_view word = code.substr(j, k - j);
-        const char letter = char(std::toupper(word.front()));
+        const char letter = char(std::toupper(static_cast<unsigned char>(word.front())));
         if (letter == 'X' || letter == 'Y' || letter == 'Z') {
             const std::string value(word.substr(1));
             m_pos[letter - 'X'] = std::atof(value.c_str());
