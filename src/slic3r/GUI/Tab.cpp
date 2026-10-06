@@ -1120,9 +1120,8 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         og_freq_chng_params->set_value("brim", val);
     }
 
-    if (m_type == Preset::TYPE_PRINT)
-        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
-            quick_settings->update_value(opt_key);
+    if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+        quick_settings->update_value(m_type, opt_key);
 
     if (opt_key == "wipe_tower" || opt_key == "single_extruder_multi_material" || opt_key == "extruders_count" )
         update_wiping_button_visibility();
@@ -3877,6 +3876,10 @@ void Tab::load_current_preset()
             if (m_type == Preset::TYPE_SLA_PRINT || m_type == Preset::TYPE_PRINT)
                 update_frequently_changed_parameters();
         }
+
+        // Another preset: the quick settings of the sidebar show its values.
+        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+            quick_settings->reload_config();
 
         m_opt_status_value = (m_presets->get_selected_preset_parent() ? osSystemValue : 0) | osInitValue;
         init_options_list();

@@ -32273,3 +32273,45 @@ msgstr "La impresora no está conectada: la impresión no se inició."
 
 msgid "Slice the plate first, then print via USB."
 msgstr "Primero lamina la placa y después imprime por USB."
+
+msgid "Min fan speed"
+msgstr "Velocidad mínima del ventilador"
+
+msgid "Max fan speed"
+msgstr "Velocidad máxima del ventilador"
+
+msgid "All settings"
+msgstr "Todos los ajustes"
+
+msgid "Search and add settings to this panel, or remove them"
+msgstr "Buscar y agregar ajustes a este panel, o quitarlos"
+
+msgid "Open the full settings of this section"
+msgstr "Abrir todos los ajustes de esta sección"
+
+msgid "No settings here: press \"Add\" to choose them."
+msgstr "No hay ajustes aquí: pulsa «Agregar» para elegirlos."
+
+msgid "Quick print settings"
+msgstr "Ajustes rápidos de impresión"
+
+msgid "Quick filament settings"
+msgstr "Ajustes rápidos de filamento"
+
+msgid "Quick printer settings"
+msgstr "Ajustes rápidos de impresora"
+
+msgid "Select the settings to show in the sidebar."
+msgstr "Elige los ajustes que se muestran en la barra lateral."
+
+msgctxt "Section"
+msgid "Print"
+msgstr "Impresión"
+
+msgctxt "Section"
+msgid "Filament"
+msgstr "Filamento"
+
+msgctxt "Section"
+msgid "Printer"
+msgstr "Impresora"
