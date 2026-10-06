@@ -50,6 +50,8 @@ set(SLIC3R_SOURCES
     Brim.hpp
     BuildVolume.cpp
     BuildVolume.hpp
+    BeltPrinter.cpp
+    BeltPrinter.hpp
     BoostAdapter.hpp
     clipper.cpp
     clipper.hpp

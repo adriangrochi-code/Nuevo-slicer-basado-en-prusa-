@@ -224,7 +224,7 @@ Orden indicado por el usuario: primero modernizar (render, rendimiento, bugs), d
 | — | Aceleración del FEA: multigrid y después GPU con Vulkan (precisión mixta) | Propuesta, sin autorizar |
 | — | Detección de fallas con cámara (servidor de Obico como servicio aparte, cámara en la impresión por USB, panel de granja en Business) | Propuesta; verificar la licencia de los pesos del modelo |
 | — | Rediseño del panel derecho (ajustes rápidos de impresión, filamento e impresora con buscador) | Propuesta, sin autorizar |
-| — | Impresoras de cinta (método de Cura BlackBelt reimplementado; FEA con capas inclinadas) | Propuesta, esperando modelo de impresora y ángulo |
+| — | Impresoras de cinta con ángulo configurable (método de Cura BlackBelt reimplementado; FEA con capas inclinadas), ver `docs/BELT_PRINTER.md` | Versión 1 hecha con pruebas automáticas; falta probar en una impresora real |
 
 Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
 - Licencia: con la AGPL, el código del servidor modificado que se ofrece por red debe estar disponible para sus
@@ -248,6 +248,6 @@ Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
 | Estrategia de iteración | Manual en v1. |
 | Trackhead | Esperando referencias. |
 | Arc Overhang definitivo | Revisar la versión actual con impresiones de prueba. |
-| Máquinas de cinta | Esperando especificaciones. |
+| Máquinas de cinta | **Decidido: ángulo configurable** (45° por defecto), `docs/BELT_PRINTER.md`. |
 | Alcance no planar | Mantener ondas/cónico + colisiones; Curved Z después. |
 | Diseño visual | Estilo PrusaSlicer 3.0 con paleta Tisma (en curso). |

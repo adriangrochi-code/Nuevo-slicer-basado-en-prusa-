@@ -100,6 +100,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "before_layer_gcode",
         "between_objects_gcode",
         "binary_gcode",
+        // Belt printers: the slicing changes through the transformation of the model in Print::apply().
+        "belt_printer",
+        "belt_angle",
         "bridge_acceleration",
         "bridge_fan_speed",
         "enable_dynamic_fan_speeds",
@@ -572,8 +575,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         return profile;
     };
 
-    // Checks that the print does not exceed the max print height
-    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++ print_object_idx) {
+    // Checks that the print does not exceed the max print height (a belt printer has no maximum along the belt).
+    for (size_t print_object_idx = 0; print_object_idx < (m_config.belt_printer.value ? 0 : m_objects.size()); ++ print_object_idx) {
         const PrintObject &print_object = *m_objects[print_object_idx];
         //FIXME It is quite expensive to generate object layers just to get the print height!
         if (auto layers = generate_object_layers(print_object.slicing_parameters(), layer_height_profile(print_object_idx));

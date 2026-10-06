@@ -18,6 +18,8 @@
 #include <cstddef>
 
 #include "Model.hpp"
+#include "BeltPrinter.hpp"
+#include <optional>
 #include "Print.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Config.hpp"
@@ -1163,8 +1165,26 @@ static void validate_print_config_change(const PrintConfig &old_config, const Dy
     }
 }
 
-Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_config, std::vector<std::string> *warnings, const DynamicPrintConfig* original_config)
+Print::ApplyStatus Print::apply(const Model &model_in, DynamicPrintConfig new_full_config, std::vector<std::string> *warnings, const DynamicPrintConfig* original_config)
 {
+    // Tisma, belt printers: the part is placed on the belt as on a bed; it is sliced rotated, so that the inclined printing
+    // planes are horizontal. The settings which do not apply to a belt are disabled.
+    std::optional<Model> belt_model;
+    double belt_c_offset = 0.;
+    if (Belt::enabled(new_full_config)) {
+        belt_model.emplace(model_in);
+        Belt::transform_model(*belt_model, Belt::Frame(Belt::angle(new_full_config)), belt_c_offset);
+        new_full_config.set("support_material", false);
+        new_full_config.set("raft_layers", 0);
+        new_full_config.set("brim_width", 0.);
+        new_full_config.set("skirts", 0);
+        new_full_config.set("wipe_tower", false);
+        new_full_config.set("complete_objects", false);
+        new_full_config.set("spiral_vase", false);
+        new_full_config.set_key_value("arc_fitting", new ConfigOptionEnum<ArcFittingType>(ArcFittingType::Disabled));
+    }
+    const Model &model = belt_model ? *belt_model : model_in;
+
 #ifdef _DEBUG
     check_model_ids_validity(model);
 #endif /* _DEBUG */
@@ -1214,6 +1234,12 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
     // Apply variables to placeholder parser. The placeholder parser is used by G-code export,
     // which should be stopped if print_diff is not empty.
     const bool virtual_extruders_differ = (virtual_extruders != m_virtual_extruders);
+
+    // Belt printers: the shift of the slicing frame is used by the G-code export.
+    if (belt_c_offset != m_belt_c_offset) {
+        update_apply_status(this->invalidate_step(psGCodeExport));
+        m_belt_c_offset = belt_c_offset;
+    }
 
     const size_t prev_num_extruders = m_config.nozzle_diameter.size();
     m_virtual_extruders             = virtual_extruders;

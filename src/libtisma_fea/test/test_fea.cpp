@@ -808,6 +808,23 @@ TEST_CASE("Line width of the profile", "[FEA]")
     CHECK(line_width(*object, config) == Approx(0.8));
 }
 
+TEST_CASE("Belt printer inclines the layers of the analysis", "[FEA][Belt]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(20., 20., 20.)));
+    object->add_instance();
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    CHECK((input.setup.build_direction - Vec3d::UnitZ()).norm() < 1e-9);
+    config.set_deserialize_strict({ { "belt_printer", 1 }, { "belt_angle", 30 } });
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    // The layers are stacked along the normal of the gantry: (0, sin 30°, cos 30°).
+    CHECK((input.setup.build_direction - Vec3d(0., 0.5, std::sqrt(3.) / 2.)).norm() < 1e-9);
+}
+
 TEST_CASE("Build direction rotates the weak axis of the material", "[FEA][Orientation]")
 {
     // A bar pulled along X: printed with the layers stacked along Z it is pulled along the layers; with the

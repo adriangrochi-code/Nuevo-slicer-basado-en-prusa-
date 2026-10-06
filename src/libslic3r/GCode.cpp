@@ -26,6 +26,7 @@
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "I18N.hpp"
 #include "GCode.hpp"
+#include "BeltPrinter.hpp"
 #include "Exception.hpp"
 #include "ExtrusionEntity.hpp"
 #include "Geometry/ConvexHull.hpp"
@@ -352,7 +353,10 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
 
         // Check that there are extrusions on the very first layer. The case with empty
         // first layer may result in skirt/brim in the air and maybe other issues.
-        if (layers_to_print.size() == 1u) {
+        // On a belt printer the first layers are slivers of the part where it touches the belt (they may be empty), and
+        // the parts further along the belt start at higher layers.
+        const bool belt = object.print()->config().belt_printer.value;
+        if (layers_to_print.size() == 1u && ! belt) {
             if (!has_extrusions)
                 throw Slic3r::SlicingError(_u8L("There is an object with no extrusions in the first layer.") + "\n" +
                                            _u8L("Object name") + ": " + object.model_object()->name);
@@ -373,7 +377,7 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
             // Negative support_contact_z is not taken into account, it can result in false positives in cases
             // where previous layer has object extrusions too (https://github.com/prusa3d/PrusaSlicer/issues/2752)
 
-            if (has_extrusions && layer_to_print.print_z() > maximal_print_z + 2. * EPSILON)
+            if (has_extrusions && layer_to_print.print_z() > maximal_print_z + 2. * EPSILON && ! (belt && last_extrusion_layer == nullptr))
                 warning_ranges.emplace_back(std::make_pair((last_extrusion_layer ? last_extrusion_layer->print_z() : 0.), layers_to_print.back().print_z()));
         }
         // Remember last layer with extrusions.
@@ -1299,6 +1303,13 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Set other general things.
     file.write(this->preamble());
 
+    // Tisma, belt printers: from here to the end G-code, the moves are converted to the axes of the machine.
+    std::optional<Belt::GCodeTransform> belt_transform;
+    if (print.config().belt_printer.value) {
+        belt_transform.emplace(Belt::Frame(print.config().belt_angle.value, print.belt_c_offset()));
+        file.set_belt_transform(&*belt_transform);
+    }
+
     print.throw_if_canceled();
 
     // Collect custom seam data from all objects.
@@ -1452,6 +1463,9 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
 
     // adds tag for processor
     file.write_format(";%s%s\n", GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Role).c_str(), gcode_extrusion_role_to_string(GCodeExtrusionRole::Custom).c_str());
+
+    // The end G-code is written in the axes of the machine.
+    file.set_belt_transform(nullptr);
 
     // Process filament-specific gcode in extruder order.
     {
@@ -3328,6 +3342,8 @@ void GCodeGenerator::GCodeOutputStream::write(const char *what)
     if (what != nullptr) {
         //FIXME don't allocate a string, maybe process a batch of lines?
         std::string gcode(m_find_replace ? m_find_replace->process_layer(what) : what);
+        if (m_belt)
+            gcode = m_belt->process(gcode);
         // writes string to file
         fwrite(gcode.c_str(), 1, gcode.size(), this->f);
         m_processor.process_buffer(gcode);

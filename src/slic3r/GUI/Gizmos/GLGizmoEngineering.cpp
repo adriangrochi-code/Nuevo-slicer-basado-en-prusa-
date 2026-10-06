@@ -14,6 +14,7 @@
 
 #include <libslic3r/Model.hpp>
 #include <libslic3r/PresetBundle.hpp>
+#include <libslic3r/BeltPrinter.hpp>
 #include <tisma_fea/Materials.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Optimize.hpp>
@@ -1369,6 +1370,11 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
 
     // Orientation of the print: the layers hold less across than along.
     if (ImGui::CollapsingHeader(_u8L("Print orientation").c_str())) {
+      // Belt printers: the layers are inclined by the gantry; the orientations compared here are the ones of a flat bed.
+      if (Belt::enabled(wxGetApp().preset_bundle->printers.get_edited_preset().config))
+        ImGuiPureWrap::text_wrapped(_u8L("Belt printer: the analysis uses the layers inclined by the gantry. "
+                                         "The recommended orientation is only available for flat beds."), width);
+      else {
         ImGuiPureWrap::text_wrapped(_u8L("The layers are weaker across than along: compares the part printed as it is placed with the part "
                                          "laid on its X and Y axes, with the same loads, and recommends the strongest."), width);
         if (ImGuiPureWrap::button(_u8L("Recommend orientation")) && can_run)
@@ -1397,6 +1403,7 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             }
             ImGuiPureWrap::text_wrapped(_u8L("The overhangs and the supports of the new orientation are not checked."), width);
         }
+      }
     }
 
     ImGui::PopItemWidth();

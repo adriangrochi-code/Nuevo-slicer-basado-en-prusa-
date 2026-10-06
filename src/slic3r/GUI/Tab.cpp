@@ -2829,6 +2829,11 @@ void TabPrinter::build_fff()
         optgroup->append_single_option_line("remaining_times");
         optgroup->append_single_option_line("binary_gcode");
 
+        // Tisma: belt printers.
+        optgroup = page->new_optgroup(L("Belt printer"));
+        optgroup->append_single_option_line("belt_printer");
+        optgroup->append_single_option_line("belt_angle");
+
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
                 if (opt_key == "thumbnails" && m_config->has("thumbnails_format")) {

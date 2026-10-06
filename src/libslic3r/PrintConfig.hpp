@@ -869,6 +869,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionString,              before_layer_gcode))
     ((ConfigOptionString,              between_objects_gcode))
     ((ConfigOptionBool,                binary_gcode))
+    ((ConfigOptionBool,                belt_printer))
+    ((ConfigOptionFloat,               belt_angle))
     ((ConfigOptionFloats,              deretract_speed))
     ((ConfigOptionString,              end_gcode))
     ((ConfigOptionStrings,             end_filament_gcode))

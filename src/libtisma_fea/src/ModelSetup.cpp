@@ -7,6 +7,7 @@
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/Model.hpp>
 #include <libslic3r/PrintConfig.hpp>
+#include <libslic3r/BeltPrinter.hpp>
 
 #include "tisma_fea/Structures.hpp"
 
@@ -173,6 +174,9 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
         cfg.apply(object.config.get(), true);
         if (const ConfigOptionFloat *lh = cfg.option<ConfigOptionFloat>("layer_height"); lh && lh->value > 0.)
             out.layer_height = lh->value;
+        // Belt printers: the layers are inclined by the angle of the gantry (stacked along its normal).
+        if (Belt::enabled(cfg))
+            setup.build_direction = Belt::Frame(Belt::angle(cfg)).layer_normal_world();
         // Nozzle temperature of the extruder of the object (layer adhesion).
         if (const ConfigOptionInts *t = cfg.option<ConfigOptionInts>("temperature"); t && ! t->values.empty()) {
             int extruder = 1;

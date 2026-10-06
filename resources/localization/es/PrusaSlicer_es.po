@@ -32315,3 +32315,21 @@ msgstr "Filamento"
 msgctxt "Section"
 msgid "Printer"
 msgstr "Impresora"
+
+msgid "Belt printer"
+msgstr "Impresora de cinta"
+
+msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
+msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, Y la cinta (avanza entre capas) y Z a lo largo del cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
+
+msgid "Gantry angle"
+msgstr "Ángulo del cabezal"
+
+msgid "Belt printer gantry angle"
+msgstr "Ángulo del cabezal de la impresora de cinta"
+
+msgid "Angle between the gantry (the printing plane) and the belt. Most belt printers use 45°."
+msgstr "Ángulo entre el cabezal (el plano de impresión) y la cinta. La mayoría de las impresoras de cinta usan 45°."
+
+msgid "Belt printer: the analysis uses the layers inclined by the gantry. The recommended orientation is only available for flat beds."
+msgstr "Impresora de cinta: el análisis usa las capas inclinadas por el cabezal. La orientación recomendada solo está disponible para camas planas."

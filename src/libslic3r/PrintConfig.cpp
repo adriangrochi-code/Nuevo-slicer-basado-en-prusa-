@@ -2282,6 +2282,26 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    // Tisma: belt printers (src/libslic3r/BeltPrinter.hpp).
+    def = this->add("belt_printer", coBool);
+    def->label = L("Belt printer");
+    def->tooltip = L("The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; "
+                     "it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, "
+                     "Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, "
+                     "sequential printing, spiral vase and arc fitting are not available on a belt.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("belt_angle", coFloat);
+    def->label = L("Gantry angle");
+    def->full_label = L("Belt printer gantry angle");
+    def->tooltip = L("Angle between the gantry (the printing plane) and the belt. Most belt printers use 45°.");
+    def->sidetext = L("°");
+    def->min = 10;
+    def->max = 80;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(45.));
+
     def = this->add("machine_limits_usage", coEnum);
     def->label = L("How to apply limits");
     def->full_label = L("Purpose of Machine Limits");

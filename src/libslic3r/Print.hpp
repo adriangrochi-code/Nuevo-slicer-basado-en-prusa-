@@ -647,6 +647,8 @@ public:
         std::vector<std::string> *warnings = nullptr,
         const DynamicPrintConfig *original_config = nullptr
     ) override;
+    // Tisma, belt printers: shift of the slicing frame across the layers (see Belt::Frame::c_offset).
+    double              belt_c_offset() const { return m_belt_c_offset; }
     void set_task(const TaskParams &params) override {
         PrintBaseWithState<PrintStep, psCount>::set_task_impl(params, m_objects);
     }
@@ -787,6 +789,7 @@ private:
 
     // Following section will be consumed by the GCodeGenerator.
     ToolOrdering 							m_tool_ordering;
+    double                                  m_belt_c_offset { 0. };
     WipeTowerData                           m_wipe_tower_data {m_tool_ordering};
 
     // Estimated print time, filament consumed.

@@ -53,6 +53,8 @@
 
 namespace Slic3r {
 
+namespace Belt { class GCodeTransform; }
+
 // Forward declarations.
 class GCodeGenerator;
 struct WipeTowerData;
@@ -189,6 +191,8 @@ private:
         void set_find_replace(GCodeFindReplace *find_replace, bool enabled) { m_find_replace_backup = find_replace; m_find_replace = enabled ? find_replace : nullptr; }
         void find_replace_enable() { m_find_replace = m_find_replace_backup; }
         void find_replace_supress() { m_find_replace = nullptr; }
+        // Tisma, belt printers: converts the moves to the axes of the machine (nullptr = off: custom start / end G-code).
+        void set_belt_transform(Belt::GCodeTransform *belt) { m_belt = belt; }
 
         bool is_open() const { return f; }
         bool is_error() const;
@@ -214,6 +218,7 @@ private:
         GCodeFindReplace *m_find_replace { nullptr };
         // If suppressed, the backoup holds m_find_replace.
         GCodeFindReplace *m_find_replace_backup { nullptr };
+        Belt::GCodeTransform *m_belt { nullptr };
         GCodeProcessor   &m_processor;
     };
     void            _do_export(Print &print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb);
