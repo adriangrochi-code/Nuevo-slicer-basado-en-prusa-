@@ -102,6 +102,14 @@ std::pair<std::string, bool> SlicingProcessCompletedEvent::format_error_message(
 	return std::make_pair(std::move(error), monospace);
 }
 
+std::string BackgroundSlicingProcess::sliced_gcode_path() const
+{
+	if (m_print != m_fff_print || m_fff_print == nullptr || ! this->is_step_done(bspsGCodeFinalize) ||
+		! boost::filesystem::exists(m_temp_output_path))
+		return {};
+	return m_temp_output_path;
+}
+
 void BackgroundSlicingProcess::set_temp_output_path(int bed_idx)
 {
     boost::filesystem::path temp_path(wxStandardPaths::Get().GetTempDir().utf8_str().data());

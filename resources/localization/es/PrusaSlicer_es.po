@@ -32231,3 +32231,45 @@ msgstr "Ultra (vóxel de 1 ancho de línea)"
 
 msgid "The layers are weaker across than along: compares the part printed as it is placed with the part laid on its X and Y axes, with the same loads, and recommends the strongest."
 msgstr "Las capas resisten menos a través que a lo largo: compara la pieza impresa como está con la pieza acostada sobre sus ejes X e Y, con las mismas cargas, y recomienda la más resistente."
+
+msgid "Remove last load"
+msgstr "Quitar la última carga"
+
+msgid "Removes the last load added (Ctrl+Z restores it)"
+msgstr "Quita la última carga agregada (Ctrl+Z la recupera)"
+
+msgid "Removes all the fixed faces and loads of the part (Ctrl+Z restores them)"
+msgstr "Quita todas las caras fijas y cargas de la pieza (Ctrl+Z las recupera)"
+
+msgid "Clear supports and loads"
+msgstr "Limpiar apoyos y cargas"
+
+msgid "(the print starts when the printer is ready)"
+msgstr "(la impresión empieza cuando la impresora esté lista)"
+
+msgid "A print is already in progress on the printer."
+msgstr "Ya hay una impresión en curso en la impresora."
+
+msgid "Cannot connect to %1%: %2%"
+msgstr "No se puede conectar a %1%: %2%"
+
+msgid "Connect automatically to this printer (the connection stays open when this window is closed)"
+msgstr "Conectar automáticamente a esta impresora (la conexión sigue abierta al cerrar esta ventana)"
+
+msgid "Print via USB on the saved printer"
+msgstr "Imprimir por USB en la impresora guardada"
+
+msgid "Printing %1%"
+msgstr "Imprimiendo %1%"
+
+msgid "The G-code is empty."
+msgstr "El G-code está vacío."
+
+msgid "The binary G-code cannot be converted to text: %1%"
+msgstr "El G-code binario no se puede convertir a texto: %1%"
+
+msgid "The printer is not connected: the print was not started."
+msgstr "La impresora no está conectada: la impresión no se inició."
+
+msgid "Slice the plate first, then print via USB."
+msgstr "Primero lamina la placa y después imprime por USB."

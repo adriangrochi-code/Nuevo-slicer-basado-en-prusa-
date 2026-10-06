@@ -120,6 +120,7 @@
 #endif
 #ifdef _WIN32
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <wx/msw/registry.h>
 #endif
 
 #if ENABLE_THUMBNAIL_GENERATOR_DEBUG
@@ -852,6 +853,7 @@ void GUI_App::post_init()
             // start before cw so it is canceled by cw if needed?
             this->get_preset_updater_wrapper()->sync_preset_updater(this, preset_bundle);
             bool cw_showed = this->config_wizard_startup();
+            this->ensure_url_handler();
             if (! cw_showed) {
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
@@ -3574,6 +3576,35 @@ void GUI_App::window_pos_sanitize(wxTopLevelWindow* window)
     if (window->GetScreenRect() != metrics.get_rect()) {
         window->SetSize(metrics.get_rect());
     }
+}
+
+void GUI_App::ensure_url_handler()
+{
+    if (! is_editor() || app_config == nullptr)
+        return;
+    // "0": the user disabled the downloads from the browser.
+    if (app_config->has("downloader_url_registered") && ! app_config->get_bool("downloader_url_registered"))
+        return;
+    // Downloads go to the folder chosen in the wizard, or to the Downloads folder of the user.
+    const boost::filesystem::path dest(app_config->get("url_downloader_dest"));
+    if (dest.empty() || ! boost::filesystem::is_directory(dest)) {
+        const wxString downloads = wxStandardPaths::Get().GetUserDir(wxStandardPaths::Dir_Downloads);
+        if (! downloads.IsEmpty())
+            app_config->set("url_downloader_dest", into_u8(downloads));
+    }
+#ifdef _WIN32
+    // The link may point to another installation (PrusaSlicer, or a previous Tisma): point it here.
+    const std::string binary = boost::filesystem::canonical(boost::dll::program_location()).string();
+    wxRegKey key(wxRegKey::HKCU, "Software\\Classes\\prusaslicer\\shell\\open\\command");
+    wxString current;
+    if (! key.Exists() || ! key.QueryValue(wxEmptyString, current) || current.Find(wxString::FromUTF8(binary)) == wxNOT_FOUND) {
+        BOOST_LOG_TRIVIAL(info) << "Registering prusaslicer:// links to " << binary;
+        DownloaderUtils::Worker::perform_url_register();
+    }
+#elif defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
+    // On Linux the desktop integration registers the links (Preferences / Desktop integration).
+#endif
+    app_config->set("downloader_url_registered", "1");
 }
 
 bool GUI_App::config_wizard_startup()

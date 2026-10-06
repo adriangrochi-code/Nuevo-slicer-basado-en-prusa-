@@ -92,6 +92,7 @@ class Sidebar : public wxPanel
     ::Button*       m_btn_reslice               { nullptr };
     wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
+    ScalableButton* m_btn_usb_print             { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
                                                              //
     wxButton* m_btn_export_all_gcode                { nullptr };
@@ -151,6 +152,7 @@ public:
     bool show_reslice(bool show) const;
     bool show_export(bool show) const;
     bool show_send(bool show) const;
+    bool show_usb_print(bool show) const;
     bool show_export_removable(bool show) const;
     bool show_connect(bool show) const;
 

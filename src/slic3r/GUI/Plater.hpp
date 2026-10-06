@@ -256,6 +256,8 @@ public:
     bool is_background_process_update_scheduled() const;
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
+    // Tisma: prints the sliced G-code on the USB printer saved in the "Print via USB" window.
+    void usb_print();
     void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
 
@@ -352,6 +354,8 @@ public:
     // Tisma: Structures workspace (phase 6): Engineering with the section of the lightest infill open.
     void open_structures();
     bool is_engineering_open() const;
+    // Closes the Engineering workspace (back to Prepare).
+    void close_engineering();
     bool can_split_to_objects() const;
     bool can_split_to_volumes() const;
     bool can_arrange() const;

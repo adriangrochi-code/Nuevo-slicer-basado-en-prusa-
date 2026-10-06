@@ -20,6 +20,7 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/BitmapCache.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
+#include "slic3r/GUI/USBPrintDialog.hpp"
 #include "slic3r/Utils/PrusaConnect.hpp"
 
 #include <cstddef>
@@ -4173,6 +4174,8 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
     const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
+    // Tisma: a USB printer was connected once.
+    const bool usb_print_shown = printer_technology == ptFFF && USBPrintDialog::has_saved_printer();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -4180,6 +4183,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 		if (sidebar->show_reslice(false) |
 			sidebar->show_export(true) |
 			sidebar->show_send(send_gcode_shown) |
+			sidebar->show_usb_print(usb_print_shown) |
             sidebar->show_connect(connect_gcode_shown) |
 			sidebar->show_export_removable(removable_media_status.has_removable_drives))
             sidebar->Layout();
@@ -4192,6 +4196,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
         if (sidebar->show_reslice(ready_to_slice) |
             sidebar->show_export(!ready_to_slice) |
             sidebar->show_send(send_gcode_shown && !ready_to_slice) |
+            sidebar->show_usb_print(usb_print_shown && !ready_to_slice) |
             sidebar->show_connect(connect_gcode_shown && !ready_to_slice) |
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
@@ -6653,6 +6658,16 @@ void Plater::open_structures()
             gizmo->show_infill_section();
 }
 
+void Plater::close_engineering()
+{
+    if (! is_engineering_open())
+        return;
+    GLCanvas3D *canvas = p->view3D->get_canvas3d();
+    // Closes the gizmo (the part is shown normally again), whatever the selection.
+    canvas->get_gizmos_manager().reset_all_states();
+    canvas->set_as_dirty();
+}
+
 bool Plater::is_engineering_open() const
 {
     return p->view3D && p->view3D->get_canvas3d()->get_gizmos_manager().get_current_type() == GLGizmosManager::Engineering;
@@ -7023,6 +7038,22 @@ void Plater::send_gcode()
     }
     */
     send_gcode_inner(physical_printer_config);
+}
+
+void Plater::usb_print()
+{
+    if (p->printer_technology != ptFFF)
+        return;
+    const std::string path = p->background_process.sliced_gcode_path();
+    if (path.empty()) {
+        // Not sliced yet: slice, the button prints when the G-code is ready.
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Slice the plate first, then print via USB."));
+        reslice();
+        select_view_3D("Preview");
+        return;
+    }
+    USBPrintDialog::print_file(wxGetApp().mainframe, path, into_u8(get_project_filename(".gcode")));
 }
 
 std::string Plater::get_upload_filename()

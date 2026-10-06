@@ -655,6 +655,7 @@ Sidebar::Sidebar(Plater *parent)
     };
 
     init_scalable_btn(&m_btn_send_gcode   , "export_gcode", _L("Send to printer") + " " +GUI::shortkey_ctrl_prefix() + "Shift+G");
+    init_scalable_btn(&m_btn_usb_print    , "plug", _L("Print via USB on the saved printer"));
 	init_scalable_btn(&m_btn_export_gcode_removable, "export_to_sd", _L("Export to SD card / Flash drive") + " " + GUI::shortkey_ctrl_prefix() + "U");
 
     // regular buttons "Slice now" and "Export G-code" 
@@ -692,6 +693,7 @@ Sidebar::Sidebar(Plater *parent)
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
     complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxEXPAND | wxLEFT, margin_5);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
+    complect_btns_sizer->Add(m_btn_usb_print, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
 
     m_btns_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
@@ -752,6 +754,7 @@ Sidebar::Sidebar(Plater *parent)
 #endif // _WIN32
 
     m_btn_send_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->send_gcode(); });
+    m_btn_usb_print->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->usb_print(); });
     m_btn_export_gcode_removable->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->export_gcode(true); });
     m_btn_connect_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->connect_gcode(); });
 
@@ -1165,6 +1168,7 @@ void Sidebar::sys_color_changed()
 
     // btn...->msw_rescale() updates icon on button, so use it
     m_btn_send_gcode            ->sys_color_changed();
+    m_btn_usb_print             ->sys_color_changed();
     m_btn_export_gcode_removable->sys_color_changed();
 
     m_scrolled_panel->Layout();
@@ -1557,6 +1561,7 @@ void Sidebar::enable_buttons(bool enable)
     m_btn_reslice->Enable(enable);
     m_btn_export_gcode->Enable(enable);
     m_btn_send_gcode->Enable(enable);
+    m_btn_usb_print->Enable(enable);
     m_btn_export_gcode_removable->Enable(enable);
     m_btn_connect_gcode->Enable(enable);
 }
@@ -1585,6 +1590,12 @@ bool Sidebar::show_send(bool show) const {
         return false;
     }
     return m_btn_send_gcode->Show(show);
+}
+bool Sidebar::show_usb_print(bool show) const {
+    if (this->m_autoslicing_mode) {
+        return false;
+    }
+    return m_btn_usb_print->Show(show);
 }
 bool Sidebar::show_export_removable(bool show) const {
     if (this->m_autoslicing_mode) {

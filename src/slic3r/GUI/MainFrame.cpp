@@ -848,7 +848,7 @@ void MainFrame::create_nav_rail()
     prepare.label       = _L("Prepare");
     prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
     prepare.icon        = "plater";
-    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); };
+    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); m_plater->close_engineering(); update_nav_rail(); };
     prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && !m_plater->is_engineering_open(); };
     m_nav_rail->add_item(prepare);
 

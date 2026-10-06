@@ -1170,6 +1170,27 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGui::PopID();
     }
 
+    // Quick cleanup: the last load, or everything to start again.
+    if (! eng.loads.empty()) {
+        if (ImGuiPureWrap::button(_u8L("Remove last load"), _u8L("Removes the last load added (Ctrl+Z restores it)"))) {
+            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove load"));
+            eng.loads.pop_back();
+            m_regions_dirty = m_result_stale = true;
+        }
+        ImGui::SameLine();
+    }
+    if (! eng.loads.empty() || ! eng.fixtures.empty()) {
+        if (ImGuiPureWrap::button(_u8L("Clear all"), _u8L("Removes all the fixed faces and loads of the part (Ctrl+Z restores them)"))) {
+            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Clear supports and loads"));
+            eng.loads.clear();
+            eng.fixtures.clear();
+            m_regions_dirty = m_result_stale = true;
+            m_result.reset();
+            m_result_models_dirty = true;
+            m_orient.reset();
+        }
+    }
+
     // Analysis.
     ImGui::Separator();
     if (m_running) {
