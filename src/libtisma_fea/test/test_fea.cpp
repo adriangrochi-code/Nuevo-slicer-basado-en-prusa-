@@ -936,3 +936,80 @@ TEST_CASE("Analysis time with many voxels", "[.FEA-bench]")
         CHECK(r.ok);
     }
 }
+
+// Tisma phase 9b: the material follows the curved (non-planar) layers voxel by voxel.
+TEST_CASE("Curved layers orient the material voxel by voxel", "[FEA][NonPlanar]")
+{
+    // A bar standing on the bed, pulled up: with flat layers the whole load crosses the layers.
+    const indexed_triangle_set its = its_make_cube(10., 10., 40.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 2.;
+    setup.tolerance  = 1e-9;
+    setup.fixtures.push_back({ side(its, 2, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 2, true);
+    load.force     = Vec3d(0., 0., 400.);
+    setup.loads.push_back(load);
+
+    const Result flat = analyze(its, setup);
+    REQUIRE(flat.ok);
+    CHECK(flat.layer_orientations == 1);
+
+    SECTION("A uniform field is the same as the build direction") {
+        const Vec3d n = Vec3d(0., std::sin(0.4), std::cos(0.4));
+        Setup by_field = setup;
+        by_field.layer_normal = [n](const Vec3d &) { return n; };
+        Setup by_direction = setup;
+        by_direction.build_direction = n;
+        const Result a = analyze(its, by_field);
+        const Result b = analyze(its, by_direction);
+        REQUIRE(a.ok);
+        REQUIRE(b.ok);
+        // The groups snap the normal to a 2° grid.
+        CHECK(a.safety_factor == Approx(b.safety_factor).epsilon(0.03));
+        CHECK(a.layer_orientations == 1);
+    }
+    SECTION("Inclined layers carry more of the pull along them") {
+        // Layers tilted by ±25° (alternating along the bar, like waves): the pull is no longer only across them.
+        Setup waves = setup;
+        waves.layer_normal = [](const Vec3d &p) {
+            const double t = 25. * M_PI / 180. * (std::fmod(std::floor(p.z() / 8.), 2.) == 0. ? 1. : -1.);
+            return Vec3d(std::sin(t), 0., std::cos(t));
+        };
+        const Result curved = analyze(its, waves);
+        REQUIRE(curved.ok);
+        CHECK(curved.layer_orientations == 2);
+        CHECK(curved.safety_factor > flat.safety_factor);
+    }
+}
+
+TEST_CASE("Non-planar print settings reach the analysis", "[FEA][NonPlanar]")
+{
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(30., 30., 20.)));
+    object->add_instance();
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    CHECK(! input.setup.layer_normal);
+
+    config.set_deserialize_strict({ { "nonplanar_mode", "wave" }, { "nonplanar_pattern", "ridges" },
+                                    { "nonplanar_amplitude", 1 }, { "nonplanar_wavelength", 20 } });
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    REQUIRE(input.setup.layer_normal);
+    // Flat at the bottom (first layers), tilted higher up where the ridges have a slope.
+    const BoundingBoxf3 bb = bounding_box(input.mesh);
+    const Vec3d c = 0.5 * (bb.min + bb.max);
+    CHECK((input.setup.layer_normal(Vec3d(c.x(), c.y(), bb.min.z() + 0.1)) - Vec3d::UnitZ()).norm() < 1e-9);
+    double max_tilt = 0.;
+    for (double x = bb.min.x(); x <= bb.max.x(); x += 1.)
+        for (double y = bb.min.y(); y <= bb.max.y(); y += 1.)
+            max_tilt = std::max(max_tilt, std::acos(input.setup.layer_normal(Vec3d(x, y, bb.max.z() - 1.)).z()));
+    // Ridges of amplitude 1 mm and wavelength 20 mm: slope up to atan(2π / 20) ≈ 17°.
+    CHECK(max_tilt * 180. / M_PI > 10.);
+    CHECK(max_tilt * 180. / M_PI < 20.);
+}

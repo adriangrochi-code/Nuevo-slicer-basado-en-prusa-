@@ -156,6 +156,19 @@ voladizos ni soportes de la nueva orientación.
 **Aplicar el relleno mínimo**: el relleno se aplica como ajuste del objeto (`fill_density`) y modificadores
 «Tisma infill zone» por zona; el panel y una notificación indican lo aplicado. Hay que laminar de nuevo.
 
+## Capas curvas (no planares, Fase 9b)
+
+Con capas no planares (`Print Settings > Non-planar`) el material ya no tiene una sola dirección débil: en cada
+vóxel el eje «a través de las capas» es la normal de la capa curva que pasa por él, calculada con la misma
+deformación que usa el laminado (`NonPlanar::Deformation::layer_normal`, el gradiente de la coordenada de laminado
+z − D). Para no guardar una matriz por vóxel, las normales se agrupan en direcciones separadas unos 2°
+(`LAYER_NORMAL_STEP_DEG`), cada una con su matriz de rigidez; el criterio de falla usa la orientación de cada vóxel.
+El panel de Ingeniería indica cuántas direcciones se usaron.
+
+No se modela el encastre mecánico entre capas onduladas (la grieta que tiene que seguir un camino más largo): la
+mejora calculada es la de girar el plano débil, y la real puede ser mayor. Prueba: una barra tirada hacia arriba con
+capas inclinadas ±25° pasa de un factor de seguridad de 4,7 a 5,2 (PLA).
+
 ## Validación (pruebas automáticas)
 
 | Caso | Resultado | Referencia |

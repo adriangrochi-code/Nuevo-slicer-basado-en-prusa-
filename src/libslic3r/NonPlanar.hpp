@@ -97,6 +97,8 @@ public:
     double jacobian(double x, double y, double z) const { return 1. / this->dzs_dz(x, y, z); }
     // Slope (tangent) of the real layer surface.
     double layer_slope(double x, double y, double z) const;
+    // Unit normal of the real layer surface through (x, y, z): the gradient of the slice coordinate z - D.
+    Vec3d  layer_normal(double x, double y, double z) const;
 
     struct Check {
         double j_min { 1. };

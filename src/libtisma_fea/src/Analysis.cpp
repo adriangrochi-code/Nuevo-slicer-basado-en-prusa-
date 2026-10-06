@@ -507,12 +507,58 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     // 4) Element matrix: the same for all the voxels.
     res.temperature_factor = temperature_factor(*material, setup.temperature);
     res.layer_adhesion_factor = layer_adhesion_factor(*material, setup.print_temperature);
-    // Transversely isotropic material with its axis along the build direction.
-    const Eigen::Matrix3d to_setup   = material_rotation(setup.build_direction);
-    const Matrix6d        to_setup_m = bond_matrix(to_setup);
-    const Matrix6d        to_layers  = bond_matrix(to_setup.transpose());
-    const Matrix6d  c  = to_setup_m * constitutive(*material, res.temperature_factor) * to_setup_m.transpose();
-    const Matrix24d ke = element_stiffness(c, h);
+    // Transversely isotropic material with its axis along the build direction, or along the normal of the curved
+    // layer at each voxel (grouped in directions, each with its own element matrix).
+    struct Orientation {
+        Matrix6d  c;          // constitutive matrix in the frame of the setup
+        Matrix6d  to_layers;  // stress in the frame of the layers
+        Matrix24d ke;
+    };
+    std::vector<Orientation> orientations;
+    std::vector<uint16_t>    orientation_of(grid.voxels.size(), 0);
+    const Matrix6d c_material = constitutive(*material, res.temperature_factor);
+    auto add_orientation = [&](const Vec3d &normal) {
+        const Eigen::Matrix3d to_setup   = material_rotation(normal);
+        const Matrix6d        to_setup_m = bond_matrix(to_setup);
+        Orientation o;
+        o.c         = to_setup_m * c_material * to_setup_m.transpose();
+        o.to_layers = bond_matrix(to_setup.transpose());
+        o.ke        = element_stiffness(o.c, h);
+        orientations.emplace_back(std::move(o));
+    };
+    if (! setup.layer_normal) {
+        add_orientation(setup.build_direction);
+    } else {
+        // Groups: polar angle in steps of LAYER_NORMAL_STEP_DEG, azimuth in steps of about the same arc. A layer
+        // normal and its opposite are the same material direction.
+        const double step = LAYER_NORMAL_STEP_DEG * M_PI / 180.;
+        std::map<std::pair<int, int>, uint16_t> group_of;
+        for (size_t e = 0; e < grid.voxels.size(); ++ e) {
+            const Vec3i ijk    = grid.voxel_ijk(grid.voxels[e]);
+            Vec3d       normal = setup.layer_normal(grid.origin + h * (ijk.cast<double>() + Vec3d(0.5, 0.5, 0.5)));
+            if (! (normal.norm() > 1e-9))
+                normal = setup.build_direction;
+            normal.normalize();
+            if (normal.z() < 0.)
+                normal = - normal;
+            const double theta = std::acos(std::clamp(normal.z(), -1., 1.));
+            const int    it    = int(std::lround(theta / step));
+            const double theta_q = it * step;
+            const int    n_phi = std::max(1, int(std::lround(2. * M_PI * std::sin(theta_q) / step)));
+            const int    ip    = it == 0 ? 0 : int(std::lround((std::atan2(normal.y(), normal.x()) + M_PI) / (2. * M_PI) * n_phi)) % n_phi;
+            auto [found, added] = group_of.try_emplace({ it, ip }, uint16_t(orientations.size()));
+            if (added) {
+                if (orientations.size() >= 65535) {
+                    res.error = "Too many layer orientations";
+                    return res;
+                }
+                const double phi = 2. * M_PI * ip / n_phi - M_PI;
+                add_orientation(Vec3d(std::sin(theta_q) * std::cos(phi), std::sin(theta_q) * std::sin(phi), std::cos(theta_q)));
+            }
+            orientation_of[e] = found->second;
+        }
+    }
+    res.layer_orientations = orientations.size();
 
     // Groups of voxels without shared nodes, for the parallel product.
     std::array<std::vector<int>, 8> colors;
@@ -530,7 +576,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             xe[3 * a + k] = x[3 * nodes[a] + k];
-                    ye.noalias() = (double(vm_mat.stiffness[color[ci]]) * ke) * xe;
+                    ye.noalias() = (double(vm_mat.stiffness[color[ci]]) * orientations[orientation_of[color[ci]]].ke) * xe;
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             y[3 * nodes[a] + k] += ye[3 * a + k];
@@ -544,7 +590,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     for (size_t e = 0; e < elements.size(); ++ e)
         for (int a = 0; a < 8; ++ a)
             for (int k = 0; k < 3; ++ k)
-                diag[3 * elements[e][a] + k] += double(vm_mat.stiffness[e]) * ke(3 * a + k, 3 * a + k);
+                diag[3 * elements[e][a] + k] += double(vm_mat.stiffness[e]) * orientations[orientation_of[e]].ke(3 * a + k, 3 * a + k);
     report(15);
 
     // 5) Preconditioned conjugate gradient.
@@ -629,7 +675,8 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             }
         // Homogenized stress of the voxel; the strength of the voxel is scaled the same way as the material.
         // Stress in the frame of the layers: z across the layers, yz and xz the shear between the layers.
-        const Eigen::Matrix<double, 6, 1> s = to_layers * (double(vm_mat.stiffness[e]) * (c * (b0 * ue)));
+        const Orientation &o = orientations[orientation_of[e]];
+        const Eigen::Matrix<double, 6, 1> s = o.to_layers * (double(vm_mat.stiffness[e]) * (o.c * (b0 * ue)));
         const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
         const double vm = std::sqrt(0.5 * ((s[0] - s[1]) * (s[0] - s[1]) + (s[1] - s[2]) * (s[1] - s[2]) + (s[2] - s[0]) * (s[2] - s[0]))
                                     + 3. * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));

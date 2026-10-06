@@ -142,6 +142,15 @@ double Deformation::layer_slope(double x, double y, double z) const
     return m_field.grad(x, y, z).norm() * m_ramp.value(z);
 }
 
+Vec3d Deformation::layer_normal(double x, double y, double z) const
+{
+    if (! this->enabled())
+        return Vec3d::UnitZ();
+    const Vec2d g = m_field.grad(x, y, z) * m_ramp.value(z);
+    const Vec3d n(- g.x(), - g.y(), this->dzs_dz(x, y, z));
+    return n.norm() > 1e-12 ? Vec3d(n.normalized()) : Vec3d(Vec3d::UnitZ());
+}
+
 double Deformation::to_real_z(double x, double y, double zs) const
 {
     if (! this->enabled())

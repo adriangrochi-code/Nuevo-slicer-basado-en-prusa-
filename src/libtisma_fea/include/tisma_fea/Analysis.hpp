@@ -85,6 +85,9 @@ struct InfillModel
 // Exponents of the homogenized infill for a pattern name of the print settings (rectilinear, grid, gyroid, ...).
 std::pair<double, double> infill_exponents(const std::string &pattern);
 
+// Angular step of the groups of layer normals (Setup::layer_normal) [°].
+constexpr double LAYER_NORMAL_STEP_DEG = 2.;
+
 struct Setup
 {
     std::string          material { "PLA" };
@@ -102,6 +105,9 @@ struct Setup
     // Direction in which the layers are stacked (the Z of the printer) in the coordinates of the setup. The
     // material is weaker across the layers (stiffness E_z, layer adhesion strength_z).
     Vec3d                build_direction { Vec3d::UnitZ() };
+    // Curved (non-planar) layers: the normal of the layer at a point of the setup, which replaces build_direction
+    // locally. The normals are grouped in directions about LAYER_NORMAL_STEP_DEG apart.
+    std::function<Vec3d(const Vec3d &point)> layer_normal;
     // Nozzle temperature of the print [°C], 0 = unknown: scales the layer adhesion (layer_adhesion_factor()).
     double               print_temperature { 0. };
 };
@@ -163,6 +169,8 @@ struct Result
     std::vector<std::pair<std::string, double>> alternatives;
 
     int                 iterations { 0 };
+    // Number of material orientations used (1 with flat layers).
+    size_t              layer_orientations { 1 };
     double              residual { 0. };
 };
 

@@ -4,10 +4,13 @@
 ///|/
 #include "tisma_fea/ModelSetup.hpp"
 
+#include <memory>
+
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/Model.hpp>
 #include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/BeltPrinter.hpp>
+#include <libslic3r/NonPlanar.hpp>
 
 #include "tisma_fea/Structures.hpp"
 
@@ -181,6 +184,25 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
         // Belt printers: the layers are inclined by the angle of the gantry (stacked along its normal).
         if (Belt::enabled(cfg))
             setup.build_direction = Belt::Frame(Belt::angle(cfg)).layer_normal_world();
+        // Non-planar layers: the material follows the curved layers (same deformation as the slicing, about the
+        // center of the part).
+        if (cfg.has("nonplanar_mode")) {
+            PrintConfig print_cfg;
+            print_cfg.apply(cfg, true);
+            if (NonPlanar::enabled(print_cfg)) {
+                BoundingBoxf3 part_bbox;
+                for (const Vec3f &v : out.mesh.vertices)
+                    part_bbox.merge(v.cast<double>());
+                // Heights from the bottom of the part, as in the slicing.
+                const double z0 = part_bbox.min.z();
+                part_bbox.min.z() -= z0;
+                part_bbox.max.z() -= z0;
+                auto deformation = std::make_shared<NonPlanar::Deformation>(NonPlanar::make_deformation(print_cfg, part_bbox));
+                setup.layer_normal = [deformation, z0](const Vec3d &p) {
+                    return deformation->layer_normal(p.x(), p.y(), p.z() - z0);
+                };
+            }
+        }
         // Nozzle temperature of the extruder of the object (layer adhesion).
         if (const ConfigOptionInts *t = cfg.option<ConfigOptionInts>("temperature"); t && ! t->values.empty()) {
             int extruder = 1;

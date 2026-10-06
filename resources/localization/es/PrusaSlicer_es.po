@@ -32434,3 +32434,6 @@ msgstr "Cabezal (capas no planares)"
 
 msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the head clearance height of %4% mm (Printer Settings > General > Print head). Reduce the wave amplitude or the cone angle, or check the measurements of the print head."
 msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que la altura libre del cabezal de %4% mm (Ajustes de la impresora > General > Cabezal). Reduce la amplitud de las ondas o el ángulo del cono, o revisa las medidas del cabezal."
+
+msgid "Curved (non-planar) layers: the material follows them (%1% directions)."
+msgstr "Capas curvas (no planares): el material las sigue (%1% direcciones)."

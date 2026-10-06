@@ -1229,6 +1229,9 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
                                             int(std::round(m_result_print_temperature)), r.layer_adhesion_factor));
         else
             ImGuiPureWrap::text(_u8L("Nozzle temperature unknown: nominal layer adhesion."));
+        if (r.layer_orientations > 1)
+            ImGuiPureWrap::text(GUI::format(_u8L("Curved (non-planar) layers: the material follows them (%1% directions)."),
+                                            r.layer_orientations));
         ImGuiPureWrap::text(GUI::format(_u8L("Safety factor: %1$.2f (required %2$.1f)"), r.safety_factor, m_result_safety));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. displacement: %1$.3f mm"), r.max_displacement));
         ImGuiPureWrap::text(GUI::format(_u8L("Max. stress (von Mises): %1$.2f MPa"), r.max_von_mises));
