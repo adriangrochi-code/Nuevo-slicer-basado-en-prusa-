@@ -46,7 +46,8 @@ codesign --verify --deep --strict "$app"
 
 # Smoke test: the bundled binary starts and finds its resources (an x86_64 build on Apple silicon needs Rosetta).
 if [ "$arch" = "$(uname -m)" ] || arch -x86_64 /usr/bin/true 2> /dev/null; then
-    "$app/Contents/MacOS/TismaSlicer" --help | head -2
+    # sed reads the whole output (head would close the pipe early: SIGPIPE with pipefail).
+    "$app/Contents/MacOS/TismaSlicer" --help | sed -n 1,2p
 else
     echo "Smoke test skipped: $arch binaries cannot run on this machine"
 fi

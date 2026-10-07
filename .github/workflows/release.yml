@@ -31,14 +31,22 @@ jobs:
   windows:
     uses: ./.github/workflows/build_windows.yml
     secrets: inherit
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+      release: true
 
   linux:
     uses: ./.github/workflows/build_linux.yml
     with:
       run_tests: true
+      ref: ${{ inputs.tag || github.ref }}
+      release: true
 
   macos:
     uses: ./.github/workflows/build_macos.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+      release: true
 
   publish:
     needs: [windows, linux, macos]
@@ -72,8 +80,10 @@ jobs:
       - name: Release notes
         run: |
           version="${TAG#v}"
-          awk -v v="$version" '
-            /^## / { if (found) exit; if (index($0, v)) { found = 1; next } }
+          # The heading of release-please: "## [X.Y.Z](compare link) (date)" or "## X.Y.Z (date)".
+          heading="^## \\[?${version//./\\.}\\]?[ (]"
+          awk -v h="$heading" '
+            /^## / { if (found) exit; if ($0 ~ h) { found = 1; next } }
             found { print }
           ' CHANGELOG.md > notes.md
           [ -s notes.md ] || echo "Tisma Slicer $version" > notes.md

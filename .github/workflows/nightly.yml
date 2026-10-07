@@ -29,11 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
       - id: changes
         run: |
-          head=$(git rev-parse HEAD)
+          head=${{ github.sha }}
           previous=$(git rev-parse -q --verify "refs/tags/nightly^{commit}" || true)
           echo "previous=$previous" >> "$GITHUB_OUTPUT"
           if [ "$head" != "$previous" ] || [ "${{ inputs.force }}" = "true" ]; then
@@ -69,9 +68,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      # The commit the packages were built from (github.sha), even if main moved during the builds.
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - uses: actions/download-artifact@v4

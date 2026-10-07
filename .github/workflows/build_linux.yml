@@ -11,6 +11,14 @@ on:
         description: Build and run the unit tests
         type: boolean
         default: true
+      ref:
+        description: Git ref to build (default the ref of the calling event)
+        type: string
+        default: ''
+      release:
+        description: Release build (clean build ID, without +<run>-<commit>)
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       run_tests:
@@ -30,6 +38,8 @@ jobs:
       DEPS_DEST: ${{ github.workspace }}/deps/build/destdir
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       # The dependencies, the application and the tests do not fit in the free space of the runner otherwise.
       - name: Free disk space
@@ -70,10 +80,11 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: find "$DEPS_BUILD" -mindepth 1 -maxdepth 1 ! -name destdir -exec rm -rf {} +
 
-      # Test builds: TismaSlicer-<version>+<run>-<commit> (title bar and G-code header).
+      # Test builds: TismaSlicer-<version>+<run>-<commit> (title bar and G-code header); releases: TismaSlicer-<version>.
       - name: Build ID
         run: |
-          sed -i "s/+UNKNOWN/+${{ github.run_number }}-${GITHUB_SHA::7}/" version.inc
+          if [ "${{ inputs.release }}" = "true" ]; then suffix=""; else suffix="+${{ github.run_number }}-$(git rev-parse --short=7 HEAD)"; fi
+          sed -i "s/+UNKNOWN/$suffix/" version.inc
           grep SLIC3R_BUILD_ID version.inc
           echo "TISMA_VERSION=$(sed -n 's/^set(TISMA_VERSION "\([^"]*\)").*/\1/p' version.inc)" >> "$GITHUB_ENV"
 
@@ -98,7 +109,7 @@ jobs:
         run: |
           appimage=$(packaging/linux/make_appimage.sh build "$TISMA_VERSION" dist | tail -n 1)
           # Smoke test: the AppImage starts and finds its resources.
-          "$appimage" --appimage-extract-and-run --help | head -2
+          "$appimage" --appimage-extract-and-run --help | sed -n 1,2p
 
       - uses: actions/upload-artifact@v4
         with:

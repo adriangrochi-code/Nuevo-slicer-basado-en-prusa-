@@ -6,6 +6,15 @@ name: Build macos
 
 on:
   workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (default the ref of the calling event)
+        type: string
+        default: ''
+      release:
+        description: Release build (clean build ID, without +<run>-<commit>)
+        type: boolean
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -25,6 +34,8 @@ jobs:
       DEPS_DEST: ${{ github.workspace }}/deps/build-${{ matrix.arch }}/destdir
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Install build tools
         run: brew install ninja autoconf automake libtool texinfo
@@ -52,7 +63,8 @@ jobs:
 
       - name: Build ID
         run: |
-          sed -i '' "s/+UNKNOWN/+${{ github.run_number }}-${GITHUB_SHA::7}/" version.inc
+          if [ "${{ inputs.release }}" = "true" ]; then suffix=""; else suffix="+${{ github.run_number }}-$(git rev-parse --short=7 HEAD)"; fi
+          sed -i '' "s/+UNKNOWN/$suffix/" version.inc
           grep SLIC3R_BUILD_ID version.inc
           echo "TISMA_VERSION=$(sed -n 's/^set(TISMA_VERSION "\([^"]*\)").*/\1/p' version.inc)" >> "$GITHUB_ENV"
 
