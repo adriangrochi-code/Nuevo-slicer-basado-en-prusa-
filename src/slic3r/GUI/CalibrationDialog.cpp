@@ -31,6 +31,7 @@
 #include "I18N.hpp"
 #include "MainFrame.hpp"
 #include "Plater.hpp"
+#include "libslic3r/BuildVolume.hpp"
 #include "Tab.hpp"
 #include "format.hpp"
 
@@ -907,6 +908,38 @@ private:
 
 } // namespace
 
+// Strength coupons of the staggered perimeters (docs/BRICK_LAYERS.md): two identical open tubes, standing, made only
+// of perimeters; A with normal perimeters, B with staggered perimeters. Broken across the layers, they compare the
+// strength between layers.
+static void load_stagger_coupons(wxWindow* parent)
+{
+    constexpr double size_x = 20., size_y = 10., height = 50., gap = 15.;
+    const Vec2d center = wxGetApp().plater()->build_volume().bed_center();
+    Model model;
+    for (int k = 0; k < 2; ++ k) {
+        ModelObject* obj = model.add_object();
+        obj->name = k == 0 ? _u8L("A - normal perimeters") : _u8L("B - staggered perimeters");
+        add_box(*obj, 0., 0., 0., size_x, size_y, height);
+        // Only walls: 4 perimeters, no infill, closed bottom, open top.
+        obj->config.set_key_value("perimeters",          new ConfigOptionInt(4));
+        obj->config.set_key_value("fill_density",        new ConfigOptionPercent(0.));
+        obj->config.set_key_value("top_solid_layers",    new ConfigOptionInt(0));
+        obj->config.set_key_value("bottom_solid_layers", new ConfigOptionInt(3));
+        obj->config.set_key_value("stagger_perimeters",  new ConfigOptionBool(k == 1));
+        obj->center_around_origin();
+        ModelInstance* instance = obj->add_instance();
+        instance->set_offset(Vec3d(center.x() + (k == 0 ? -1. : 1.) * 0.5 * (size_x + gap), center.y(), 0.5 * height));
+    }
+    DynamicPrintConfig calib;
+    calib.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+    wxGetApp().plater()->load_calibration(model, calib);
+    wxMessageBox(_L("Two identical tubes made only of walls: A with normal perimeters, B with staggered perimeters.\n\n"
+                    "Print them with the same filament. Hold each one by its base and push the top sideways (or hang "
+                    "weights from the top) until it breaks between the layers. Compare the force, or the weight, that "
+                    "each one held: the difference is what the staggered perimeters add with your printer and filament."),
+                 _L("Staggered perimeters: strength coupons"), wxOK | wxICON_INFORMATION, parent);
+}
+
 wxMenu* create_calibration_menu(wxWindow* parent)
 {
     auto menu = new wxMenu();
@@ -928,6 +961,11 @@ wxMenu* create_calibration_menu(wxWindow* parent)
         menu->Append(id, all[i].title + dots, all[i].description);
         menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) { run_test(parent, tests()[i]); }, id);
     }
+    menu->AppendSeparator();
+    const int coupons_id = wxWindow::NewControlId();
+    menu->Append(coupons_id, _L("Staggered perimeters: strength coupons") + dots,
+                 _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_stagger_coupons(parent); }, coupons_id);
     menu->AppendSeparator();
     const int apply_id = wxWindow::NewControlId();
     menu->Append(apply_id, _L("Apply a calibration result") + dots, _L("Writes the value read on a calibration print to its setting."));

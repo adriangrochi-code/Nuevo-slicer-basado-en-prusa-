@@ -32970,3 +32970,24 @@ msgstr[1] "%1% objetos"
 
 msgid "Coasting"
 msgstr "Coasting"
+
+msgid "Staggered perimeters (Experimental)"
+msgstr "Perímetros escalonados (experimental)"
+
+msgid "Print every second internal perimeter half a layer higher, so that the layer lines of neighbouring perimeters are not aligned and the wall interlocks like a brick wall: stronger between layers. The external perimeter is not moved. The first layer and the last layer under a top surface are printed with more or less flow to keep the wall flat. Not used with spiral vase, non-planar layers or belt printers."
+msgstr "Imprime uno de cada dos perímetros internos media capa más arriba, para que las juntas de los perímetros vecinos no queden alineadas y la pared se trabe como una pared de ladrillos: más resistencia entre capas. El perímetro externo no se mueve. La primera capa y la última bajo una superficie superior llevan más o menos flujo para que la pared quede plana. No se usa con vaso espiral, capas no planares ni impresoras de cinta."
+
+msgid "A - normal perimeters"
+msgstr "A - perímetros normales"
+
+msgid "B - staggered perimeters"
+msgstr "B - perímetros escalonados"
+
+msgid "Two identical tubes made only of walls: A with normal perimeters, B with staggered perimeters.\n\nPrint them with the same filament. Hold each one by its base and push the top sideways (or hang weights from the top) until it breaks between the layers. Compare the force, or the weight, that each one held: the difference is what the staggered perimeters add with your printer and filament."
+msgstr "Dos tubos iguales hechos solo de paredes: A con perímetros normales y B con perímetros escalonados.\n\nImprimilos con el mismo filamento. Sujetá cada uno por la base y empujá la parte de arriba hacia el costado (o colgale pesos) hasta que se rompa entre capas. Compará la fuerza o el peso que aguantó cada uno: la diferencia es lo que suman los perímetros escalonados con tu impresora y tu filamento."
+
+msgid "Staggered perimeters: strength coupons"
+msgstr "Perímetros escalonados: probetas de resistencia"
+
+msgid "Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."
+msgstr "Dos tubos para romper, con y sin perímetros escalonados, para medir la resistencia que suman entre capas."
