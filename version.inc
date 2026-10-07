@@ -8,7 +8,11 @@ set(SLIC3R_APP_KEY "PrusaSlicer")
 set(SLIC3R_VERSION "2.9.6")
 # Version of Tisma Slicer (shown to the user, installer, G-code header). The CI replaces "+UNKNOWN" by
 # "+<run>-<commit>" for test builds.
-set(TISMA_VERSION "0.9.0")
+# The release automation (release-please) updates the line with the marker.
+set(TISMA_VERSION "0.9.0") # x-release-please-version
 set(SLIC3R_BUILD_ID "TismaSlicer-${TISMA_VERSION}+UNKNOWN")
-set(SLIC3R_RC_VERSION "0,9,0,0")
-set(SLIC3R_RC_VERSION_DOTS "0.9.0.0")
+# Windows resource versions (four numbers), from the numeric part of TISMA_VERSION.
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" _tisma_numeric_version "${TISMA_VERSION}")
+string(REPLACE "." "," _tisma_rc_version "${_tisma_numeric_version}")
+set(SLIC3R_RC_VERSION "${_tisma_rc_version},0")
+set(SLIC3R_RC_VERSION_DOTS "${_tisma_numeric_version}.0")
