@@ -1,0 +1,76 @@
+name: Build macos
+
+# Builds Tisma Slicer for Apple silicon (arm64) and Intel (x86_64, cross compiled on the arm64 runner) and uploads a
+# disk image per architecture (TismaSlicer-macos-<arch>). Signed ad hoc only: see packaging/macos/make_dmg.sh.
+# The dependencies are built from deps/ and cached. Called by ci.yml, nightly.yml and release.yml.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build_macos:
+    runs-on: macos-14
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+      DEPS_BUILD: ${{ github.workspace }}/deps/build-${{ matrix.arch }}
+      DEPS_DEST: ${{ github.workspace }}/deps/build-${{ matrix.arch }}/destdir
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: brew install ninja autoconf automake libtool texinfo
+
+      - name: Restore dependencies
+        id: deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/build-${{ matrix.arch }}/destdir
+          key: deps-macos-${{ matrix.arch }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('deps/**') }}
+
+      - name: Build dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          cmake -S deps -B "$DEPS_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release -DDESTDIR="$DEPS_DEST" \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+          cmake --build "$DEPS_BUILD"
+
+      - name: Save dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: deps/build-${{ matrix.arch }}/destdir
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+      - name: Build ID
+        run: |
+          sed -i '' "s/+UNKNOWN/+${{ github.run_number }}-${GITHUB_SHA::7}/" version.inc
+          grep SLIC3R_BUILD_ID version.inc
+          echo "TISMA_VERSION=$(sed -n 's/^set(TISMA_VERSION "\([^"]*\)").*/\1/p' version.inc)" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSLIC3R_STATIC=1 -DSLIC3R_PCH=OFF \
+            -DSLIC3R_BUILD_TESTS=OFF -DCMAKE_PREFIX_PATH="$DEPS_DEST/usr/local" \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"
+
+      - name: Build
+        run: cmake --build build --target TismaSlicer
+
+      - name: Disk image
+        run: |
+          packaging/macos/make_dmg.sh build "$TISMA_VERSION" ${{ matrix.arch }} dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TismaSlicer-macos-${{ matrix.arch }}
+          path: dist/*.dmg
+          retention-days: 14
