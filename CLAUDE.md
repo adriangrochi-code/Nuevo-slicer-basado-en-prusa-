@@ -15,7 +15,8 @@ by CI too.
 - Build, test, then document. Never report work as done without running the build and the relevant tests (and the
   GUI when the change is visible); say plainly what was not tested.
 - Keep the original line endings of edited files (some use CRLF; Python rewrites must preserve them).
-- No model identifiers in commits, PRs or code.
+- No model identifiers (model ids or version names) in code, commit subjects and bodies, or PR text. The only
+  exception is the attribution trailer the session requires at the end of commits and PRs.
 
 ## Development flow
 

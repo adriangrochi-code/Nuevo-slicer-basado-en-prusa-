@@ -117,3 +117,14 @@ Ninguna se ha añadido. Antes de usar cualquiera hay que verificar la licencia d
 
 Recomendación inicial (a decidir con el usuario): empezar con un **FEM propio sobre vóxeles con Eigen**, sin
 dependencias nuevas, y usar CalculiX como referencia externa de validación. Ver `ARCHITECTURE.md`.
+
+## 5. Herramientas de CI y desarrollo (no se distribuyen con el programa)
+
+| Herramienta | Uso | Licencia |
+|---|---|---|
+| appimagetool (AppImage/appimagetool) | Arma el AppImage de Linux; se descarga en cada build (`packaging/linux/make_appimage.sh`) | MIT |
+| googleapis/release-please-action | Versiones y CHANGELOG desde Conventional Commits | Apache-2.0 |
+| amannn/action-semantic-pull-request | Comprueba que el título del PR sea un Conventional Commit | MIT |
+| signpath/github-action-submit-signing-request | Firma de Windows con SignPath | MIT **(sin verificar)** |
+| actions/checkout, cache, upload-artifact, download-artifact (GitHub) | Workflows | MIT |
+| obra/superpowers (skills `systematic-debugging` y `verification-before-completion`, copiadas en `.claude/skills/`) | Instrucciones para Claude Code | MIT (`.claude/skills/LICENSE-superpowers`) |
