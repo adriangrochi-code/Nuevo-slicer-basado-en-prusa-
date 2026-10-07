@@ -416,6 +416,9 @@ Sidebar::Sidebar(Plater *parent)
 {
     m_scrolled_panel = new wxScrolledWindow(this);
     m_scrolled_panel->SetScrollRate(0, 5);
+    m_objects_panel = new wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(28 * wxGetApp().em_unit(), -1));
+    m_objects_panel->SetScrollRate(0, 5);
+    m_objects_panel->SetMinSize(wxSize(28 * wxGetApp().em_unit(), -1));
 
     SetFont(wxGetApp().normal_font());
 #ifndef __APPLE__
@@ -593,26 +596,32 @@ Sidebar::Sidebar(Plater *parent)
         m_presets_sizer->Show(size_t(4), int(m_combos_filament.size()) >= 2);
 
     // Object List
-    m_object_list = new ObjectList(m_scrolled_panel);
-    params_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND);
+    // The objects go to the panel at the left of the 3D view.
+    auto *objects_sizer = new wxBoxSizer(wxVERTICAL);
+    m_objects_panel->SetSizer(objects_sizer);
+    m_objects_caption = new wxStaticText(m_objects_panel, wxID_ANY, _L("OBJECTS"));
+    m_objects_caption->SetFont(wxGetApp().bold_font());
+    objects_sizer->Add(m_objects_caption, 0, wxLEFT | wxTOP | wxBOTTOM, margin_5);
+    m_object_list = new ObjectList(m_objects_panel);
+    objects_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND | wxLEFT | wxRIGHT, margin_5);
 
     // Object Manipulations
-    m_object_manipulation = std::make_unique<ObjectManipulation>(m_scrolled_panel);
+    m_object_manipulation = std::make_unique<ObjectManipulation>(m_objects_panel);
     m_object_manipulation->Hide();
-    params_sizer->Add(m_object_manipulation->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
+    objects_sizer->Add(m_object_manipulation->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
 
     // Frequently Object Settings
-    m_object_settings = std::make_unique<ObjectSettings>(m_scrolled_panel);
+    m_object_settings = std::make_unique<ObjectSettings>(m_objects_panel);
     m_object_settings->Hide();
-    params_sizer->Add(m_object_settings->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
+    objects_sizer->Add(m_object_settings->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
 
     // Object Layers
-    m_object_layers = std::make_unique<ObjectLayers>(m_scrolled_panel);
+    m_object_layers = std::make_unique<ObjectLayers>(m_objects_panel);
     m_object_layers->Hide();
-    params_sizer->Add(m_object_layers->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
+    objects_sizer->Add(m_object_layers->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
 
     // Info boxes
-    m_object_info = new ObjectInfo(m_scrolled_panel);
+    m_object_info = new ObjectInfo(m_objects_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
@@ -620,8 +629,8 @@ Sidebar::Sidebar(Plater *parent)
     is_msw ?
         scrolled_sizer->Add(m_presets_panel, 0, wxEXPAND | size_margin, margin_5) :
         scrolled_sizer->Add(m_presets_sizer, 0, wxEXPAND | size_margin, margin_5);
-    scrolled_sizer->Add(params_sizer, 1, wxEXPAND | size_margin, margin_5);
-    scrolled_sizer->Add(m_object_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
+    scrolled_sizer->Add(params_sizer, 0, wxEXPAND | size_margin, margin_5);
+    objects_sizer->Add(m_object_info, 0, wxEXPAND | wxALL, margin_5);
     scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
 
     // Buttons underneath the scrolled area
@@ -1096,9 +1105,29 @@ void Sidebar::msw_rescale()
     m_scrolled_panel->Layout();
 }
 
+bool Sidebar::Layout()
+{
+    layout_objects_panel();
+    return wxPanel::Layout();
+}
+
+void Sidebar::layout_objects_panel()
+{
+    if (m_objects_panel == nullptr)
+        return;
+    m_objects_panel->Layout();
+    m_objects_panel->FitInside();
+    m_objects_panel->Refresh();
+}
+
 void Sidebar::apply_tisma_theme()
 {
     const bool dark = wxGetApp().dark_mode();
+    if (m_objects_panel) {
+        m_objects_panel->SetBackgroundColour(TismaTheme::panel_bg(dark));
+        if (m_objects_caption)
+            m_objects_caption->SetForegroundColour(TismaTheme::text_muted(dark));
+    }
     for (wxWindow* win : std::vector<wxWindow*>{ this, m_scrolled_panel, m_presets_panel })
         if (win)
             win->SetBackgroundColour(TismaTheme::panel_bg(dark));
@@ -1671,6 +1700,9 @@ void Sidebar::collapse(bool collapse)
     is_collapsed = collapse;
 
     this->Show(!collapse);
+    // The objects panel is collapsed with the sidebar (the whole width for the 3D view).
+    if (m_objects_panel)
+        m_objects_panel->Show(! collapse && wxGetApp().is_editor());
     m_plater->Layout();
 
     // save collapsing state to the AppConfig

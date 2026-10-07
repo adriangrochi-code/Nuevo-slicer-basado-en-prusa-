@@ -83,6 +83,7 @@
 #include "libslic3r/ModelProcessing.hpp"
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/MultipleBeds.hpp"
+#include "NavRail.hpp"
 #include "libslic3r/SLA/Workflows.hpp"
 
 // For stl export
@@ -778,7 +779,41 @@ void Plater::priv::init()
     panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
-    hsizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    // Órbita Pro: the objects at the left of the 3D view, the print settings at the right.
+    if (wxWindow* objects = sidebar->objects_panel()) {
+        hsizer->Add(objects, 0, wxEXPAND, 0);
+        // The G-code viewer has no objects.
+        objects->Show(wxGetApp().is_editor());
+    }
+    // The 3D view with the status bar under it.
+    auto *center_sizer = new wxBoxSizer(wxVERTICAL);
+    center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    if (wxGetApp().is_editor()) {
+        auto *status = new StatusStrip(q, [this]() {
+            StatusStrip::State st;
+            const size_t n_objects = model.objects.size();
+            const bool   fff       = printer_technology == ptFFF;
+            const Print &print     = *fff_prints[s_multiple_beds.get_active_bed()];
+            const bool   sliced    = fff && n_objects > 0 && print.finished();
+            st.left.push_back(n_objects == 0 ? _L("No objects") : sliced ? _L("Ready") : _L("Not sliced"));
+            if (s_multiple_beds.get_number_of_beds() > 1)
+                st.left.push_back(format_wxstr(_L("Plate %1% of %2%"), s_multiple_beds.get_active_bed() + 1,
+                                               s_multiple_beds.get_number_of_beds()));
+            st.left.push_back(format_wxstr(_L_PLURAL("%1% object", "%1% objects", n_objects), n_objects));
+            if (sliced) {
+                const PrintStatistics &ps = print.print_statistics();
+                wxString est = format_wxstr(_L("Estimated: %1%"), from_u8(ps.estimated_normal_print_time));
+                if (ps.total_weight > 0.)
+                    est += format_wxstr(" · %1% g", wxString::Format("%.1f", ps.total_weight));
+                if (ps.total_cost > 0.)
+                    est += format_wxstr(" · %1%", wxString::Format("%.2f", ps.total_cost));
+                st.right = est;
+            }
+            return st;
+        });
+        center_sizer->Add(status, 0, wxEXPAND, 0);
+    }
+    hsizer->Add(center_sizer, 1, wxEXPAND | wxALL, 0);
     hsizer->Add(sidebar, 0, wxEXPAND | wxLEFT | wxRIGHT, 0);
     q->SetSizer(hsizer);
 

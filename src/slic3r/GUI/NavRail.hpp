@@ -95,6 +95,30 @@ private:
     wxTimer                 m_timer;
 };
 
+// Status bar under the 3D view (Órbita Pro): short facts at the left (state, plate, objects) and the estimate of
+// the print at the right. The texts are polled.
+class StatusStrip : public wxPanel
+{
+public:
+    struct State {
+        std::vector<wxString> left;
+        wxString              right;
+        bool operator==(const State &rhs) const { return left == rhs.left && right == rhs.right; }
+    };
+
+    StatusStrip(wxWindow* parent, std::function<State()> get_state);
+    ~StatusStrip() override;
+    void update();
+    void msw_rescale();
+
+private:
+    void on_paint(wxPaintEvent&);
+
+    std::function<State()>  m_get_state;
+    State                   m_state;
+    wxTimer                 m_timer;
+};
+
 } // namespace GUI
 } // namespace Slic3r
 

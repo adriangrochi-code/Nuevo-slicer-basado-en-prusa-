@@ -449,5 +449,78 @@ void PrinterChip::on_paint(wxPaintEvent&)
     dc.DrawText(label, x0, (sz.y - dc.GetTextExtent(label).y) / 2);
 }
 
+StatusStrip::StatusStrip(wxWindow* parent, std::function<State()> get_state)
+    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxFULL_REPAINT_ON_RESIZE)
+    , m_get_state(std::move(get_state))
+    , m_timer(this)
+{
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
+    msw_rescale();
+    Bind(wxEVT_PAINT, &StatusStrip::on_paint, this);
+    Bind(wxEVT_TIMER, [this](wxTimerEvent&) { update(); });
+    update();
+    m_timer.Start(1000);
+}
+
+StatusStrip::~StatusStrip()
+{
+    m_timer.Stop();
+}
+
+void StatusStrip::msw_rescale()
+{
+    SetFont(wxGetApp().small_font());
+    const int em = wxGetApp().em_unit();
+    SetMinSize(wxSize(-1, int(2.4 * em)));
+    SetMaxSize(wxSize(-1, int(2.4 * em)));
+    Refresh();
+}
+
+void StatusStrip::update()
+{
+    State st = m_get_state ? m_get_state() : State();
+    if (st == m_state)
+        return;
+    m_state = std::move(st);
+    Refresh();
+}
+
+void StatusStrip::on_paint(wxPaintEvent&)
+{
+    wxAutoBufferedPaintDC dc(this);
+    const wxSize sz   = GetClientSize();
+    const int    em   = wxGetApp().em_unit();
+    const bool   dark = wxGetApp().dark_mode();
+    const wxColour bg     = dark ? wxColour(0x1F, 0x1F, 0x24) : wxColour(0xF4, 0xF4, 0xF6);
+    const wxColour border = dark ? wxColour(0x34, 0x34, 0x3C) : wxColour(0xD8, 0xD8, 0xE0);
+    const wxColour muted  = dark ? wxColour(0x8A, 0x8A, 0x96) : wxColour(0x6A, 0x6A, 0x76);
+    const wxColour text   = dark ? wxColour(0xEC, 0xEC, 0xF0) : wxColour(0x14, 0x14, 0x17);
+
+    dc.SetPen(wxPen(bg));
+    dc.SetBrush(wxBrush(bg));
+    dc.DrawRectangle(0, 0, sz.x, sz.y);
+    dc.SetPen(wxPen(border));
+    dc.DrawLine(0, 0, sz.x, 0);
+
+    dc.SetFont(GetFont());
+    // Estimate at the right, the facts from the left (they are cut when the window is narrow).
+    int right_x = sz.x - em;
+    if (! m_state.right.empty()) {
+        const wxSize tsz = dc.GetTextExtent(m_state.right);
+        right_x -= tsz.x;
+        dc.SetTextForeground(text);
+        dc.DrawText(m_state.right, right_x, (sz.y - tsz.y) / 2);
+    }
+    int x = em;
+    for (size_t i = 0; i < m_state.left.size(); ++ i) {
+        const wxSize tsz = dc.GetTextExtent(m_state.left[i]);
+        if (x + tsz.x > right_x - 2 * em)
+            break;
+        dc.SetTextForeground(i == 0 ? text : muted);
+        dc.DrawText(m_state.left[i], x, (sz.y - tsz.y) / 2);
+        x += tsz.x + 2 * em;
+    }
+}
+
 } // namespace GUI
 } // namespace Slic3r

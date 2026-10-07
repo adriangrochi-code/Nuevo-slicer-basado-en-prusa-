@@ -32947,3 +32947,23 @@ msgstr "Caras que no deben desplazarse más que esto, sean cuales sean las carga
 
 msgid "Air flowing around the part as printed, with the roughness of the layers. An estimate to compare designs and orientations."
 msgstr "Aire alrededor de la pieza tal como se imprime, con la rugosidad de las capas. Una estimación para comparar diseños y orientaciones."
+
+msgid "OBJECTS"
+msgstr "OBJETOS"
+
+msgid "No objects"
+msgstr "Sin objetos"
+
+msgid "Not sliced"
+msgstr "Sin laminar"
+
+msgid "Plate %1% of %2%"
+msgstr "Plancha %1% de %2%"
+
+msgid "Estimated: %1%"
+msgstr "Estimado: %1%"
+
+msgid "%1% object"
+msgid_plural "%1% objects"
+msgstr[0] "%1% objeto"
+msgstr[1] "%1% objetos"
