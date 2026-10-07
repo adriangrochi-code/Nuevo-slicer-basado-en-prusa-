@@ -12,6 +12,12 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Perímetros escalonados** (alternativa a Brick Layers fuera de la patente US11331848B2, ver
+  `docs/BRICK_LAYERS.md`): opción «Perímetros escalonados» en Capas y perímetros; uno de cada dos perímetros
+  internos media capa más arriba, el externo sin cambios, flujo ajustado en la primera y la última capa.
+- **Ingeniería**: zonas con desplazamiento máximo permitido; rojo al llegar al límite y negro donde rompe.
+- **Rediseño Órbita Pro**: tema grafito, pestañas de trabajo arriba con chip de impresora, panel de Ingeniería
+  por secciones, objetos a la izquierda, barra de estado y resumen del laminado con los ajustes usados.
 - **Planchas al estilo de OrcaSlicer** (sobre las varias camas de PrusaSlicer 2.9): nombre por plancha, bloqueo
   (organizar no mueve lo que había al bloquear ni pone nada más; las copias con «+» van a otra plancha) y ajustes
   propios por plancha (orden de impresión, jarrón en espiral y temperaturas de cama) que solo cambian su G-code.
