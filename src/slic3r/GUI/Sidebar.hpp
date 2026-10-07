@@ -69,8 +69,8 @@ class Sidebar : public wxPanel
     Plater*             m_plater            { nullptr };
 
     wxScrolledWindow*   m_scrolled_panel    { nullptr };
-    // Tisma (Órbita Pro): panel at the left of the 3D view with the objects (list, manipulation, per object
-    // settings, layers and info). It is a child of the plater, placed by it.
+    // Tisma (Órbita Pro): panel at the left of the 3D view with the list and the info of the objects. It is a child
+    // of the plater, placed by it.
     wxScrolledWindow*   m_objects_panel     { nullptr };
     wxStaticText*       m_objects_caption   { nullptr };
     wxPanel*            m_presets_panel     { nullptr }; // Used for MSW better layouts
@@ -173,7 +173,7 @@ public:
     void collapse(bool collapse);
     // Panel of the objects at the left of the 3D view (Órbita Pro).
     wxWindow* objects_panel() const { return m_objects_panel; }
-    // Lays out the objects panel too: the object list, the manipulation and the info live there.
+    // Lays out the objects panel too: the object list and the object info live there.
     bool Layout() override;
     void set_extruders_count(size_t extruders_count);
 

@@ -416,9 +416,9 @@ Sidebar::Sidebar(Plater *parent)
 {
     m_scrolled_panel = new wxScrolledWindow(this);
     m_scrolled_panel->SetScrollRate(0, 5);
-    m_objects_panel = new wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(28 * wxGetApp().em_unit(), -1));
+    m_objects_panel = new wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(30 * wxGetApp().em_unit(), -1));
     m_objects_panel->SetScrollRate(0, 5);
-    m_objects_panel->SetMinSize(wxSize(28 * wxGetApp().em_unit(), -1));
+    m_objects_panel->SetMinSize(wxSize(30 * wxGetApp().em_unit(), -1));
 
     SetFont(wxGetApp().normal_font());
 #ifndef __APPLE__
@@ -596,7 +596,8 @@ Sidebar::Sidebar(Plater *parent)
         m_presets_sizer->Show(size_t(4), int(m_combos_filament.size()) >= 2);
 
     // Object List
-    // The objects go to the panel at the left of the 3D view.
+    // The list and the info of the objects go to the panel at the left of the 3D view; the manipulation, the per
+    // object settings and the layers stay here, under the print settings.
     auto *objects_sizer = new wxBoxSizer(wxVERTICAL);
     m_objects_panel->SetSizer(objects_sizer);
     m_objects_caption = new wxStaticText(m_objects_panel, wxID_ANY, _L("OBJECTS"));
@@ -606,19 +607,19 @@ Sidebar::Sidebar(Plater *parent)
     objects_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND | wxLEFT | wxRIGHT, margin_5);
 
     // Object Manipulations
-    m_object_manipulation = std::make_unique<ObjectManipulation>(m_objects_panel);
+    m_object_manipulation = std::make_unique<ObjectManipulation>(m_scrolled_panel);
     m_object_manipulation->Hide();
-    objects_sizer->Add(m_object_manipulation->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
+    params_sizer->Add(m_object_manipulation->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
 
     // Frequently Object Settings
-    m_object_settings = std::make_unique<ObjectSettings>(m_objects_panel);
+    m_object_settings = std::make_unique<ObjectSettings>(m_scrolled_panel);
     m_object_settings->Hide();
-    objects_sizer->Add(m_object_settings->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
+    params_sizer->Add(m_object_settings->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
 
     // Object Layers
-    m_object_layers = std::make_unique<ObjectLayers>(m_objects_panel);
+    m_object_layers = std::make_unique<ObjectLayers>(m_scrolled_panel);
     m_object_layers->Hide();
-    objects_sizer->Add(m_object_layers->get_sizer(), 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, margin_5);
+    params_sizer->Add(m_object_layers->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
 
     // Info boxes
     m_object_info = new ObjectInfo(m_objects_panel);
