@@ -8,6 +8,8 @@
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/Format/GooSLA.hpp"
+#include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -177,4 +179,90 @@ TEST_CASE("GOO export of a sliced print", "[sla_archives][goo]") {
     const std::uint8_t ending[11] = { 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x44, 0x4C, 0x50, 0x00 };
     REQUIRE(at + 11 == d.size());
     CHECK(std::memcmp(d.data() + at, ending, 11) == 0);
+}
+
+TEST_CASE("Elegoo GOO printer profiles", "[sla_archives][goo]") {
+    namespace fs = boost::filesystem;
+    const fs::path bundle_path = fs::path(TEST_DATA_DIR) / ".." / ".." / "resources" / "profiles" / "ElegooSLA.ini";
+    const fs::path data = fs::temp_directory_path() / fs::unique_path("tisma-elegoo-%%%%-%%%%");
+    fs::create_directories(data);
+    set_data_dir(data.string());
+
+    PresetBundle bundle;
+    size_t loaded = 0;
+    REQUIRE_NOTHROW(loaded = bundle.load_configbundle(bundle_path.string(), PresetBundle::LoadConfigBundleAttribute::LoadSystem,
+                                                      ForwardCompatibilitySubstitutionRule::Disable).second);
+    CHECK(loaded > 0);
+
+    std::vector<std::string> printers;
+    for (const Preset &preset : bundle.printers)
+        if (preset.is_system && preset.printer_technology() == ptSLA && preset.name.rfind("Elegoo ", 0) == 0)
+            printers.push_back(preset.name);
+    CHECK(printers.size() == 7);
+
+    for (const std::string &name : printers) {
+        INFO(name);
+        REQUIRE(bundle.printers.select_preset_by_name(name, true));
+        const Preset &printer = bundle.printers.get_selected_preset();
+        const std::string print    = printer.config.opt_string("default_sla_print_profile");
+        const std::string material = printer.config.opt_string("default_sla_material_profile");
+        REQUIRE(bundle.sla_prints.select_preset_by_name(print, true));
+        REQUIRE(bundle.sla_materials.select_preset_by_name(material, true));
+        // The defaults are compatible: nothing else gets selected.
+        bundle.update_compatible(PresetSelectCompatibleType::Always);
+        CHECK(bundle.sla_prints.get_selected_preset_name() == print);
+        CHECK(bundle.sla_materials.get_selected_preset_name() == material);
+
+        const DynamicPrintConfig cfg = bundle.full_config();
+        CHECK(cfg.opt_string("sla_archive_format") == "GOO");
+        CHECK(cfg.opt_string("output_filename_format").find(".goo") != std::string::npos);
+        // Pixels of 17 to 36 um, as the printers have.
+        const double px = cfg.opt_float("display_width") / cfg.opt_int("display_pixels_x");
+        const double py = cfg.opt_float("display_height") / cfg.opt_int("display_pixels_y");
+        CHECK(px > 0.017);
+        CHECK(px < 0.036);
+        CHECK(py > 0.017);
+        CHECK(py < 0.036);
+        const Goo::MotionParams mp = Goo::motion_params(cfg);
+        CHECK(mp.lift_distance >= 5.f);
+        CHECK(mp.lift_speed > 60.f);
+        CHECK(mp.lift_speed < 110.f);
+        CHECK(mp.retract_speed >= 150.f);
+    }
+
+    SECTION("slice and export with the Mars 5 profile") {
+        REQUIRE(bundle.printers.select_preset_by_name("Elegoo Mars 5", true));
+        REQUIRE(bundle.sla_prints.select_preset_by_name("0.05 Normal @ELEGOO", true));
+        REQUIRE(bundle.sla_materials.select_preset_by_name("Generic Standard Resin @ELEGOO MARS", true));
+        DynamicPrintConfig cfg = bundle.full_config();
+        cfg.set_key_value("supports_enable", new ConfigOptionBool(false));
+        cfg.set_key_value("pad_enable", new ConfigOptionBool(false));
+
+        SLAPrint print;
+        auto m = FileReader::load_model(TEST_DATA_DIR PATH_SEPARATOR + std::string("20mm_cube.obj"));
+        print.set_status_callback([](const PrintBase::SlicingStatus&) {});
+        print.apply(m, cfg);
+        print.process();
+        const std::string fname = "output_goo_mars5.goo";
+        print.export_print(fname, ThumbnailsList{}, "cube");
+
+        std::ifstream in(fname, std::ios::binary);
+        const std::vector<std::uint8_t> d { std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
+        REQUIRE(d.size() > Goo::LAYERS_OFFSET);
+        const std::size_t after_previews = 194 + 116 * 116 * 2 + 2 + 290 * 290 * 2 + 2;
+        CHECK(be_u32(d, after_previews) == print.print_layers().size());
+        CHECK(be_u16(d, after_previews + 4) == 4098);
+        CHECK(be_u16(d, after_previews + 6) == 2560);
+        CHECK(be_u32(d, after_previews + 63) == 5); // bottom layers
+        // First layer: bottom exposure 30 s, bottom lift 7 mm at 80 mm/min.
+        const std::size_t at = Goo::LAYERS_OFFSET;
+        CHECK(be_f32(d, at + 10) == 30.f);
+        CHECK(be_f32(d, at + 30) == 7.f);
+        CHECK(std::abs(be_f32(d, at + 34) - 80.f) < 0.01f);
+        std::vector<std::uint8_t> pixels;
+        CHECK(Goo::decode_layer(d.data() + at + 70, be_u32(d, at + 66), 4098 * 2560, pixels));
+    }
+
+    boost::system::error_code ec;
+    fs::remove_all(data, ec);
 }
