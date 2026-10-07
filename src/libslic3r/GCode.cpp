@@ -1093,6 +1093,14 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         m_nonplanar = make_unique<NonPlanar::GCodeFilter>(*m_nonplanar_deformation, params);
     }
 
+    // Staggered perimeters change the Z of the moves: not with the G-code filters that also do (spiral vase,
+    // non-planar layers, belt printers).
+    m_stagger_allowed = ! print.config().spiral_vase.value && ! m_nonplanar && ! print.config().belt_printer.value;
+    m_stagger_layer   = nullptr;
+    m_stagger_dz      = 0.;
+    m_stagger_flow    = 1.;
+    m_stagger_raised  = false;
+
     if (print.config().max_volumetric_extrusion_rate_slope_positive.value > 0 ||
         print.config().max_volumetric_extrusion_rate_slope_negative.value > 0)
         m_pressure_equalizer = make_unique<PressureEqualizer>(print.config());
@@ -3328,6 +3336,50 @@ std::string GCodeGenerator::extrude_infill_ranges(
     return gcode;
 }
 
+// Staggered perimeters: the odd internal perimeters (the first internal one, the third, ...) are printed half a layer
+// higher where the layer above covers them, so that the layer lines of neighbouring perimeters interlock. Returns
+// the Z offset and the flow factor of the perimeter: the flow fills the height between the bead below and the top of
+// this bead (1.5 on the first layer, 0.5 where it goes back to the layer height under a top surface).
+std::pair<double, double> GCodeGenerator::stagger_perimeter(const ExtrusionEntity &entity, const PrintRegion &region)
+{
+    if (! m_stagger_allowed || m_layer == nullptr || ! region.config().stagger_perimeters.value || ! entity.is_loop())
+        return { 0., 1. };
+    const ExtrusionLoop &loop = static_cast<const ExtrusionLoop&>(entity);
+    if (loop.paths.empty() || loop.role().is_external_perimeter())
+        return { 0., 1. };
+    const std::optional<uint16_t> &index = loop.paths.front().attributes().perimeter_index;
+    if (! index || *index % 2 == 0)
+        return { 0., 1. };
+
+    if (m_stagger_layer != m_layer) {
+        // Half a perimeter inwards: a perimeter is covered only when the next layer has material over all of it.
+        m_stagger_layer = m_layer;
+        const float shrink = float(0.5 * scale_(region.flow(*m_layer->object(), frPerimeter, m_layer->height).width()));
+        m_stagger_upper = m_layer->upper_layer ? offset_ex(m_layer->upper_layer->lslices, -shrink) : ExPolygons();
+        m_stagger_lower = m_layer->lower_layer ? offset_ex(m_layer->lower_layer->lslices, -shrink) : ExPolygons();
+    }
+    auto covered = [&loop](const ExPolygons &islands) {
+        if (islands.empty())
+            return false;
+        for (const ExtrusionPath &path : loop.paths) {
+            const Points &pts = path.polyline.points;
+            const size_t step = std::max<size_t>(1, pts.size() / 32);
+            for (size_t i = 0; i < pts.size(); i += step)
+                if (std::none_of(islands.begin(), islands.end(), [&pts, i](const ExPolygon &ex) { return ex.contains(pts[i]); }))
+                    return false;
+        }
+        return true;
+    };
+    const double h       = m_layer->height;
+    const double h_below = m_layer->lower_layer ? m_layer->lower_layer->height : 0.;
+    // This bead: raised by half its height when the layer above covers it.
+    const double top     = covered(m_stagger_upper) ? 0.5 * h : 0.;
+    // The bead below at the same place: raised as well when there is one (it was covered by this layer).
+    const double bottom  = h_below > 0. && covered(m_stagger_lower) ? 0.5 * h_below - h : -h;
+    const double flow    = (top - bottom) / h;
+    return { top, std::clamp(flow, 0.25, 2.) };
+}
+
 std::string GCodeGenerator::extrude_perimeters(
     const PrintRegion &region,
     const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
@@ -3344,7 +3396,10 @@ std::string GCodeGenerator::extrude_perimeters(
         // Apply the small perimeter speed.
         if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
             speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
+        std::tie(m_stagger_dz, m_stagger_flow) = this->stagger_perimeter(*perimeter.extrusion_entity, region);
         gcode += this->extrude_smooth_path(perimeter.smooth_path, perimeter.extrusion_entity->is_loop(), comment_perimeter, speed, perimeter.wipe_offset);
+        m_stagger_dz   = 0.;
+        m_stagger_flow = 1.;
         this->m_travel_obstacle_tracker.mark_extruded(
             perimeter.extrusion_entity, print_instance.object_layer_to_print_id, print_instance.instance_id
         );
@@ -3610,6 +3665,21 @@ std::string GCodeGenerator::_extrude(
     if (m_writer.extrusion_axis().empty())
         // gcfNoExtrusion
         e_per_mm = 0;
+
+    // Tisma, staggered perimeters: raise the nozzle for the staggered perimeter (after the travel to it), and lower it
+    // back for the next extrusion when no travel did it.
+    if (m_stagger_dz != 0. || m_stagger_flow != 1.) {
+        const double target = m_last_layer_z + m_config.z_offset.value + m_stagger_dz;
+        if (std::abs(m_writer.get_position().z() - target) > 1e-4)
+            gcode += m_writer.travel_to_z(target, "staggered perimeter");
+        m_stagger_raised = m_stagger_dz != 0.;
+        e_per_mm *= m_stagger_flow;
+    } else if (m_stagger_raised) {
+        const double target = m_last_layer_z + m_config.z_offset.value;
+        if (std::abs(m_writer.get_position().z() - target) > 1e-4)
+            gcode += m_writer.travel_to_z(target, "end of staggered perimeter");
+        m_stagger_raised = false;
+    }
 
     // Tisma calibration tests along X: each step of the test is a patch of the object.
     if (m_calib_x0 && path_attr.role != ExtrusionRole::Skirt) {

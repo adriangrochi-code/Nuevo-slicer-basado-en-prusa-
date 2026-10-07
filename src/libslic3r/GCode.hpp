@@ -480,6 +480,17 @@ private:
     std::optional<double>               m_calib_x0;
     // Coasting (Tisma): distance along the path passed to _extrude() from which it stops extruding, < 0 = never.
     double                              m_coast_start{ -1. };
+    // Tisma, staggered perimeters (docs/BRICK_LAYERS.md): the perimeter being extruded is raised by m_stagger_dz
+    // with its flow scaled by m_stagger_flow; m_stagger_raised = the nozzle is still above the layer after it.
+    bool                                m_stagger_allowed{ false };
+    double                              m_stagger_dz{ 0. };
+    double                              m_stagger_flow{ 1. };
+    bool                                m_stagger_raised{ false };
+    // Islands of the layers above and below, shrunk by half a perimeter, cached for the current layer.
+    const Layer                        *m_stagger_layer{ nullptr };
+    ExPolygons                          m_stagger_upper;
+    ExPolygons                          m_stagger_lower;
+    std::pair<double, double>           stagger_perimeter(const ExtrusionEntity &entity, const PrintRegion &region);
     // Value of the step of the calibration along X under the start of the path, if any.
     std::optional<double>               calib_value_along_x(const Geometry::ArcWelder::Path &path) const;
     std::string                         emit_calibration_step(const Print &print, double print_z, bool force);

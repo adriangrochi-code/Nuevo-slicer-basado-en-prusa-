@@ -1237,6 +1237,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("stagger_perimeters", coBool);
+    def->label = L("Staggered perimeters (Experimental)");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Print every second internal perimeter half a layer higher, so that the layer lines of neighbouring "
+                    "perimeters are not aligned and the wall interlocks like a brick wall: stronger between layers. "
+                    "The external perimeter is not moved. The first layer and the last layer under a top surface are "
+                    "printed with more or less flow to keep the wall flat. Not used with spiral vase, non-planar layers "
+                    "or belt printers.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("extruder", coInt);
     def->label = L("Extruder");
     def->category = L("Extruders");

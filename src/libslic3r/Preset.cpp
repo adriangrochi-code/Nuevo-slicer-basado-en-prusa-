@@ -471,7 +471,7 @@ std::string Preset::trim_vendor_repo_prefix(const std::string& id, const VendorP
 static std::vector<std::string> s_Preset_print_options {
     "layer_height", "first_layer_height", "perimeters", "spiral_vase", "nonplanar_mode", "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength", "nonplanar_angle", "nonplanar_twist", "nonplanar_cone_angle", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top", "nonplanar_max_slope", "nonplanar_segment_length", "nonplanar_flow_policy", "nonplanar_uniform_flow", "slice_closing_radius", "slicing_mode",
     "top_solid_layers", "top_solid_min_thickness", "bottom_solid_layers", "bottom_solid_min_thickness",
-    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs",
+    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs", "stagger_perimeters",
     "avoid_crossing_curled_overhangs", "avoid_crossing_perimeters", "thin_walls", "overhangs",
     "seam_position", "staggered_inner_seams", "seam_gap_distance",
     "external_perimeters_first", "fill_density", "infill_dense", "infill_dense_density", "fill_pattern", "top_fill_pattern", "bottom_fill_pattern",
