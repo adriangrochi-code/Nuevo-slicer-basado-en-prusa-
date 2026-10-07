@@ -793,14 +793,26 @@ void Plater::priv::init()
             StatusStrip::State st;
             const size_t n_objects = model.objects.size();
             const bool   fff       = printer_technology == ptFFF;
-            const Print &print     = *fff_prints[s_multiple_beds.get_active_bed()];
-            const bool   sliced    = fff && n_objects > 0 && print.finished();
+            const int    bed       = s_multiple_beds.get_active_bed();
+            const Print    &print     = *fff_prints[bed];
+            const SLAPrint &sla_print = *sla_prints[bed];
+            const bool   sliced    = n_objects > 0 && (fff ? print.finished() : sla_print.finished());
             st.left.push_back(n_objects == 0 ? _L("No objects") : sliced ? _L("Ready") : _L("Not sliced"));
             if (s_multiple_beds.get_number_of_beds() > 1)
                 st.left.push_back(format_wxstr(_L("Plate %1% of %2%"), s_multiple_beds.get_active_bed() + 1,
                                                s_multiple_beds.get_number_of_beds()));
             st.left.push_back(format_wxstr(_L_PLURAL("%1% object", "%1% objects", n_objects), n_objects));
-            if (sliced) {
+            if (sliced && ! fff) {
+                // Resin: the time and the volume of resin (objects, supports and pad).
+                const SLAPrintStatistics &ps = sla_print.print_statistics();
+                wxString est;
+                if (! std::isnan(ps.estimated_print_time))
+                    est = format_wxstr(_L("Estimated: %1%"), from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time)))));
+                const double ml = (ps.objects_used_material + ps.support_used_material) / 1000.;
+                if (ml > 0.)
+                    est += (est.empty() ? wxString() : wxString(" · ")) + wxString::Format("%.1f ml", ml);
+                st.right = est;
+            } else if (sliced) {
                 const PrintStatistics &ps = print.print_statistics();
                 wxString est = format_wxstr(_L("Estimated: %1%"), from_u8(ps.estimated_normal_print_time));
                 if (ps.total_weight > 0.)

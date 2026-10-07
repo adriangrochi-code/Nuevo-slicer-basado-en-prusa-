@@ -3138,7 +3138,7 @@ void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id,
 
     if (is_sla_technology) 
     {
-        pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " MLSA"), *vendor, indent, T_SLA);
+        pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " MSLA"), *vendor, indent, T_SLA);
         pageSLA->install = install;
         add_page(pageSLA);
     }

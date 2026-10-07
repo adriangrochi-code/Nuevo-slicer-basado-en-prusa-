@@ -1376,6 +1376,11 @@ void Sidebar::update_sliced_info_sizer()
             m_sliced_info->SetTextAndShow(siFilament_mm3, "N/A");
             m_sliced_info->SetTextAndShow(siFilament_g, "N/A");
             m_sliced_info->SetTextAndShow(siWTNumberOfToolchanges, "N/A");
+            // Of the summary of the main settings, only the layer height applies to resin.
+            const DynamicPrintConfig &full_cfg = wxGetApp().preset_bundle->full_config();
+            m_sliced_info->SetTextAndShow(siLayerHeight, full_cfg.has("layer_height") ? wxString::Format("%.3f mm", full_cfg.opt_float("layer_height")) : "N/A");
+            for (SlicedInfoIdx idx : { siPerimeters, siInfill, siSupports, siCoasting })
+                m_sliced_info->SetTextAndShow(idx, "N/A");
         }
         else
         {

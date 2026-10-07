@@ -197,10 +197,11 @@ public:
     void boolean(bool v)      { u8(v ? 1 : 0); }
     void bytes(const std::uint8_t *p, std::size_t n) { data.insert(data.end(), p, p + n); }
     // Fixed length string, zero padded (and cut).
+    // A fixed size field, always with a terminating zero (longer text is cut).
     void str(const std::string &s, std::size_t len)
     {
         for (std::size_t i = 0; i < len; ++ i)
-            data.push_back(i < s.size() ? std::uint8_t(s[i]) : 0);
+            data.push_back(i + 1 < len && i < s.size() ? std::uint8_t(s[i]) : 0);
     }
     void delimiter() { u8(0x0D); u8(0x0A); }
 };
@@ -329,13 +330,13 @@ void GooSLAArchive::export_print(const std::string     fname,
     }
 
     BigEndianWriter w;
-    w.str("V3.0", 4);
+    w.bytes(reinterpret_cast<const std::uint8_t*>("V3.0"), 4);
     static const std::uint8_t magic[8] = { 0x07, 0x00, 0x00, 0x00, 0x44, 0x4C, 0x50, 0x00 };
     w.bytes(magic, 8);
     w.str(SLIC3R_APP_NAME, 32);
     w.str(SLIC3R_VERSION, 24);
     w.str(time_str, 24);
-    w.str(cfg_string(cfg, "printer_model").empty() ? cfg_string(cfg, "printer_settings_id") : cfg_string(cfg, "printer_model"), 32);
+    w.str(cfg_string(cfg, "printer_settings_id").empty() ? cfg_string(cfg, "printer_model") : cfg_string(cfg, "printer_settings_id"), 32);
     w.str("MSLA", 32);
     w.str(cfg_string(cfg, "sla_material_settings_id"), 32);
     w.u16(std::uint16_t(mp.antialiasing));
