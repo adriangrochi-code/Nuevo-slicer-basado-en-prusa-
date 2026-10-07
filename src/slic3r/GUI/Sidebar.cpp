@@ -251,6 +251,12 @@ enum SlicedInfoIdx
     siCost,
     siEstimatedTime,
     siWTNumberOfToolchanges,
+    // Tisma (Órbita Pro): the main settings the G-code was sliced with.
+    siLayerHeight,
+    siPerimeters,
+    siInfill,
+    siSupports,
+    siCoasting,
 
     siCount
 };
@@ -293,6 +299,11 @@ SlicedInfo::SlicedInfo(wxWindow *parent) :
     init_info_label(_L("Cost (money)"));
     init_info_label(_L("Estimated printing time"));
     init_info_label(_L("Number of tool changes"));
+    init_info_label(_L("Layer height"));
+    init_info_label(_L("Perimeters"));
+    init_info_label(_L("Infill"));
+    init_info_label(_L("Supports"));
+    init_info_label(_L("Coasting"));
 
     Add(grid_sizer, 0, wxEXPAND);
     this->Show(false);
@@ -630,9 +641,10 @@ Sidebar::Sidebar(Plater *parent)
     is_msw ?
         scrolled_sizer->Add(m_presets_panel, 0, wxEXPAND | size_margin, margin_5) :
         scrolled_sizer->Add(m_presets_sizer, 0, wxEXPAND | size_margin, margin_5);
+    // Órbita Pro: the summary of the slicing right under the profiles, where it is seen.
+    scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
     scrolled_sizer->Add(params_sizer, 0, wxEXPAND | size_margin, margin_5);
     objects_sizer->Add(m_object_info, 0, wxEXPAND | wxALL, margin_5);
-    scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
 
     // Buttons underneath the scrolled area
 
@@ -1542,6 +1554,25 @@ void Sidebar::update_sliced_info_sizer()
 
             // Hide non-FFF sliced info parameters
             m_sliced_info->SetTextAndShow(siMaterial_unit, "N/A");
+
+            // The main settings used (of the print; the objects may override them).
+            const DynamicPrintConfig &cfg = wxGetApp().preset_bundle->full_config();
+            auto opt_float = [&cfg](const char *key) { return cfg.has(key) ? cfg.opt_float(key) : 0.; };
+            m_sliced_info->SetTextAndShow(siLayerHeight, wxString::Format("%.2f mm", opt_float("layer_height")));
+            if (cfg.has("perimeters"))
+                m_sliced_info->SetTextAndShow(siPerimeters, wxString::Format("%d", cfg.opt_int("perimeters")));
+            if (const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density")) {
+                wxString infill = wxString::Format("%.0f %%", density->value);
+                if (const ConfigOption *pattern = cfg.option("fill_pattern"))
+                    infill += " " + from_u8(pattern->serialize());
+                m_sliced_info->SetTextAndShow(siInfill, infill);
+            }
+            if (cfg.has("support_material"))
+                m_sliced_info->SetTextAndShow(siSupports, cfg.opt_bool("support_material") ? _L("Yes") : _L("No"));
+            double coast = 0.;
+            if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
+                coast = c->get_at(0);
+            m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
         }
     }
 

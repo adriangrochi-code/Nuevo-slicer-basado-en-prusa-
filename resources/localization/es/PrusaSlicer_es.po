@@ -32967,3 +32967,6 @@ msgid "%1% object"
 msgid_plural "%1% objects"
 msgstr[0] "%1% objeto"
 msgstr[1] "%1% objetos"
+
+msgid "Coasting"
+msgstr "Coasting"
