@@ -17476,11 +17476,11 @@ msgstr "Puede que necesites actualizar tu tarjeta de gráficos."
 
 #: src/slic3r/GUI/OpenGLManager.cpp:393
 msgid ""
-"As a workaround, you may run PrusaSlicer with a software rendered 3D "
-"graphics by running prusa-slicer.exe with the --sw-renderer parameter."
+"As a workaround, you may run Tisma Slicer with a software rendered 3D "
+"graphics by running tisma-slicer.exe with the --sw-renderer parameter."
 msgstr ""
-"Como solución, puedes ejecutar PrusaSlicer con gráficos 3D renderizados por "
-"software ejecutando prusa-slicer.exe con el parámetro --sw-renderer."
+"Como solución, puedes ejecutar Tisma Slicer con gráficos 3D renderizados por "
+"software ejecutando tisma-slicer.exe con el parámetro --sw-renderer."
 
 #: src/slic3r/GUI/OpenGLManager.cpp:395
 msgid "Unsupported OpenGL version"
@@ -31326,3 +31326,1707 @@ msgstr "error de zlib %d"
 #: ../src/richtext/richtextbulletspage.cpp:288
 msgid "~"
 msgstr "~"
+
+# Tisma Slicer
+
+msgid "A print is in progress. Closing this window stops it. Close anyway?"
+msgstr "Hay una impresión en curso. Cerrar esta ventana la detiene. ¿Cerrar de todos modos?"
+
+msgid "A print is in progress. Disconnecting stops it. Disconnect anyway?"
+msgstr "Hay una impresión en curso. Desconectar la detiene. ¿Desconectar de todos modos?"
+
+msgid "Arc overhangs (Experimental)"
+msgstr "Voladizos en arco (experimental)"
+
+msgid "Baud rate"
+msgstr "Velocidad (baudios)"
+
+msgid "Cancel print"
+msgstr "Cancelar impresión"
+
+msgid "Cancel the print?"
+msgstr "¿Cancelar la impresión?"
+
+msgid "Cannot read %1%"
+msgstr "No se puede leer %1%"
+
+msgid "Choose the settings shown here"
+msgstr "Elegir los ajustes que se muestran aquí"
+
+msgid "Cone angle"
+msgstr "Ángulo del cono"
+
+msgid "Conical"
+msgstr "Cónica"
+
+msgid "Conical layers: slope of the cone. Positive values rise outwards."
+msgstr "Capas cónicas: pendiente del cono. Los valores positivos suben hacia afuera."
+
+msgid "Connect"
+msgstr "Conectar"
+
+msgid "Connecting"
+msgstr "Conectando"
+
+msgid "Connecting to %1% at %2% baud..."
+msgstr "Conectando a %1% a %2% baudios..."
+
+msgid "Customized for Tisma."
+msgstr "Personalizado para Tisma."
+
+msgid "Dense infill density"
+msgstr "Densidad del relleno denso"
+
+msgid "Dense infill under top surfaces"
+msgstr "Relleno denso bajo superficies superiores"
+
+msgid "Density of the infill layer printed below solid top surfaces when \"Dense infill under top surfaces\" is enabled."
+msgstr "Densidad de la capa de relleno que se imprime bajo las superficies sólidas superiores cuando está activado \"Relleno denso bajo superficies superiores\"."
+
+msgid "Direction of the ridges, 0 = along X."
+msgstr "Dirección de las crestas, 0 = a lo largo de X."
+
+msgid "Disconnect"
+msgstr "Desconectar"
+
+msgid "Disconnected"
+msgstr "Desconectado"
+
+msgid "Egg crate"
+msgstr "Huevera"
+
+msgid "Flat below"
+msgstr "Plano por debajo de"
+
+msgid "Flat top"
+msgstr "Superficie superior plana"
+
+msgid "G-code to print"
+msgstr "G-code a imprimir"
+
+msgid "Go back to flat layers at the top of the object."
+msgstr "Volver a capas planas en la parte superior del objeto."
+
+msgid "Height of the waves."
+msgstr "Altura de las ondas."
+
+msgid "Hotend %1% / %2% °C    Bed %3% / %4% °C"
+msgstr "Hotend %1% / %2% °C    Cama %3% / %4% °C"
+
+msgid "Layers below this height stay flat, so that the first layer sticks to the bed."
+msgstr "Las capas por debajo de esta altura quedan planas para que la primera capa se adhiera a la cama."
+
+msgid "Length of one wave. Longer waves are gentler on a slow Z axis."
+msgstr "Longitud de una onda. Las ondas largas exigen menos a un eje Z lento."
+
+msgid "Maximum layer slope"
+msgstr "Pendiente máxima de capa"
+
+msgid "Non-planar"
+msgstr "No planar"
+
+msgid "Non-planar layers"
+msgstr "Capas no planares"
+
+msgid "Off"
+msgstr "Desactivado"
+
+msgid "Paused"
+msgstr "En pausa"
+
+msgid "Port"
+msgstr "Puerto"
+
+msgid "Preserve"
+msgstr "Conservar"
+
+msgid "Print a G-code file on a printer connected by USB (serial port)"
+msgstr "Imprimir un archivo G-code en una impresora conectada por USB (puerto serie)"
+
+msgid "Print via &USB"
+msgstr "Imprimir por &USB"
+
+msgid "Print via USB"
+msgstr "Imprimir por USB"
+
+msgid "Quick settings"
+msgstr "Ajustes rápidos"
+
+msgid "Reset to defaults"
+msgstr "Restablecer predeterminados"
+
+msgid "Resume"
+msgstr "Reanudar"
+
+msgid "Ridge direction"
+msgstr "Dirección de las crestas"
+
+msgid "Ridges"
+msgstr "Crestas"
+
+msgid "Segment length"
+msgstr "Longitud de segmento"
+
+msgid "Select the print settings to show in the sidebar."
+msgstr "Selecciona los ajustes de impresión que se muestran en la barra lateral."
+
+msgid "Send"
+msgstr "Enviar"
+
+msgid "Start print"
+msgstr "Iniciar impresión"
+
+msgid "Transition"
+msgstr "Transición"
+
+msgid "Transition height"
+msgstr "Altura de transición"
+
+msgid "Twist"
+msgstr "Giro"
+
+msgid "Twisted ridges"
+msgstr "Crestas giradas"
+
+msgid "Twisted ridges: rotation of the ridge direction per millimeter of height."
+msgstr "Crestas giradas: rotación de la dirección de las crestas por milímetro de altura."
+
+msgid "Uniform"
+msgstr "Uniforme"
+
+msgid "Uniform flow"
+msgstr "Caudal uniforme"
+
+msgid "Volumetric flow of the uniform flow policy. 0 = 80 % of the maximum volumetric speed."
+msgstr "Caudal volumétrico de la política de caudal uniforme. 0 = 80 % de la velocidad volumétrica máxima."
+
+msgid "Wave"
+msgstr "Onda"
+
+msgid "Wave amplitude"
+msgstr "Amplitud de onda"
+
+msgid "Wave pattern"
+msgstr "Patrón de onda"
+
+msgid "Wavelength"
+msgstr "Longitud de onda"
+
+msgid "is based on PrusaSlicer by Prusa Research and on Slic3r by Alessandro Ranellucci and the RepRap community."
+msgstr "está basado en PrusaSlicer de Prusa Research y en Slic3r de Alessandro Ranellucci y la comunidad RepRap."
+
+msgid "Process"
+msgstr "Proceso"
+
+msgid "Device"
+msgstr "Dispositivo"
+
+msgid "Prepare"
+msgstr "Preparar"
+
+msgid "Temperature tower"
+msgstr "Torre de temperatura"
+
+msgid "Prints a tower of blocks with bridges and gaps. The nozzle temperature changes at each block."
+msgstr "Imprime una torre de bloques con puentes y huecos. La temperatura de la boquilla cambia en cada bloque."
+
+msgid "Choose the block with the best bridge, the least stringing and good layer adhesion. Its temperature is the start value plus the block number (from the bottom, starting at 0) times the step."
+msgstr "Elige el bloque con el mejor puente, menos hilos y buena adhesión entre capas. Su temperatura es el valor inicial más el número de bloque (desde abajo, empezando en 0) por el paso."
+
+msgid "Pressure advance tower"
+msgstr "Torre de pressure advance"
+
+msgid "Prints a thin walled square tower at high speed. Pressure advance (linear advance) changes along the height."
+msgstr "Imprime una torre cuadrada de pared fina a alta velocidad. El pressure advance (linear advance) cambia con la altura."
+
+msgid "Look at the corners: choose the height where they are sharp, without bulges nor gaps. The value is start + step × floor(height / step height). The printer also shows it on its display."
+msgstr "Mira las esquinas: elige la altura donde quedan nítidas, sin abultamientos ni huecos. El valor es inicio + paso × entero(altura / altura de cada paso). La impresora también lo muestra en su pantalla."
+
+msgid "Retraction tower"
+msgstr "Torre de retracción"
+
+msgid "Prints two thin pillars. The retraction length changes along the height."
+msgstr "Imprime dos columnas finas. La longitud de retracción cambia con la altura."
+
+msgid "Find the lowest height without strings between the pillars. The retraction length is start + step × floor(height / step height)."
+msgstr "Busca la altura más baja sin hilos entre las columnas. La retracción es inicio + paso × entero(altura / altura de cada paso)."
+
+msgid "Maximum volumetric speed"
+msgstr "Velocidad volumétrica máxima"
+
+msgid "Prints a single wall cylinder. The volumetric flow of the wall increases along the height (the speed of the wall is the flow divided by the section of the extrusion)."
+msgstr "Imprime un cilindro de una sola pared. El caudal volumétrico de la pared aumenta con la altura (la velocidad de la pared es el caudal dividido por la sección de la extrusión)."
+
+msgid "Find the height where the wall starts to get weak, with gaps or a matte surface. The flow there is start + step × floor(height / step height) mm³/s: use a slightly lower value as the maximum volumetric speed of the filament."
+msgstr "Busca la altura donde la pared empieza a debilitarse, con huecos o superficie mate. El caudal allí es inicio + paso × entero(altura / altura de cada paso) mm³/s: usa un valor algo menor como velocidad volumétrica máxima del filamento."
+
+msgid "Vertical fine artifacts (VFA)"
+msgstr "Artefactos verticales finos (VFA)"
+
+msgid "Prints a single wall square tower. The speed of the walls increases at each block."
+msgstr "Imprime una torre cuadrada de una sola pared. La velocidad de las paredes aumenta en cada bloque."
+
+msgid "Look at the walls against the light: choose the fastest block without fine vertical lines (VFA). Its speed is start + step × block number (from the bottom, starting at 0)."
+msgstr "Mira las paredes a contraluz: elige el bloque más rápido sin líneas verticales finas (VFA). Su velocidad es inicio + paso × número de bloque (desde abajo, empezando en 0)."
+
+msgid "Acceleration tower"
+msgstr "Torre de aceleración"
+
+msgid "Prints a thin walled square tower. The print acceleration changes at each block."
+msgstr "Imprime una torre cuadrada de pared fina. La aceleración de impresión cambia en cada bloque."
+
+msgid "Look at the ringing (ghosting) after the corners: choose the highest acceleration that still prints clean walls."
+msgstr "Mira las ondulaciones (ghosting) después de las esquinas: elige la aceleración más alta que todavía imprime paredes limpias."
+
+msgid "Cornering tower (jerk / junction deviation)"
+msgstr "Torre de esquinas (jerk / junction deviation)"
+
+msgid "Prints a thin walled square tower. The cornering setting changes at each block: square corner velocity on Klipper, jerk on Marlin (values of 1 or more) or junction deviation on Marlin (values below 1)."
+msgstr "Imprime una torre cuadrada de pared fina. El ajuste de esquinas cambia en cada bloque: square corner velocity en Klipper, jerk en Marlin (valores de 1 o más) o junction deviation en Marlin (valores menores que 1)."
+
+msgid "Choose the highest value with sharp corners and no ringing."
+msgstr "Elige el valor más alto con esquinas nítidas y sin ondulaciones."
+
+msgid "Input shaping frequency"
+msgstr "Frecuencia de input shaping"
+
+msgid "Prints a thin walled square tower at high speed and acceleration. The input shaper frequency changes at each block (Klipper SET_INPUT_SHAPER, Marlin M593)."
+msgstr "Imprime una torre cuadrada de pared fina a alta velocidad y aceleración. La frecuencia del input shaper cambia en cada bloque (Klipper SET_INPUT_SHAPER, Marlin M593)."
+
+msgid "Choose the block with the least ringing after the corners: its frequency is start + step × block number."
+msgstr "Elige el bloque con menos ondulaciones después de las esquinas: su frecuencia es inicio + paso × número de bloque."
+
+msgid "Start value"
+msgstr "Valor inicial"
+
+msgid "End value"
+msgstr "Valor final"
+
+msgid "Step"
+msgstr "Paso"
+
+msgid "Height of each step"
+msgstr "Altura de cada paso"
+
+msgid "%1% steps, tower height %2% mm."
+msgstr "%1% pasos, altura de la torre %2% mm."
+
+msgid "The step and its height must be greater than zero."
+msgstr "El paso y su altura deben ser mayores que cero."
+
+msgid "Calibration"
+msgstr "Calibración"
+
+msgid "C&alibration"
+msgstr "C&alibración"
+
+msgid "Calibration tests: temperature, pressure advance, retraction, speeds, ..."
+msgstr "Pruebas de calibración: temperatura, pressure advance, retracción, velocidades..."
+
+msgid "The calibration test replaces all the objects of the plater, continue?"
+msgstr "La prueba de calibración reemplaza todos los objetos de la plataforma. ¿Continuar?"
+
+msgid "Calibration test"
+msgstr "Prueba de calibración"
+
+msgid "Value changed along the height of the print by the calibration test."
+msgstr "Valor que la prueba de calibración cambia a lo largo de la altura de la impresión."
+
+msgid "Pressure advance"
+msgstr "Pressure advance"
+
+msgid "Perimeter speed"
+msgstr "Velocidad de perímetro"
+
+msgid "Cornering (jerk / square corner velocity)"
+msgstr "Esquinas (jerk / square corner velocity)"
+
+msgid "Calibration test: %1% from %2% to %3% every %4% mm."
+msgstr "Prueba de calibración: %1% de %2% a %3% cada %4% mm."
+
+msgid "Disable the test"
+msgstr "Desactivar"
+
+msgid "In development: not available in this version"
+msgstr "En desarrollo: no disponible en esta versión"
+
+msgid "Planned workflow"
+msgstr "Flujo de trabajo previsto"
+
+msgid "Development phase %1%"
+msgstr "Fase de desarrollo %1%"
+
+msgid "The results of the simulations will be estimations based on simplified models and approximate material data, not guarantees of strength. The plan and its status are in docs/IMPLEMENTATION_ROADMAP.md."
+msgstr "Los resultados de las simulaciones serán estimaciones basadas en modelos simplificados y datos aproximados de materiales, no garantías de resistencia. El plan y su estado están en docs/IMPLEMENTATION_ROADMAP.md."
+
+msgid "Engineering"
+msgstr "Ingeniería"
+
+msgid "Mechanical and thermal analysis of the part before printing it: paint fixed faces and loads on the model, run a finite element simulation and see stresses and displacements on the part."
+msgstr "Análisis mecánico y térmico de la pieza antes de imprimirla: pinta caras fijas y cargas sobre el modelo, ejecuta una simulación por elementos finitos y observa tensiones y desplazamientos sobre la pieza."
+
+msgid "Boundary conditions"
+msgstr "Condiciones de contorno"
+
+msgid "Paint fixed faces, forces and pressures on the model with the painting tool, with direction, magnitude and load cases. They are saved in the project."
+msgstr "Pinta caras fijas, fuerzas y presiones sobre el modelo con la herramienta de pintura, con dirección, magnitud y casos de carga. Se guardan en el proyecto."
+
+msgid "Orthotropic material: the strength between layers is lower than along the extrusions. PLA and PETG with editable properties."
+msgstr "Material ortótropo: la resistencia entre capas es menor que a lo largo de las extrusiones. PLA y PETG con propiedades editables."
+
+msgid "Simulation"
+msgstr "Simulación"
+
+msgid "Linear finite element analysis on a voxel grid of the part, run in the background and cancellable."
+msgstr "Análisis lineal por elementos finitos sobre una rejilla de vóxeles de la pieza, en segundo plano y cancelable."
+
+msgid "Results"
+msgstr "Resultados"
+
+msgid "Displacement, von Mises stress and principal stresses shown with colors on the model."
+msgstr "Desplazamiento, tensión de von Mises y tensiones principales mostrados con colores sobre el modelo."
+
+msgid "Thermal analysis"
+msgstr "Análisis térmico"
+
+msgid "Steady state heat conduction with imposed temperatures and heat flows."
+msgstr "Conducción de calor en régimen estacionario con temperaturas y flujos de calor impuestos."
+
+msgid "Structures"
+msgstr "Estructuras"
+
+msgid "Internal structures adapted to the loads: the outside of the part is kept and the infill is generated from a first analysis, then validated with a second analysis of the real structure."
+msgstr "Estructuras internas adaptadas a las cargas: se mantiene el exterior de la pieza y el relleno se genera a partir de un primer análisis; después se valida con un segundo análisis de la estructura real."
+
+msgid "Preliminary analysis"
+msgstr "Análisis preliminar"
+
+msgid "Analysis of the part with the properties of a homogeneous reference infill, to find the critical zones."
+msgstr "Análisis de la pieza con las propiedades de un relleno homogéneo de referencia, para encontrar las zonas críticas."
+
+msgid "Adaptive infill"
+msgstr "Relleno adaptativo"
+
+msgid "Infill density and orientation follow the stresses. First version: internal modifiers by density bands."
+msgstr "La densidad y la orientación del relleno siguen las tensiones. Primera versión: modificadores internos por bandas de densidad."
+
+msgid "Local reinforcements"
+msgstr "Refuerzos locales"
+
+msgid "More walls and ribs around loads, fixtures and critical zones."
+msgstr "Más paredes y nervaduras alrededor de cargas, fijaciones y zonas críticas."
+
+msgid "3D lattice"
+msgstr "Lattice 3D"
+
+msgid "Cells and struts of variable thickness, connected to the shell."
+msgstr "Celdas y barras de espesor variable, conectadas al exterior de la pieza."
+
+msgid "Validation"
+msgstr "Validación"
+
+msgid "Second analysis of the sliced part with its real walls and infill; weight and estimated stiffness compared with a uniform infill."
+msgstr "Segundo análisis de la pieza laminada con sus paredes y relleno reales; peso y rigidez estimada comparados con un relleno uniforme."
+
+msgid "Import, arrange and orient the models; supports and painting tools"
+msgstr "Importar, colocar y orientar los modelos; soportes y herramientas de pintura"
+
+msgid "Layers, toolpaths and G-code preview"
+msgstr "Capas, trayectorias y vista previa del G-code"
+
+msgid "Mechanical and thermal analysis (in development)"
+msgstr "Análisis mecánico y térmico (en desarrollo)"
+
+msgid "Adaptive infill, lattice and reinforcements (in development)"
+msgstr "Relleno adaptativo, lattice y refuerzos (en desarrollo)"
+
+msgid "Configuration"
+msgstr "Configuración"
+
+msgid "Printer, filament and process profiles; preferences"
+msgstr "Perfiles de impresora, filamento y proceso; preferencias"
+
+msgid "Structural analysis at the working temperature (in development)"
+msgstr "Análisis estructural a la temperatura de trabajo (en desarrollo)"
+
+msgid ""
+"Structural analysis of the part in its working conditions: set the ambient temperature where the part will be used, "
+"place the supports and the loads, and see stresses and displacements on the part."
+msgstr ""
+"Análisis estructural de la pieza en sus condiciones de trabajo: indica la temperatura ambiente donde se usará la "
+"pieza, coloca los apoyos y las cargas, y mira las tensiones y desplazamientos sobre la pieza."
+
+msgid "Working temperature"
+msgstr "Temperatura de trabajo"
+
+msgid ""
+"A single ambient temperature for the whole part, like a heated chamber (for example 130 °C). It changes the "
+"stiffness and strength of the material; there is no heat conduction analysis. A warning is shown when the "
+"temperature is close to or above the glass transition of the material."
+msgstr ""
+"Una sola temperatura ambiente para toda la pieza, como una cámara caliente (por ejemplo 130 °C). Cambia la "
+"rigidez y la resistencia del material; no hay análisis de conducción de calor. Se avisa cuando la temperatura "
+"se acerca o supera la transición vítrea del material."
+
+msgid "Supports and loads"
+msgstr "Apoyos y cargas"
+
+msgid ""
+"Paint the fixed faces, and place loads on specific points or faces with their components X, Y and Z in newtons. "
+"Several load cases are saved in the project."
+msgstr ""
+"Pinta las caras fijas y coloca cargas en puntos o caras concretas con sus componentes X, Y y Z en newtons. "
+"Los casos de carga se guardan en el proyecto."
+
+msgid ""
+"Orthotropic material: the strength between layers is lower than along the extrusions. PLA and PETG with editable "
+"properties that depend on the temperature."
+msgstr ""
+"Material ortótropo: la resistencia entre capas es menor que a lo largo de las extrusiones. PLA y PETG con "
+"propiedades editables que dependen de la temperatura."
+
+msgid "Displacement, von Mises stress and safety factor shown with colors on the model."
+msgstr "Desplazamiento, tensión de von Mises y factor de seguridad mostrados con colores sobre el modelo."
+
+msgid "Tessellate again (%1%)"
+msgstr "Volver a teselar (%1%)"
+
+msgid "Tessellate again"
+msgstr "Volver a teselar"
+
+msgid "Tessellate again the selected parts from their STEP model with another precision, keeping the painting"
+msgstr "Vuelve a teselar las piezas seleccionadas desde su modelo STEP con otra precisión, conservando lo pintado"
+
+msgid "Check CAD geometry"
+msgstr "Comprobar geometría CAD"
+
+msgid "Show the result of the geometry check of the STEP model of the selected parts"
+msgstr "Muestra el resultado de la comprobación geométrica del modelo STEP de las piezas seleccionadas"
+
+msgid "%1% of %2% parts tessellated again."
+msgstr "%1% de %2% piezas teseladas de nuevo."
+
+msgid "The painting of %1% faces painted only in part was projected triangle by triangle: check it."
+msgstr "Lo pintado en %1% caras pintadas solo en parte se proyectó triángulo a triángulo: revísalo."
+
+msgid "Errors:"
+msgstr "Errores:"
+
+msgid "valid geometry"
+msgstr "geometría válida"
+
+msgid "geometry with errors"
+msgstr "geometría con errores"
+
+msgid "STEP file: %1%, solid %2%, %3% faces, %4% triangles"
+msgstr "Archivo STEP: %1%, sólido %2%, %3% caras, %4% triángulos"
+
+msgid "Tessellation: linear %1% mm, angular %2%°"
+msgstr "Teselado: lineal %1% mm, angular %2%°"
+
+msgid "CAD geometry"
+msgstr "Geometría CAD"
+
+msgid "The STEP model has geometry errors (B-Rep check). Check the printed result:"
+msgstr "El modelo STEP tiene errores geométricos (comprobación B-Rep). Revisa el resultado impreso:"
+
+msgid ""
+"Table of printing materials (PLA, PETG, ABS, ASA, PC, PA, ...) with their properties and how they change with the "
+"temperature. The material of the filament selected for printing is used by default. Orthotropic: the strength "
+"between layers is lower than along the extrusions."
+msgstr ""
+"Tabla de materiales de impresión (PLA, PETG, ABS, ASA, PC, PA, ...) con sus propiedades y cómo cambian con la "
+"temperatura. Por defecto se usa el material del filamento elegido para imprimir. Ortótropo: la resistencia "
+"entre capas es menor que a lo largo de las extrusiones."
+
+msgid ""
+"Displacement, von Mises stress and safety factor shown with colors on the model, and a clear verdict: the part "
+"holds, it is out of load, or the temperature is too high for the material, with materials of the table that "
+"would work."
+msgstr ""
+"Desplazamiento, tensión de von Mises y factor de seguridad con colores sobre el modelo, y un veredicto claro: la "
+"pieza aguanta, está fuera de carga o la temperatura es demasiado alta para el material, con los materiales de la "
+"tabla que sí servirían."
+
+msgid "Structural analysis at the working temperature: supports, loads and material"
+msgstr "Análisis estructural a la temperatura de trabajo: apoyos, cargas y material"
+
+msgid "Load a part to analyze it in Engineering."
+msgstr "Carga una pieza para analizarla en Ingeniería."
+
+msgid "The structural analysis is available for FFF printers."
+msgstr "El análisis estructural está disponible para impresoras FFF."
+
+msgid "The part holds"
+msgstr "La pieza aguanta"
+
+msgid "It holds, but with less margin than the required safety factor"
+msgstr "Aguanta, pero con menos margen que el factor de seguridad pedido"
+
+msgid "Out of load: the stresses exceed the strength of the material"
+msgstr "Fuera de carga: las tensiones superan la resistencia del material"
+
+msgid "Too flexible: a load moves more than its allowed deformation"
+msgstr "Demasiado flexible: una carga se desplaza más que su deformación permitida"
+
+msgid "Out of temperature: the material is not structural at this temperature"
+msgstr "Fuera de temperatura: el material no es estructural a esta temperatura"
+
+msgid "The linear analysis does not describe this material (elastomer)"
+msgstr "El análisis lineal no describe este material (elastómero)"
+
+msgid "Click a face to hold the part there"
+msgstr "Haz clic en una cara para sujetar la pieza ahí"
+
+msgid "Click a face to apply the load on it"
+msgstr "Haz clic en una cara para aplicarle la carga"
+
+msgid "Click a point of the part to apply the load there"
+msgstr "Haz clic en un punto de la pieza para aplicar la carga ahí"
+
+msgid "Remove fixed face"
+msgstr "Quitar cara fija"
+
+msgid "Add fixed face"
+msgstr "Añadir cara fija"
+
+msgid "Load %1%"
+msgstr "Carga %1%"
+
+msgid "Add load"
+msgstr "Añadir carga"
+
+msgid "1 = breaks"
+msgstr "1 = rompe"
+
+msgid "Filament (%1%)"
+msgstr "Del filamento (%1%)"
+
+msgid "Change material"
+msgstr "Cambiar material"
+
+msgid "The filament type has no material in the table: choose one."
+msgstr "El tipo de filamento no tiene material en la tabla: elige uno."
+
+msgid "Temperature [°C]"
+msgstr "Temperatura [°C]"
+
+msgid "Change working temperature"
+msgstr "Cambiar temperatura de trabajo"
+
+msgid "%1% is not structural above %2% °C"
+msgstr "%1% no es estructural por encima de %2% °C"
+
+msgid "Safety factor"
+msgstr "Factor de seguridad"
+
+msgid "Change safety factor"
+msgstr "Cambiar factor de seguridad"
+
+msgid "Click on the part:"
+msgstr "Clic sobre la pieza:"
+
+msgid "Rotate the view"
+msgstr "Girar la vista"
+
+msgid "Fixed face"
+msgstr "Cara fija"
+
+msgid "Load on a face"
+msgstr "Carga en una cara"
+
+msgid "Load on a point"
+msgstr "Carga en un punto"
+
+msgid "Force X, Y, Z [N]"
+msgstr "Fuerza X, Y, Z [N]"
+
+msgid "Max. deformation [mm] / [%]"
+msgstr "Deformación máx. [mm] / [%]"
+
+msgid "0 = no limit. Z is up, as on the bed: -100 in Z pushes down with 100 N (about 10 kg)."
+msgstr "0 = sin límite. Z hacia arriba, como en la cama: -100 en Z empuja hacia abajo con 100 N (unos 10 kg)."
+
+msgid "Fixed faces: %1%"
+msgstr "Caras fijas: %1%"
+
+msgid "Face %1%"
+msgstr "Cara %1%"
+
+msgid "Loads: %1%"
+msgstr "Cargas: %1%"
+
+msgid ", max %1% mm"
+msgstr ", máx. %1% mm"
+
+msgid ", max %1% %%"
+msgstr ", máx. %1% %%"
+
+msgid " -> moves %1$.3f mm"
+msgstr " -> se mueve %1$.3f mm"
+
+msgid "Remove load"
+msgstr "Quitar carga"
+
+msgid "Analyze"
+msgstr "Calcular"
+
+msgid "Run the structural analysis"
+msgstr "Ejecuta el análisis estructural"
+
+msgid "Add a fixed face and a load."
+msgstr "Añade una cara fija y una carga."
+
+msgid "The setup changed: analyze again."
+msgstr "La configuración cambió: vuelve a calcular."
+
+msgid "Material: %1% at %2% °C (stiffness and strength x %3$.2f)"
+msgstr "Material: %1% a %2% °C (rigidez y resistencia x %3$.2f)"
+
+msgid "Safety factor: %1$.2f (required %2$.1f)"
+msgstr "Factor de seguridad: %1$.2f (pedido %2$.1f)"
+
+msgid "Max. displacement: %1$.3f mm"
+msgstr "Desplazamiento máx.: %1$.3f mm"
+
+msgid "Max. stress (von Mises): %1$.2f MPa"
+msgstr "Tensión máx. (von Mises): %1$.2f MPa"
+
+msgid "Materials that would hold (safety factor): %1%"
+msgstr "Materiales que aguantarían (factor de seguridad): %1%"
+
+msgid "Show results on the part"
+msgstr "Mostrar resultados sobre la pieza"
+
+msgid "Safety (stress / strength)"
+msgstr "Seguridad (tensión / resistencia)"
+
+msgid "Stress (von Mises)"
+msgstr "Tensión (von Mises)"
+
+msgid "Displacement"
+msgstr "Desplazamiento"
+
+msgid "Solid part, %1$.2f mm voxels. Walls and infill are taken into account in phase 6."
+msgstr "Pieza maciza, vóxeles de %1$.2f mm. Las paredes y el relleno se tendrán en cuenta en la Fase 6."
+
+msgid "Load radius [mm]"
+msgstr "Radio de la carga [mm]"
+
+msgid ", r %1% mm"
+msgstr ", r %1% mm"
+
+msgid "Lightest infill for the loads: uniform or by zones"
+msgstr "Relleno más ligero para las cargas: uniforme o por zonas"
+
+msgid "Apply lightest infill"
+msgstr "Aplicar el relleno más ligero"
+
+msgid "0 % (empty)"
+msgstr "0 % (vacío)"
+
+msgid "100 % (solid)"
+msgstr "100 % (macizo)"
+
+msgid "Printed part (walls and infill of the profile)"
+msgstr "Pieza impresa (paredes y relleno del perfil)"
+
+msgid "Estimated mass: %1$.1f g (solid part: %2$.1f g)"
+msgstr "Masa estimada: %1$.1f g (pieza maciza: %2$.1f g)"
+
+msgid "Solid part, %1$.2f mm voxels."
+msgstr "Pieza maciza, vóxeles de %1$.2f mm."
+
+msgid "Walls and homogenized infill, %1$.2f mm voxels."
+msgstr "Paredes y relleno homogeneizado, vóxeles de %1$.2f mm."
+
+msgid "Lightest infill"
+msgstr "Relleno mínimo"
+
+msgid "Searches the lowest infill which meets the safety factor and the deformation limits of the loads, with the walls and the infill pattern of the profile."
+msgstr "Busca el relleno más bajo que cumple el factor de seguridad y los límites de deformación de las cargas, con las paredes y el patrón de relleno del perfil."
+
+msgid "Also by zones (more infill where the stresses are high)"
+msgstr "También por zonas (más relleno donde las tensiones son altas)"
+
+msgid "Find lightest infill"
+msgstr "Buscar relleno mínimo"
+
+msgid "Not even 100 % infill meets the requirements:"
+msgstr "Ni con el 100 % de relleno se cumplen los requisitos:"
+
+msgid "Add perimeters, choose another material or reinforce the shape."
+msgstr "Añade perímetros, elige otro material o refuerza la forma."
+
+msgid "Current infill: %1$.1f g"
+msgstr "Relleno actual: %1$.1f g"
+
+msgid "Uniform: %1% %% -> %2$.1f g, safety factor %3$.2f"
+msgstr "Uniforme: %1% %% -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Apply uniform"
+msgstr "Aplicar uniforme"
+
+msgid "By zones: %1% %% + zones of %2% -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"
+msgstr "Por zonas: %1% %% + zonas de %2% -> %3$.1f g (%4$.0f %% más ligero), factor de seguridad %5$.2f"
+
+msgid "Apply by zones"
+msgstr "Aplicar por zonas"
+
+msgid "The zones would not save material: the uniform infill is the lightest."
+msgstr "Las zonas no ahorrarían material: el relleno uniforme es el más ligero."
+
+msgid "%1% analyses. Homogenized infill model: check the result with a printed test part."
+msgstr "%1% análisis. Modelo de relleno homogeneizado: comprueba el resultado con una pieza de prueba impresa."
+
+msgid "The solid walls are hidden to show the infill inside."
+msgstr "Las paredes macizas se ocultan para mostrar el relleno interior."
+
+msgid "Apply local reinforcement"
+msgstr "Aplicar refuerzo local"
+
+msgid "Apply lattice"
+msgstr "Aplicar lattice"
+
+msgid "Local reinforcement"
+msgstr "Refuerzos locales"
+
+msgid "More perimeters and infill around the fixed faces and the loads, and the rest of the part as light as possible."
+msgstr "Más perímetros y relleno alrededor de las caras fijas y de las cargas, y el resto de la pieza lo más ligero posible."
+
+msgid "Radius [mm] (0 = automatic)"
+msgstr "Radio [mm] (0 = automático)"
+
+msgid "Extra perimeters"
+msgstr "Perímetros extra"
+
+msgid "Infill of the reinforcement [%]"
+msgstr "Relleno del refuerzo [%]"
+
+msgid "Calculate reinforcement"
+msgstr "Calcular refuerzo"
+
+msgid "Without reinforcement: %1% %% -> %2$.1f g"
+msgstr "Sin refuerzo: %1% %% -> %2$.1f g"
+
+msgid "Without reinforcement: not even 100 % infill meets the requirements."
+msgstr "Sin refuerzo: ni con el 100 % de relleno se cumplen los requisitos."
+
+msgid "With reinforcement: %1% %% + reinforcement -> %2$.1f g, safety factor %3$.2f"
+msgstr "Con refuerzo: %1% %% + refuerzo -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Apply reinforcement"
+msgstr "Aplicar refuerzo"
+
+msgid "With reinforcement: not even 100 % infill meets the requirements."
+msgstr "Con refuerzo: ni con el 100 % de relleno se cumplen los requisitos."
+
+msgid "Struts instead of the infill, joined to the walls: vertical and at 45 degrees, printable without supports. Their thickness follows the stresses."
+msgstr "Barras en lugar del relleno, unidas a las paredes: verticales y a 45°, imprimibles sin soportes. Su grosor sigue a las tensiones."
+
+msgid "Cell [mm]"
+msgstr "Celda [mm]"
+
+msgid "Min. strut diameter [mm]"
+msgstr "Diámetro mín. de barra [mm]"
+
+msgid "Max. strut diameter [mm]"
+msgstr "Diámetro máx. de barra [mm]"
+
+msgid "Generate lattice"
+msgstr "Generar lattice"
+
+msgid "Not even the thickest struts meet the requirements: a smaller cell, more walls or another material."
+msgstr "Ni con las barras más gruesas se cumplen los requisitos: celda más pequeña, más paredes u otro material."
+
+msgid "Uniform struts: %1$.2f mm -> %2$.1f g, safety factor %3$.2f"
+msgstr "Barras uniformes: %1$.2f mm -> %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Variable struts: %1$.2f-%2$.2f mm -> %3$.1f g (%4$.0f %% lighter), safety factor %5$.2f"
+msgstr "Barras variables: %1$.2f-%2$.2f mm -> %3$.1f g (%4$.0f %% más ligero), factor de seguridad %5$.2f"
+
+msgid "The infill of the part becomes 0 %%. %1% analyses; homogenized lattice model: check the first print."
+msgstr "El relleno de la pieza pasa a 0 %%. %1% análisis; modelo de lattice homogeneizado: revisa la primera impresión."
+
+msgid "The reinforcement does not save material here: the stresses are not concentrated at the supports and loads."
+msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en los apoyos y las cargas."
+
+msgid "Rendering quality"
+msgstr "Calidad de render"
+
+msgid "Quality of the 3D view of the objects, of the bed and of the G-code preview. Classic: lighting per vertex, as PrusaSlicer 2.9. Per pixel: smooth lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and shadows of the main light (needs a faster graphics card)."
+msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como PrusaSlicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
+
+msgid "Per pixel"
+msgstr "Por píxel"
+
+msgid "Shadows"
+msgstr "Sombras"
+
+msgid "%1% axis vertical"
+msgstr "Eje %1% vertical"
+
+msgid "%1%: safety factor %2$.2f, displacement %3$.3f mm"
+msgstr "%1%: factor de seguridad %2$.2f, desplazamiento %3$.3f mm"
+
+msgid "About %1% voxels of %2$.2f mm."
+msgstr "Unos %1% vóxeles de %2$.2f mm."
+
+msgid "About %1% voxels of %2$.2f mm: too many, limited to %3%."
+msgstr "Unos %1% vóxeles de %2$.2f mm: demasiados, se limita a %3%."
+
+msgid "Applied: infill %1% %% in \"%2%\" and %3% modifiers \"%4%\" with more infill. Slice again to see it in the preview."
+msgstr "Aplicado: relleno del %1% %% en «%2%» y %3% modificadores «%4%» con más relleno. Lamina de nuevo para verlo en la vista previa."
+
+msgid "Applied: infill %1% %% in \"%2%\". Slice again to see it in the preview."
+msgstr "Aplicado: relleno del %1% %% en «%2%». Lamina de nuevo para verlo en la vista previa."
+
+msgid "As placed (layers along Z)"
+msgstr "Como está (capas a lo largo de Z)"
+
+msgid "High (voxel 2 line widths)"
+msgstr "Alta (vóxel de 2 anchos de línea)"
+
+msgid "Layer adhesion with the nozzle at %1% °C: x %2$.2f"
+msgstr "Adherencia entre capas con la boquilla a %1% °C: x %2$.2f"
+
+msgid "Limited to %1% voxels of %2$.2f mm (%3$.1f line widths)."
+msgstr "Limitado a %1% vóxeles de %2$.2f mm (%3$.1f anchos de línea)."
+
+msgid "Nozzle temperature unknown: nominal layer adhesion."
+msgstr "Temperatura de boquilla desconocida: adherencia entre capas nominal."
+
+msgid "Part rotated to print the loads along the layers: analyze again and check the supports of the print."
+msgstr "Pieza rotada para que las cargas vayan a lo largo de las capas: analiza de nuevo y revisa los soportes de la impresión."
+
+msgid "Print orientation"
+msgstr "Orientación de impresión"
+
+msgid "Recommend orientation"
+msgstr "Recomendar orientación"
+
+msgid "Recommended: print with the %1% axis vertical (safety factor x %2$.2f)."
+msgstr "Recomendado: imprimir con el eje %1% vertical (factor de seguridad x %2$.2f)."
+
+msgid "Resolution"
+msgstr "Resolución"
+
+msgid "Rotate the part"
+msgstr "Rotar la pieza"
+
+msgid "Rotate to the recommended orientation"
+msgstr "Rotar a la orientación recomendada"
+
+msgid "The current orientation is already the strongest for these loads."
+msgstr "La orientación actual ya es la más resistente para estas cargas."
+
+msgid "The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."
+msgstr "La búsqueda de relleno, el refuerzo, el lattice y la orientación usan como máximo %1% vóxeles."
+
+msgid "The overhangs and the supports of the new orientation are not checked."
+msgstr "No se comprueban los voladizos ni los soportes de la nueva orientación."
+
+msgid "Ultra (voxel 1 line width)"
+msgstr "Ultra (vóxel de 1 ancho de línea)"
+
+msgid "The layers are weaker across than along: compares the part printed as it is placed with the part laid on its X and Y axes, with the same loads, and recommends the strongest."
+msgstr "Las capas resisten menos a través que a lo largo: compara la pieza impresa como está con la pieza acostada sobre sus ejes X e Y, con las mismas cargas, y recomienda la más resistente."
+
+msgid "Remove last load"
+msgstr "Quitar la última carga"
+
+msgid "Removes the last load added (Ctrl+Z restores it)"
+msgstr "Quita la última carga agregada (Ctrl+Z la recupera)"
+
+msgid "Removes all the fixed faces and loads of the part (Ctrl+Z restores them)"
+msgstr "Quita todas las caras fijas y cargas de la pieza (Ctrl+Z las recupera)"
+
+msgid "Clear supports and loads"
+msgstr "Limpiar apoyos y cargas"
+
+msgid "(the print starts when the printer is ready)"
+msgstr "(la impresión empieza cuando la impresora esté lista)"
+
+msgid "A print is already in progress on the printer."
+msgstr "Ya hay una impresión en curso en la impresora."
+
+msgid "Cannot connect to %1%: %2%"
+msgstr "No se puede conectar a %1%: %2%"
+
+msgid "Connect automatically to this printer (the connection stays open when this window is closed)"
+msgstr "Conectar automáticamente a esta impresora (la conexión sigue abierta al cerrar esta ventana)"
+
+msgid "Print via USB on the saved printer"
+msgstr "Imprimir por USB en la impresora guardada"
+
+msgid "Printing %1%"
+msgstr "Imprimiendo %1%"
+
+msgid "The G-code is empty."
+msgstr "El G-code está vacío."
+
+msgid "The binary G-code cannot be converted to text: %1%"
+msgstr "El G-code binario no se puede convertir a texto: %1%"
+
+msgid "The printer is not connected: the print was not started."
+msgstr "La impresora no está conectada: la impresión no se inició."
+
+msgid "Slice the plate first, then print via USB."
+msgstr "Primero lamina la placa y después imprime por USB."
+
+msgid "Min fan speed"
+msgstr "Velocidad mínima del ventilador"
+
+msgid "Max fan speed"
+msgstr "Velocidad máxima del ventilador"
+
+msgid "All settings"
+msgstr "Todos los ajustes"
+
+msgid "Search and add settings to this panel, or remove them"
+msgstr "Buscar y agregar ajustes a este panel, o quitarlos"
+
+msgid "Open the full settings of this section"
+msgstr "Abrir todos los ajustes de esta sección"
+
+msgid "No settings here: press \"Add\" to choose them."
+msgstr "No hay ajustes aquí: pulsa «Agregar» para elegirlos."
+
+msgid "Quick print settings"
+msgstr "Ajustes rápidos de impresión"
+
+msgid "Quick filament settings"
+msgstr "Ajustes rápidos de filamento"
+
+msgid "Quick printer settings"
+msgstr "Ajustes rápidos de impresora"
+
+msgid "Select the settings to show in the sidebar."
+msgstr "Elige los ajustes que se muestran en la barra lateral."
+
+msgctxt "Section"
+msgid "Print"
+msgstr "Impresión"
+
+msgctxt "Section"
+msgid "Filament"
+msgstr "Filamento"
+
+msgctxt "Section"
+msgid "Printer"
+msgstr "Impresora"
+
+msgid "Belt printer"
+msgstr "Impresora de cinta"
+
+msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
+msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, Y la cinta (avanza entre capas) y Z a lo largo del cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
+
+msgid "Gantry angle"
+msgstr "Ángulo del cabezal"
+
+msgid "Belt printer gantry angle"
+msgstr "Ángulo del cabezal de la impresora de cinta"
+
+msgid "Angle between the gantry (the printing plane) and the belt. Most belt printers use 45°."
+msgstr "Ángulo entre el cabezal (el plano de impresión) y la cinta. La mayoría de las impresoras de cinta usan 45°."
+
+msgid "Belt printer: the analysis uses the layers inclined by the gantry. The recommended orientation is only available for flat beds."
+msgstr "Impresora de cinta: el análisis usa las capas inclinadas por el cabezal. La orientación recomendada solo está disponible para camas planas."
+
+msgid "Devices"
+msgstr "Dispositivos"
+
+msgid "Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code"
+msgstr "Impresoras por USB y Wi-Fi: interfaz web (cámara, temperaturas, calibraciones) y envío del G-code"
+
+msgid "Add network printer"
+msgstr "Agregar impresora de red"
+
+msgid "OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, Repetier, MKS, FlashAir, AstroBox. The printers of the local network can be searched in the dialog."
+msgstr "OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, Repetier, MKS, FlashAir, AstroBox. En el diálogo se pueden buscar las impresoras de la red local."
+
+msgid "Edit printer"
+msgstr "Editar impresora"
+
+msgid "Start printing"
+msgstr "Iniciar la impresión"
+
+msgid "Send sliced G-code"
+msgstr "Enviar el G-code laminado"
+
+msgid "Open in browser"
+msgstr "Abrir en el navegador"
+
+msgid "USB printer (not connected yet)"
+msgstr "Impresora USB (todavía sin conectar)"
+
+msgid "USB printer (%1%)"
+msgstr "Impresora USB (%1%)"
+
+msgid "USB printer"
+msgstr "Impresora USB"
+
+msgid "The USB printer is controlled from the \"Print via USB\" window: connection, temperatures, console and printing. Add a network printer to see its web interface here (camera, temperatures, calibrations)."
+msgstr "La impresora USB se controla desde la ventana «Imprimir por USB»: conexión, temperaturas, consola e impresión. Agrega una impresora de red para ver aquí su interfaz web (cámara, temperaturas, calibraciones)."
+
+msgid "Prusa Connect printers are shown in the Prusa Connect page; the G-code can be sent from here."
+msgstr "Las impresoras de Prusa Connect se ven en la página de Prusa Connect; el G-code se puede enviar desde aquí."
+
+msgid "Web interface of the printer: camera, temperatures, console and the calibrations of its firmware (for example input shaping in Klipper)."
+msgstr "Interfaz web de la impresora: cámara, temperaturas, consola y las calibraciones de su firmware (por ejemplo, el input shaping de Klipper)."
+
+msgid "Slice the plate first: there is no sliced G-code to send."
+msgstr "Primero lamina la placa: no hay G-code laminado para enviar."
+
+msgid "Cannot copy the G-code: %1%"
+msgstr "No se puede copiar el G-code: %1%"
+
+msgid "The printer has no network address: edit it."
+msgstr "La impresora no tiene dirección de red: edítala."
+
+msgid "Sending %1% to %2%."
+msgstr "Enviando %1% a %2%."
+
+msgid "Printer Selection"
+msgstr "Selección de impresoras"
+
+msgid "Choose the brand of your printer and check your printers, or search them by name. You can choose printers of several brands."
+msgstr "Elige la marca de tu impresora y marca tus impresoras, o búscalas por nombre. Puedes elegir impresoras de varias marcas."
+
+msgid "Search printer by name"
+msgstr "Buscar impresora por nombre"
+
+msgid "Brands"
+msgstr "Marcas"
+
+msgid "All results (%1%)"
+msgstr "Todos los resultados (%1%)"
+
+msgid "No printer selected."
+msgstr "Ninguna impresora seleccionada."
+
+msgid "%1% printer selected. Next: their settings and filaments."
+msgid_plural "%1% printers selected. Next: their settings and filaments."
+msgstr[0] "%1% impresora seleccionada. Siguiente: sus ajustes y filamentos."
+msgstr[1] "%1% impresoras seleccionadas. Siguiente: sus ajustes y filamentos."
+
+msgid "Head clearance height"
+msgstr "Altura libre del cabezal"
+
+msgid "Print head clearance height (non-planar)"
+msgstr "Altura libre del cabezal (no planar)"
+
+msgid "Vertical distance from the nozzle tip to the lowest point of the print head around it (heater block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers are refused if the part already printed would rise higher than this within the head clearance radius. 0 disables the check."
+msgstr "Distancia vertical desde la punta de la boquilla hasta el punto más bajo del cabezal a su alrededor (bloque calefactor con su funda, ducto de ventilación de la pieza, sensor). Mídela en tu impresora. Las capas no planares se rechazan si la pieza ya impresa sube más que esto dentro del radio libre del cabezal. 0 desactiva la comprobación."
+
+msgid "Head clearance radius"
+msgstr "Radio libre del cabezal"
+
+msgid "Print head clearance radius (non-planar)"
+msgstr "Radio libre del cabezal (no planar)"
+
+msgid "Horizontal distance from the nozzle to the farthest point of the print head parts that are lower than the head clearance height above the nozzle tip (heater block, cooling duct)."
+msgstr "Distancia horizontal desde la boquilla hasta el punto más lejano de las partes del cabezal que quedan por debajo de la altura libre sobre la punta (bloque calefactor, ducto de ventilación)."
+
+msgid "Print head (non-planar layers)"
+msgstr "Cabezal (capas no planares)"
+
+msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the %4% mm the print head allows there (Printer Settings > General > Print head). Reduce the wave amplitude or the cone angle, or check the measurements of the print head."
+msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que los %4% mm que admite el cabezal ahí (Ajustes de la impresora > General > Cabezal). Reduce la amplitud de las ondas o el ángulo del cono, o revisa las medidas del cabezal."
+
+msgid "Curved (non-planar) layers: the material follows them (%1% directions)."
+msgstr "Capas curvas (no planares): el material las sigue (%1% direcciones)."
+
+msgid "Non-planar: maximum layer slope"
+msgstr "No planar: pendiente máxima de capa"
+
+msgid "Non-planar: Z axis speed"
+msgstr "No planar: velocidad del eje Z"
+
+msgid "Non-planar: print head clearance gauge"
+msgstr "No planar: galga de altura libre del cabezal"
+
+msgid "Prints a block whose top layers are curved ridges. The slope of the ridges grows in steps along X (from left to right). Uses its own curved layers, not the non-planar settings of the print."
+msgstr "Imprime un bloque cuyas capas superiores son crestas curvas. La pendiente de las crestas crece por pasos a lo largo de X (de izquierda a derecha). Usa sus propias capas curvas, no los ajustes no planares de la impresión."
+
+msgid "Look at the top surface from the left: find the first step where the nozzle scrapes or drags the surface, or the lines stop sticking. The step before it is the steepest one your nozzle prints well: its slope is start + step × step number (from the left, starting at 0). Enter it as \"Maximum layer slope\" (Print Settings > Non-planar)."
+msgstr "Mira la superficie superior desde la izquierda: busca el primer paso donde la boquilla raspa o arrastra la superficie, o las líneas dejan de pegarse. El paso anterior es el más empinado que tu boquilla imprime bien: su pendiente es inicio + paso × número de paso (desde la izquierda, empezando en 0). Ingrésala como «Pendiente máxima de capa» (Ajustes de impresión > No planar)."
+
+msgid "Prints a cylinder with wavy layers. The Z speed allowed to the curved moves grows at each step above the transition (about 9 mm). Uses its own curved layers, not the non-planar settings of the print."
+msgstr "Imprime un cilindro con capas onduladas. La velocidad Z permitida a los movimientos curvos crece en cada paso por encima de la transición (unos 9 mm). Usa sus propias capas curvas, no los ajustes no planares de la impresión."
+
+msgid "Find the first step where the layers look squashed or shifted, the wall gets rough, or the Z motor skips (the top ends lower than the rest). The step before it is the fastest Z speed that works: start + step × floor((height − 9 mm) / step height). Enter it as the maximum Z feed rate of the machine limits (Printer Settings > Machine limits). If the firmware limits Z (M203), the steps above that limit look the same."
+msgstr "Busca el primer paso donde las capas se ven aplastadas o desplazadas, la pared queda áspera o el motor Z pierde pasos (la parte de arriba termina más baja). El paso anterior es la velocidad Z más rápida que funciona: inicio + paso × piso((altura − 9 mm) / altura del paso). Ingrésala como velocidad máxima de Z en los límites de la máquina (Ajustes de la impresora > Límites de la máquina). Si el firmware limita Z (M203), los pasos por encima de ese límite se ven iguales."
+
+msgid "Prints a staircase gauge (nothing is printed near the print head). Put it on the cold bed with the nozzle touching the bed and slide it under the print head."
+msgstr "Imprime una galga escalonada (no se imprime nada cerca del cabezal). Ponla sobre la cama fría con la boquilla tocando la cama y deslízala por debajo del cabezal."
+
+msgid "The highest step that fits under the lowest point of the print head (heater block with its sock, cooling duct, probe) without touching it is the head clearance height: start + step × step number (from the lowest, starting at 0). Measure also the farthest point of those parts from the nozzle: it is the head clearance radius. Enter both in Printer Settings > General > Print head."
+msgstr "El escalón más alto que entra debajo del punto más bajo del cabezal (bloque calefactor con su funda, ducto de ventilación, sensor) sin tocarlo es la altura libre del cabezal: inicio + paso × número de escalón (desde el más bajo, empezando en 0). Mide también el punto más lejano de esas partes a la boquilla: es el radio libre del cabezal. Ingresa ambos en Ajustes de la impresora > General > Cabezal."
+
+msgid "Width of each step"
+msgstr "Ancho de cada paso"
+
+msgid "%1% steps, %2% mm long."
+msgstr "%1% pasos, %2% mm de largo."
+
+msgid "Non-planar: free nozzle angle gauge (static)"
+msgstr "No planar: galga de ángulo libre de la boquilla (estática)"
+
+msgid "Non-planar calibration assistant"
+msgstr "Asistente de calibración no planar"
+
+msgid "Measures and applies the maximum layer slope (in two steps), the print head clearance and the Z speed."
+msgstr "Mide y aplica la pendiente máxima de capa (en dos pasos), la altura libre del cabezal y la velocidad Z."
+
+msgid "Measure what the non-planar layers need to know about your printer. The maximum layer slope is found in two steps: first a static gauge measured with the printer cold, then a printed test in small steps around that value. The result is applied with a safety tolerance."
+msgstr "Mide lo que las capas no planares necesitan saber de tu impresora. La pendiente máxima de capa se obtiene en dos pasos: primero una galga estática medida con la impresora fría, después una prueba impresa con pasos pequeños alrededor de ese valor. El resultado se aplica con una tolerancia de seguridad."
+
+msgid "Print the gauge"
+msgstr "Imprimir la galga"
+
+msgid "Print the test"
+msgstr "Imprimir la prueba"
+
+msgid "Step 2: steepest good step of the printed test"
+msgstr "Paso 2: paso bueno más empinado de la prueba impresa"
+
+msgid "Safety tolerance"
+msgstr "Tolerancia de seguridad"
+
+msgid "Fastest good Z speed of the printed test"
+msgstr "Velocidad Z buena más rápida de la prueba impresa"
+
+msgid "Measure the free angle on the static gauge first (step 1)."
+msgstr "Mide primero el ángulo libre en la galga estática (paso 1)."
+
+msgid "Apply to the presets"
+msgstr "Aplicar a los perfiles"
+
+msgid "Maximum layer slope: not measured yet."
+msgstr "Pendiente máxima de capa: todavía sin medir."
+
+msgid "Maximum layer slope to apply: %1%° (now %2%°)."
+msgstr "Pendiente máxima de capa a aplicar: %1%° (ahora %2%°)."
+
+msgid "Not confirmed with the printed test (step 2) yet."
+msgstr "Todavía sin confirmar con la prueba impresa (paso 2)."
+
+msgid "The values were applied to the print and printer settings. Save the presets to keep them."
+msgstr "Los valores se aplicaron a los ajustes de impresión y de impresora. Guarda los perfiles para conservarlos."
+
+msgid "First layer Z offset"
+msgstr "Offset Z de la primera capa"
+
+msgid "Flow rate (%)"
+msgstr "Flujo (%)"
+
+msgid "Prints a row of single layer patches in one go. Each patch is printed with the nozzle at a different height (Z offset), from left to right, so the first layer is calibrated in a single print instead of printing, adjusting and printing again."
+msgstr "Imprime de una vez una fila de parches de una sola capa. Cada parche se imprime con la boquilla a una altura distinta (offset Z), de izquierda a derecha, así la primera capa se calibra en una sola impresión en lugar de imprimir, ajustar y volver a imprimir."
+
+msgid "Choose the patch with the best first layer: smooth and closed, lines joined but not ridged, and well stuck. Too high: separate round lines with gaps. Too low: rough, transparent or ridged surface. Its offset is start + step × patch number (from the left, starting at 0): add it to the Z offset of the printer (Calibration > Apply a calibration result)."
+msgstr "Elige el parche con la mejor primera capa: lisa y cerrada, con las líneas unidas pero sin crestas, y bien pegada. Demasiado alta: líneas redondas separadas, con huecos. Demasiado baja: superficie áspera, transparente o con crestas. Su offset es inicio + paso × número de parche (desde la izquierda, empezando en 0): súmalo al offset Z de la impresora (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Prints a row of solid patches in one go, each with a different flow in percent (from left to right). The value of the best patch is the flow to use, no calculation needed."
+msgstr "Imprime de una vez una fila de parches sólidos, cada uno con un flujo distinto en porcentaje (de izquierda a derecha). El valor del mejor parche es el flujo a usar, sin cálculos."
+
+msgid "Look at the top surface: choose the smoothest patch, with the lines just touching (no gaps, no ridges nor bulging). Its flow is start + step × patch number (from the left, starting at 0), in percent: it is the extrusion multiplier of the filament (Calibration > Apply a calibration result)."
+msgstr "Mira la superficie superior: elige el parche más liso, con las líneas justo tocándose (sin huecos, sin crestas ni abultamientos). Su flujo es inicio + paso × número de parche (desde la izquierda, empezando en 0), en porcentaje: es el multiplicador de extrusión del filamento (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Apply a calibration result"
+msgstr "Aplicar un resultado de calibración"
+
+msgid "Writes the value read on a calibration print to its setting."
+msgstr "Escribe el valor leído en una impresión de calibración en su ajuste."
+
+msgid "Enter the value read on the calibration print: it is written to the setting it calibrates (save the preset afterwards)."
+msgstr "Ingresa el valor leído en la impresión de calibración: se escribe en el ajuste que calibra (guarda el perfil después)."
+
+msgid "First layer Z offset (added)"
+msgstr "Offset Z de la primera capa (se suma)"
+
+msgid "Current value: %1%"
+msgstr "Valor actual: %1%"
+
+msgid "Prints, with normal flat layers, a gauge of ramps in rows of 2, 5 and 10 mm of height; along each row the angle grows in steps (from left to right). Each ramp has a plateau behind it. It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration. Near the nozzle tip the head allows steep but low rises, farther away only gentler ones: that is why there are several heights."
+msgstr "Imprime, con capas planas normales, una galga de rampas en filas de 2, 5 y 10 mm de altura; a lo largo de cada fila el ángulo crece por pasos (de izquierda a derecha). Cada rampa tiene una meseta detrás. Se mide con la impresora fría y no se imprime nada curvo: es el primer paso, seguro, de la calibración. Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves: por eso hay varias alturas."
+
+msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the smallest. Enter the three angles in the non-planar calibration assistant."
+msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla hasta que su punta toque la cama al pie de una rampa. La rampa está libre si nada más toca la rampa ni su meseta: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. En cada fila, la rampa libre más empinada es el ángulo libre a esa altura: inicio + paso × número de rampa (desde la izquierda, empezando en 0). Compruébalo con la galga girada 90°, 180° y 270° (el cabezal no es simétrico) y quédate con el menor. Ingresa los tres ángulos en el asistente de calibración no planar."
+
+msgid "Step 1: free angle on the static gauge at %1% mm"
+msgstr "Paso 1: ángulo libre en la galga estática a %1% mm"
+
+msgid "Measured head profile"
+msgstr "Perfil medido del cabezal"
+
+msgid "Measured print head profile (non-planar)"
+msgstr "Perfil medido del cabezal (no planar)"
+
+msgid "Free angle of the print head measured with the static gauge at several heights, as height:angle pairs separated by semicolons (for example 2:45;5:30;10:20). Near the nozzle tip the head allows steep but low rises, farther away only gentler ones. When set, the collision check of the non-planar layers uses it instead of the head clearance height. Filled by the non-planar calibration assistant."
+msgstr "Ángulo libre del cabezal medido con la galga estática a varias alturas, como pares altura:ángulo separados por punto y coma (por ejemplo 2:45;5:30;10:20). Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves. Si está definido, la comprobación de colisiones de las capas no planares lo usa en lugar de la altura libre del cabezal. Lo completa el asistente de calibración no planar."
+
+msgid "based on PrusaSlicer %1%"
+msgstr "basado en PrusaSlicer %1%"
+
+msgid "Plate %1% settings"
+msgstr "Ajustes de la plancha %1%"
+
+msgid "Plate %1%"
+msgstr "Plancha %1%"
+
+msgid "Print sequence"
+msgstr "Orden de impresión"
+
+msgid "As in the print settings"
+msgstr "Como en los ajustes de impresión"
+
+msgid "By layer"
+msgstr "Por capa"
+
+msgid "By object"
+msgstr "Por objeto"
+
+msgid "On"
+msgstr "Activado"
+
+msgid "First layer bed temperature (°C)"
+msgstr "Temperatura de cama en la primera capa (°C)"
+
+msgid "Bed temperature (°C)"
+msgstr "Temperatura de cama (°C)"
+
+msgid "Lock the plate: arrange does not move its objects or put others on it"
+msgstr "Bloquear la plancha: organizar no mueve sus objetos ni pone otros en ella"
+
+msgid "A bed temperature of 0 uses the filament settings. These settings apply only to the G-code of this plate."
+msgstr "Una temperatura de cama de 0 usa la del filamento. Estos ajustes solo se aplican al G-code de esta plancha."
+
+msgid "Plate settings"
+msgstr "Ajustes de plancha"
+
+msgid "&Plate Settings"
+msgstr "Ajustes de &plancha"
+
+msgid "Name, lock and print settings of the current plate"
+msgstr "Nombre, bloqueo y ajustes de impresión de la plancha actual"
+
+msgid "This plate is locked. Unlock it in the plate settings to arrange it."
+msgstr "Esta plancha está bloqueada. Desbloquéala en sus ajustes para organizarla."
+
+msgid "Locked"
+msgstr "Bloqueada"
+
+msgid "Lock"
+msgstr "Bloquear"
+
+msgid "Unlock the plate"
+msgstr "Desbloquear la plancha"
+
+msgid "This plate overrides some print settings"
+msgstr "Esta plancha cambia algunos ajustes de impresión"
+
+msgid "Name and print settings of this plate"
+msgstr "Nombre y ajustes de impresión de esta plancha"
+
+msgid "Lock plate"
+msgstr "Bloquear plancha"
+
+msgid "Unlock plate"
+msgstr "Desbloquear plancha"
+
+msgid "Print from the AMS"
+msgstr "Imprimir desde el AMS"
+
+msgid "Bambu Lab printers: take the filament from the AMS instead of the external spool."
+msgstr "Impresoras Bambu Lab: tomar el filamento del AMS en lugar de la bobina externa."
+
+msgid "Bambu Lab (LAN)"
+msgstr "Bambu Lab (LAN)"
+
+msgid "Bambu Lab: on the printer turn on LAN only mode and Developer mode (Settings > LAN only). Hostname = IP address of the printer, API key = access code shown there. The serial number is read from the printer."
+msgstr "Bambu Lab: en la impresora activa el modo Solo LAN y el modo Desarrollador (Ajustes > Solo LAN). Nombre de host = dirección IP de la impresora, clave API = código de acceso que se muestra ahí. El número de serie se lee de la impresora."
+
+msgid "Bambu Lab printer in LAN mode: asking for its status..."
+msgstr "Impresora Bambu Lab en modo LAN: consultando su estado..."
+
+msgid "Could not read the status of the printer: %1%"
+msgstr "No se pudo leer el estado de la impresora: %1%"
+
+msgid "the printer rejected the access code"
+msgstr "la impresora rechazó el código de acceso"
+
+msgid "Serial number %1%. State: %2%."
+msgstr "Número de serie %1%. Estado: %2%."
+
+msgid "Nozzle %1% °C, bed %2% °C."
+msgstr "Boquilla %1% °C, cama %2% °C."
+
+msgid "Progress %1% %%, %2% min left."
+msgstr "Progreso %1% %%, faltan %2% min."
+
+msgid "Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."
+msgstr "Selecciónala de nuevo para actualizar. Tisma todavía no muestra la cámara de las impresoras Bambu Lab."
+
+msgid "The printer rejected the access code."
+msgstr "La impresora rechazó el código de acceso."
+
+msgid "Printer %1%, state %2%."
+msgstr "Impresora %1%, estado %2%."
+
+msgid "Connection to the Bambu Lab printer works correctly."
+msgstr "La conexión con la impresora Bambu Lab funciona correctamente."
+
+msgid "Could not connect to the Bambu Lab printer"
+msgstr "No se pudo conectar con la impresora Bambu Lab"
+
+msgid "The printer must be in LAN only mode with Developer mode on, and the access code is the one shown on its screen (Settings > LAN only)."
+msgstr "La impresora debe estar en modo Solo LAN con el modo Desarrollador activado, y el código de acceso es el que muestra su pantalla (Ajustes > Solo LAN)."
+
+msgid "Bambu Lab printers need text G-code: turn off binary G-code for this printer."
+msgstr "Las impresoras Bambu Lab necesitan G-code de texto: desactiva el G-code binario para esta impresora."
+
+msgid "Upload to the printer failed: %1%"
+msgstr "Falló la subida a la impresora: %1%"
+
+msgid "The file was uploaded but the print did not start: %1%"
+msgstr "El archivo se subió pero la impresión no empezó: %1%"
+
+msgid "Coasting distance"
+msgstr "Distancia de coasting"
+
+msgid "Stops extruding this many millimeters before the end of each extrusion and travels the rest with the nozzle still moving, so the pressure left in the nozzle finishes the line (as coasting in Simplify3D). It reduces blobs and zits at the seam and stringing; too much leaves a gap at the seam. Paths shorter than three times this distance are not affected. 0 turns it off. Calibrate it with Calibration > Coasting distance."
+msgstr "Deja de extruir esta cantidad de milímetros antes del final de cada extrusión y recorre el resto con la boquilla en movimiento, para que la presión que queda en la boquilla termine la línea (como el coasting de Simplify3D). Reduce las gotas y granos en la costura y los hilos; demasiado deja un hueco en la costura. No afecta a los recorridos de menos de tres veces esta distancia. 0 lo desactiva. Se calibra con Calibración > Distancia de coasting."
+
+msgid "Prints a row of hollow towers in one go, each with a different coasting distance (from left to right): the extruder stops this many millimeters before the end of each loop and the nozzle finishes it with the pressure left inside. The seams are aligned at the back of the towers."
+msgstr "Imprime de una vez una fila de torres huecas, cada una con una distancia de coasting distinta (de izquierda a derecha): el extrusor se detiene esa cantidad de milímetros antes del final de cada vuelta y la boquilla la termina con la presión que queda dentro. Las costuras quedan alineadas en la parte de atrás de las torres."
+
+msgid "Look at the seams at the back: choose the tower with the cleanest seam, without a blob or zit and without a gap or a missing piece where the loop closes. Its distance is start + step × tower number (from the left, starting at 0): it is the coasting distance of the filament (Calibration > Apply a calibration result). Tune pressure advance and retraction first: coasting is a fine correction on top of them."
+msgstr "Mira las costuras de atrás: elige la torre con la costura más limpia, sin gota ni grano y sin hueco ni faltante donde se cierra la vuelta. Su distancia es inicio + paso × número de torre (desde la izquierda, empezando en 0): es la distancia de coasting del filamento (Calibración > Aplicar un resultado de calibración). Ajusta primero el pressure advance y la retracción: el coasting es una corrección fina encima de ellos."
+
+msgid "Structural"
+msgstr "Estructural"
+
+msgid "Aerodynamics"
+msgstr "Aerodinámica"
+
+msgid "Air flowing around the part as printed: drag, lift and pressure map. The roughness of the layers is taken into account. An estimate to compare designs and orientations."
+msgstr "Aire alrededor de la pieza tal como se imprime: arrastre, sustentación y mapa de presión. Tiene en cuenta la rugosidad de las capas. Es una estimación para comparar diseños y orientaciones."
+
+msgid "Towards +X"
+msgstr "Hacia +X"
+
+msgid "Towards -X"
+msgstr "Hacia -X"
+
+msgid "Towards +Y"
+msgstr "Hacia +Y"
+
+msgid "Towards -Y"
+msgstr "Hacia -Y"
+
+msgid "Upwards (+Z)"
+msgstr "Hacia arriba (+Z)"
+
+msgid "Downwards (-Z)"
+msgstr "Hacia abajo (-Z)"
+
+msgid "Into the view"
+msgstr "Hacia adentro de la vista"
+
+msgid "Air flow"
+msgstr "Flujo de aire"
+
+msgid "Speed (m/s)"
+msgstr "Velocidad (m/s)"
+
+msgid "= %1$.0f km/h"
+msgstr "= %1$.0f km/h"
+
+msgid "Friction only (instant)"
+msgstr "Solo rozamiento (instantáneo)"
+
+msgid "Simulating the air... %1%%%"
+msgstr "Simulando el aire... %1%%%"
+
+msgid "Analyze the air flow"
+msgstr "Analizar el flujo de aire"
+
+msgid "Drag: %1$.3f N"
+msgstr "Arrastre: %1$.3f N"
+
+msgid "Drag coefficient Cd %1$.2f (pressure %2$.2f + friction %3$.2f)"
+msgstr "Coeficiente de arrastre Cd %1$.2f (presión %2$.2f + rozamiento %3$.2f)"
+
+msgid "Force across the flow: %1$.3f N"
+msgstr "Fuerza transversal al flujo: %1$.3f N"
+
+msgid "Frontal area %1$.0f mm², Reynolds %2$.0f"
+msgstr "Área frontal %1$.0f mm², Reynolds %2$.0f"
+
+msgid "Roughness Ra %1$.0f µm: %2$.0f %% of the friction"
+msgstr "Rugosidad Ra %1$.0f µm: %2$.0f %% del rozamiento"
+
+msgid "The pressure was simulated at Reynolds %1$.0f (limit of the resolution)."
+msgstr "La presión se simuló a Reynolds %1$.0f (límite de la resolución)."
+
+msgid "Show the roughness instead of the pressure"
+msgstr "Mostrar la rugosidad en lugar de la presión"
+
+msgid "Cp -1.5 (suction)"
+msgstr "Cp -1,5 (succión)"
+
+msgid "1 (stagnation)"
+msgstr "1 (estancamiento)"
+
+msgid "No connection configured"
+msgstr "Sin conexión configurada"
+
+msgid "Connection: %1%"
+msgstr "Conexión: %1%"
+
+msgid "No connection configured. Add a physical printer to send the G-code over the network or USB."
+msgstr "Sin conexión configurada. Agregá una impresora física para enviar el G-code por red o USB."
+
+msgid "Click to open Device"
+msgstr "Clic para abrir Dispositivo"
+
+msgid " max %1% %%"
+msgstr " máx. %1% %%"
+
+msgid " max %1% mm"
+msgstr " máx. %1% mm"
+
+msgid "%1$.0f (simulated %2$.0f)"
+msgstr "%1$.0f (simulado %2$.0f)"
+
+msgid "%1$.0f µm (%2$.0f %% of the friction)"
+msgstr "%1$.0f µm (%2$.0f %% del rozamiento)"
+
+msgid "%1$.1f g (solid %2$.1f g)"
+msgstr "%1$.1f g (maciza %2$.1f g)"
+
+msgid "%1$.3f mm (limit)"
+msgstr "%1$.3f mm (límite)"
+
+msgid "%1% at %2% °C (x %3$.2f)"
+msgstr "%1% a %2% °C (x %3$.2f)"
+
+msgid "%1% directions"
+msgstr "%1% direcciones"
+
+msgid "1 = at the strength"
+msgstr "1 = en la resistencia"
+
+msgid "Add displacement limit"
+msgstr "Agregar límite de desplazamiento"
+
+msgid "Breaks (stress above the strength)"
+msgstr "Rompe (tensión mayor que la resistencia)"
+
+msgid "Cd pressure / friction"
+msgstr "Cd presión / rozamiento"
+
+msgid "Click on the part to add:"
+msgstr "Clic en la pieza para agregar:"
+
+msgid "Conditions"
+msgstr "Condiciones"
+
+msgid "Curved layers"
+msgstr "Capas curvas"
+
+msgid "Displ."
+msgstr "Despl."
+
+msgid "Displacement limit"
+msgstr "Límite de desplazamiento"
+
+msgid "Estimated mass"
+msgstr "Masa estimada"
+
+msgid "Fixed face %1%"
+msgstr "Cara fija %1%"
+
+msgid "Force across the flow"
+msgstr "Fuerza transversal"
+
+msgid "Frontal area"
+msgstr "Área frontal"
+
+msgid "Hide"
+msgstr "Ocultar"
+
+msgid "Layer adhesion"
+msgstr "Adhesión entre capas"
+
+msgid "Max. displacement"
+msgstr "Desplazamiento máx."
+
+msgid "Max. stress (von Mises)"
+msgstr "Tensión máx. (von Mises)"
+
+msgid "Nothing (rotate)"
+msgstr "Nada (girar vista)"
+
+msgid "Optimize"
+msgstr "Optimizar"
+
+msgid "Pressure"
+msgstr "Presión"
+
+msgid "Remove displacement limit"
+msgstr "Quitar límite de desplazamiento"
+
+msgid "Removes all the fixed faces, loads and limits of the part (Ctrl+Z restores them)"
+msgstr "Quita todas las caras fijas, cargas y límites de la pieza (Ctrl+Z los recupera)"
+
+msgid "Required safety factor"
+msgstr "Factor de seguridad pedido"
+
+msgid "Result"
+msgstr "Resultado"
+
+msgid "Reynolds"
+msgstr "Reynolds"
+
+msgid "Roughness Ra"
+msgstr "Rugosidad Ra"
+
+msgid "Roughness"
+msgstr "Rugosidad"
+
+msgid "Safety"
+msgstr "Seguridad"
+
+msgid "Stress"
+msgstr "Tensión"
+
+msgid "Supports, loads and limits"
+msgstr "Apoyos, cargas y límites"
+
+msgid "Too flexible: a load or a limited zone moves more than its allowed displacement"
+msgstr "Demasiado flexible: una carga o una zona con límite se desplaza más de lo permitido"
+
+msgid "Zone %1%"
+msgstr "Zona %1%"
+
+msgid "max %1% %%"
+msgstr "máx. %1% %%"
+
+msgid "max %1% mm"
+msgstr "máx. %1% mm"
+
+msgid "moves %1$.3f mm of %2$.3f mm allowed"
+msgstr "se desplaza %1$.3f mm de %2$.3f mm permitidos"
+
+msgid "moves %1$.3f mm"
+msgstr "se desplaza %1$.3f mm"
+
+msgid "no limit"
+msgstr "sin límite"
+
+msgid "nominal (nozzle temperature unknown)"
+msgstr "nominal (temperatura de boquilla desconocida)"
+
+msgid "not converged"
+msgstr "sin converger"
+
+msgid "radius %1% mm"
+msgstr "radio %1% mm"
+
+msgid "setup changed: analyze again"
+msgstr "cambió la configuración: analizar de nuevo"
+
+msgid "x %1$.2f (nozzle at %2% °C)"
+msgstr "x %1$.2f (boquilla a %2% °C)"
+
+msgid "Faces which must not move more than this, whatever the loads (a fit, a sealing face, a mechanism). Elsewhere the part may deform more: only its strength is checked there. Click a limited face again to remove it."
+msgstr "Caras que no deben desplazarse más que esto, sean cuales sean las cargas (un encastre, una cara de sellado, un mecanismo). En el resto la pieza puede deformarse más: ahí solo se comprueba que no rompa. Clic de nuevo en una cara con límite para quitarlo."
+
+msgid "Air flowing around the part as printed, with the roughness of the layers. An estimate to compare designs and orientations."
+msgstr "Aire alrededor de la pieza tal como se imprime, con la rugosidad de las capas. Una estimación para comparar diseños y orientaciones."
+
+msgid "OBJECTS"
+msgstr "OBJETOS"
+
+msgid "No objects"
+msgstr "Sin objetos"
+
+msgid "Not sliced"
+msgstr "Sin laminar"
+
+msgid "Plate %1% of %2%"
+msgstr "Plancha %1% de %2%"
+
+msgid "Estimated: %1%"
+msgstr "Estimado: %1%"
+
+msgid "%1% object"
+msgid_plural "%1% objects"
+msgstr[0] "%1% objeto"
+msgstr[1] "%1% objetos"
+
+msgid "Coasting"
+msgstr "Coasting"
+
+msgid "Staggered perimeters (Experimental)"
+msgstr "Perímetros escalonados (experimental)"
+
+msgid "Print every second internal perimeter half a layer higher, so that the layer lines of neighbouring perimeters are not aligned and the wall interlocks like a brick wall: stronger between layers. The external perimeter is not moved. The first layer and the last layer under a top surface are printed with more or less flow to keep the wall flat. Not used with spiral vase, non-planar layers or belt printers."
+msgstr "Imprime uno de cada dos perímetros internos media capa más arriba, para que las juntas de los perímetros vecinos no queden alineadas y la pared se trabe como una pared de ladrillos: más resistencia entre capas. El perímetro externo no se mueve. La primera capa y la última bajo una superficie superior llevan más o menos flujo para que la pared quede plana. No se usa con vaso espiral, capas no planares ni impresoras de cinta."
+
+msgid "A - normal perimeters"
+msgstr "A - perímetros normales"
+
+msgid "B - staggered perimeters"
+msgstr "B - perímetros escalonados"
+
+msgid "Two identical tubes made only of walls: A with normal perimeters, B with staggered perimeters.\n\nPrint them with the same filament. Hold each one by its base and push the top sideways (or hang weights from the top) until it breaks between the layers. Compare the force, or the weight, that each one held: the difference is what the staggered perimeters add with your printer and filament."
+msgstr "Dos tubos iguales hechos solo de paredes: A con perímetros normales y B con perímetros escalonados.\n\nImprimilos con el mismo filamento. Sujetá cada uno por la base y empujá la parte de arriba hacia el costado (o colgale pesos) hasta que se rompa entre capas. Compará la fuerza o el peso que aguantó cada uno: la diferencia es lo que suman los perímetros escalonados con tu impresora y tu filamento."
+
+msgid "Staggered perimeters: strength coupons"
+msgstr "Perímetros escalonados: probetas de resistencia"
+
+msgid "Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."
+msgstr "Dos tubos para romper, con y sin perímetros escalonados, para medir la resistencia que suman entre capas."
+
+msgid "Resin exposure tower"
+msgstr "Torre de exposición de resina"
+
+msgid "Prints a tower in one go with a different exposure time in each band of layers, from the bottom up (the first band is the base, with the exposure of the material). Each band has holes of 0.4, 0.6, 0.8, 1.0 and 1.4 mm across it and fins of 0.15, 0.25, 0.35 and 0.5 mm on the back. Needs a printer whose archive keeps the exposure of each layer (Elegoo GOO)."
+msgstr "Imprime de una vez una torre con un tiempo de exposición distinto en cada banda de capas, de abajo hacia arriba (la primera banda es la base, con la exposición del material). Cada banda tiene agujeros de 0,4, 0,6, 0,8, 1,0 y 1,4 mm que la atraviesan y aletas de 0,15, 0,25, 0,35 y 0,5 mm atrás. Necesita una impresora cuyo archivo guarde la exposición de cada capa (Elegoo GOO)."
+
+msgid "Count the bands from the bottom, above the base (separated by the grooves on the front). Too little exposure: the thin fins are missing or bent. Too much: the small holes are closed. Choose the band with the most open holes and the most fins: its time is start + step × band number (from 0) and goes to the exposure time of the material (Calibration > Apply a calibration result)."
+msgstr "Cuenta las bandas desde abajo, por encima de la base (las separan las ranuras del frente). Poca exposición: faltan las aletas finas o salen dobladas. Demasiada: los agujeros pequeños se cierran. Elige la banda con más agujeros abiertos y más aletas: su tiempo es inicio + paso × número de banda (desde 0) y va al tiempo de exposición del material (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Resin dimensions block"
+msgstr "Bloque de medidas de resina"
+
+msgid "A block of %1% x %1% x %2% mm printed on the plate, without supports.\n\nWash and cure it as usual, then measure X, Y and Z with a caliper away from the bottom edge (the first layers spread). Enter the values in Calibration > Resin dimensional correction: it calculates the correction of the material."
+msgstr "Un bloque de %1% x %1% x %2% mm impreso sobre la placa, sin soportes.\n\nLávalo y cúralo como siempre y mide X, Y y Z con un calibre lejos del borde de abajo (las primeras capas se ensanchan). Introduce las medidas en Calibración > Corrección dimensional de la resina: calcula la corrección del material."
+
+msgid "Resin dimensional correction"
+msgstr "Corrección dimensional de la resina"
+
+msgid "Measured sizes of the dimensions block (%1% x %1% x %2% mm), printed with the current correction of the material. The new correction is written to the material (save the preset afterwards)."
+msgstr "Medidas del bloque de medidas (%1% x %1% x %2% mm), impreso con la corrección actual del material. La corrección nueva se escribe en el material (después guarda el perfil)."
+
+msgid "Measured %1%"
+msgstr "%1% medido"
+
+msgid "Correction X %1% (now %2%), Y %3% (now %4%), Z %5% (now %6%)"
+msgstr "Corrección X %1% (ahora %2%), Y %3% (ahora %4%), Z %5% (ahora %6%)"
+
+msgid "Resin exposure time"
+msgstr "Tiempo de exposición de la resina"
+
+msgid "The exposure tower needs a printer whose archive keeps the exposure of each layer: for now the Elegoo printers (GOO format). With other printers, print a small test once per exposure time."
+msgstr "La torre de exposición necesita una impresora cuyo archivo guarde la exposición de cada capa: por ahora las Elegoo (formato GOO). Con otras impresoras, imprime una prueba pequeña por cada tiempo de exposición."
+
+msgid "A block to measure the shrinkage of the resin in X, Y and Z."
+msgstr "Un bloque para medir la contracción de la resina en X, Y y Z."
+
+msgid "Calculates the scaling correction of the material from the measured sizes of the dimensions block."
+msgstr "Calcula la corrección de escala del material con las medidas del bloque de medidas."

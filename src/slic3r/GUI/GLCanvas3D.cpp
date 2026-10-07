@@ -107,8 +107,9 @@ static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = { 0.949f, 0.949f, 0.957f
 static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR    = { 0.850f, 0.560f, 0.600f, 1.0f };
 static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR   = { 0.960f, 0.760f, 0.790f, 1.0f };
 // Dark mode.
-static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.200f, 0.190f, 0.250f, 1.0f };
-static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.090f, 0.090f, 0.110f, 1.0f };
+// Tisma, Órbita Pro: a dark, quiet view in both color modes (#1C1C21 to #141417).
+static const Slic3r::ColorRGBA DARK_MODE_BG_TOP_COLOR       = { 0.110f, 0.110f, 0.129f, 1.0f };
+static const Slic3r::ColorRGBA DARK_MODE_BG_BOTTOM_COLOR    = { 0.078f, 0.078f, 0.090f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_TOP_COLOR    = { 0.550f, 0.180f, 0.220f, 1.0f };
 static const Slic3r::ColorRGBA DARK_MODE_ERROR_BOTTOM_COLOR = { 0.300f, 0.100f, 0.120f, 1.0f };
 
@@ -1362,6 +1363,7 @@ GLCanvas3D::GLCanvas3D(wxGLCanvas *canvas, Bed3D &bed)
 GLCanvas3D::~GLCanvas3D()
 {
     reset_volumes();
+    m_tisma_shading.shutdown();
 }
 
 void GLCanvas3D::post_event(wxEvent &&event)
@@ -2160,6 +2162,12 @@ void GLCanvas3D::render()
 
     const bool is_looking_downward = camera.is_looking_downward();
 
+    // Tisma (phase 7): per pixel lighting and shadows of this frame.
+    m_tisma_shading.begin_frame(camera);
+    Slic3r::ScopeGuard tisma_shading_guard([this]() { m_tisma_shading.end_frame(); });
+    if (! s_multiple_beds.is_autoslicing())
+        _render_tisma_shadow_map();
+
     // draw scene
     glsafe(::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     _render_background();
@@ -2240,6 +2248,8 @@ void GLCanvas3D::render()
     _render_overlays();
 
     _render_bed_selector();
+
+    _render_plate_labels();
 
     if (wxGetApp().plater()->is_render_statistic_dialog_visible()) {
         ImGuiPureWrap::begin(std::string("Render statistics"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
@@ -6091,7 +6101,7 @@ void GLCanvas3D::_render_background()
     // Draws a bottom to top gradient over the complete screen.
     glsafe(::glDisable(GL_DEPTH_TEST));
 
-    const bool      dark         = wxGetApp().dark_mode();
+    const bool      dark         = true;   // Tisma: the 3D view is always dark (Órbita Pro).
     const ColorRGBA top_color    = dark ? (use_error_color ? DARK_MODE_ERROR_TOP_COLOR : DARK_MODE_BG_TOP_COLOR) :
                                           (use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR);
     const ColorRGBA bottom_color = dark ? (use_error_color ? DARK_MODE_ERROR_BOTTOM_COLOR : DARK_MODE_BG_BOTTOM_COLOR) :
@@ -6227,7 +6237,14 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
 
     GLShaderProgram* shader = wxGetApp().get_shader("gouraud");
     if (shader != nullptr) {
+        // Tisma (phase 7): the painted volumes are rendered with the "mm_gouraud" shader.
+        if (GLShaderProgram* mm_shader = wxGetApp().get_shader("mm_gouraud"); mm_shader != nullptr) {
+            mm_shader->start_using();
+            m_tisma_shading.apply(*mm_shader, true);
+            mm_shader->stop_using();
+        }
         shader->start_using();
+        m_tisma_shading.apply(*shader, true);
 
         switch (type)
         {
@@ -6277,6 +6294,45 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
     }
 
     m_camera_clipping_plane = ClippingPlane::ClipsNothing();
+}
+
+void GLCanvas3D::_render_tisma_shadow_map()
+{
+    if (m_tisma_shading.quality() != TismaShading::Quality::Shadows)
+        return;
+
+    // Casters: the opaque volumes and the toolpaths.
+    std::vector<GLVolume*> casters;
+    BoundingBoxf3 box;
+    for (GLVolume* volume : m_volumes.volumes) {
+        if (!volume->is_active || volume->is_modifier || volume->render_color.is_transparent() ||
+            !(m_render_sla_auxiliaries || volume->composite_id.volume_id >= 0))
+            continue;
+        casters.push_back(volume);
+        box.merge(volume->transformed_bounding_box());
+    }
+    const bool toolpaths = !m_main_toolbar.is_enabled() && current_printer_technology() != ptSLA &&
+        m_gcode_viewer.has_data() && m_gcode_viewer.get_paths_bounding_box().defined;
+    if (toolpaths) {
+        BoundingBoxf3 paths = m_gcode_viewer.get_paths_bounding_box();
+        paths.translate(s_multiple_beds.get_bed_translation(s_multiple_beds.get_active_bed()));
+        box.merge(paths);
+    }
+    if (casters.empty() && !toolpaths)
+        return;
+
+    m_tisma_shading.render_shadow_map(box, [this, &casters, toolpaths](const Transform3d& view, const Transform3d& projection) {
+        GLShaderProgram* shader = wxGetApp().get_current_shader();
+        if (shader != nullptr) {
+            shader->set_uniform("projection_matrix", projection);
+            for (GLVolume* volume : casters) {
+                shader->set_uniform("view_model_matrix", view * volume->world_matrix());
+                volume->render();
+            }
+        }
+        if (toolpaths)
+            m_gcode_viewer.render_toolpaths_for_shadows(view, projection);
+    });
 }
 
 void GLCanvas3D::_render_selection()
@@ -6536,6 +6592,77 @@ bool button_with_icon(const wchar_t icon, const std::string& tooltip, bool is_ac
         ImGui::SetTooltip("%s", tooltip.c_str());
 
     return pressed;
+}
+
+void Slic3r::GUI::GLCanvas3D::_render_plate_labels()
+{
+    Plater *plater = wxGetApp().plater();
+    if (plater == nullptr || !wxGetApp().is_editor() || plater->is_preview_shown() || plater->canvas3D() != this ||
+        m_model == nullptr || current_printer_technology() != ptFFF || m_gizmos.get_current_type() != GLGizmosManager::Undefined ||
+        is_layers_editing_enabled())
+        return;
+
+    const Camera &camera = plater->get_camera();
+    // Full 4x4 product: Transform3d is affine and would drop the perspective row.
+    const Matrix4d world_to_clip = camera.get_projection_matrix().matrix() * camera.get_view_matrix().matrix();
+    const std::array<int, 4> &viewport = camera.get_viewport();
+    const BoundingBoxf bb = m_bed.build_volume().bounding_volume2d();
+
+    for (int i = 0; i < s_multiple_beds.get_number_of_beds() && i < int(m_model->plates.size()); ++i) {
+        // Back left corner of the plate, where the label sits like in OrcaSlicer.
+        const Vec3d corner = s_multiple_beds.get_bed_translation(i) + Vec3d(bb.min.x(), bb.max.y(), 0.);
+        const Vec4d clip = world_to_clip * Vec4d(corner.x(), corner.y(), corner.z(), 1.);
+        if (clip.w() <= 0.)
+            continue;
+        const double x = (0.5 + 0.5 * clip.x() / clip.w()) * viewport[2];
+        const double y = (0.5 - 0.5 * clip.y() / clip.w()) * viewport[3];
+        if (x < 0. || x > viewport[2] || y < 0. || y > viewport[3])
+            continue;
+
+        const ModelPlate &plate = m_model->plate(i);
+        ImGui::SetNextWindowPos(ImVec2(float(x), float(y)), ImGuiCond_Always, ImVec2(0.f, 1.f));
+        ImGui::SetNextWindowBgAlpha(0.7f);
+        const std::string window_name = "##plate_label_" + std::to_string(i);
+        ImGui::Begin(window_name.c_str(), nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+        const std::string title = std::to_string(i + 1) + (plate.name.empty() ? std::string() : " - " + plate.name);
+        ImGuiPureWrap::text(title);
+        ImGui::SameLine();
+        const std::string lock_label = (plate.locked ? _u8L("Locked") : _u8L("Lock")) + "##lock" + std::to_string(i);
+        if (plate.locked)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGuiPureWrap::COL_ORANGE_DARK);
+        const bool lock_clicked = ImGui::SmallButton(lock_label.c_str());
+        if (plate.locked)
+            ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", (plate.locked ? _u8L("Unlock the plate") : _u8L("Lock the plate: arrange does not move its objects or put others on it")).c_str());
+        ImGui::SameLine();
+        const std::string settings_label = _u8L("Settings") + "##settings" + std::to_string(i);
+        const bool settings_clicked = ImGui::SmallButton(settings_label.c_str());
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", (plate.has_overrides() ? _u8L("This plate overrides some print settings") : _u8L("Name and print settings of this plate")).c_str());
+        if (plate.has_overrides()) {
+            ImGui::SameLine();
+            ImGuiPureWrap::text("*");
+        }
+        ImGui::End();
+
+        if (lock_clicked) {
+            wxGetApp().CallAfter([plater, i]() {
+                ModelPlate plate = plater->model().plate(i);
+                plate.locked = !plate.locked;
+                plate.locked_instances = plate.locked ? plater->instances_on_plate(i) : std::vector<size_t>{};
+                plater->take_snapshot(plate.locked ? _L("Lock plate") : _L("Unlock plate"));
+                plater->model().plate(i) = plate;
+                plater->canvas3D()->set_as_dirty();
+                plater->canvas3D()->request_extra_frame();
+            });
+        }
+        if (settings_clicked)
+            wxGetApp().CallAfter([plater, i]() { plater->edit_plate_settings(i); });
+    }
 }
 
 void Slic3r::GUI::GLCanvas3D::_render_bed_selector()
@@ -6842,9 +6969,10 @@ void GLCanvas3D::_render_view_toolbar() const
     GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
 
     const Size cnv_size = get_canvas_size();
-    // places the toolbar on the bottom-left corner of the 3d scene
-    const float top = -0.5f * (float)cnv_size.get_height() + view_toolbar.get_height();
-    const float left = -0.5f * (float)cnv_size.get_width();
+    // places the toolbar on the bottom-left corner of the 3d scene (the legend of the preview uses the top-left corner)
+    const float margin = 8.0f * wxGetApp().imgui()->get_style_scaling();
+    const float top = -0.5f * (float)cnv_size.get_height() + view_toolbar.get_height() + margin;
+    const float left = -0.5f * (float)cnv_size.get_width() + margin;
     view_toolbar.set_position(top, left);
     view_toolbar.render(*this);
 }

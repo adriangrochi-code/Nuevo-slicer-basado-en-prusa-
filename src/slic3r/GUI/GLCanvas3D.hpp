@@ -20,6 +20,7 @@
 #include "MeshUtils.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "GCodeViewer.hpp"
+#include "TismaShading.hpp"
 #include "Camera.hpp"
 #include "SceneRaycaster.hpp"
 #include "GUI_Utils.hpp"
@@ -522,6 +523,8 @@ private:
     std::array<std::optional<BoundingBoxf>, MAX_NUMBER_OF_BEDS> m_wipe_tower_bounding_boxes;
 
     GCodeViewer m_gcode_viewer;
+    // Tisma (phase 7): per pixel lighting and shadows.
+    TismaShading m_tisma_shading;
 
     RenderTimer m_render_timer;
 
@@ -1006,7 +1009,9 @@ private:
     void _render_bed_axes();
     void _render_bed_for_picking(const Transform3d& view_matrix, const Transform3d& projection_matrix, bool bottom);
     void _render_objects(GLVolumeCollection::ERenderType type);
-    void _render_gcode() { m_gcode_viewer.render(); }
+    void _render_gcode() { m_tisma_shading.apply(m_gcode_viewer.get_libvgcode_viewer()); m_gcode_viewer.render(); }
+    // Tisma (phase 7): renders the shadow map of the objects and of the toolpaths.
+    void _render_tisma_shadow_map();
     void _render_gcode_cog() { m_gcode_viewer.render_cog(); }
     void _render_selection();
     bool check_toolbar_icon_size(float init_scale, float& new_scale_to_save, bool is_custom, int counter = 3);
@@ -1016,6 +1021,8 @@ private:
     void _check_and_update_toolbar_icon_scale();
     void _render_overlays();
     void _render_bed_selector();
+    // Tisma: name, lock and settings buttons of every plate in the 3D view.
+    void _render_plate_labels();
     void _render_volumes_for_picking(const Camera& camera) const;
     void _render_current_gizmo() const { m_gizmos.render_current_gizmo(); }
     void _render_gizmos_overlay();

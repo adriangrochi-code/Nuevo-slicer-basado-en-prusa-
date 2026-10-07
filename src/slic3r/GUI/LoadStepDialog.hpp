@@ -57,7 +57,8 @@ struct SliderHelper
 class LoadStepDialog : public DPIDialog
 {
 public:
-    LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading);
+    // Tisma: retessellate = true when the dialog asks the precision to tessellate again a part already loaded.
+    LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading, bool retessellate = false);
     ~LoadStepDialog() = default;
 
     bool IsCheckBoxChecked();

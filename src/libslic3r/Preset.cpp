@@ -471,7 +471,7 @@ std::string Preset::trim_vendor_repo_prefix(const std::string& id, const VendorP
 static std::vector<std::string> s_Preset_print_options {
     "layer_height", "first_layer_height", "perimeters", "spiral_vase", "nonplanar_mode", "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength", "nonplanar_angle", "nonplanar_twist", "nonplanar_cone_angle", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top", "nonplanar_max_slope", "nonplanar_segment_length", "nonplanar_flow_policy", "nonplanar_uniform_flow", "slice_closing_radius", "slicing_mode",
     "top_solid_layers", "top_solid_min_thickness", "bottom_solid_layers", "bottom_solid_min_thickness",
-    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs",
+    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs", "stagger_perimeters",
     "avoid_crossing_curled_overhangs", "avoid_crossing_perimeters", "thin_walls", "overhangs",
     "seam_position", "staggered_inner_seams", "seam_gap_distance",
     "external_perimeters_first", "fill_density", "infill_dense", "infill_dense_density", "fill_pattern", "top_fill_pattern", "bottom_fill_pattern",
@@ -517,7 +517,7 @@ static std::vector<std::string> s_Preset_print_options {
 
 static std::vector<std::string> s_Preset_filament_options {
     "filament_colour", "filament_diameter", "filament_type", "filament_soluble", "filament_abrasive", "filament_notes", "filament_max_volumetric_speed", "filament_infill_max_speed", "filament_infill_max_crossing_speed",
-    "extrusion_multiplier", "filament_density", "filament_cost", "filament_spool_weight", "filament_loading_speed", "filament_loading_speed_start", "filament_load_time",
+    "extrusion_multiplier", "filament_density", "filament_cost", "filament_coast_distance", "filament_spool_weight", "filament_loading_speed", "filament_loading_speed_start", "filament_load_time",
     "filament_unloading_speed", "filament_unloading_speed_start", "filament_unload_time", "filament_toolchange_delay", "filament_cooling_moves", "filament_stamping_loading_speed", "filament_stamping_distance",
     "filament_cooling_initial_speed", "filament_purge_multiplier", "filament_cooling_final_speed", "filament_ramming_parameters", "filament_minimal_purge_on_wipe_tower",
     "filament_multitool_ramming", "filament_multitool_ramming_volume", "filament_multitool_ramming_flow", "filament_flush_volume", "filament_flush_speed",
@@ -549,7 +549,7 @@ static std::vector<std::string> s_Preset_machine_limits_options {
 
 static std::vector<std::string> s_Preset_printer_options {
     "printer_technology", "autoemit_temperature_commands",
-    "bed_shape", "bed_custom_texture", "bed_custom_model", "binary_gcode", "z_offset", "gcode_flavor", "use_relative_e_distances",
+    "bed_shape", "bed_custom_texture", "bed_custom_model", "binary_gcode", "belt_printer", "belt_angle", "nonplanar_head_clearance_height", "nonplanar_head_clearance_radius", "nonplanar_head_profile", "z_offset", "gcode_flavor", "use_relative_e_distances",
     "use_firmware_retraction", "use_volumetric_e", "variable_layer_height", "prefer_clockwise_movements",
     //FIXME the print host keys are left here just for conversion from the Printer preset to Physical Printer preset.
     "host_type", "print_host", "printhost_apikey", "printhost_cafile",
@@ -1769,7 +1769,9 @@ static std::vector<std::string> s_PhysicalPrinter_opts {
     // HTTP digest authentization (RFC 2617)
     "printhost_user",
     "printhost_password",
-    "printhost_ssl_ignore_revoke"
+    "printhost_ssl_ignore_revoke",
+    // Tisma: Bambu Lab printers in LAN mode.
+    "bambu_use_ams"
 };
 
 const std::vector<std::string>& PhysicalPrinter::printer_options()

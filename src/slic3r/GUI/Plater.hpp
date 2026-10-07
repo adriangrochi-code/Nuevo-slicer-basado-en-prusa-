@@ -112,6 +112,11 @@ public:
     const std::vector<GCodeProcessorResult>& get_gcode_results() const;
 
     void new_project();
+    // Tisma calibration suite: replaces the objects by the calibration model and sets the calibration test
+    // of the project (calib_* options).
+    void load_calibration(const Model& model, const DynamicPrintConfig& calib_config);
+    // Shows or hides the notification of an active calibration test (calib_mode of the project config).
+    void update_calibration_notification();
     void load_project();
     void load_project(const wxString& filename);
     void add_model(bool imperial_units = false);
@@ -251,6 +256,10 @@ public:
     bool is_background_process_update_scheduled() const;
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
+    // Tisma: prints the sliced G-code on the USB printer saved in the "Print via USB" window.
+    void usb_print();
+    // Tisma: the G-code of the finished slicing (a temporary file), empty if the plate is not sliced.
+    std::string sliced_gcode_path() const;
     void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
 
@@ -313,6 +322,10 @@ public:
     void render_sliders(GLCanvas3D& canvas);
 
     void arrange(bool current_bed_only);
+    // Tisma: dialog with the name, lock and setting overrides of a plate.
+    void edit_plate_settings(int bed_index);
+    // ObjectID values of the instances on a plate.
+    std::vector<size_t> instances_on_plate(int bed_index) const;
     void arrange(Worker &w, const ArrangeSelectionMode &selected);
 
     void set_current_canvas_as_dirty();
@@ -336,6 +349,19 @@ public:
     bool can_set_instance_to_object() const;
     bool can_fix_through_winsdk() const;
     bool can_simplify() const;
+    // Tisma: parts imported from STEP (phase 4).
+    bool can_retessellate_cad() const;
+    void retessellate_cad();
+    void show_cad_check();
+    // Notifies the parts of the objects whose STEP model did not pass the geometry check.
+    void notify_cad_check(const std::vector<size_t>& obj_idxs);
+    // Tisma: Engineering workspace (phase 5): 3D view with the structural analysis of the selected object.
+    void open_engineering();
+    // Tisma: Structures workspace (phase 6): Engineering with the section of the lightest infill open.
+    void open_structures();
+    bool is_engineering_open() const;
+    // Closes the Engineering workspace (back to Prepare).
+    void close_engineering();
     bool can_split_to_objects() const;
     bool can_split_to_volumes() const;
     bool can_arrange() const;

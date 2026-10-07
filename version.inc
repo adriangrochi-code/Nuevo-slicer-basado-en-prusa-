@@ -3,7 +3,16 @@
 
 set(SLIC3R_APP_NAME "Tisma Slicer")
 set(SLIC3R_APP_KEY "PrusaSlicer")
+# Version of PrusaSlicer the fork is based on: kept for the compatibility of the profiles, 3MF and configuration
+# snapshots (do not change it for Tisma releases).
 set(SLIC3R_VERSION "2.9.6")
-set(SLIC3R_BUILD_ID "TismaSlicer-${SLIC3R_VERSION}+UNKNOWN")
-set(SLIC3R_RC_VERSION "2,9,6,0")
-set(SLIC3R_RC_VERSION_DOTS "2.9.6.0")
+# Version of Tisma Slicer (shown to the user, installer, G-code header). The CI replaces "+UNKNOWN" by
+# "+<run>-<commit>" for test builds.
+# The release automation (release-please) updates the line with the marker.
+set(TISMA_VERSION "0.9.0") # x-release-please-version
+set(SLIC3R_BUILD_ID "TismaSlicer-${TISMA_VERSION}+UNKNOWN")
+# Windows resource versions (four numbers), from the numeric part of TISMA_VERSION.
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" _tisma_numeric_version "${TISMA_VERSION}")
+string(REPLACE "." "," _tisma_rc_version "${_tisma_numeric_version}")
+set(SLIC3R_RC_VERSION "${_tisma_rc_version},0")
+set(SLIC3R_RC_VERSION_DOTS "${_tisma_numeric_version}.0")

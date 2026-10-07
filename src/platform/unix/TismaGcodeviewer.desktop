@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Tisma G-code Viewer
+Exec=tisma-slicer --gcodeviewer %F
+Icon=TismaSlicer-gcodeviewer
+Terminal=false
+Type=Application
+MimeType=text/x.gcode;
+Categories=Graphics;3DGraphics;
+Keywords=3D;Printing;Slicer;

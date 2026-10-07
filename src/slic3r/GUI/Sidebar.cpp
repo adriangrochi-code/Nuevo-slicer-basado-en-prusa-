@@ -19,6 +19,10 @@
 ///|/
 #include "Sidebar.hpp"
 #include "FrequentlyChangedParameters.hpp"
+#include "QuickSettings.hpp"
+#include "TismaTheme.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -247,6 +251,12 @@ enum SlicedInfoIdx
     siCost,
     siEstimatedTime,
     siWTNumberOfToolchanges,
+    // Tisma (Órbita Pro): the main settings the G-code was sliced with.
+    siLayerHeight,
+    siPerimeters,
+    siInfill,
+    siSupports,
+    siCoasting,
 
     siCount
 };
@@ -289,6 +299,11 @@ SlicedInfo::SlicedInfo(wxWindow *parent) :
     init_info_label(_L("Cost (money)"));
     init_info_label(_L("Estimated printing time"));
     init_info_label(_L("Number of tool changes"));
+    init_info_label(_L("Layer height"));
+    init_info_label(_L("Perimeters"));
+    init_info_label(_L("Infill"));
+    init_info_label(_L("Supports"));
+    init_info_label(_L("Coasting"));
 
     Add(grid_sizer, 0, wxEXPAND);
     this->Show(false);
@@ -324,6 +339,7 @@ void Sidebar::show_preset_comboboxes()
         m_presets_sizer->Show(i, showSLA);
 
     m_frequently_changed_parameters->Show(!showSLA);
+    m_quick_settings->Show(!showSLA);
 
     const Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
     bool is_prusa_slx = showSLA && tab->is_prusa_printer() && tab->printer_model() == "SLX";
@@ -336,7 +352,7 @@ void Sidebar::show_preset_comboboxes()
 
 #ifdef _WIN32
 using wxRichToolTipPopup = wxCustomBackgroundWindow<wxPopupTransientWindow>;
-static wxRichToolTipPopup* get_rtt_popup(wxButton* btn)
+static wxRichToolTipPopup* get_rtt_popup(wxWindow* btn)
 {
     auto children = btn->GetChildren();
     for (auto child : children)
@@ -363,7 +379,7 @@ static bool found_and_dismiss_shown_dropdown(wxWindow* win)
     return false;
 }
 
-static void show_rich_tip(const wxString& tooltip, wxButton* btn)
+static void show_rich_tip(const wxString& tooltip, wxWindow* btn)
 {   
     if (tooltip.IsEmpty())
         return;
@@ -397,7 +413,7 @@ static void show_rich_tip(const wxString& tooltip, wxButton* btn)
     }
 }
 
-static void hide_rich_tip(wxButton* btn)
+static void hide_rich_tip(wxWindow* btn)
 {
     if (wxRichToolTipPopup* popup = get_rtt_popup(btn))
         popup->Dismiss();
@@ -411,6 +427,9 @@ Sidebar::Sidebar(Plater *parent)
 {
     m_scrolled_panel = new wxScrolledWindow(this);
     m_scrolled_panel->SetScrollRate(0, 5);
+    m_objects_panel = new wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(30 * wxGetApp().em_unit(), -1));
+    m_objects_panel->SetScrollRate(0, 5);
+    m_objects_panel->SetMinSize(wxSize(30 * wxGetApp().em_unit(), -1));
 
     SetFont(wxGetApp().normal_font());
 #ifndef __APPLE__
@@ -449,8 +468,10 @@ Sidebar::Sidebar(Plater *parent)
     const int margin_5 = int(0.5 * wxGetApp().em_unit());// 5;
 
     auto init_combo = [this, margin_5](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
-        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label + ":");
-        text->SetFont(wxGetApp().small_font());
+        // Caption in the PrusaSlicer 3.0 style: small, upper case, muted.
+        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label.Upper());
+        text->SetFont(wxGetApp().small_font().Bold());
+        m_preset_captions.push_back(text);
         *combo = new PlaterPresetComboBox(m_presets_panel, preset_type);
 
         auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -463,7 +484,7 @@ Sidebar::Sidebar(Plater *parent)
         auto *sizer_filaments = this->m_filaments_sizer;
         // Hide controls, which will be shown/hidden in respect to the printer technology
         text->Show(preset_type == Preset::TYPE_PRINTER);
-        sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT, 4);
+        sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
         if (! filament) {
             combo_and_btn_sizer->ShowItems(preset_type == Preset::TYPE_PRINTER);
             sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND | 
@@ -574,12 +595,27 @@ Sidebar::Sidebar(Plater *parent)
         | wxRIGHT
 #endif // __WXGTK3__
         , wxOSX ? 1 : margin_5);
+
+    // Favorite print settings (Tisma)
+    m_quick_settings = std::make_unique<QuickSettings>(m_scrolled_panel);
+    params_sizer->Add(m_quick_settings->get_sizer(), 0, wxEXPAND | wxBOTTOM
+#ifdef __WXGTK3__
+        | wxRIGHT
+#endif // __WXGTK3__
+        , wxOSX ? 1 : margin_5);
     if (m_btn_full_spectrum)
         m_presets_sizer->Show(size_t(4), int(m_combos_filament.size()) >= 2);
 
     // Object List
-    m_object_list = new ObjectList(m_scrolled_panel);
-    params_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND);
+    // The list and the info of the objects go to the panel at the left of the 3D view; the manipulation, the per
+    // object settings and the layers stay here, under the print settings.
+    auto *objects_sizer = new wxBoxSizer(wxVERTICAL);
+    m_objects_panel->SetSizer(objects_sizer);
+    m_objects_caption = new wxStaticText(m_objects_panel, wxID_ANY, _L("OBJECTS"));
+    m_objects_caption->SetFont(wxGetApp().bold_font());
+    objects_sizer->Add(m_objects_caption, 0, wxLEFT | wxTOP | wxBOTTOM, margin_5);
+    m_object_list = new ObjectList(m_objects_panel);
+    objects_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND | wxLEFT | wxRIGHT, margin_5);
 
     // Object Manipulations
     m_object_manipulation = std::make_unique<ObjectManipulation>(m_scrolled_panel);
@@ -597,7 +633,7 @@ Sidebar::Sidebar(Plater *parent)
     params_sizer->Add(m_object_layers->get_sizer(), 0, wxEXPAND | wxTOP, margin_5);
 
     // Info boxes
-    m_object_info = new ObjectInfo(m_scrolled_panel);
+    m_object_info = new ObjectInfo(m_objects_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
@@ -605,9 +641,10 @@ Sidebar::Sidebar(Plater *parent)
     is_msw ?
         scrolled_sizer->Add(m_presets_panel, 0, wxEXPAND | size_margin, margin_5) :
         scrolled_sizer->Add(m_presets_sizer, 0, wxEXPAND | size_margin, margin_5);
-    scrolled_sizer->Add(params_sizer, 1, wxEXPAND | size_margin, margin_5);
-    scrolled_sizer->Add(m_object_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
+    // Órbita Pro: the summary of the slicing right under the profiles, where it is seen.
     scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
+    scrolled_sizer->Add(params_sizer, 0, wxEXPAND | size_margin, margin_5);
+    objects_sizer->Add(m_object_info, 0, wxEXPAND | wxALL, margin_5);
 
     // Buttons underneath the scrolled area
 
@@ -640,6 +677,7 @@ Sidebar::Sidebar(Plater *parent)
     };
 
     init_scalable_btn(&m_btn_send_gcode   , "export_gcode", _L("Send to printer") + " " +GUI::shortkey_ctrl_prefix() + "Shift+G");
+    init_scalable_btn(&m_btn_usb_print    , "plug", _L("Print via USB on the saved printer"));
 	init_scalable_btn(&m_btn_export_gcode_removable, "export_to_sd", _L("Export to SD card / Flash drive") + " " + GUI::shortkey_ctrl_prefix() + "U");
 
     // regular buttons "Slice now" and "Export G-code" 
@@ -657,10 +695,18 @@ Sidebar::Sidebar(Plater *parent)
         wxGetApp().UpdateDarkUI((*btn), true);
     };
 
-    init_btn(&m_btn_export_gcode, _L("Export G-code") + dots , scaled_height);
-    init_btn(&m_btn_reslice     , _L("Slice now")            , scaled_height);
+    // Action buttons in the Tisma style: filled accent button to slice, outlined button to export.
+    auto init_action_btn = [this, scaled_height](::Button **btn, wxString label) {
+        *btn = new ::Button(this, label);
+        (*btn)->SetFont(wxGetApp().bold_font());
+        (*btn)->SetCornerRadius(int(0.6 * wxGetApp().em_unit()));
+        (*btn)->SetMinSize(wxSize(-1, scaled_height));
+    };
+    init_action_btn(&m_btn_export_gcode, _L("Export G-code") + dots);
+    init_action_btn(&m_btn_reslice     , _L("Slice now"));
     init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
 
+    apply_tisma_theme();
     enable_buttons(false);
 
     m_btns_sizer = new wxBoxSizer(wxVERTICAL);
@@ -669,6 +715,7 @@ Sidebar::Sidebar(Plater *parent)
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
     complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxEXPAND | wxLEFT, margin_5);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
+    complect_btns_sizer->Add(m_btn_usb_print, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
 
     m_btns_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
@@ -729,6 +776,7 @@ Sidebar::Sidebar(Plater *parent)
 #endif // _WIN32
 
     m_btn_send_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->send_gcode(); });
+    m_btn_usb_print->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->usb_print(); });
     m_btn_export_gcode_removable->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->export_gcode(true); });
     m_btn_connect_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->connect_gcode(); });
 
@@ -1054,6 +1102,7 @@ void Sidebar::msw_rescale()
         combo->msw_rescale();
 
     m_frequently_changed_parameters->msw_rescale();
+    m_quick_settings->msw_rescale();
     m_object_list                  ->msw_rescale();
     m_object_manipulation          ->msw_rescale();
     m_object_layers                ->msw_rescale();
@@ -1069,16 +1118,74 @@ void Sidebar::msw_rescale()
     m_scrolled_panel->Layout();
 }
 
+bool Sidebar::Layout()
+{
+    layout_objects_panel();
+    return wxPanel::Layout();
+}
+
+void Sidebar::layout_objects_panel()
+{
+    if (m_objects_panel == nullptr)
+        return;
+    m_objects_panel->Layout();
+    m_objects_panel->FitInside();
+    m_objects_panel->Refresh();
+}
+
+void Sidebar::apply_tisma_theme()
+{
+    const bool dark = wxGetApp().dark_mode();
+    if (m_objects_panel) {
+        m_objects_panel->SetBackgroundColour(TismaTheme::panel_bg(dark));
+        if (m_objects_caption)
+            m_objects_caption->SetForegroundColour(TismaTheme::text_muted(dark));
+    }
+    for (wxWindow* win : std::vector<wxWindow*>{ this, m_scrolled_panel, m_presets_panel })
+        if (win)
+            win->SetBackgroundColour(TismaTheme::panel_bg(dark));
+    for (wxStaticText* caption : m_preset_captions)
+        caption->SetForegroundColour(TismaTheme::text_muted(dark));
+
+    // Slice: filled accent button.
+    m_btn_reslice->SetBackgroundColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_pressed(),    StateColor::Pressed),
+        std::pair<wxColour, int>(TismaTheme::accent_hover(),      StateColor::Hovered),
+        std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+    m_btn_reslice->SetBorderColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+    m_btn_reslice->SetTextColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+        std::pair<wxColour, int>(*wxWHITE,                        StateColor::Normal)));
+
+    // Export: outlined button.
+    m_btn_export_gcode->SetBackgroundColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::card_bg(dark),       StateColor::Hovered),
+        std::pair<wxColour, int>(TismaTheme::panel_bg(dark),      StateColor::Normal)));
+    m_btn_export_gcode->SetBorderColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::separator(dark),     StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+    m_btn_export_gcode->SetTextColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+        std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+    m_btn_reslice->Refresh();
+    m_btn_export_gcode->Refresh();
+}
+
 void Sidebar::sys_color_changed()
 {
+    apply_tisma_theme();
+
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
 
-    for (wxWindow* win : std::vector<wxWindow*>{ this, m_sliced_info->GetStaticBox(), m_object_info->GetStaticBox(), m_btn_reslice, m_btn_export_gcode })
+    for (wxWindow* win : std::vector<wxWindow*>{ this, m_sliced_info->GetStaticBox(), m_object_info->GetStaticBox() })
         wxGetApp().UpdateDarkUI(win);
     for (wxWindow* win : std::vector<wxWindow*>{ m_scrolled_panel, m_presets_panel })
         wxGetApp().UpdateAllStaticTextDarkUI(win);
-    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode, m_btn_connect_gcode })
+    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_connect_gcode })
         wxGetApp().UpdateDarkUI(btn, true);
     if (m_btn_full_spectrum) {
         wxGetApp().UpdateDarkUI(m_btn_full_spectrum, true);
@@ -1097,11 +1204,13 @@ void Sidebar::sys_color_changed()
         combo->sys_color_changed();
 
     m_object_list        ->sys_color_changed();
+    m_quick_settings     ->sys_color_changed();
     m_object_manipulation->sys_color_changed();
     m_object_layers      ->sys_color_changed();
 
     // btn...->msw_rescale() updates icon on button, so use it
     m_btn_send_gcode            ->sys_color_changed();
+    m_btn_usb_print             ->sys_color_changed();
     m_btn_export_gcode_removable->sys_color_changed();
 
     m_scrolled_panel->Layout();
@@ -1131,6 +1240,11 @@ ObjectLayers* Sidebar::obj_layers()
 ConfigOptionsGroup* Sidebar::og_freq_chng_params(const bool is_fff)
 {
     return m_frequently_changed_parameters->get_og(is_fff);
+}
+
+QuickSettings* Sidebar::quick_settings()
+{
+    return m_quick_settings.get();
 }
 
 wxButton* Sidebar::get_wiping_dialog_button()
@@ -1262,6 +1376,11 @@ void Sidebar::update_sliced_info_sizer()
             m_sliced_info->SetTextAndShow(siFilament_mm3, "N/A");
             m_sliced_info->SetTextAndShow(siFilament_g, "N/A");
             m_sliced_info->SetTextAndShow(siWTNumberOfToolchanges, "N/A");
+            // Of the summary of the main settings, only the layer height applies to resin.
+            const DynamicPrintConfig &full_cfg = wxGetApp().preset_bundle->full_config();
+            m_sliced_info->SetTextAndShow(siLayerHeight, full_cfg.has("layer_height") ? wxString::Format("%.3f mm", full_cfg.opt_float("layer_height")) : "N/A");
+            for (SlicedInfoIdx idx : { siPerimeters, siInfill, siSupports, siCoasting })
+                m_sliced_info->SetTextAndShow(idx, "N/A");
         }
         else
         {
@@ -1440,6 +1559,25 @@ void Sidebar::update_sliced_info_sizer()
 
             // Hide non-FFF sliced info parameters
             m_sliced_info->SetTextAndShow(siMaterial_unit, "N/A");
+
+            // The main settings used (of the print; the objects may override them).
+            const DynamicPrintConfig &cfg = wxGetApp().preset_bundle->full_config();
+            auto opt_float = [&cfg](const char *key) { return cfg.has(key) ? cfg.opt_float(key) : 0.; };
+            m_sliced_info->SetTextAndShow(siLayerHeight, wxString::Format("%.2f mm", opt_float("layer_height")));
+            if (cfg.has("perimeters"))
+                m_sliced_info->SetTextAndShow(siPerimeters, wxString::Format("%d", cfg.opt_int("perimeters")));
+            if (const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density")) {
+                wxString infill = wxString::Format("%.0f %%", density->value);
+                if (const ConfigOption *pattern = cfg.option("fill_pattern"))
+                    infill += " " + from_u8(pattern->serialize());
+                m_sliced_info->SetTextAndShow(siInfill, infill);
+            }
+            if (cfg.has("support_material"))
+                m_sliced_info->SetTextAndShow(siSupports, cfg.opt_bool("support_material") ? _L("Yes") : _L("No"));
+            double coast = 0.;
+            if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
+                coast = c->get_at(0);
+            m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
         }
     }
 
@@ -1489,6 +1627,7 @@ void Sidebar::enable_buttons(bool enable)
     m_btn_reslice->Enable(enable);
     m_btn_export_gcode->Enable(enable);
     m_btn_send_gcode->Enable(enable);
+    m_btn_usb_print->Enable(enable);
     m_btn_export_gcode_removable->Enable(enable);
     m_btn_connect_gcode->Enable(enable);
 }
@@ -1517,6 +1656,12 @@ bool Sidebar::show_send(bool show) const {
         return false;
     }
     return m_btn_send_gcode->Show(show);
+}
+bool Sidebar::show_usb_print(bool show) const {
+    if (this->m_autoslicing_mode) {
+        return false;
+    }
+    return m_btn_usb_print->Show(show);
 }
 bool Sidebar::show_export_removable(bool show) const {
     if (this->m_autoslicing_mode) {
@@ -1580,8 +1725,8 @@ void Sidebar::set_btn_label(const ActionButtonType btn_type, const wxString& lab
 {
     switch (btn_type)
     {
-    case ActionButtonType::Reslice:   m_btn_reslice->SetLabelText(label);        break;
-    case ActionButtonType::Export:    m_btn_export_gcode->SetLabelText(label);   break;
+    case ActionButtonType::Reslice:   m_btn_reslice->SetLabel(label);            break;
+    case ActionButtonType::Export:    m_btn_export_gcode->SetLabel(label);       break;
     case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/ break;
     case ActionButtonType::Connect: /*m_btn_connect_gcode->SetLabelText(label);*/ break;
     }
@@ -1592,6 +1737,9 @@ void Sidebar::collapse(bool collapse)
     is_collapsed = collapse;
 
     this->Show(!collapse);
+    // The objects panel is collapsed with the sidebar (the whole width for the 3D view).
+    if (m_objects_panel)
+        m_objects_panel->Show(! collapse && wxGetApp().is_editor());
     m_plater->Layout();
 
     // save collapsing state to the AppConfig

@@ -1,0 +1,118 @@
+name: Build linux
+
+# Builds tisma-slicer on Ubuntu 22.04 (older glibc: the AppImage runs on more distributions), runs the unit tests and
+# uploads the AppImage as the TismaSlicer-linux artifact. The dependencies are built from deps/ and cached.
+# Called by ci.yml, nightly.yml and release.yml.
+
+on:
+  workflow_call:
+    inputs:
+      run_tests:
+        description: Build and run the unit tests
+        type: boolean
+        default: true
+      ref:
+        description: Git ref to build (default the ref of the calling event)
+        type: string
+        default: ''
+      release:
+        description: Release build (clean build ID, without +<run>-<commit>)
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: Build and run the unit tests
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    env:
+      DEPS_BUILD: ${{ github.workspace }}/deps/build
+      DEPS_DEST: ${{ github.workspace }}/deps/build/destdir
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      # The dependencies, the application and the tests do not fit in the free space of the runner otherwise.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf libtool m4 texinfo pkg-config ninja-build file \
+            libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libwebkit2gtk-4.1-dev \
+            xvfb xauth
+
+      - name: Restore dependencies
+        id: deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/build/destdir
+          key: deps-linux-ubuntu2204-${{ hashFiles('deps/**') }}
+
+      - name: Build dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          cmake -S deps -B "$DEPS_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release -DDEP_WX_GTK3=ON -DDESTDIR="$DEPS_DEST"
+          cmake --build "$DEPS_BUILD"
+
+      # Saved right away, so a failure of the application build does not lose them.
+      - name: Save dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: deps/build/destdir
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+      - name: Remove the dependency build tree
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: find "$DEPS_BUILD" -mindepth 1 -maxdepth 1 ! -name destdir -exec rm -rf {} +
+
+      # Test builds: TismaSlicer-<version>+<run>-<commit> (title bar and G-code header); releases: TismaSlicer-<version>.
+      - name: Build ID
+        run: |
+          if [ "${{ inputs.release }}" = "true" ]; then suffix=""; else suffix="+${{ github.run_number }}-$(git rev-parse --short=7 HEAD)"; fi
+          sed -i "s/+UNKNOWN/$suffix/" version.inc
+          grep SLIC3R_BUILD_ID version.inc
+          echo "TISMA_VERSION=$(sed -n 's/^set(TISMA_VERSION "\([^"]*\)").*/\1/p' version.inc)" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSLIC3R_STATIC=1 -DSLIC3R_GTK=3 -DSLIC3R_PCH=OFF \
+            -DCMAKE_PREFIX_PATH="$DEPS_DEST/usr/local" -DSLIC3R_BUILD_TESTS=${{ inputs.run_tests && 'ON' || 'OFF' }}
+
+      - name: Build
+        run: cmake --build build --target TismaSlicer
+
+      - name: Build tests
+        if: ${{ inputs.run_tests }}
+        run: cmake --build build
+
+      # libseqarrange_tests (upstream sequential arrange, z3) runs for more than 2 hours (docs/TEST_BASELINE.md).
+      - name: Unit tests
+        if: ${{ inputs.run_tests }}
+        run: ctest --test-dir build --output-on-failure --timeout 3600 -j 2 -E libseqarrange_tests
+
+      - name: AppImage
+        run: |
+          appimage=$(packaging/linux/make_appimage.sh build "$TISMA_VERSION" dist | tail -n 1)
+          # Smoke test: the AppImage starts and finds its resources.
+          "$appimage" --appimage-extract-and-run --help | sed -n 1,2p
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TismaSlicer-linux
+          path: dist/*.AppImage
+          retention-days: 14

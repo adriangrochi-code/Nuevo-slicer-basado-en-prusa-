@@ -55,6 +55,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/GLShader.hpp    
     GUI/GLCanvas3D.hpp
     GUI/GLCanvas3D.cpp
+    GUI/TismaShading.cpp
+    GUI/TismaShading.hpp
     GUI/SceneRaycaster.hpp
     GUI/SceneRaycaster.cpp	
     GUI/OpenGLManager.hpp
@@ -95,6 +97,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoSeam.hpp
     GUI/Gizmos/GLGizmoSimplify.cpp
     GUI/Gizmos/GLGizmoSimplify.hpp
+    GUI/Gizmos/GLGizmoEngineering.cpp
+    GUI/Gizmos/GLGizmoEngineering.hpp
     GUI/Gizmos/GLGizmoSVG.cpp
     GUI/Gizmos/GLGizmoSVG.hpp
     GUI/Gizmos/GLGizmoMmuSegmentation.cpp
@@ -139,6 +143,12 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdatesUIManager.hpp
     GUI/FrequentlyChangedParameters.cpp
     GUI/FrequentlyChangedParameters.hpp
+    GUI/CalibrationDialog.cpp
+    GUI/CalibrationDialog.hpp
+    GUI/NavRail.cpp
+    GUI/NavRail.hpp
+    GUI/QuickSettings.cpp
+    GUI/QuickSettings.hpp
     GUI/Sidebar.cpp
     GUI/Sidebar.hpp
     GUI/Plater.cpp
@@ -242,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdateDialogs.hpp
     GUI/FirmwareDialog.cpp
     GUI/USBPrintDialog.cpp
+    GUI/DevicesPanel.cpp
+    GUI/DevicesPanel.hpp
     GUI/USBPrintDialog.hpp
     GUI/FirmwareDialog.hpp
     GUI/PrintHostDialogs.cpp
@@ -364,6 +376,10 @@ set(SLIC3R_GUI_SOURCES
     Utils/Jwt.hpp
     Utils/Moonraker.cpp
     Utils/Moonraker.hpp
+    Utils/BambuLan.cpp
+    Utils/BambuLan.hpp
+    Utils/BambuLanClient.cpp
+    Utils/BambuLanClient.hpp
     Utils/OctoPrint.cpp
     Utils/OctoPrint.hpp
     Utils/Duet.cpp
@@ -458,6 +474,7 @@ target_link_libraries(
     libslic3r_gui
     PUBLIC
     libslic3r
+    libtisma_fea
     slic3r-arrange-wrapper
     avrdude
     libcereal

@@ -378,9 +378,15 @@ SupportGeneratorLayersPtr generate_raft_base(
     SupportGeneratorLayer       *interfaces       = interface_layers     .empty() ? nullptr : interface_layers     .front();
     SupportGeneratorLayer       *base_interfaces  = base_interface_layers.empty() ? nullptr : base_interface_layers.front();
     SupportGeneratorLayer       *columns_base     = base_layers          .empty() ? nullptr : base_layers          .front();
-    if (contacts != nullptr && contacts->print_z > std::max(slicing_params.first_print_layer_height, slicing_params.raft_contact_top_z) + EPSILON)
+    // Upstream fix SPE-3329 (PrusaSlicer master): keep the silhouette of a levitating object for the raft below it,
+    // otherwise layers are missing under a floating object.
+    Polygons floating_object_silhouette;
+    if (contacts != nullptr && contacts->print_z > std::max(slicing_params.first_print_layer_height, slicing_params.raft_contact_top_z) + EPSILON) {
         // This is not the raft contact layer.
+        if (slicing_params.raft_layers() > 1 && ! contacts->polygons.empty())
+            floating_object_silhouette = contacts->polygons;
         contacts = nullptr;
+    }
     if (interfaces != nullptr && interfaces->bottom_print_z() > slicing_params.raft_interface_top_z + EPSILON)
         // This is not the raft column base layer.
         interfaces = nullptr;
@@ -394,6 +400,12 @@ SupportGeneratorLayersPtr generate_raft_base(
     Polygons interface_polygons;
     if (contacts != nullptr && ! contacts->polygons.empty())
         polygons_append(interface_polygons, expand(contacts->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+    else if (! floating_object_silhouette.empty()) {
+        // Levitating object: the support columns for the raft, or the object silhouette as fallback.
+        const bool support_columns_reach_raft = columns_base != nullptr && ! columns_base->polygons.empty();
+        polygons_append(interface_polygons, expand(support_columns_reach_raft ? columns_base->polygons : floating_object_silhouette,
+            inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+    }
     if (interfaces != nullptr && ! interfaces->polygons.empty())
         polygons_append(interface_polygons, expand(interfaces->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
     if (base_interfaces != nullptr && ! base_interfaces->polygons.empty())

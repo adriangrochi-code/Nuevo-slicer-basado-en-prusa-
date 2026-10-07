@@ -368,10 +368,12 @@ void TopBarItemsCtrl::update_btns_width()
 
     if (m_settings_btn)
         m_btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
-    else {
+    else if (m_page_btns_shown) {
         for (const Button* btn : m_pageButtons)
             m_btns_width += btn->GetSize().GetWidth() + m_btn_margin;
     }
+    if (m_workspace_tabs)
+        m_btns_width += m_workspace_tabs->GetMinSize().GetWidth();
 
     // Check min width of parent and change it if needed
 
@@ -414,6 +416,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     this->SetSizer(m_sizer);
 
     wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
+    m_left_sizer = left_sizer;
 /*
 #ifdef __APPLE__
     auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 40));
@@ -434,6 +437,19 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
     }
 
+    if (!m_cb_settings_btn) {
+        // Project "tab": the plater is the first page.
+        m_project_btn = new Button(this, " ");
+        m_project_btn->SetToolTip(_L("Project"));
+        m_project_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+            wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_TOPBAR_SEL_CHANGED);
+            evt.SetId(0);
+            wxPostEvent(this->GetParent(), evt);
+        });
+        m_project_btn->Hide();
+        left_sizer->Add(m_project_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
+    }
+
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
 
@@ -448,6 +464,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     m_sizer->Add(left_sizer, 1, wxEXPAND);
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
+    m_right_sizer = right_sizer;
 
     m_workspace_btn = new ButtonWithPopup(this, "Workspace", "mode_simple");
     right_sizer->AddStretchSpacer(20);
@@ -570,6 +587,7 @@ bool TopBarItemsCtrl::InsertPage(size_t n, const wxString& text, bool bSelect/* 
         }
     });
 
+    btn->Show(m_page_btns_shown);
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_buttons_sizer->Insert(n, new wxSizerItem(btn, 0, wxALIGN_CENTER_VERTICAL));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
@@ -629,6 +647,50 @@ void TopBarItemsCtrl::ShowJustMode()
     m_account_btn->Hide();
     update_btns_width();
     UpdateSearchSizeAndPosition();
+}
+
+void TopBarItemsCtrl::ShowPageButtons(bool show)
+{
+    m_page_btns_shown = show;
+    for (Button* btn : m_pageButtons)
+        btn->Show(show);
+    update_btns_width();
+    UpdateSearchSizeAndPosition();
+    m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::SetWorkspaceTabs(wxWindow* tabs)
+{
+    m_workspace_tabs = tabs;
+    m_left_sizer->Insert(0, tabs, 0, wxEXPAND);
+    if (m_project_btn)
+        m_project_btn->Hide();
+    update_btns_width();
+    UpdateSearchSizeAndPosition();
+    m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::AddRightWindow(wxWindow* win)
+{
+    // After the stretch spacer, before the mode and account buttons.
+    m_right_sizer->Insert(1, win, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
+    m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::SetProjectName(const wxString& name)
+{
+    if (!m_project_btn || m_workspace_tabs)
+        return;
+    m_project_btn->SetText(name);
+    // Wide enough for the name, but a long name must not push the search box away.
+    const int em = em_unit(this);
+    wxClientDC dc(m_project_btn);
+    dc.SetFont(m_project_btn->GetFont());
+    const int width = std::min(dc.GetTextExtent(name).GetWidth() + 6 * em, 40 * em);
+    m_project_btn->SetMinSize(wxSize(width, m_project_btn->GetMinSize().GetHeight()));
+    m_project_btn->Show();
+    m_sizer->Layout();
+    m_project_btn->Refresh();
 }
 
 void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)

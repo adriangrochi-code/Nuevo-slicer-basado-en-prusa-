@@ -86,6 +86,7 @@ public:
         Emboss,
         Svg,
         Simplify,
+        Engineering,    // Tisma: structural analysis (phase 5), opened from the navigation rail
         Undefined
     };
 

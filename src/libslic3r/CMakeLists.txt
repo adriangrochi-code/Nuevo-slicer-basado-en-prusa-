@@ -50,6 +50,8 @@ set(SLIC3R_SOURCES
     Brim.hpp
     BuildVolume.cpp
     BuildVolume.hpp
+    BeltPrinter.cpp
+    BeltPrinter.hpp
     BoostAdapter.hpp
     clipper.cpp
     clipper.hpp
@@ -155,8 +157,13 @@ set(SLIC3R_SOURCES
     Format/SL1_SVG.cpp
     Format/AnycubicSLA.hpp
     Format/AnycubicSLA.cpp
+    Format/GooSLA.hpp
+    Format/GooSLA.cpp
     Format/STEP.hpp
     Format/STEP.cpp
+    CadSource.hpp
+    CadSource.cpp
+    Engineering.hpp
     Format/SVG.hpp
     Format/SVG.cpp
     Format/SLAArchiveFormatRegistry.hpp
@@ -413,6 +420,8 @@ set(SLIC3R_SOURCES
     miniz_extension.cpp
     MarchingSquares.hpp
     MultipleBeds.cpp
+    ModelPlate.cpp
+    ModelPlate.hpp
     MultipleBeds.hpp
     Execution/Execution.hpp
     Execution/ExecutionSeq.hpp

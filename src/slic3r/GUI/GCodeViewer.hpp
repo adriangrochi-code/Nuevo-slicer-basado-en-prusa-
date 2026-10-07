@@ -299,6 +299,9 @@ public:
     }
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     bool has_data() const { return !m_viewer.get_extrusion_roles().empty(); }
+    // Tisma (phase 7): the viewer of the toolpaths (shading) and the toolpaths rendered into the shadow map.
+    libvgcode::Viewer& get_libvgcode_viewer() { return m_viewer; }
+    void render_toolpaths_for_shadows(const Transform3d& light_view, const Transform3d& light_projection);
 
     bool can_export_toolpaths() const;
 

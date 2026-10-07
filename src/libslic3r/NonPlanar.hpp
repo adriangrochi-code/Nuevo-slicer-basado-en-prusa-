@@ -30,7 +30,8 @@ class PrintConfig;
 
 namespace NonPlanar {
 
-enum class Mode { Disabled, Wave, Conical };
+// SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
+enum class Mode { Disabled, Wave, Conical, SlopeTest };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 
@@ -46,6 +47,15 @@ struct FieldParams
     double  cone_tip_radius  { 2. };    // conical: smoothing of the cone tip
     // Center of the field (object coordinates).
     Vec2d   center           { Vec2d::Zero() };
+    // SlopeTest: the slope of the ridges (wavelength above, along Y) is slope_start_deg + i * slope_step_deg in
+    // the band i of width slope_band from slope_x0 along X, up to slope_end_deg.
+    double  slope_x0         { 0. };
+    double  slope_band       { 10. };
+    double  slope_start_deg  { 10. };
+    double  slope_step_deg   { 5. };
+    double  slope_end_deg    { 40. };
+    // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
+    std::pair<double, double> slope_test_tangent(double x) const;
 };
 
 // Shape of the layers g(x, y, z) and its derivatives.
@@ -97,6 +107,8 @@ public:
     double jacobian(double x, double y, double z) const { return 1. / this->dzs_dz(x, y, z); }
     // Slope (tangent) of the real layer surface.
     double layer_slope(double x, double y, double z) const;
+    // Unit normal of the real layer surface through (x, y, z): the gradient of the slice coordinate z - D.
+    Vec3d  layer_normal(double x, double y, double z) const;
 
     struct Check {
         double j_min { 1. };
@@ -120,6 +132,39 @@ private:
 constexpr double J_MIN = 0.6;
 constexpr double J_MAX = 1.4;
 
+// Print head around the nozzle (Tisma): its lowest parts (heater block, cooling duct) are `height` above the nozzle
+// tip and reach `radius` around the nozzle. The nozzle cone itself is covered by the maximum layer slope.
+struct HeadClearance
+{
+    double height { 0. };
+    double radius { 0. };
+    // Measured profile (static gauge): (height of the ramp, free angle in degrees), sorted by height. A ramp of that
+    // angle up to that height, with a plateau behind, did not touch the head. Empty = use height.
+    std::vector<std::pair<double, double>> profile;
+
+    // Highest rise of the part allowed at a horizontal distance from the nozzle tip (within the radius).
+    double allowed_rise(double distance) const;
+};
+
+// Parses "height:angle;height:angle..." (nonplanar_head_profile); invalid pairs are skipped.
+std::vector<std::pair<double, double>> parse_head_profile(const std::string &text);
+
+struct HeadCollision
+{
+    bool   collides { false };
+    // Highest rise of the part already printed above the nozzle tip within the head radius.
+    double rise     { 0. };
+    // Horizontal distance from the nozzle to that point.
+    double distance { 0. };
+    // Nozzle tip position where it happens (object coordinates, real Z).
+    Vec3d  nozzle   { Vec3d::Zero() };
+};
+
+// Checks whether the print head would hit the part already printed while printing the curved layers. The part
+// already printed when printing at a height is bounded by the convex hull of the mesh below that height and by the
+// current layer surface (conservative). mesh: object coordinates, real (not deformed) space.
+HeadCollision check_head_collision(const Deformation &deformation, const indexed_triangle_set &mesh, const HeadClearance &head);
+
 // Splits the mesh so that no edge is longer than max_edge (watertight, no T-junctions)
 // and moves its vertices to slice space.
 void deform_mesh(indexed_triangle_set &its, const Deformation &deformation, double max_edge);
@@ -136,6 +181,14 @@ struct GCodeFilterParams
     double z_max_speed       { 0. };     // mm/s, 0 = no limit
     double z_max_accel       { 0. };     // mm/s^2, 0 = no limit
     double max_volumetric    { 0. };     // mm^3/s, 0 = no limit
+    // Calibration of the Z speed: above the object bottom, z_max_speed is z_speed_test_start + i * z_speed_test_step
+    // in the band i of height z_speed_test_band (0 = no test).
+    double z_speed_test_start { 0. };
+    double z_speed_test_step  { 0. };
+    double z_speed_test_end   { 0. };
+    double z_speed_test_band  { 0. };
+    // Height above the object bottom where the bands start (after the flat layers and the transition).
+    double z_speed_test_offset { 0. };
     FlowPolicy flow_policy   { FlowPolicy::Preserve };
     double uniform_flow      { 0. };     // mm^3/s for FlowPolicy::Uniform
     std::vector<std::string> uniform_exclude { "External perimeter", "Overhang perimeter", "Bridge infill", "Gap fill" };
@@ -197,6 +250,12 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
 double mesh_max_edge(const PrintConfig &config);
 GCodeFilterParams make_filter_params(const PrintConfig &config);
 bool enabled(const PrintConfig &config);
+// The calibration test of the non-planar layers (calib_mode), which replaces the non-planar settings.
+bool calibration_test(const PrintConfig &config);
+// Field of the calibration of the maximum slope (relative to x0 = 0 and the center set by the caller).
+FieldParams slope_test_field(double start_deg, double step_deg, double end_deg, double band);
+// Height above the bottom of the object where the calibration tests reach their full deformation.
+double nonplanar_test_start_height(const PrintConfig &config);
 
 } // namespace NonPlanar
 } // namespace Slic3r

@@ -120,6 +120,7 @@
 #endif
 #ifdef _WIN32
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <wx/msw/registry.h>
 #endif
 
 #if ENABLE_THUMBNAIL_GENERATOR_DEBUG
@@ -186,7 +187,7 @@ public:
             memDC.SelectObject(bitmap);
 
             memDC.SetFont(m_action_font);
-            memDC.SetTextForeground(wxColour(91, 60, 196));
+            memDC.SetTextForeground(wxColour(122, 36, 201));
             memDC.DrawText(text, int(m_scale * 60), m_action_line_y_position);
 
             memDC.SelectObject(wxNullBitmap);
@@ -300,7 +301,7 @@ private:
             title = wxGetApp().is_editor() ? SLIC3R_APP_NAME : GCODEVIEWER_APP_NAME;
 
             // dynamically get the version to display
-            version = _L("Version") + " " + std::string(SLIC3R_VERSION);
+            version = _L("Version") + " " + std::string(TISMA_VERSION);
 
             // credits infornation
             credits = "\n" + title + " " +
@@ -468,7 +469,7 @@ static bool run_updater_win()
 {
     // find updater exe
     boost::filesystem::path path_updater = boost::dll::program_location().parent_path() / "prusaslicer-updater.exe";
-    // run updater. Original args: /silent -restartapp prusa-slicer.exe -startappfirst
+    // run updater. Original args: /silent -restartapp tisma-slicer.exe -startappfirst
     std::string msg;
     bool res = create_process(path_updater, L"/silent", msg);
     if (!res)
@@ -852,6 +853,7 @@ void GUI_App::post_init()
             // start before cw so it is canceled by cw if needed?
             this->get_preset_updater_wrapper()->sync_preset_updater(this, preset_bundle);
             bool cw_showed = this->config_wizard_startup();
+            this->ensure_url_handler();
             if (! cw_showed) {
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
@@ -1158,7 +1160,7 @@ std::string GUI_App::check_older_app_config(Semver current_version, bool backup)
     BOOST_LOG_TRIVIAL(info) << "last app config file used: " << older_data_dir_path;
     // ask about using older data folder
     InfoDialog msg(nullptr
-        , format_wxstr(_L("You are opening %1% version %2%."), SLIC3R_APP_NAME, SLIC3R_VERSION)
+        , format_wxstr(_L("You are opening %1% version %2%."), SLIC3R_APP_NAME, TISMA_VERSION)
         , backup ? 
         format_wxstr(_L(
             "The active configuration was created by <b>%1% %2%</b>,"
@@ -1746,7 +1748,7 @@ const wxColour GUI_App::get_label_default_clr_system()
 
 const wxColour GUI_App::get_label_default_clr_modified()
 {
-    return dark_mode() ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
+    return dark_mode() ? wxColour(176, 122, 238) : wxColour(122, 36, 201);
 }
 
 const std::vector<std::string> GUI_App::get_mode_default_palette()
@@ -1765,9 +1767,9 @@ void GUI_App::init_ui_colours()
     m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250): wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230): wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_default       = is_dark_mode ? wxColour(58, 58, 58)   : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
-    m_color_hovered_btn_label       = is_dark_mode ? wxColour(156, 133, 230) : wxColour(91, 60, 196);
-    m_color_default_btn_label       = is_dark_mode ? wxColour(201, 188, 242): wxColour(69, 39, 168);
-    m_color_selected_btn_bg         = is_dark_mode ? wxColour(67, 56, 104)  : wxColour(226, 220, 248);
+    m_color_hovered_btn_label       = is_dark_mode ? wxColour(176, 122, 238) : wxColour(122, 36, 201);
+    m_color_default_btn_label       = is_dark_mode ? wxColour(217, 189, 245): wxColour(91, 15, 167);
+    m_color_selected_btn_bg         = is_dark_mode ? wxColour(74, 46, 102)  : wxColour(238, 224, 251);
 //#else
 //    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
 //#endif
@@ -2705,6 +2707,8 @@ void GUI_App::update_mode()
 
     mainframe->m_tmp_top_bar->UpdateMode();
     mainframe->m_tabpanel->UpdateMode();
+    // Advanced workspaces are shown only in the Expert mode.
+    mainframe->update_nav_rail(true);
 
     for (auto tab : tabs_list)
         tab->update_mode();
@@ -3425,7 +3429,7 @@ void GUI_App::show_desktop_integration_dialog()
 void GUI_App::show_downloader_registration_dialog()
 {
     InfoDialog msg(nullptr
-        , format_wxstr(_L("Welcome to %1% version %2%."), SLIC3R_APP_NAME, SLIC3R_VERSION)
+        , format_wxstr(_L("Welcome to %1% version %2%."), SLIC3R_APP_NAME, TISMA_VERSION)
         , format_wxstr(_L(
             "Do you wish to register downloads from supported websites"
             "\nfor this <b>%1% %2%</b> executable?"
@@ -3572,6 +3576,35 @@ void GUI_App::window_pos_sanitize(wxTopLevelWindow* window)
     if (window->GetScreenRect() != metrics.get_rect()) {
         window->SetSize(metrics.get_rect());
     }
+}
+
+void GUI_App::ensure_url_handler()
+{
+    if (! is_editor() || app_config == nullptr)
+        return;
+    // "0": the user disabled the downloads from the browser.
+    if (app_config->has("downloader_url_registered") && ! app_config->get_bool("downloader_url_registered"))
+        return;
+    // Downloads go to the folder chosen in the wizard, or to the Downloads folder of the user.
+    const boost::filesystem::path dest(app_config->get("url_downloader_dest"));
+    if (dest.empty() || ! boost::filesystem::is_directory(dest)) {
+        const wxString downloads = wxStandardPaths::Get().GetUserDir(wxStandardPaths::Dir_Downloads);
+        if (! downloads.IsEmpty())
+            app_config->set("url_downloader_dest", into_u8(downloads));
+    }
+#ifdef _WIN32
+    // The link may point to another installation (PrusaSlicer, or a previous Tisma): point it here.
+    const std::string binary = boost::filesystem::canonical(boost::dll::program_location()).string();
+    wxRegKey key(wxRegKey::HKCU, "Software\\Classes\\prusaslicer\\shell\\open\\command");
+    wxString current;
+    if (! key.Exists() || ! key.QueryValue(wxEmptyString, current) || current.Find(wxString::FromUTF8(binary)) == wxNOT_FOUND) {
+        BOOST_LOG_TRIVIAL(info) << "Registering prusaslicer:// links to " << binary;
+        DownloaderUtils::Worker::perform_url_register();
+    }
+#elif defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
+    // On Linux the desktop integration registers the links (Preferences / Desktop integration).
+#endif
+    app_config->set("downloader_url_registered", "1");
 }
 
 bool GUI_App::config_wizard_startup()
@@ -3724,22 +3757,22 @@ bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* pare
 #ifdef __WXMSW__
 void GUI_App::associate_3mf_files()
 {
-    associate_file_type(L".3mf", L"Prusa.Slicer.1", L"PrusaSlicer", true);
+    associate_file_type(L".3mf", L"TismaSlicer.Model", L"TismaSlicer", true);
 }
 
 void GUI_App::associate_stl_files()
 {
-    associate_file_type(L".stl", L"Prusa.Slicer.1", L"PrusaSlicer", true);
+    associate_file_type(L".stl", L"TismaSlicer.Model", L"TismaSlicer", true);
 }
 
 void GUI_App::associate_gcode_files()
 {
-    associate_file_type(L".gcode", L"PrusaSlicer.GCodeViewer.1", L"PrusaSlicerGCodeViewer", true);
+    associate_file_type(L".gcode", L"TismaSlicer.Gcode", L"TismaGCodeViewer", true);
 }
 
 void GUI_App::associate_bgcode_files()
 {
-    associate_file_type(L".bgcode", L"PrusaSlicer.GCodeViewer.1", L"PrusaSlicerGCodeViewer", true);
+    associate_file_type(L".bgcode", L"TismaSlicer.Gcode", L"TismaGCodeViewer", true);
 }
 #endif // __WXMSW__
 
@@ -3840,6 +3873,12 @@ void GUI_App::app_version_check(bool from_user)
         }
     }
     std::string version_check_url = app_config->version_check_url();
+    if (version_check_url.empty()) {
+        // Tisma has no version server yet: show its releases page when the user asks.
+        if (from_user)
+            open_browser_with_warning_dialog("https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/releases");
+        return;
+    }
     m_app_updater->sync_version(version_check_url, from_user);
 }
 

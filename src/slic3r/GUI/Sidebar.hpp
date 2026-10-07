@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 
+#include <wx/scrolwin.h>
 #include <wx/panel.h>
 #include <wx/string.h>
 #include <wx/sizer.h>
@@ -34,12 +35,16 @@ class wxScrolledWindow;
 class ScalableButton;
 class ModeSizer;
 
+class Button;
+class wxStaticText;
+
 namespace Slic3r {
 
 namespace GUI {
 
 class ConfigOptionsGroup;
 class FreqChangedParams;
+class QuickSettings;
 class ObjectInfo;
 class SlicedInfo;
 class ObjectManipulation;
@@ -64,6 +69,10 @@ class Sidebar : public wxPanel
     Plater*             m_plater            { nullptr };
 
     wxScrolledWindow*   m_scrolled_panel    { nullptr };
+    // Tisma (Órbita Pro): panel at the left of the 3D view with the list and the info of the objects. It is a child
+    // of the plater, placed by it.
+    wxScrolledWindow*   m_objects_panel     { nullptr };
+    wxStaticText*       m_objects_caption   { nullptr };
     wxPanel*            m_presets_panel     { nullptr }; // Used for MSW better layouts
 
     wxFlexGridSizer*    m_presets_sizer     { nullptr };
@@ -84,10 +93,11 @@ class Sidebar : public wxPanel
     wxBoxSizer*     m_autoslicing_btns_sizer    { nullptr };
 
 
-    wxButton*       m_btn_export_gcode          { nullptr };
-    wxButton*       m_btn_reslice               { nullptr };
+    ::Button*       m_btn_export_gcode          { nullptr };
+    ::Button*       m_btn_reslice               { nullptr };
     wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
+    ScalableButton* m_btn_usb_print             { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
                                                              //
     wxButton* m_btn_export_all_gcode                { nullptr };
@@ -96,6 +106,7 @@ class Sidebar : public wxPanel
 
     wxButton*                           m_btn_full_spectrum { nullptr };
     std::unique_ptr<FreqChangedParams>  m_frequently_changed_parameters;
+    std::unique_ptr<QuickSettings>      m_quick_settings;
     std::unique_ptr<ObjectManipulation> m_object_manipulation;
     std::unique_ptr<ObjectSettings>     m_object_settings;
     std::unique_ptr<ObjectLayers>       m_object_layers;
@@ -112,6 +123,10 @@ class Sidebar : public wxPanel
     void init_workflow_combo(int margin_5);
 
     void show_preset_comboboxes();
+    // Tisma colors of the panel and of the action buttons.
+    void apply_tisma_theme();
+    void layout_objects_panel();
+    std::vector<wxStaticText*> m_preset_captions;
     void on_select_preset(wxCommandEvent& evt);
 
 public:
@@ -129,6 +144,7 @@ public:
 
     ConfigOptionsGroup*     og_freq_chng_params(const bool is_fff);
     wxButton*               get_wiping_dialog_button();
+    QuickSettings*          quick_settings();
 
     void show_info_sizer();
     void show_sliced_info_sizer(const bool show);
@@ -142,6 +158,7 @@ public:
     bool show_reslice(bool show) const;
     bool show_export(bool show) const;
     bool show_send(bool show) const;
+    bool show_usb_print(bool show) const;
     bool show_export_removable(bool show) const;
     bool show_connect(bool show) const;
 
@@ -154,6 +171,10 @@ public:
     void switch_from_autoslicing_mode();
 
     void collapse(bool collapse);
+    // Panel of the objects at the left of the 3D view (Órbita Pro).
+    wxWindow* objects_panel() const { return m_objects_panel; }
+    // Lays out the objects panel too: the object list and the object info live there.
+    bool Layout() override;
     void set_extruders_count(size_t extruders_count);
 
     void update_mode();

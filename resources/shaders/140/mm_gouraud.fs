@@ -14,6 +14,34 @@ const vec3 LIGHT_FRONT_DIR = vec3(0.6985074, 0.1397015, 0.6985074);
 
 #define INTENSITY_AMBIENT    0.3
 
+
+// Tisma Slicer (phase 7): shadows of the main light (see src/slic3r/GUI/TismaShading.cpp), disabled by default.
+uniform bool tisma_shadows;
+uniform mat4 tisma_eye_to_shadow;
+uniform sampler2D tisma_shadow_map;
+uniform float tisma_shadow_intensity;
+
+float tisma_shadow(vec3 eye_pos, float NdotL)
+{
+    if (!tisma_shadows)
+        return 1.0;
+    vec4 p = tisma_eye_to_shadow * vec4(eye_pos, 1.0);
+    vec3 c = p.xyz / p.w * 0.5 + 0.5;
+    if (c.x < 0.0 || c.x > 1.0 || c.y < 0.0 || c.y > 1.0 || c.z < 0.0)
+        return 1.0;
+    float bias = max(0.0025 * (1.0 - NdotL), 0.0005);
+    // behind the far plane of the light the shadow map is a silhouette
+    float depth = (c.z > 1.0) ? 1.0 : c.z - bias;
+    vec2 texel = 1.0 / vec2(textureSize(tisma_shadow_map, 0));
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            shadow += (depth > texture(tisma_shadow_map, c.xy + vec2(x, y) * texel).r) ? 1.0 : 0.0;
+        }
+    }
+    return 1.0 - tisma_shadow_intensity * shadow / 9.0;
+}
+
 const vec3  ZERO    = vec3(0.0, 0.0, 0.0);
 const float EPSILON = 0.0001;
 
@@ -53,9 +81,10 @@ void main()
 
     // x = diffuse, y = specular;
     vec2 intensity = vec2(0.0);
-    intensity.x = INTENSITY_AMBIENT + NdotL * LIGHT_TOP_DIFFUSE;
     vec3 position = (view_model_matrix * model_pos).xyz;
-    intensity.y = LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(position), reflect(-LIGHT_TOP_DIR, eye_normal)), 0.0), LIGHT_TOP_SHININESS);
+    float shadow = tisma_shadow(position, NdotL);
+    intensity.x = INTENSITY_AMBIENT + shadow * NdotL * LIGHT_TOP_DIFFUSE;
+    intensity.y = shadow * LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(position), reflect(-LIGHT_TOP_DIR, eye_normal)), 0.0), LIGHT_TOP_SHININESS);
 
     // Perform the same lighting calculation for the 2nd light source (no specular applied).
     NdotL = max(dot(eye_normal, LIGHT_FRONT_DIR), 0.0);

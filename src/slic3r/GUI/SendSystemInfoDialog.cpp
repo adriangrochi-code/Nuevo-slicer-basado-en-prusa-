@@ -745,7 +745,10 @@ bool SendSystemInfoDialog::send_info(wxString& message)
 // The only function callable from outside this unit.
 void show_send_system_info_dialog_if_needed()
 {
-    if (wxGetApp().is_gcode_viewer() || ! should_dialog_be_shown())
+    // Tisma Slicer: the information would go to a server of Prusa Research (SEND_SYSTEM_INFO_URL), which has nothing
+    // to do with this fork. Disabled until Tisma has its own service.
+    static constexpr bool enabled = false;
+    if (! enabled || wxGetApp().is_gcode_viewer() || ! should_dialog_be_shown())
         return;
 
     SendSystemInfoDialog dlg(wxGetApp().mainframe);

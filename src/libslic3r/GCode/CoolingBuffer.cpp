@@ -1205,6 +1205,8 @@ std::string CoolingBuffer::apply_layer_cooldown(
         requested_fan_speed_limits.min_speed = std::min(requested_fan_speed_limits.min_speed, requested_fan_speed_limits.max_speed);
         if (requested_fan_speed >= 0) {
             fan_speed_new = std::clamp(requested_fan_speed, requested_fan_speed_limits.min_speed, requested_fan_speed_limits.max_speed);
+            // Upstream SPE-3377: a dynamic fan speed stays within [min_fan_speed, max_fan_speed] (or off).
+            fan_speed_new = this->clamp_fan_speed_to_allowed_range(fan_speed_new);
         }
 
         if (fan_speed_new != m_fan_speed) {
@@ -1408,6 +1410,17 @@ std::string CoolingBuffer::apply_layer_cooldown(
     // There should be no empty G1 lines emitted.
     assert(new_gcode.find("G1\n") == std::string::npos);
     return new_gcode;
+}
+
+int CoolingBuffer::clamp_fan_speed_to_allowed_range(const int fan_speed) const
+{
+    const int min_fan_speed = m_config.min_fan_speed.get_at(m_current_extruder);
+    const int max_fan_speed = m_config.max_fan_speed.get_at(m_current_extruder);
+    if (fan_speed == 0 || fan_speed < min_fan_speed)
+        return 0;
+    if (fan_speed > max_fan_speed)
+        return max_fan_speed;
+    return fan_speed;
 }
 
 } // namespace Slic3r

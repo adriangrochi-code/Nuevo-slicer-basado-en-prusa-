@@ -141,6 +141,9 @@ public:
     explicit TriangleMesh(indexed_triangle_set &&M, const RepairedMeshErrors& repaired_errors = RepairedMeshErrors());
     void clear() { this->its.clear(); m_stats.clear(); }
     void from_facets(std::vector<stl_facet> &&facets, bool repair = true);
+    // Tisma: as above, and returns for every triangle of the mesh the 16 bit tag stored in stl_facet::extra of the
+    // facet it comes from. The repair may remove and reorder facets, the tags follow them.
+    void from_facets(std::vector<stl_facet> &&facets, bool repair, std::vector<uint16_t> &facet_tags);
     bool ReadSTLFile(const char* input_file, bool repair = true);
     bool write_ascii(const char* output_file);
     bool write_binary(const char* output_file);

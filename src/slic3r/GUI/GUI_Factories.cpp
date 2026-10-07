@@ -891,6 +891,20 @@ wxMenuItem* MenuFactory::append_menu_item_simplify(wxMenu* menu)
     return menu_item;
 }
 
+// Tisma: commands for the parts imported from STEP (phase 4).
+void MenuFactory::append_menu_items_cad(wxMenu* menu)
+{
+    append_menu_item(menu, wxID_ANY, _L("Tessellate again") + dots,
+        _L("Tessellate again the selected parts from their STEP model with another precision, keeping the painting"),
+        [](wxCommandEvent&) { plater()->retessellate_cad(); }, "", menu,
+        []() { return plater()->can_retessellate_cad(); }, m_parent);
+    append_menu_item(menu, wxID_ANY, _L("Check CAD geometry"),
+        _L("Show the result of the geometry check of the STEP model of the selected parts"),
+        [](wxCommandEvent&) { plater()->show_cad_check(); }, "", menu,
+        []() { return plater()->can_retessellate_cad(); }, m_parent);
+    menu->AppendSeparator();
+}
+
 void MenuFactory::append_menu_item_export_stl(wxMenu* menu)
 {
     append_menu_item(menu, wxID_ANY, _L("Export as STL/OBJ") + dots, "",
@@ -1200,6 +1214,7 @@ void MenuFactory::create_common_object_menu(wxMenu* menu)
 
     append_menu_item_fix_through_winsdk(menu);
     append_menu_item_simplify(menu);
+    append_menu_items_cad(menu);
     append_menu_items_mirror(menu);
 
     append_menu_items_split(menu);
@@ -1249,6 +1264,7 @@ void MenuFactory::create_part_menu()
     append_menu_item_export_stl(menu);
     append_menu_item_fix_through_winsdk(menu);
     append_menu_item_simplify(menu);
+    append_menu_items_cad(menu);
 
     append_menu_item(menu, wxID_ANY, _L("Split"), _L("Split the selected object into individual parts"),
         [](wxCommandEvent&) { plater()->split_volume(); }, "split_parts_SMALL", nullptr,

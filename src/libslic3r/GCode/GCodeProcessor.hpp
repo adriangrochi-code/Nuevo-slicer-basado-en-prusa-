@@ -548,6 +548,9 @@ namespace Slic3r {
         float m_mm3_per_mm;
         float m_fan_speed; // percentage
         float m_z_offset; // mm
+        // Tisma, belt printers: angle of the gantry [deg], 0 = not a belt printer. The moves are shown in the world
+        // (the part on the belt) instead of the axes of the machine.
+        double m_belt_angle { 0. };
         GCodeExtrusionRole m_extrusion_role;
         unsigned char m_extruder_id;
         ExtruderColors m_extruder_colors;

@@ -62,6 +62,7 @@ Model& Model::assign_copy(const Model &rhs)
     // copy custom code per height
     this->custom_gcode_per_print_z_vector = rhs.custom_gcode_per_print_z_vector;
     this->wipe_tower_vector = rhs.wipe_tower_vector;
+    this->plates = rhs.plates;
     this->sla_workflow_uuid = rhs.sla_workflow_uuid;
     this->virtual_extruders = rhs.virtual_extruders;
 
@@ -87,6 +88,7 @@ Model& Model::assign_copy(Model &&rhs)
     // copy custom code per height
     this->custom_gcode_per_print_z_vector = std::move(rhs.custom_gcode_per_print_z_vector);
     this->wipe_tower_vector = rhs.wipe_tower_vector;
+    this->plates = rhs.plates;
     this->sla_workflow_uuid = rhs.sla_workflow_uuid;
     this->virtual_extruders = std::move(rhs.virtual_extruders);
 
@@ -466,6 +468,7 @@ ModelObject& ModelObject::assign_copy(const ModelObject &rhs)
     this->printable                   = rhs.printable;
     this->origin_translation          = rhs.origin_translation;
     this->cut_id                      = rhs.cut_id;
+    this->engineering                 = rhs.engineering;
     this->copy_transformation_caches(rhs);
 
     this->clear_volumes();
@@ -502,6 +505,7 @@ ModelObject& ModelObject::assign_copy(ModelObject &&rhs)
     this->layer_height_profile        = std::move(rhs.layer_height_profile);
     this->printable                   = std::move(rhs.printable);
     this->origin_translation          = std::move(rhs.origin_translation);
+    this->engineering                 = std::move(rhs.engineering);
     this->copy_transformation_caches(rhs);
 
     this->clear_volumes();

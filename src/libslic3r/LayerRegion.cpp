@@ -311,6 +311,13 @@ Surfaces merge_bridges(
             //NOTE: The current regularization of the shells can create small unasigned regions in the object (E.G. benchy)
             // without the following closing operation, those regions will stay unfilled and cause small holes in the expanded surface.
             // look for narrow_ensure_vertical_wall_thickness_region_radius filter.
+            // Tisma (phase 8): the expansions produced by the wave propagation have many collinear points (the
+            // Benchy has a layer with 37k points, 80 % of them within 0.1 um of a line). Their closing degenerated
+            // in Clipper (almost 1 s, single threaded, the slowest step of the slicing of the Benchy). Removing the
+            // points closer than SCALED_EPSILON (0.1 um) to the simplified contour makes it ~40x faster; the
+            // closed area changes by less than 0.001 %.
+            for (Polygon &polygon : bridge_group)
+                polygon.points = MultiPoint::douglas_peucker(polygon.points, SCALED_EPSILON);
             ExPolygons merged_bridges = closing_ex(bridge_group, closing_radius);
             // without safety offset, artifacts are generated (GH #2494)
             // union_safety_offset_ex(acc)

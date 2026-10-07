@@ -88,7 +88,7 @@ enum class MachineLimitsUsage {
 };
 
 enum PrintHostType {
-   htPrusaLink, htPrusaConnect, htOctoPrint, htMoonraker, htDuet, htFlashAir, htAstroBox, htRepetier, htMKS, htPrusaConnectNew
+   htPrusaLink, htPrusaConnect, htOctoPrint, htMoonraker, htDuet, htFlashAir, htAstroBox, htRepetier, htMKS, htBambuLan, htPrusaConnectNew
 };
 
 enum AuthorizationType {
@@ -182,6 +182,12 @@ enum class LabelObjectsStyle {
 
 // Non-planar layers (see NonPlanar.hpp).
 enum class NonPlanarMode { Disabled, Wave, Conical };
+
+// Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
+enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,
+                       NonPlanarSlope, NonPlanarZSpeed, FirstLayerOffset, FlowRate, Coasting,
+                       // Resin: exposure time per band of layers (archives with a per layer exposure, GOO).
+                       ResinExposure };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
 enum class NonPlanarFlowPolicy { Preserve, Uniform, Off };
 
@@ -313,6 +319,7 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(GCodeThumbnailsFormat)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(ForwardCompatibilitySubstitutionRule)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarMode)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(CalibMode)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarPattern)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NonPlanarFlowPolicy)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOnePerimeterType)
@@ -766,6 +773,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 extra_perimeters))
     ((ConfigOptionBool,                 extra_perimeters_on_overhangs))
     ((ConfigOptionBool,                 overhang_arcs))
+    ((ConfigOptionBool,                 stagger_perimeters))
     ((ConfigOptionFloat,                fill_angle))
     ((ConfigOptionPercent,              fill_density))
     ((ConfigOptionBool,                 infill_dense))
@@ -865,6 +873,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionString,              before_layer_gcode))
     ((ConfigOptionString,              between_objects_gcode))
     ((ConfigOptionBool,                binary_gcode))
+    ((ConfigOptionBool,                belt_printer))
+    ((ConfigOptionFloat,               belt_angle))
+    ((ConfigOptionFloat,               nonplanar_head_clearance_height))
+    ((ConfigOptionFloat,               nonplanar_head_clearance_radius))
+    ((ConfigOptionString,              nonplanar_head_profile))
     ((ConfigOptionFloats,              deretract_speed))
     ((ConfigOptionString,              end_gcode))
     ((ConfigOptionStrings,             end_filament_gcode))
@@ -876,6 +889,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBools,               filament_soluble))
     ((ConfigOptionBools,               filament_abrasive))
     ((ConfigOptionFloats,              filament_cost))
+    ((ConfigOptionFloats,              filament_coast_distance))
     ((ConfigOptionFloats,              filament_spool_weight))
     ((ConfigOptionFloats,              filament_max_volumetric_speed))
     ((ConfigOptionFloats,              filament_infill_max_speed))
@@ -1079,6 +1093,11 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloats,             wiping_volumes_matrix))
     ((ConfigOptionBool,               wiping_volumes_use_custom_matrix))
     ((ConfigOptionFloat,              z_offset))
+    ((ConfigOptionEnum<CalibMode>,    calib_mode))
+    ((ConfigOptionFloat,              calib_start))
+    ((ConfigOptionFloat,              calib_end))
+    ((ConfigOptionFloat,              calib_step))
+    ((ConfigOptionFloat,              calib_band_height))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(

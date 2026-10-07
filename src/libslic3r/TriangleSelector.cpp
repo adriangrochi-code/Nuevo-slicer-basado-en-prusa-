@@ -1582,6 +1582,16 @@ typename IndexedTriangleSetType<facet_info>::type TriangleSelector::get_facets(c
     return out;
 }
 
+std::vector<TriangleSelector::LeafTriangle> TriangleSelector::get_leaf_triangles() const
+{
+    std::vector<LeafTriangle> out;
+    for (const Triangle &tr : m_triangles)
+        if (tr.valid() && ! tr.is_split())
+            out.push_back({ { m_vertices[tr.verts_idxs[0]].v, m_vertices[tr.verts_idxs[1]].v, m_vertices[tr.verts_idxs[2]].v },
+                            tr.source_triangle, tr.get_state() });
+    return out;
+}
+
 indexed_triangle_set TriangleSelector::get_facets(TriangleStateType state) const {
     return this->get_facets([state](const Triangle &tr) { return tr.get_state() == state; });
 }

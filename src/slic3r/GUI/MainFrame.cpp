@@ -10,6 +10,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "MainFrame.hpp"
+#include "libslic3r/MultipleBeds.hpp"
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -59,6 +60,11 @@
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
 #include "TopBar.hpp"
+#include "NavRail.hpp"
+#include "USBPrintDialog.hpp"
+#include "DevicesPanel.hpp"
+#include "CalibrationDialog.hpp"
+#include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GalleryDialog.hpp"
@@ -123,12 +129,12 @@ static wxIcon main_frame_icon(GUI_App::EAppMode app_mode)
     if (len > 0 && len < MAX_PATH) {
         path.erase(path.begin() + len, path.end());
         if (app_mode == GUI_App::EAppMode::GCodeViewer) {
-            // Only in case the slicer was started with --gcodeviewer parameter try to load the icon from prusa-gcodeviewer.exe
+            // Only in case the slicer was started with --gcodeviewer parameter try to load the icon from tisma-gcodeviewer.exe
             // Otherwise load it from the exe.
-            for (const std::wstring_view exe_name : { std::wstring_view(L"prusa-slicer.exe"), std::wstring_view(L"prusa-slicer-console.exe") })
+            for (const std::wstring_view exe_name : { std::wstring_view(L"tisma-slicer.exe"), std::wstring_view(L"tisma-slicer-console.exe") })
                 if (boost::iends_with(path, exe_name)) {
                     path.erase(path.end() - exe_name.size(), path.end());
-                    path += L"prusa-gcodeviewer.exe";
+                    path += L"tisma-gcodeviewer.exe";
                     break;
                 }
         }
@@ -356,6 +362,13 @@ void MainFrame::update_layout()
             m_plater_page = nullptr;
         }
 
+        if (m_rail_sizer) {
+            // Deleting the sizer releases the windows it holds, so that they can be added to another sizer.
+            m_main_sizer->Remove(m_rail_sizer);
+            m_rail_sizer = nullptr;
+        }
+        if (m_nav_rail && !m_nav_rail->horizontal())
+            m_nav_rail->Hide();
         clean_sizer(m_main_sizer);
         clean_sizer(m_settings_dialog.GetSizer());
 
@@ -412,7 +425,14 @@ void MainFrame::update_layout()
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
 
-        m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
+        if (m_nav_rail && !m_nav_rail->horizontal()) {
+            m_rail_sizer = new wxBoxSizer(wxHORIZONTAL);
+            m_rail_sizer->Add(m_nav_rail, 0, wxEXPAND);
+            m_rail_sizer->Add(m_tabpanel, 1, wxEXPAND);
+            m_main_sizer->Add(m_rail_sizer, 1, wxEXPAND | wxTOP, 1);
+            m_nav_rail->Show();
+        } else
+            m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
         m_tabpanel->ShowFull();
         m_tmp_top_bar->Hide();
@@ -599,6 +619,16 @@ void MainFrame::update_title()
         title += (" " + _L("based on Slic3r"));
 
     SetTitle(title);
+
+    // Tisma: name of the project in the top bar, as the project tab of PrusaSlicer 3.0.
+    if (m_plater != nullptr && m_tabpanel != nullptr) {
+        wxString project = from_path(into_path(m_plater->get_project_filename()).filename());
+        if (project.empty())
+            project = _L("Untitled");
+        if (m_plater->is_project_dirty())
+            project += " *";
+        m_tabpanel->GetTopBarItemsCtrl()->SetProjectName(project);
+    }
 }
 
 static wxString GetTooltipForSettingsButton(PrinterTechnology pt)
@@ -695,6 +725,9 @@ void MainFrame::init_tabpanel()
         on_tab_change_rename_reload_item(e.GetSelection());
 #endif // !__APPLE__
 
+        if (m_nav_rail)
+            m_nav_rail->update_selection();
+
         wxWindow* panel = m_tabpanel->GetCurrentPage();
         Tab* tab = dynamic_cast<Tab*>(panel);
 
@@ -722,8 +755,10 @@ void MainFrame::init_tabpanel()
     m_plater->Hide();
 
 
-    if (wxGetApp().is_editor())
+    if (wxGetApp().is_editor()) {
         create_preset_tabs();
+        create_nav_rail();
+    }
 
     if (m_plater) {
         // load initial config
@@ -797,6 +832,161 @@ void MainFrame::register_win32_callbacks()
 }
 #endif // _WIN32
 
+void MainFrame::create_nav_rail()
+{
+    // Órbita Pro: the workspaces are tabs of the top bar.
+    TopBarItemsCtrl* top_bar = m_tabpanel->GetTopBarItemsCtrl();
+    m_nav_rail = new NavRail(top_bar, true);
+
+    auto is_fff       = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
+    auto is_expert    = []() { return wxGetApp().get_mode() == comExpert; };
+    auto current_page = [this]() -> wxWindow* { return m_tabpanel ? m_tabpanel->GetCurrentPage() : nullptr; };
+    auto select_page  = [this](wxWindow* page) {
+        if (int idx = m_tabpanel->FindPage(page); idx != wxNOT_FOUND)
+            m_tabpanel->SetSelection(idx);
+    };
+
+    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering, Structures, Configuration.
+    NavRail::Item prepare;
+    prepare.label       = _L("Prepare");
+    prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
+    prepare.icon        = "plater";
+    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); m_plater->close_engineering(); update_nav_rail(); };
+    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && !m_plater->is_engineering_open(); };
+    m_nav_rail->add_item(prepare);
+
+    NavRail::Item slice;
+    slice.label       = _L("Slice");
+    slice.tooltip     = _L("Layers, toolpaths and G-code preview");
+    slice.icon        = "layers";
+    slice.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("Preview"); };
+    slice.is_selected = [this, current_page]() { return current_page() == m_plater && m_plater->is_preview_shown(); };
+    m_nav_rail->add_item(slice);
+
+    // Advanced workspaces: only in the Expert mode, the basic modes stay as in PrusaSlicer.
+    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5).
+    NavRail::Item engineering;
+    engineering.label       = _L("Engineering");
+    engineering.tooltip     = _L("Structural analysis at the working temperature: supports, loads and material");
+    engineering.icon        = "wrench";
+    engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
+    engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
+    // The analyses and the calibrations are for FFF printers: hidden with an SLA printer.
+    engineering.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
+    m_nav_rail->add_item(engineering);
+
+    // Structures: the lightest infill for the loads (phase 6), in the Engineering view; lattice and local
+    // reinforcements will follow (docs/IMPLEMENTATION_ROADMAP.md).
+    NavRail::Item structures;
+    structures.label       = _L("Structures");
+    structures.tooltip     = _L("Lightest infill for the loads: uniform or by zones");
+    structures.icon        = "infill";
+    structures.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_structures(); update_nav_rail(); };
+    structures.is_selected = []() { return false; };
+    structures.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
+    m_nav_rail->add_item(structures);
+
+    NavRail::Item calib;
+    calib.label    = _L("Calibration");
+    calib.tooltip  = _L("Calibration tests: temperature, pressure advance, retraction, speeds, ...");
+    calib.icon     = "test";
+    calib.on_click = [this]() { show_calibration_menu(this); };
+    m_nav_rail->add_item(calib);
+
+    NavRail::Item usb;
+    usb.label       = _L("Device");
+    usb.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
+    usb.icon        = "plug";
+    usb.on_click    = [this, select_page]() {
+        if (m_devices_panel)
+            select_page(m_devices_panel);
+        else
+            USBPrintDialog::run(this);
+    };
+    usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
+    m_nav_rail->add_item(usb);
+
+    if (m_printables_webview) {
+        NavRail::Item printables;
+        printables.label       = "Printables";
+        printables.icon        = "open_browser";
+        printables.on_click    = [select_page, this]() { select_page(m_printables_webview); };
+        printables.is_selected = [this, current_page]() { return current_page() == m_printables_webview; };
+        m_nav_rail->add_item(printables);
+    }
+
+    // Configuration: printer, filament and process profiles, preferences.
+    NavRail::Item config;
+    config.label       = _L("Configuration");
+    config.tooltip     = _L("Printer, filament and process profiles; preferences");
+    config.icon        = "settings";
+    config.bottom      = true;
+    config.is_selected = [current_page]() { return dynamic_cast<Tab*>(current_page()) != nullptr; };
+    config.on_click    = [this, is_fff]() {
+        wxMenu menu;
+        auto add = [this, &menu](const wxString& label, std::function<void()> action) {
+            const int id = wxWindow::NewControlId();
+            menu.Append(id, label);
+            menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
+        };
+        add(_L("Printer"),  [this]()         { select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER)); });
+        add(is_fff() ? _L("Filament") : _L("Material"),
+                            [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL)); });
+        add(_L("Process"),  [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT)); });
+        menu.AppendSeparator();
+        add(_L("Preferences") + dots, []()   { wxGetApp().open_preferences(); });
+        add(_(ConfigWizard::name()) + dots, []() { wxGetApp().run_wizard(ConfigWizard::RR_USER); });
+        PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
+    };
+    m_nav_rail->add_item(config);
+
+    // The pages are selected from the workspace tabs.
+    top_bar->ShowPageButtons(false);
+    top_bar->SetWorkspaceTabs(m_nav_rail);
+
+    // Current printer and whether it has a connection (physical printer with a host).
+    m_printer_chip = new PrinterChip(top_bar,
+        []() {
+            PrinterChip::State st;
+            PresetBundle* bundle = wxGetApp().preset_bundle;
+            if (bundle == nullptr)
+                return st;
+            st.name = from_u8(bundle->printers.get_selected_preset_name());
+            PhysicalPrinterCollection& ph = bundle->physical_printers;
+            if (ph.has_selection()) {
+                st.name = from_u8(ph.get_selected_printer_name());
+                const DynamicPrintConfig* cfg = ph.get_selected_printer_config();
+                const std::string host = cfg && cfg->has("print_host") ? cfg->opt_string("print_host") : std::string();
+                st.connected = !host.empty();
+                st.tooltip   = st.connected ? format_wxstr(_L("Connection: %1%"), host) : _L("No connection configured");
+            } else
+                st.tooltip = _L("No connection configured. Add a physical printer to send the G-code over the network or USB.");
+            st.tooltip += "\n" + _L("Click to open Device");
+            return st;
+        },
+        [this, select_page]() {
+            if (m_devices_panel)
+                select_page(m_devices_panel);
+            else
+                USBPrintDialog::run(this);
+        });
+    top_bar->AddRightWindow(m_printer_chip);
+}
+
+void MainFrame::update_nav_rail(bool visibility)
+{
+    if (m_nav_rail == nullptr)
+        return;
+    if (visibility) {
+        wxWindow* page = m_tabpanel->GetCurrentPage();
+        // Leaving the Expert mode or switching to an SLA printer while an advanced workspace is shown: back to Prepare.
+        if (m_plater && (wxGetApp().get_mode() != comExpert || m_plater->printer_technology() != ptFFF) && m_plater->is_engineering_open())
+            m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
+        m_nav_rail->update_visibility();
+    } else
+        m_nav_rail->update_selection();
+}
+
 void MainFrame::create_preset_tabs()
 {
     add_created_tab(new TabPrint(m_tabpanel), "cog");
@@ -806,6 +996,9 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
     
     m_printables_webview = new PrintablesWebViewPanel(m_tabpanel);
+    // Tisma: Devices page (selected from the navigation column).
+    m_devices_panel = new DevicesPanel(m_tabpanel);
+    m_tabpanel->AddNewPage(m_devices_panel, _L("Devices"), "");
     add_printables_webview_tab();
    
     m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
@@ -1306,6 +1499,8 @@ void MainFrame::on_sys_color_changed()
         m_connect_webview->sys_color_changed();
     if (m_printer_webview)
         m_printer_webview->sys_color_changed();
+    if (m_devices_panel)
+        m_devices_panel->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 
@@ -1657,6 +1852,11 @@ void MainFrame::init_menubar_as_editor()
 #endif // __APPLE__
 
         editMenu->AppendSeparator();
+        append_menu_item(editMenu, wxID_ANY, _L("&Plate Settings") + dots,
+            _L("Name, lock and print settings of the current plate"),
+            [this](wxCommandEvent&) { m_plater->edit_plate_settings(s_multiple_beds.get_active_bed()); },
+            "", nullptr, [this]() { return m_plater != nullptr && m_plater->printer_technology() == ptFFF; }, this);
+        editMenu->AppendSeparator();
         append_menu_item(editMenu, wxID_ANY, _L("Searc&h") + "\tCtrl+F",
             _L("Search in settings"), [this](wxCommandEvent&) {
 				m_tabpanel->GetTopBarItemsCtrl()->TriggerSearch();
@@ -1778,9 +1978,15 @@ void MainFrame::init_menubar_as_editor()
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
     m_menubar->Append(wxGetApp().get_config_menu(this), _L("&Configuration"));
+    m_calibration_menu       = create_calibration_menu(this, false);
+    m_resin_calibration_menu = create_calibration_menu(this, true);
+    m_calibration_menu_pos   = m_menubar->GetMenuCount();
+    m_menubar->Append(m_calibration_menu, _L("C&alibration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
     SetMenuBar(m_menubar);
+    // With an SLA printer at start, without the FFF only menus.
+    update_technology_ui();
 
 #ifdef __APPLE__
     init_macos_application_menu(m_menubar, this);
@@ -2302,8 +2508,30 @@ void MainFrame::add_to_recent_projects(const wxString& filename)
     }
 }
 
+MainFrame::~MainFrame()
+{
+    // The Calibration menu not in the menu bar is not deleted by it.
+    for (wxMenu* menu : { m_calibration_menu, m_resin_calibration_menu })
+        if (menu != nullptr && menu->GetMenuBar() == nullptr)
+            delete menu;
+}
+
+// Tisma Slicer: Engineering and Structures only work with FFF printers (hidden with an SLA printer), and the
+// Calibration menu has the tests of the printer technology.
+void MainFrame::update_technology_ui()
+{
+    const bool fff = m_plater != nullptr && m_plater->printer_technology() == ptFFF;
+    if (m_menubar != nullptr && m_calibration_menu != nullptr && m_resin_calibration_menu != nullptr) {
+        wxMenu* wanted = fff ? m_calibration_menu : m_resin_calibration_menu;
+        if (wanted->GetMenuBar() == nullptr)
+            m_menubar->Replace(m_calibration_menu_pos, wanted, _L("C&alibration"));
+    }
+    update_nav_rail(true);
+}
+
 void MainFrame::technology_changed()
 {
+    update_technology_ui();
     PrinterTechnology pt = plater()->printer_technology();
     m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(pt));
 

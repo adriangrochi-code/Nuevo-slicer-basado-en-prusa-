@@ -933,7 +933,8 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "small_perimeter_speed"
             || opt_key == "solid_infill_speed"
             || opt_key == "first_layer_infill_speed"
-            || opt_key == "top_solid_infill_speed") {
+            || opt_key == "top_solid_infill_speed"
+            || opt_key == "stagger_perimeters") {
             invalidated |= m_print->invalidate_step(psGCodeExport);
         } else if (
                opt_key == "wipe_into_infill"
@@ -2766,13 +2767,60 @@ SlicingParameters PrintObject::slicing_parameters(const DynamicPrintConfig &full
     return SlicingParameters::create_from_config(print_config, object_config, object_max_z, object_extruders, object_shrinkage_compensation);
 }
 
+// Upstream SPE-3414 (adapted to 2.9.6): a part painted entirely with existing extruders prints nothing with its own
+// regions (unless the painting is limited in depth, then the inside keeps them).
+static bool is_fully_mm_painted(const ModelVolume &volume, size_t num_extruders)
+{
+    if (! volume.is_model_part() || ! volume.is_mm_painted())
+        return false;
+    const std::vector<bool> &used = volume.mm_segmentation_facets.get_data().used_states;
+    if (used.empty() || used[size_t(TriangleStateType::NONE)])
+        return false;
+    for (size_t state = size_t(TriangleStateType::Extruder1); state < used.size(); ++ state)
+        if (used[state] && state > num_extruders)
+            return false; // printed with the default extruder of the volume
+    return true;
+}
+
+std::vector<const PrintRegion*> PrintObject::printing_regions() const
+{
+    const size_t num_extruders = this->print()->config().nozzle_diameter.size();
+    const bool   full_depth    = this->config().mmu_segmented_region_max_width.value <= 0.;
+    std::vector<const PrintRegion*> out;
+    if (m_shared_regions == nullptr)
+        return out;
+    for (const PrintObjectRegions::LayerRangeRegions &range : m_shared_regions->layer_ranges) {
+        std::vector<char> volume_region_used(range.volume_regions.size(), true);
+        for (size_t i = 0; i < range.volume_regions.size(); ++ i) {
+            // The part this region belongs to (modifier regions point to the region they modify).
+            int root = int(i);
+            while (range.volume_regions[root].parent >= 0)
+                root = range.volume_regions[root].parent;
+            const ModelVolume *part = range.volume_regions[root].model_volume;
+            volume_region_used[i] = ! (full_depth && part != nullptr && is_fully_mm_painted(*part, num_extruders));
+            if (volume_region_used[i] && range.volume_regions[i].region != nullptr)
+                out.emplace_back(range.volume_regions[i].region);
+        }
+        for (const PrintObjectRegions::PaintedRegion &painted : range.painted_regions)
+            if (painted.region != nullptr)
+                out.emplace_back(painted.region);
+        for (const PrintObjectRegions::FuzzySkinPaintedRegion &fuzzy : range.fuzzy_skin_painted_regions)
+            if (fuzzy.region != nullptr &&
+                (fuzzy.parent_type != PrintObjectRegions::FuzzySkinPaintedRegion::ParentType::VolumeRegion ||
+                 fuzzy.parent < 0 || volume_region_used[fuzzy.parent]))
+                out.emplace_back(fuzzy.region);
+    }
+    sort_remove_duplicates(out);
+    return out;
+}
+
 // returns 0-based indices of extruders used to print the object (without brim, support and other helper extrusions)
 std::vector<unsigned int> PrintObject::object_extruders() const
 {
     std::vector<unsigned int> extruders;
     extruders.reserve(this->all_regions().size() * 3);
-    for (const PrintRegion &region : this->all_regions())
-        region.collect_object_printing_extruders(*this->print(), extruders);
+    for (const PrintRegion *region : this->printing_regions())
+        region->collect_object_printing_extruders(*this->print(), extruders);
     sort_remove_duplicates(extruders);
     return extruders;
 }

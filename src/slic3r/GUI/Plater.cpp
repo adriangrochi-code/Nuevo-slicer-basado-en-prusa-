@@ -20,6 +20,7 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/BitmapCache.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
+#include "slic3r/GUI/USBPrintDialog.hpp"
 #include "slic3r/Utils/PrusaConnect.hpp"
 
 #include <cstddef>
@@ -42,6 +43,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <wx/spinctrl.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/button.h>
@@ -81,6 +83,7 @@
 #include "libslic3r/ModelProcessing.hpp"
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/MultipleBeds.hpp"
+#include "NavRail.hpp"
 #include "libslic3r/SLA/Workflows.hpp"
 
 // For stl export
@@ -142,6 +145,7 @@
 #include "PresetArchiveDatabase.hpp"
 #include "BulkExportDialog.hpp"
 #include "LoadStepDialog.hpp"
+#include "Gizmos/GLGizmoEngineering.hpp"
 
 #include "libslic3r/ArrangeHelper.hpp"
 
@@ -775,7 +779,53 @@ void Plater::priv::init()
     panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
-    hsizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    // Órbita Pro: the objects at the left of the 3D view, the print settings at the right.
+    if (wxWindow* objects = sidebar->objects_panel()) {
+        hsizer->Add(objects, 0, wxEXPAND, 0);
+        // The G-code viewer has no objects.
+        objects->Show(wxGetApp().is_editor());
+    }
+    // The 3D view with the status bar under it.
+    auto *center_sizer = new wxBoxSizer(wxVERTICAL);
+    center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    if (wxGetApp().is_editor()) {
+        auto *status = new StatusStrip(q, [this]() {
+            StatusStrip::State st;
+            const size_t n_objects = model.objects.size();
+            const bool   fff       = printer_technology == ptFFF;
+            const int    bed       = s_multiple_beds.get_active_bed();
+            const Print    &print     = *fff_prints[bed];
+            const SLAPrint &sla_print = *sla_prints[bed];
+            const bool   sliced    = n_objects > 0 && (fff ? print.finished() : sla_print.finished());
+            st.left.push_back(n_objects == 0 ? _L("No objects") : sliced ? _L("Ready") : _L("Not sliced"));
+            if (s_multiple_beds.get_number_of_beds() > 1)
+                st.left.push_back(format_wxstr(_L("Plate %1% of %2%"), s_multiple_beds.get_active_bed() + 1,
+                                               s_multiple_beds.get_number_of_beds()));
+            st.left.push_back(format_wxstr(_L_PLURAL("%1% object", "%1% objects", n_objects), n_objects));
+            if (sliced && ! fff) {
+                // Resin: the time and the volume of resin (objects, supports and pad).
+                const SLAPrintStatistics &ps = sla_print.print_statistics();
+                wxString est;
+                if (! std::isnan(ps.estimated_print_time))
+                    est = format_wxstr(_L("Estimated: %1%"), from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time)))));
+                const double ml = (ps.objects_used_material + ps.support_used_material) / 1000.;
+                if (ml > 0.)
+                    est += (est.empty() ? wxString() : wxString(" · ")) + wxString::Format("%.1f ml", ml);
+                st.right = est;
+            } else if (sliced) {
+                const PrintStatistics &ps = print.print_statistics();
+                wxString est = format_wxstr(_L("Estimated: %1%"), from_u8(ps.estimated_normal_print_time));
+                if (ps.total_weight > 0.)
+                    est += format_wxstr(" · %1% g", wxString::Format("%.1f", ps.total_weight));
+                if (ps.total_cost > 0.)
+                    est += format_wxstr(" · %1%", wxString::Format("%.2f", ps.total_cost));
+                st.right = est;
+            }
+            return st;
+        });
+        center_sizer->Add(status, 0, wxEXPAND, 0);
+    }
+    hsizer->Add(center_sizer, 1, wxEXPAND | wxALL, 0);
     hsizer->Add(sidebar, 0, wxEXPAND | wxLEFT | wxRIGHT, 0);
     q->SetSizer(hsizer);
 
@@ -1541,6 +1591,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
             this->model.get_custom_gcode_per_print_z_vector() = model.get_custom_gcode_per_print_z_vector();
             this->model.get_wipe_tower_vector()               = model.get_wipe_tower_vector();
+            this->model.plates                                = model.plates;
             this->model.get_virtual_extruders()               = model.get_virtual_extruders();
 
             FullSpectrum::remap_full_spectrum_on_import(
@@ -1771,6 +1822,11 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     s_multiple_beds.update_shown_beds(model, q->build_volume());
 
     update((unsigned int)UpdateParams::FORCE_BACKGROUND_PROCESSING_UPDATE);
+
+    // A project may contain a calibration test.
+    q->update_calibration_notification();
+    // Tisma: STEP models with errors found by the B-Rep check.
+    q->notify_cad_check(obj_idxs);
 
     return obj_idxs;
 }
@@ -2169,6 +2225,10 @@ void Plater::priv::reset()
 {
     Plater::TakeSnapshot snapshot(q, _L("Reset Project"), UndoRedo::SnapshotType::ProjectSeparator);
 
+    // A new project is not a calibration test.
+    wxGetApp().preset_bundle->project_config.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+    q->update_calibration_notification();
+
 	clear_warnings();
 
     set_project_filename(wxEmptyString);
@@ -2184,6 +2244,8 @@ void Plater::priv::reset()
     // Stop and reset the Print content.
     this->background_process.reset();
     model.clear_objects();
+    // A new project starts with default plates.
+    std::fill(model.plates.begin(), model.plates.end(), ModelPlate{});
     update();
     // Delete object from Sidebar list. Do it after update, so that the GLScene selection is updated with the modified model.
     sidebar->obj_list()->delete_all_objects_from_list();
@@ -2369,7 +2431,12 @@ std::vector<Print::ApplyStatus> apply_to_inactive_beds(
         }
         using MultipleBedsUtils::with_single_bed_model_fff;
         with_single_bed_model_fff(model, bed_index, [&](){
-            result[bed_index] = print->apply(model, config);
+            if (model.plate(bed_index).has_overrides()) {
+                DynamicPrintConfig plate_config{config};
+                model.plate(bed_index).apply_to(plate_config);
+                result[bed_index] = print->apply(model, plate_config);
+            } else
+                result[bed_index] = print->apply(model, config);
         });
     }
     return result;
@@ -2484,7 +2551,9 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     // Apply new config to the possibly running background task and give the user feedback on warnings.
     if (printer_technology == ptFFF) {
         with_single_bed_model_fff(q->model(), s_multiple_beds.get_active_bed(), [&](){
-            invalidated = background_process.apply(q->model(), full_config, &warnings);
+            DynamicPrintConfig plate_config{full_config};
+            q->model().plate(s_multiple_beds.get_active_bed()).apply_to(plate_config);
+            invalidated = background_process.apply(q->model(), plate_config, &warnings);
             apply_statuses[s_multiple_beds.get_active_bed()] = invalidated;
         });
     } else if (printer_technology == ptSLA) {
@@ -3291,6 +3360,10 @@ void Plater::priv::set_current_panel(wxPanel* panel)
     }
 
     current_panel->SetFocusFromKbd();
+
+    // The navigation column shows Prepare or Slice as selected.
+    if (wxGetApp().mainframe != nullptr)
+        wxGetApp().mainframe->update_nav_rail();
 }
 
 void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
@@ -4159,6 +4232,8 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
     const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
+    // Tisma: a USB printer was connected once.
+    const bool usb_print_shown = printer_technology == ptFFF && USBPrintDialog::has_saved_printer();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -4166,6 +4241,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 		if (sidebar->show_reslice(false) |
 			sidebar->show_export(true) |
 			sidebar->show_send(send_gcode_shown) |
+			sidebar->show_usb_print(usb_print_shown) |
             sidebar->show_connect(connect_gcode_shown) |
 			sidebar->show_export_removable(removable_media_status.has_removable_drives))
             sidebar->Layout();
@@ -4178,6 +4254,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
         if (sidebar->show_reslice(ready_to_slice) |
             sidebar->show_export(!ready_to_slice) |
             sidebar->show_send(send_gcode_shown && !ready_to_slice) |
+            sidebar->show_usb_print(usb_print_shown && !ready_to_slice) |
             sidebar->show_connect(connect_gcode_shown && !ready_to_slice) |
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
@@ -5522,6 +5599,56 @@ void Plater::deselect_all() { p->deselect_all(); }
 
 void Plater::remove(size_t obj_idx) { p->remove(obj_idx); }
 void Plater::reset() { p->reset(); }
+
+void Plater::load_calibration(const Model& model, const DynamicPrintConfig& calib_config)
+{
+    if (!p->model.objects.empty() &&
+        MessageDialog(static_cast<wxWindow*>(this), _L("The calibration test replaces all the objects of the plater, continue?"),
+                      wxString(SLIC3R_APP_NAME) + " - " + _L("Calibration"), wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxCENTRE).ShowModal() != wxID_YES)
+        return;
+
+    wxGetApp().mainframe->select_tab(size_t(0));
+    p->reset();
+    {
+        Plater::TakeSnapshot snapshot(this, _L("Calibration test"));
+        wxGetApp().preset_bundle->project_config.apply(calib_config);
+        p->load_model_objects(model.objects);
+    }
+    update_project_dirty_from_presets();
+    p->schedule_background_process();
+    update_calibration_notification();
+}
+
+void Plater::update_calibration_notification()
+{
+    NotificationManager* nm = get_notification_manager();
+    if (nm == nullptr)
+        return;
+    nm->close_notification_of_type(NotificationType::CalibrationActive);
+
+    const DynamicPrintConfig& project = wxGetApp().preset_bundle->project_config;
+    const auto* mode = project.option<ConfigOptionEnum<CalibMode>>("calib_mode");
+    if (mode == nullptr || mode->value == CalibMode::Disabled)
+        return;
+
+    const ConfigOptionDef* def = project.def()->get("calib_mode");
+    std::string name;
+    for (size_t i = 0; def && i < def->enum_def->values().size(); ++i)
+        if (def->enum_def->value(i) == mode->serialize())
+            name = _u8L(def->enum_def->label(i));
+    // Short text, so that the "Disable" link is visible without expanding the notification.
+    const std::string text = format(_u8L("Calibration test: %1% from %2% to %3% every %4% mm."),
+                                    name, project.opt_float("calib_start"), project.opt_float("calib_end"),
+                                    project.opt_float("calib_band_height"));
+    nm->push_notification(NotificationType::CalibrationActive, NotificationManager::NotificationLevel::WarningNotificationLevel,
+        text, _u8L("Disable the test"),
+        [this](wxEvtHandler*) {
+            wxGetApp().preset_bundle->project_config.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+            update_project_dirty_from_presets();
+            p->schedule_background_process();
+            return true; // close the notification
+        });
+}
 void Plater::reset_with_confirm()
 {
     if (p->model.objects.empty() ||
@@ -5592,6 +5719,16 @@ void Plater::increase_instances(size_t num, int obj_idx, int inst_idx)
     sidebar().obj_list()->increase_object_instances(obj_idx, was_one_instance ? num + 1 : num);
 
     p->selection_changed();
+
+    // Tisma: copies of an object on a locked plate go to another plate.
+    if (const auto it = s_multiple_beds.get_inst_map().find(model_instance->id());
+        it != s_multiple_beds.get_inst_map().end() && model().plate(it->second).locked && printer_technology() == ptFFF &&
+        !(p->config->has("complete_objects") && p->config->opt_bool("complete_objects"))) {
+        UIThreadWorker w;
+        arrange(w, ArrangeSelectionMode::SelectionOnly);
+        w.wait_for_idle();
+    }
+
     this->p->schedule_background_process();
 }
 
@@ -5680,6 +5817,11 @@ void Plater::set_number_of_copies()
 
 void Plater::fill_bed_with_instances()
 {
+    if (model().plate(s_multiple_beds.get_active_bed()).locked) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("This plate is locked. Unlock it in the plate settings to arrange it."));
+        return;
+    }
     auto &w = get_ui_job_worker();
     if (w.is_idle()) {
 
@@ -6091,8 +6233,7 @@ void Plater::export_all_gcodes(bool prefer_removable) {
 
         const fs::path filename{
             default_filename.stem().string()
-            + "_bed"
-            + std::to_string(print_index + 1)
+            + plate_file_suffix(this->model().plates, int(print_index))
             + default_filename.extension().string()
         };
         const fs::path output_file{output_dir / filename};
@@ -6472,6 +6613,154 @@ void Plater::reload_from_disk()
     p->reload_from_disk();
 }
 
+// Tisma: the selected parts which were imported from STEP and keep their B-Rep origin, as (object, volume) indices.
+static std::vector<std::pair<int, int>> selected_cad_volumes(const Selection& selection, const Model& model)
+{
+    std::set<std::pair<int, int>> out;
+    for (unsigned int idx : selection.get_volume_idxs()) {
+        const GLVolume* v = selection.get_volume(idx);
+        const int o = v->object_idx();
+        const int vi = v->volume_idx();
+        if (o < 0 || o >= int(model.objects.size()) || vi < 0 || vi >= int(model.objects[o]->volumes.size()))
+            continue;
+        if (model.objects[o]->volumes[vi]->has_cad_source())
+            out.emplace(o, vi);
+    }
+    return { out.begin(), out.end() };
+}
+
+bool Plater::can_retessellate_cad() const
+{
+    return ! selected_cad_volumes(get_selection(), p->model).empty();
+}
+
+void Plater::retessellate_cad()
+{
+    const std::vector<std::pair<int, int>> items = selected_cad_volumes(get_selection(), p->model);
+    if (items.empty())
+        return;
+    const CadSource& first = *p->model.objects[items.front().first]->volumes[items.front().second]->cad_source;
+    LoadStepDialog dlg(this, first.step->name, first.linear_deflection, first.angular_deflection, false, true);
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+    const double linear  = dlg.get_linear_precision();
+    const double angular = dlg.get_angle_precision();
+
+    Plater::TakeSnapshot snapshot(this, _L("Tessellate again"));
+    wxBusyCursor wait;
+    CadRemapStats stats;
+    std::string   errors;
+    std::set<int> changed;
+    size_t        done = 0;
+    for (const auto& [o, v] : items) {
+        ModelVolume* volume = p->model.objects[o]->volumes[v];
+        std::string error;
+        if (cad_retessellate_volume(*volume, linear, angular, &stats, error)) {
+            volume->set_new_unique_id();
+            changed.insert(o);
+            ++ done;
+        } else
+            errors += "\n" + volume->name + ": " + error;
+    }
+    for (int o : changed) {
+        p->model.objects[o]->invalidate_bounding_box();
+        p->model.objects[o]->ensure_on_bed(true);
+        changed_mesh(o);
+        sidebar().obj_list()->update_info_items(size_t(o));
+        sidebar().obj_list()->update_item_error_icon(o, -1);
+    }
+
+    std::string text = format(_u8L("%1% of %2% parts tessellated again."), done, items.size());
+    if (stats.faces_approximate > 0)
+        text += "\n" + format(_u8L("The painting of %1% faces painted only in part was projected triangle by triangle: check it."), stats.faces_approximate);
+    if (! errors.empty())
+        text += "\n" + _u8L("Errors:") + errors;
+    get_notification_manager()->push_notification(NotificationType::CustomNotification,
+        errors.empty() ? NotificationManager::NotificationLevel::PrintInfoNotificationLevel : NotificationManager::NotificationLevel::WarningNotificationLevel, text);
+}
+
+void Plater::show_cad_check()
+{
+    const std::vector<std::pair<int, int>> items = selected_cad_volumes(get_selection(), p->model);
+    wxString text;
+    for (const auto& [o, v] : items) {
+        const ModelVolume& volume = *p->model.objects[o]->volumes[v];
+        const CadSource& cad = *volume.cad_source;
+        text += from_u8(volume.name) + ": ";
+        text += cad.brep_valid ? _L("valid geometry") : _L("geometry with errors") + " (" + from_u8(cad.brep_report) + ")";
+        text += "\n" + format_wxstr(_L("STEP file: %1%, solid %2%, %3% faces, %4% triangles"), cad.step->name, cad.solid_index + 1,
+                                    cad.face_count, cad.face_ids.size());
+        text += "\n" + format_wxstr(_L("Tessellation: linear %1% mm, angular %2%°"), cad.linear_deflection, cad.angular_deflection) + "\n\n";
+    }
+    if (! text.empty())
+        InfoDialog(this, _L("CAD geometry"), text).ShowModal();
+}
+
+void Plater::open_engineering()
+{
+    select_view_3D("3D");
+    if (p->model.objects.empty()) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Load a part to analyze it in Engineering."));
+        return;
+    }
+    if (printer_technology() != ptFFF) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("The structural analysis is available for FFF printers."));
+        return;
+    }
+    GLCanvas3D* canvas = p->view3D->get_canvas3d();
+    Selection& selection = canvas->get_selection();
+    if (! selection.is_single_full_instance()) {
+        const int obj_idx = selection.get_object_idx();
+        selection.add_instance(unsigned(obj_idx >= 0 ? obj_idx : 0), 0, true);
+        canvas->set_as_dirty();
+    }
+    GLGizmosManager& gizmos = canvas->get_gizmos_manager();
+    if (gizmos.get_current_type() != GLGizmosManager::Engineering)
+        gizmos.open_gizmo(GLGizmosManager::Engineering);
+    canvas->set_as_dirty();
+}
+
+void Plater::open_structures()
+{
+    open_engineering();
+    if (is_engineering_open())
+        if (auto *gizmo = dynamic_cast<GLGizmoEngineering*>(p->view3D->get_canvas3d()->get_gizmos_manager().get_gizmo(GLGizmosManager::Engineering)))
+            gizmo->show_infill_section();
+}
+
+void Plater::close_engineering()
+{
+    if (! is_engineering_open())
+        return;
+    GLCanvas3D *canvas = p->view3D->get_canvas3d();
+    // Closes the gizmo (the part is shown normally again), whatever the selection.
+    canvas->get_gizmos_manager().reset_all_states();
+    canvas->set_as_dirty();
+}
+
+bool Plater::is_engineering_open() const
+{
+    return p->view3D && p->view3D->get_canvas3d()->get_gizmos_manager().get_current_type() == GLGizmosManager::Engineering;
+}
+
+void Plater::notify_cad_check(const std::vector<size_t>& obj_idxs)
+{
+    std::string text;
+    for (size_t o : obj_idxs) {
+        if (o >= p->model.objects.size())
+            continue;
+        for (const ModelVolume* volume : p->model.objects[o]->volumes)
+            if (volume->cad_source && ! volume->cad_source->brep_valid)
+                text += "\n" + volume->name + ": " + volume->cad_source->brep_report;
+    }
+    if (! text.empty())
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::WarningNotificationLevel,
+            _u8L("The STEP model has geometry errors (B-Rep check). Check the printed result:") + text);
+}
+
 void Plater::replace_with_stl()
 {
     p->replace_with_stl();
@@ -6744,8 +7033,7 @@ void Plater::connect_gcode_all() {
 
         const fs::path filename_fixed{
             default_filename.stem().string()
-            + "_bed"
-            + std::to_string(print_index + 1)
+            + plate_file_suffix(this->model().plates, int(print_index))
             + default_filename.extension().string()
         };
         paths.emplace_back(print_index, filename_fixed);
@@ -6821,6 +7109,27 @@ void Plater::send_gcode()
     }
     */
     send_gcode_inner(physical_printer_config);
+}
+
+std::string Plater::sliced_gcode_path() const
+{
+    return p->printer_technology == ptFFF ? p->background_process.sliced_gcode_path() : std::string();
+}
+
+void Plater::usb_print()
+{
+    if (p->printer_technology != ptFFF)
+        return;
+    const std::string path = p->background_process.sliced_gcode_path();
+    if (path.empty()) {
+        // Not sliced yet: slice, the button prints when the G-code is ready.
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Slice the plate first, then print via USB."));
+        reslice();
+        select_view_3D("Preview");
+        return;
+    }
+    USBPrintDialog::print_file(wxGetApp().mainframe, path, into_u8(get_project_filename(".gcode")));
 }
 
 std::string Plater::get_upload_filename()
@@ -7283,8 +7592,124 @@ static std::string concat_strings(const std::set<std::string> &strings,
         });
 }
 
+namespace {
+class PlateSettingsDialog : public DPIDialog
+{
+public:
+    PlateSettingsDialog(wxWindow *parent, int bed_index, const ModelPlate &plate)
+        : DPIDialog(parent, wxID_ANY, format_wxstr(_L("Plate %1% settings"), bed_index + 1), wxDefaultPosition, wxDefaultSize,
+                    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    {
+        const int em = em_unit();
+        auto *grid = new wxFlexGridSizer(2, em / 2, em);
+        grid->AddGrowableCol(1);
+        auto add = [this, grid](const wxString &label, wxWindow *ctrl) {
+            grid->Add(new wxStaticText(this, wxID_ANY, label), 0, wxALIGN_CENTER_VERTICAL);
+            grid->Add(ctrl, 1, wxEXPAND);
+        };
+
+        m_name = new wxTextCtrl(this, wxID_ANY, from_u8(plate.name));
+        m_name->SetHint(format_wxstr(_L("Plate %1%"), bed_index + 1));
+        add(_L("Name") + ":", m_name);
+
+        m_sequence = new wxChoice(this, wxID_ANY);
+        m_sequence->Append(_L("As in the print settings"));
+        m_sequence->Append(_L("By layer"));
+        m_sequence->Append(_L("By object"));
+        m_sequence->SetSelection(int(plate.print_sequence));
+        add(_L("Print sequence") + ":", m_sequence);
+
+        m_vase = new wxChoice(this, wxID_ANY);
+        m_vase->Append(_L("As in the print settings"));
+        m_vase->Append(_L("On"));
+        m_vase->Append(_L("Off"));
+        m_vase->SetSelection(int(plate.spiral_vase));
+        add(_L("Spiral vase") + ":", m_vase);
+
+        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
+        add(_L("First layer bed temperature (°C)") + ":", m_first_layer_bed);
+        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
+        add(_L("Bed temperature (°C)") + ":", m_bed);
+
+        m_locked = new wxCheckBox(this, wxID_ANY, _L("Lock the plate: arrange does not move its objects or put others on it"));
+        m_locked->SetValue(plate.locked);
+
+        auto *note = new wxStaticText(this, wxID_ANY, _L("A bed temperature of 0 uses the filament settings. These settings apply only to the G-code of this plate."));
+        note->Wrap(40 * em);
+
+        auto *sizer = new wxBoxSizer(wxVERTICAL);
+        sizer->Add(grid, 0, wxEXPAND | wxALL, em);
+        sizer->Add(m_locked, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
+        sizer->Add(note, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
+        sizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, em);
+        SetSizerAndFit(sizer);
+        m_name->SetFocus();
+    }
+
+    ModelPlate plate() const
+    {
+        ModelPlate p;
+        p.name = into_u8(m_name->GetValue().Strip(wxString::both));
+        p.locked = m_locked->GetValue();
+        p.print_sequence = ModelPlate::Sequence(std::max(0, m_sequence->GetSelection()));
+        p.spiral_vase = ModelPlate::Toggle(std::max(0, m_vase->GetSelection()));
+        p.first_layer_bed_temperature = m_first_layer_bed->GetValue();
+        p.bed_temperature = m_bed->GetValue();
+        return p;
+    }
+
+protected:
+    void on_dpi_changed(const wxRect &) override { Fit(); }
+
+private:
+    wxTextCtrl *m_name;
+    wxChoice   *m_sequence;
+    wxChoice   *m_vase;
+    wxSpinCtrl *m_first_layer_bed;
+    wxSpinCtrl *m_bed;
+    wxCheckBox *m_locked;
+};
+} // namespace
+
+std::vector<size_t> Plater::instances_on_plate(int bed_index) const
+{
+    std::vector<size_t> ids;
+    for (const auto &[id, bed] : s_multiple_beds.get_inst_map())
+        if (bed == bed_index)
+            ids.push_back(id.id);
+    return ids;
+}
+
+void Plater::edit_plate_settings(int bed_index)
+{
+    if (bed_index < 0 || bed_index >= int(model().plates.size()))
+        return;
+    PlateSettingsDialog dlg(this, bed_index, model().plate(bed_index));
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+    const ModelPlate plate = dlg.plate();
+    if (plate == model().plate(bed_index))
+        return;
+    take_snapshot(_L("Plate settings"));
+    const bool was_locked = model().plate(bed_index).locked;
+    std::vector<size_t> locked_instances = model().plate(bed_index).locked_instances;
+    model().plate(bed_index) = plate;
+    model().plate(bed_index).locked_instances = !plate.locked ? std::vector<size_t>{} :
+                                                was_locked   ? std::move(locked_instances) : instances_on_plate(bed_index);
+    // The overrides change the G-code of the plate: reslice it.
+    s_print_statuses[bed_index] = PrintStatus::idle;
+    p->update_restart_background_process(false, false);
+    canvas3D()->set_as_dirty();
+    canvas3D()->request_extra_frame();
+}
+
 void Plater::arrange(bool current_bed_only)
 {
+    if (current_bed_only && model().plate(s_multiple_beds.get_active_bed()).locked) {
+        get_notification_manager()->push_notification(NotificationType::CustomNotification,
+            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("This plate is locked. Unlock it in the plate settings to arrange it."));
+        return;
+    }
     ArrangeSelectionMode mode;
     if (current_bed_only)
         mode = wxGetKeyState(WXK_SHIFT) ? ArrangeSelectionMode::CurrentBedSelectionOnly : ArrangeSelectionMode::CurrentBedFull;

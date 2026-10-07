@@ -990,7 +990,7 @@ bool init_texture(Texture &texture, const ExPolygonsWithIds& shapes_with_ids, un
     unsigned char alpha = 255; // without transparency
     std::array<unsigned char, 4> color_shape{201, 201, 201, alpha}; // from degin by @JosefZachar
     std::array<unsigned char, 4> color_error{237, 28, 36, alpha}; // from icon: resources/icons/flag_red.svg
-    std::array<unsigned char, 4> color_warning{91, 60, 196, alpha}; // icons brand color
+    std::array<unsigned char, 4> color_warning{122, 36, 201, alpha}; // icons brand color
     // draw unhealedable shape
     for (const ExPolygonsWithId &shapes_with_id : shapes_with_ids)
         if (!shapes_with_id.is_healed) {

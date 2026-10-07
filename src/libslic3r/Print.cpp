@@ -86,6 +86,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "autoemit_temperature_commands",
         "nonplanar_flow_policy",
         "nonplanar_max_slope",
+        "nonplanar_head_clearance_height",
+        "nonplanar_head_clearance_radius",
+        "nonplanar_head_profile",
         "nonplanar_segment_length",
         "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
@@ -95,6 +98,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "before_layer_gcode",
         "between_objects_gcode",
         "binary_gcode",
+        // Belt printers: the slicing changes through the transformation of the model in Print::apply().
+        "belt_printer",
+        "belt_angle",
         "bridge_acceleration",
         "bridge_fan_speed",
         "enable_dynamic_fan_speeds",
@@ -130,6 +136,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "filament_density",
         "filament_notes",
         "filament_cost",
+        "filament_coast_distance",
         "filament_seam_gap_distance",
         "filament_spool_weight",
         "filament_flush_volume",
@@ -238,6 +245,12 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "nonplanar_flat_below"
             || opt_key == "nonplanar_ramp_height"
             || opt_key == "nonplanar_flat_top"
+            // Calibration tests of the non-planar layers deform the mesh (see NonPlanar::calibration_test()).
+            || opt_key == "calib_mode"
+            || opt_key == "calib_start"
+            || opt_key == "calib_end"
+            || opt_key == "calib_step"
+            || opt_key == "calib_band_height"
             || opt_key == "filament_shrinkage_compensation_xy"
             || opt_key == "filament_shrinkage_compensation_z"
             || opt_key == "prefer_clockwise_movements") {
@@ -360,8 +373,8 @@ std::vector<unsigned int> Print::object_extruders() const
     std::vector<unsigned int> extruders;
     extruders.reserve(m_print_regions.size() * m_objects.size() * 3);
     for (const PrintObject *object : m_objects)
-		for (const PrintRegion &region : object->all_regions())
-        	region.collect_object_printing_extruders(*this, extruders);
+        for (const PrintRegion *region : object->printing_regions())
+            region->collect_object_printing_extruders(*this, extruders);
     sort_remove_duplicates(extruders);
 
     // Expand virtual extruder IDs to their physical components.
@@ -524,11 +537,35 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                                "wave amplitude / cone angle."),
                           int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
                           int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
-        if (check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
+        // The calibration of the maximum slope prints steeper layers on purpose.
+        if (m_config.calib_mode.value != CalibMode::NonPlanarSlope && check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
             return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the maximum layer "
                                "slope of %2%° the nozzle can print without colliding with the part. Use a longer "
                                "wavelength or a smaller amplitude / cone angle."),
                           int(std::round(check.max_slope_deg)), int(std::round(m_config.nonplanar_max_slope.value)));
+        // Tisma: the print head (heater block, cooling duct) must not hit the part already printed.
+        NonPlanar::HeadClearance head{ m_config.nonplanar_head_clearance_height.value,
+                                       m_config.nonplanar_head_clearance_radius.value };
+        head.profile = NonPlanar::parse_head_profile(m_config.nonplanar_head_profile.value);
+        if ((head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
+            indexed_triangle_set mesh;
+            for (const ModelVolume *model_volume : object.model_object()->volumes)
+                if (model_volume->is_model_part()) {
+                    indexed_triangle_set part = model_volume->mesh().its;
+                    its_transform(part, object.trafo_centered() * model_volume->get_matrix());
+                    its_merge(mesh, part);
+                }
+            const NonPlanar::HeadCollision collision = NonPlanar::check_head_collision(deformation, mesh, head);
+            if (collision.collides)
+                return format(_u8L("Non-planar layers: the print head would hit the part. At %1% mm of height, the part "
+                                   "already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the "
+                                   "%4% mm the print head allows there (Printer Settings > General > Print head). Reduce "
+                                   "the wave amplitude or the cone angle, or check the measurements of the print head."),
+                              float_to_string_decimal_point(collision.nozzle.z() - bbox.min.z(), 1),
+                              float_to_string_decimal_point(collision.rise, 1),
+                              float_to_string_decimal_point(collision.distance, 1),
+                              float_to_string_decimal_point(head.allowed_rise(collision.distance), 1));
+        }
     }
 
     if (m_config.avoid_crossing_perimeters && m_config.avoid_crossing_curled_overhangs) {
@@ -567,8 +604,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         return profile;
     };
 
-    // Checks that the print does not exceed the max print height
-    for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++ print_object_idx) {
+    // Checks that the print does not exceed the max print height (a belt printer has no maximum along the belt).
+    for (size_t print_object_idx = 0; print_object_idx < (m_config.belt_printer.value ? 0 : m_objects.size()); ++ print_object_idx) {
         const PrintObject &print_object = *m_objects[print_object_idx];
         //FIXME It is quite expensive to generate object layers just to get the print height!
         if (auto layers = generate_object_layers(print_object.slicing_parameters(), layer_height_profile(print_object_idx));

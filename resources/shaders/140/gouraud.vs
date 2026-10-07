@@ -50,6 +50,8 @@ out float color_clip_plane_dot;
 out vec4 world_pos;
 out float world_normal_z;
 out vec3 eye_normal;
+// Tisma: position in eye space for the per pixel lighting and the shadows.
+out vec3 tisma_eye_pos;
 
 void main()
 {
@@ -74,6 +76,7 @@ void main()
     // z component of normal vector in world coordinate used for slope shading
     world_normal_z = slope.actived ? (normalize(slope.volume_world_normal_matrix * v_normal)).z : 0.0;
 
+    tisma_eye_pos = position.xyz;
     gl_Position = projection_matrix * position;
     // Fill in the scalars for fragment shader clipping. Fragments with any of these components lower than zero are discarded.
     clipping_planes_dots = vec3(dot(world_pos, clipping_plane), world_pos.z - z_range.x, z_range.y - world_pos.z);

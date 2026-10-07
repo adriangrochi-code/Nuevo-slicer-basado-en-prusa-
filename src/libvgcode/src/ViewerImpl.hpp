@@ -6,6 +6,7 @@
 #define VGCODE_VIEWERIMPL_HPP
 
 #include "Settings.hpp"
+#include "../include/Viewer.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
@@ -71,6 +72,7 @@ public:
     // Render the toolpaths
     //
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
+    void set_shading(const Viewer::Shading& shading) { m_shading = shading; }
 
     EViewType get_view_type() const { return m_settings.view_type; }
     void set_view_type(EViewType type);
@@ -196,6 +198,7 @@ private:
     // Settings used to render the toolpaths
     //
     Settings m_settings;
+    Viewer::Shading m_shading;
     //
     // Detected layers
     //
@@ -320,6 +323,22 @@ private:
     int m_uni_options_height_width_angle_tex_id{ -1 };
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
+    //
+    // Tisma: uniforms of the per-pixel lighting and of the shadows (segments [0] and options [1] shaders)
+    //
+    struct ShadingUniforms
+    {
+        int per_pixel{ -1 };
+        int shadows_enabled{ -1 };
+        int eye_to_shadow_matrix{ -1 };
+        int shadow_map{ -1 };
+        int shadow_intensity{ -1 };
+    };
+    std::array<ShadingUniforms, 2> m_uni_shading;
+    void init_shading_uniforms(ShadingUniforms& uniforms, unsigned int shader_id);
+    // Sets the uniforms of the current shader and binds the shadow map, returns the texture to restore.
+    int apply_shading(const ShadingUniforms& uniforms);
+    void restore_shading(int prev_texture);
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Caches for OpenGL uniforms id for cog marker shader 

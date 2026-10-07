@@ -448,6 +448,9 @@ private:
     bool            select_language();
 
     bool            config_wizard_startup();
+    // Tisma: the "prusaslicer://" links (button "Open in PrusaSlicer" / "Slice" of Printables) open this
+    // application, unless the user disabled them in the preferences.
+    void            ensure_url_handler();
     // Returns true if the configuration is fine. 
     // Returns true if the configuration is not compatible and the user decided to rather close the slicer instead of reconfiguring.
 	bool            check_updates(const bool invoked_automatically);

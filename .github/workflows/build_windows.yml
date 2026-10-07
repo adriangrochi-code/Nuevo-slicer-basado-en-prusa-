@@ -1,17 +1,25 @@
 name: Build windows
 
-# Builds the Windows binaries (prusa-slicer.exe) with MSVC and uploads them as a zip artifact:
-# Actions > the run > Artifacts > NonPlanarSlicer-windows.
-# The dependencies are built from deps/ and cached, so only the first run is slow (~2-3 h).
+# Builds the Windows binaries (tisma-slicer.exe) with MSVC and the installer, uploaded as the artifacts
+# TismaSlicer-windows and TismaSlicer-windows-installer. Signed with SignPath on main and version tags when it is set
+# up (packaging/windows/README.md). The dependencies are built from deps/ and cached, so only the first run is slow
+# (~2-3 h). Called by ci.yml, nightly.yml and release.yml.
 
 on:
-  push:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (default the ref of the calling event)
+        type: string
+        default: ''
+      release:
+        description: Release build (clean build ID, without +<run>-<commit>)
+        type: boolean
+        default: false
   workflow_dispatch:
 
-concurrency:
-  group: windows-${{ github.ref }}
-  # Queue instead of cancelling, so that a running build finishes and caches the dependencies.
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
   build_win:
@@ -22,8 +30,18 @@ jobs:
       DEPS_BUILD: C:/d
       DEPS_DEST: C:/dd
       APP_BUILD: C:/b
+      # Code signing (optional): a PFX code signing certificate in base64 and its password, as repository secrets.
+      # Without them the binaries and the installer are not signed. See packaging/windows/README.md.
+      SIGN_PFX_BASE64: ${{ secrets.WINDOWS_SIGN_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGN_PFX_PASSWORD }}
+      # Or SignPath Foundation (free for open source): API token secret and organization id variable, see
+      # packaging/windows/README.md. Only the runs of the main branch and tags are signed (signing policy).
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Restore dependencies
         id: deps-cache
@@ -47,31 +65,163 @@ jobs:
           path: C:/dd
           key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
+      # TODO (after the first test on Windows): Ninja + sccache (see commit 4a4a936) for incremental builds.
+      # Test builds: TismaSlicer-<version>+<run>-<commit> (shown in the title bar and the G-code header).
+      - name: Build ID
+        shell: pwsh
+        run: |
+          $sha = (git rev-parse --short=7 HEAD).Trim()
+          $suffix = if ("${{ inputs.release }}" -eq "true") { "" } else { "+${{ github.run_number }}-$sha" }
+          (Get-Content version.inc) -replace '\+UNKNOWN', $suffix | Set-Content version.inc
+          Select-String -Path version.inc -Pattern 'SLIC3R_BUILD_ID'
+
       - name: Configure
         shell: cmd
         run: |
-          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
+          rem Release only, as build_win.bat does: with Debug among the configurations, FindOpenVDB also
+          rem requires the debug libraries, which are not built (DEP_DEBUG=OFF).
+          cmake -S . -B %APP_BUILD% -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%DEPS_DEST%/usr/local -DCMAKE_CONFIGURATION_TYPES=Release -DBUILD_TESTING=OFF -DSLIC3R_GUI=ON
 
       - name: Build
         shell: cmd
         run: |
-          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer -- /m /v:minimal
+          cmake --build %APP_BUILD% --config Release --target TismaSlicer_app_gui TismaSlicer_app_console TismaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
 
       - name: Package
         shell: pwsh
         run: |
-          $out = "NonPlanarSlicer"
+          $out = "TismaSlicer"
           New-Item -ItemType Directory -Force $out | Out-Null
-          Get-ChildItem "$env:APP_BUILD/src/Release" -File |
+          # Ninja (single configuration) puts the binaries in src/, Visual Studio in src/Release/.
+          $bin = @("$env:APP_BUILD/src/Release", "$env:APP_BUILD/src") | Where-Object { Test-Path "$_/tisma-slicer.exe" } | Select-Object -First 1
+          if (-not $bin) { throw "tisma-slicer.exe not found" }
+          Get-ChildItem $bin -File |
             Where-Object { $_.Extension -in '.exe', '.dll' } |
             Copy-Item -Destination $out
+          # The STEP import (and the CAD retessellation) loads OCCTWrapper.dll next to the executable.
+          $occt = @("$env:APP_BUILD/src/Release/OCCTWrapper.dll", "$env:APP_BUILD/src/OCCTWrapper.dll") | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $occt) { throw "OCCTWrapper.dll not found" }
+          Copy-Item $occt -Destination $out -Force
+          # TismaSlicer.dll needs GMP and MPFR (CGAL); upstream copies them with the TismaSlicerDllsCopy target,
+          # which is not among the built targets. Without them tisma-slicer.exe exits silently.
+          Copy-Item deps/+GMP/gmp/lib/win64/libgmp-10.dll, deps/+MPFR/mpfr/lib/win64/libmpfr-4.dll -Destination $out
+          # Visual C++ runtime next to the executable (app-local deployment of the redistributable files), so a PC
+          # without the Visual C++ Redistributable can run it too.
+          $crt = Get-ChildItem "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Redist/MSVC/*/x64/Microsoft.VC143.CRT" -Directory |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $crt) { throw "Visual C++ runtime not found" }
+          Copy-Item "$($crt.FullName)/*.dll" -Destination $out
           Copy-Item -Recurse resources "$out/resources"
-          Copy-Item doc/NonPlanarSlicer.md "$out/LEEME.md"
+          Copy-Item doc/TismaSlicer.md "$out/LEEME.md"
           Get-ChildItem $out
-          & "$out/prusa-slicer-console.exe" --help | Select-Object -First 3
+          # Smoke test: TismaSlicer.dll must load (it prints the usage), otherwise the package is broken.
+          $help = & "$out/tisma-slicer-console.exe" --help 2>&1 | Out-String
+          if ($help -notmatch "Usage:") { Write-Output $help; throw "tisma-slicer-console.exe did not start (TismaSlicer.dll not loaded?)" }
+          Write-Output ($help -split "`n" | Select-Object -First 4)
+
+      - name: Sign binaries
+        if: ${{ env.SIGN_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "sign.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+          $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          # Only our own binaries (the runtime and the third party DLLs keep their own signatures).
+          $files = Get-ChildItem TismaSlicer -File | Where-Object { $_.Name -match '^(tisma-.*\.exe|TismaSlicer.*\.dll|OCCTWrapper\.dll)$' }
+          & $signtool.FullName sign /f $pfx /p $env:SIGN_PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 $files.FullName
+          if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+          Remove-Item $pfx
 
       - uses: actions/upload-artifact@v4
+        id: upload-package
         with:
-          name: NonPlanarSlicer-windows
-          path: NonPlanarSlicer
-          retention-days: 30
+          name: TismaSlicer-windows
+          path: TismaSlicer
+          retention-days: 14
+
+      # SignPath signs the executables and our DLLs inside the package (artifact configuration "package") and returns it;
+      # the installer is then built from the signed files.
+      - name: Sign package (SignPath)
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: tisma-slicer
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: package
+          github-artifact-id: ${{ steps.upload-package.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: TismaSlicer
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        with:
+          name: TismaSlicer-windows
+          path: TismaSlicer
+          retention-days: 14
+          overwrite: true
+
+      - name: Installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup could not be installed" }
+          $iscc = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          $version = (Select-String -Path version.inc -Pattern 'set\(TISMA_VERSION "([^"]+)"\)').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force installer | Out-Null
+          & $iscc "/DSourceDir=$PWD/TismaSlicer" "/DAppVersion=$version" "/DBuildNumber=${{ github.run_number }}" "/DOutputDir=$PWD/installer" packaging/windows/TismaSlicer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+          $setup = Get-ChildItem installer/*.exe | Select-Object -First 1
+          if ($env:SIGN_PFX_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP "sign.pfx"
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+            $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+            & $signtool.FullName sign /f $pfx /p $env:SIGN_PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 $setup.FullName
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
+            Remove-Item $pfx
+          }
+          Get-ChildItem installer
+
+      - uses: actions/upload-artifact@v4
+        id: upload-installer
+        with:
+          name: TismaSlicer-windows-installer
+          path: installer
+          retention-days: 14
+
+      - name: Sign installer (SignPath)
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: tisma-slicer
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: installer
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        with:
+          name: TismaSlicer-windows-installer
+          path: installer
+          retention-days: 14
+          overwrite: true
+
+      - name: Test installer
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem installer/*.exe | Select-Object -First 1
+          # Smoke test: silent installation for the current user, the installed program starts, silent uninstallation.
+          $dir = Join-Path $env:RUNNER_TEMP "tisma-install"
+          $p = Start-Process $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER", "/DIR=$dir", "/TASKS=assocmodels" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The installer failed ($($p.ExitCode))" }
+          $help = & "$dir/tisma-slicer-console.exe" --help 2>&1 | Out-String
+          if ($help -notmatch "Usage:") { Write-Output $help; throw "The installed program did not start" }
+          $p = Start-Process "$dir/unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The uninstaller failed ($($p.ExitCode))" }
+          # The signature, when signed.
+          Get-AuthenticodeSignature $setup.FullName | Format-List Status, SignerCertificate

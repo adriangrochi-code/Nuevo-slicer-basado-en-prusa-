@@ -42,12 +42,15 @@ namespace GUI
 class Tab;
 class PrintHostQueueDialog;
 class Plater;
+class NavRail;
+class PrinterChip;
 class MainFrame;
 class PreferencesDialog;
 class GalleryDialog;
 class ConnectWebViewPanel; 
 class PrinterWebViewPanel;
 class PrintablesWebViewPanel;
+class DevicesPanel;
 
 enum QuickSlice
 {
@@ -103,6 +106,8 @@ class MainFrame : public DPIFrame
     ConnectWebViewPanel*    m_connect_webview{ nullptr };
     bool                    m_connect_webview_added{ false };
     PrintablesWebViewPanel* m_printables_webview{ nullptr };
+    // Tisma: Devices workspace (USB and network printers, their web interface).
+    DevicesPanel*           m_devices_panel{ nullptr };
     bool                    m_printables_webview_added{ false };
     PrinterWebViewPanel*    m_printer_webview{ nullptr };
     bool                    m_printer_webview_added{ false };
@@ -164,7 +169,7 @@ protected:
 
 public:
     MainFrame(const int font_point_size);
-    ~MainFrame() = default;
+    ~MainFrame();
 
     void update_layout();
     void update_mode_markers();
@@ -210,6 +215,8 @@ public:
     // Select tab in m_tabpanel
     // When tab == -1, will be selected last selected tab
     void        select_tab(Tab* tab);
+    // Tisma navigation column: repaint the selection, or update the items shown in the current mode.
+    void        update_nav_rail(bool visibility = false);
     void        select_tab(size_t tab = size_t(-1));
     void        select_view(const std::string& direction);
     // Propagate changed configuration from the Tab to the Plater and save changes to the AppConfig
@@ -250,6 +257,17 @@ public:
 
     Plater*               m_plater { nullptr };
     TopBar*               m_tmp_top_bar { nullptr };
+    // Tisma: navigation column at the left (PrusaSlicer 3.0 style)
+    NavRail*              m_nav_rail    { nullptr };
+    // The Calibration menu has different tests for FFF and SLA printers: the one of the current technology is in the
+    // menu bar.
+    wxMenu*               m_calibration_menu       { nullptr };
+    wxMenu*               m_resin_calibration_menu { nullptr };
+    size_t                m_calibration_menu_pos   { 0 };
+    void                  update_technology_ui();
+    PrinterChip*          m_printer_chip{ nullptr };
+    wxBoxSizer*           m_rail_sizer  { nullptr };
+    void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;
     DiffPresetDialog      diff_dialog;

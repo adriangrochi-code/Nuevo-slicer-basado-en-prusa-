@@ -12,6 +12,7 @@
 #include "libslic3r/I18N.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
 #include "GCodeProcessor.hpp"
+#include "libslic3r/BeltPrinter.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/log/trivial.hpp>
@@ -661,6 +662,7 @@ GCodeProcessor::GCodeProcessor()
 void GCodeProcessor::apply_config(const PrintConfig& config)
 {
     m_parser.apply_config(config);
+    m_belt_angle = config.belt_printer.value ? config.belt_angle.value : 0.;
 
     m_binarizer.set_enabled(config.binary_gcode);
     m_result.is_binary_file = config.binary_gcode;
@@ -770,6 +772,7 @@ void GCodeProcessor::apply_config(const PrintConfig& config)
 void GCodeProcessor::apply_config(const DynamicPrintConfig& config)
 {
     m_parser.apply_config(config);
+    m_belt_angle = Belt::enabled(config) ? Belt::angle(config) : 0.;
 
     const ConfigOptionEnum<GCodeFlavor>* gcode_flavor = config.option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor");
     if (gcode_flavor != nullptr)
@@ -1061,6 +1064,7 @@ void GCodeProcessor::enable_stealth_time_estimator(bool enabled)
 
 void GCodeProcessor::reset()
 {
+    m_belt_angle = 0.;
     m_units = EUnits::Millimeters;
     m_global_positioning_type = EPositioningType::Absolute;
     m_e_local_positioning_type = EPositioningType::Absolute;
@@ -1422,6 +1426,13 @@ void GCodeProcessor::finalize(bool perform_post_process)
             move.width = Wipe_Width;
             move.height = Wipe_Height;
         }
+    }
+
+    // Belt printers: the times are computed in the axes of the machine; the preview shows the part on the belt.
+    if (m_belt_angle > 0.) {
+        const Belt::Frame frame(m_belt_angle);
+        for (GCodeProcessorResult::MoveVertex& move : m_result.moves)
+            move.position = frame.machine_to_world(move.position.cast<double>()).cast<float>();
     }
 
     calculate_time(m_result);
@@ -4447,19 +4458,22 @@ void GCodeProcessor::post_process()
             std::stringstream ss(cmd.substr(1));
             int tool_number = -1;
             ss >> tool_number;
-            if (tool_number != -1) {
-                if (tool_number < 0 || (int)m_extruder_temps_config.size() <= tool_number) {
-                    // found an invalid value, clamp it to a valid one
-                    tool_number = std::clamp<int>(0, m_extruder_temps_config.size() - 1, tool_number);
-                    // emit warning
-                    std::string warning = _u8L("GCode Post-Processor encountered an invalid toolchange, maybe from a custom gcode:");
-                    warning += "\n> ";
-                    warning += gcode_line;
-                    warning += _u8L("Generated M104 lines may be incorrect.");
-                    BOOST_LOG_TRIVIAL(error) << warning;
-                    if (m_print != nullptr)
-                        m_print->active_step_add_warning(PrintStateBase::WarningLevel::CRITICAL, warning);
-                }
+            // Upstream fix #15768 (PrusaSlicer master): no M104 preheat if the tool does not parse or is not valid.
+            // Before, a tool that did not parse indexed the temperatures with -1 and an invalid one was clamped with
+            // the arguments of std::clamp swapped.
+            if (ss.fail())
+                // Not a toolchange at all.
+                return;
+            if (tool_number < 0 || (int)m_extruder_temps_config.size() <= tool_number) {
+                // emit warning
+                std::string warning = _u8L("GCode Post-Processor encountered an invalid toolchange, maybe from a custom gcode:");
+                warning += "\n> ";
+                warning += gcode_line;
+                warning += _u8L("Generated M104 lines may be incorrect.");
+                BOOST_LOG_TRIVIAL(error) << warning;
+                if (m_print != nullptr)
+                    m_print->active_step_add_warning(PrintStateBase::WarningLevel::CRITICAL, warning);
+                return;
             }
             export_lines.insert_lines(backtrace, cmd,
                 // line inserter

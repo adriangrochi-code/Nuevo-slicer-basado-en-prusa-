@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
   <defs>
-    <linearGradient id="pl" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#8466E0"/>
-      <stop offset="1" stop-color="#4527A8"/>
+    <linearGradient id="tp" gradientUnits="userSpaceOnUse" x1="0" y1="405" x2="0" y2="928">
+      <stop offset="0" stop-color="#9D40E9"/>
+      <stop offset="1" stop-color="#5B0FA7"/>
     </linearGradient>
-    <linearGradient id="pr" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9579EA"/>
-      <stop offset="1" stop-color="#5B3CC4"/>
+    <linearGradient id="tf" gradientUnits="userSpaceOnUse" x1="0" y1="405" x2="0" y2="868">
+      <stop offset="0" stop-color="#B2B2BC"/>
+      <stop offset="1" stop-color="#DCDCE0"/>
     </linearGradient>
   </defs>
-  <g>
-    <polygon points="100,8 180,54 180,146 100,192 20,146 20,54" fill="#FFFFFF" stroke="#141414" stroke-width="9" stroke-linejoin="miter"/>
-    <polygon points="100,26 36,150 164,150" fill="#E4E4E9"/>
-    <polygon points="36,150 164,150 151,166 49,166" fill="#CFCFD7"/>
-    <polygon points="100,38 60,142 100,158" fill="url(#pl)"/>
-    <polygon points="100,38 140,142 100,158" fill="url(#pr)"/>
-    <line x1="100" y1="38" x2="100" y2="158" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="scale(0.277778) translate(-142,-342)">
+    <polygon points="502,358 788,526 788,880 502,1046 216,880 216,526" fill="#FFFFFF" stroke="#0B0B0B" stroke-width="79.2" stroke-linejoin="miter"/>
+    <polygon points="502,405 240,868 502,1030 764,868" fill="url(#tf)"/>
+    <polygon points="240,868 342,852 502,928 502,1030" fill="#D4D3D8"/>
+    <polygon points="764,868 662,852 502,928 502,1030" fill="#D4D3D8"/>
+    <polygon points="502,405 342,852 502,928 662,852" fill="url(#tp)"/>
+    <g stroke="#FFFFFF" stroke-width="11.0" stroke-linecap="round"><line x1="502" y1="405" x2="502" y2="928"/><line x1="502" y1="928" x2="502" y2="1030"/><line x1="502" y1="405" x2="342" y2="852"/><line x1="502" y1="405" x2="662" y2="852"/><line x1="342" y1="852" x2="502" y2="928"/><line x1="662" y1="852" x2="502" y2="928"/><line x1="240" y1="868" x2="342" y2="852"/><line x1="764" y1="868" x2="662" y2="852"/></g>
   </g>
 </svg>
