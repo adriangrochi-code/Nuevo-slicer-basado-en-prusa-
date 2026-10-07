@@ -1,0 +1,113 @@
+name: Nightly
+
+# Every night, when main has new commits: Windows, Linux and macOS builds published in the "nightly" pre-release
+# (replaced each time, with the commit list since the previous one). Can also be started by hand.
+
+on:
+  schedule:
+    - cron: '17 4 * * *'   # 04:17 UTC (01:17 in Argentina)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if main did not change since the last nightly
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.changes.outputs.build }}
+      previous: ${{ steps.changes.outputs.previous }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - id: changes
+        run: |
+          head=$(git rev-parse HEAD)
+          previous=$(git rev-parse -q --verify "refs/tags/nightly^{commit}" || true)
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          if [ "$head" != "$previous" ] || [ "${{ inputs.force }}" = "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "main did not change since the last nightly ($head)"
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  windows:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    uses: ./.github/workflows/build_windows.yml
+    secrets: inherit
+
+  linux:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    uses: ./.github/workflows/build_linux.yml
+    with:
+      run_tests: false   # already run by CI on main
+
+  macos:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    uses: ./.github/workflows/build_macos.yml
+
+  publish:
+    needs: [check, windows, linux, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assets
+        run: |
+          stamp="$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)"
+          mkdir -p assets
+          (cd artifacts/TismaSlicer-windows && zip -qr "../../assets/TismaSlicer-nightly-$stamp-windows-x64.zip" .)
+          cp artifacts/TismaSlicer-windows-installer/*.exe "assets/TismaSlicer-nightly-$stamp-windows-x64-setup.exe"
+          for f in artifacts/TismaSlicer-linux/*.AppImage artifacts/TismaSlicer-macos-*/*.dmg; do
+            ext="${f##*.}"
+            arch=$(basename "$f" ".$ext" | sed 's/.*-\(linux-[a-z0-9_]*\|macos-[a-z0-9_]*\)$/\1/')
+            cp "$f" "assets/TismaSlicer-nightly-$stamp-$arch.$ext"
+          done
+          (cd assets && sha256sum -- * > SHA256SUMS.txt)
+          ls -la assets
+
+      - name: Notes
+        env:
+          PREVIOUS: ${{ needs.check.outputs.previous }}
+        run: |
+          {
+            echo "Development build of \`main\` at $(git rev-parse --short HEAD), $(date -u '+%Y-%m-%d %H:%M UTC')."
+            echo "Not tested on printers: use a version release for real work."
+            echo
+            echo "### Changes since the previous nightly"
+            if [ -n "$PREVIOUS" ]; then git log --no-merges --format='- %s (%h)' "$PREVIOUS..HEAD"; else git log --no-merges --format='- %s (%h)' -20; fi
+          } > notes.md
+          cat notes.md
+
+      - name: Publish
+        run: |
+          gh release delete nightly --yes --cleanup-tag || true
+          git tag -f nightly HEAD
+          git push -f origin refs/tags/nightly
+          gh release create nightly assets/* --prerelease --title "Nightly $(date -u +%Y-%m-%d)" --notes-file notes.md --verify-tag

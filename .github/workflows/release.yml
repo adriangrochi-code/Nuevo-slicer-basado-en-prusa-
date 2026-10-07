@@ -1,0 +1,97 @@
+name: Release
+
+# Builds Windows, Linux and macOS for a version tag (vX.Y.Z) and publishes them in its GitHub release, with
+# SHA256SUMS.txt. Started by release-please.yml when its release pull request is merged (the tag it creates does not
+# start workflows), or by pushing a tag by hand.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_call:
+    inputs:
+      tag:
+        description: Version tag (vX.Y.Z)
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag (vX.Y.Z), already pushed
+        type: string
+        required: true
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    uses: ./.github/workflows/build_windows.yml
+    secrets: inherit
+
+  linux:
+    uses: ./.github/workflows/build_linux.yml
+    with:
+      run_tests: true
+
+  macos:
+    uses: ./.github/workflows/build_macos.yml
+
+  publish:
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assets
+        run: |
+          version="${TAG#v}"
+          mkdir -p assets
+          (cd artifacts/TismaSlicer-windows && zip -qr "../../assets/TismaSlicer-$version-windows-x64.zip" .)
+          cp artifacts/TismaSlicer-windows-installer/*.exe "assets/TismaSlicer-$version-windows-x64-setup.exe"
+          cp artifacts/TismaSlicer-linux/*.AppImage assets/
+          cp artifacts/TismaSlicer-macos-arm64/*.dmg artifacts/TismaSlicer-macos-x86_64/*.dmg assets/
+          (cd assets && sha256sum -- * > SHA256SUMS.txt)
+          ls -la assets
+
+      # Notes: the section of CHANGELOG.md for this version (written by release-please), and how to verify the files.
+      - name: Release notes
+        run: |
+          version="${TAG#v}"
+          awk -v v="$version" '
+            /^## / { if (found) exit; if (index($0, v)) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Tisma Slicer $version" > notes.md
+          cat >> notes.md <<EOF
+
+          ### Downloads
+          - Windows: \`TismaSlicer-$version-windows-x64-setup.exe\` (installer) or the zip.
+          - Linux: \`TismaSlicer-$version-linux-x86_64.AppImage\` (needs GTK 3 and WebKitGTK 4.1, e.g. Ubuntu 22.04+).
+          - macOS: \`TismaSlicer-$version-macos-arm64.dmg\` (Apple silicon) or \`-x86_64.dmg\` (Intel). Not notarized:
+            right click > Open the first time.
+
+          \`SHA256SUMS.txt\` has the checksums. Code signing policy: docs/CODE_SIGNING_POLICY.md.
+          EOF
+
+      - name: Publish
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+          else
+            gh release create "$TAG" assets/* --title "Tisma Slicer ${TAG#v}" --notes-file notes.md --verify-tag
+          fi
