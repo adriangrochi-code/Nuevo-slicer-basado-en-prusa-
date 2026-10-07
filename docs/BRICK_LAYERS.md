@@ -59,3 +59,12 @@ Detalles:
 
 El ensayo de CNC Kitchen con la técnica original midió de 10 % (PETG) a 14 % (PLA) más resistencia a tracción
 entre capas, sin material extra. Hay que medir la de Tisma con probetas.
+
+## Medir la resistencia
+
+Calibración > «Perímetros escalonados: probetas de resistencia» carga dos tubos iguales de 20 × 10 × 50 mm hechos
+solo de paredes (4 perímetros, sin relleno, fondo cerrado y sin techo): A con perímetros normales y B con perímetros
+escalonados. Se imprimen juntos con el mismo filamento; después se sujeta cada uno por la base y se empuja la punta
+hacia el costado, o se le cuelgan pesos, hasta que se rompa entre capas. La diferencia de fuerza entre A y B es lo
+que suma la técnica con esa impresora y ese filamento.
+
