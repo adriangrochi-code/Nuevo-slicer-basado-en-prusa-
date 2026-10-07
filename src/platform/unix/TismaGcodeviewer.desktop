@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=Prusa GCode viewer
-Exec=prusa-slicer --gcodeviewer %F
+Name=Tisma G-code Viewer
+Exec=tisma-slicer --gcodeviewer %F
 Icon=PrusaSlicer-gcodeviewer
 Terminal=false
 Type=Application

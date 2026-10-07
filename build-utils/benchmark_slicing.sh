@@ -6,12 +6,12 @@
 # builds can be compared with `cmp` / `diff` (an optimization must not change the G-code, or it must be explained).
 #
 # Usage: build-utils/benchmark_slicing.sh [binary] [runs] [output dir]
-#   binary:     default build/src/prusa-slicer
+#   binary:     default build/src/tisma-slicer
 #   runs:       default 3
 #   output dir: default /tmp/tisma-bench
 set -euo pipefail
 
-BIN=${1:-build/src/prusa-slicer}
+BIN=${1:-build/src/tisma-slicer}
 RUNS=${2:-3}
 OUT=${3:-/tmp/tisma-bench}
 SHAPES=resources/shapes

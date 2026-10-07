@@ -31,7 +31,7 @@
 
 #include "libslic3r/libslic3r.h"
 
-#include "PrusaSlicer.hpp"
+#include "TismaSlicer.hpp"
 
 // __has_feature() is used later for Clang, this is for compatibility with other compilers (such as GCC and MSVC)
 #ifndef __has_feature

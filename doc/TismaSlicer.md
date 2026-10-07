@@ -87,7 +87,7 @@ Funciona con Marlin, firmware de Prusa y RepRapFirmware.
 
 ```
 build-utils/build_linux_system_libs.sh --deps   # instala las dependencias con apt y compila
-build/src/prusa-slicer
+build/src/tisma-slicer
 ```
 
 Tests: `ctest --test-dir build`. Etiquetas propias: `[NonPlanar]`, `[USBPrinter]`, `[ArcOverhangs]`, `[DenseInfill]`.

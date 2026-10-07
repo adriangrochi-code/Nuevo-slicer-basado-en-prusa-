@@ -5,7 +5,7 @@ For each instantiable printer preset of the bundles given, the printer, its defa
 filament (or the first default material of its model) are flattened (inheritance resolved as in PrusaSlicer) into one
 configuration, which is loaded by the Tisma command line to slice the model.
 
-Usage: validate_bundles.py <prusa-slicer binary> <model.stl> <out dir> <bundle.ini>... [--jobs N]
+Usage: validate_bundles.py <tisma-slicer binary> <model.stl> <out dir> <bundle.ini>... [--jobs N]
 """
 
 import argparse

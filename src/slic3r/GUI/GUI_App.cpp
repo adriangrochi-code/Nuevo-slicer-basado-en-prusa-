@@ -469,7 +469,7 @@ static bool run_updater_win()
 {
     // find updater exe
     boost::filesystem::path path_updater = boost::dll::program_location().parent_path() / "prusaslicer-updater.exe";
-    // run updater. Original args: /silent -restartapp prusa-slicer.exe -startappfirst
+    // run updater. Original args: /silent -restartapp tisma-slicer.exe -startappfirst
     std::string msg;
     bool res = create_process(path_updater, L"/silent", msg);
     if (!res)
@@ -3757,22 +3757,22 @@ bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* pare
 #ifdef __WXMSW__
 void GUI_App::associate_3mf_files()
 {
-    associate_file_type(L".3mf", L"Prusa.Slicer.1", L"PrusaSlicer", true);
+    associate_file_type(L".3mf", L"TismaSlicer.Model", L"TismaSlicer", true);
 }
 
 void GUI_App::associate_stl_files()
 {
-    associate_file_type(L".stl", L"Prusa.Slicer.1", L"PrusaSlicer", true);
+    associate_file_type(L".stl", L"TismaSlicer.Model", L"TismaSlicer", true);
 }
 
 void GUI_App::associate_gcode_files()
 {
-    associate_file_type(L".gcode", L"PrusaSlicer.GCodeViewer.1", L"PrusaSlicerGCodeViewer", true);
+    associate_file_type(L".gcode", L"TismaSlicer.Gcode", L"TismaGCodeViewer", true);
 }
 
 void GUI_App::associate_bgcode_files()
 {
-    associate_file_type(L".bgcode", L"PrusaSlicer.GCodeViewer.1", L"PrusaSlicerGCodeViewer", true);
+    associate_file_type(L".bgcode", L"TismaSlicer.Gcode", L"TismaGCodeViewer", true);
 }
 #endif // __WXMSW__
 

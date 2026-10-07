@@ -49,7 +49,7 @@ Pasos del dueño del repositorio:
   LAN printing to Bambu Lab printers. The fork is clearly named Tisma Slicer in the binaries, installer and UI.
 - **Build:** Windows binaries and the Inno Setup installer are built only by GitHub Actions
   (`.github/workflows/build_windows.yml`) from the public repository; no manual builds are signed.
-- **What to sign:** `prusa-slicer.exe`, `prusa-slicer-console.exe`, `prusa-gcodeviewer.exe`, `PrusaSlicer*.dll`,
+- **What to sign:** `tisma-slicer.exe`, `tisma-slicer-console.exe`, `tisma-gcodeviewer.exe`, `TismaSlicer*.dll`,
   `OCCTWrapper.dll` and `TismaSlicer-<version>-build<n>-setup.exe`. Third party DLLs are not signed.
 - **Team:** single maintainer (committer, reviewer and approver), MFA enabled on GitHub and SignPath.
 

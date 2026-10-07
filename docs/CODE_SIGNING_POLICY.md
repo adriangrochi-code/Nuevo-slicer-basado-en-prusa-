@@ -10,7 +10,7 @@ Free code signing provided by [SignPath.io](https://about.signpath.io), certific
 The Windows builds of Tisma Slicer produced by the GitHub Actions workflow `.github/workflows/build_windows.yml`
 from this public repository, on the main branch and on release tags:
 
-- `prusa-slicer.exe`, `prusa-slicer-console.exe`, `prusa-gcodeviewer.exe`, `PrusaSlicer*.dll`, `OCCTWrapper.dll`;
+- `tisma-slicer.exe`, `tisma-slicer-console.exe`, `tisma-gcodeviewer.exe`, `TismaSlicer*.dll`, `OCCTWrapper.dll`;
 - the installer `TismaSlicer-<version>-build<n>-setup.exe`.
 
 Third party libraries keep their own signatures. Nothing is signed outside of that automated build.

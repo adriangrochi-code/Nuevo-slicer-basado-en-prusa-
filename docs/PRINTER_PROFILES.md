@@ -81,7 +81,7 @@ sus impresoras. El resto del asistente (filamentos, perfiles instalados) no camb
 
 ```
 python3 tools/profiles/convert_orca_profiles.py <OrcaSlicer>/resources/profiles resources/profiles --orca-commit <hash>
-python3 tools/profiles/validate_bundles.py build/src/prusa-slicer resources/shapes/box.stl /tmp/val \
+python3 tools/profiles/validate_bundles.py build/src/tisma-slicer resources/shapes/box.stl /tmp/val \
     resources/profiles/Orca_*.ini --library resources/profiles/Orca_OrcaFilamentLibrary.ini
 ```
 

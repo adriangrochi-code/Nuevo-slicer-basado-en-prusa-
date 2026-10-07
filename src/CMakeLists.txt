@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(PrusaSlicer-native)
+project(TismaSlicer-native)
 
 add_subdirectory(clipper)
 find_package(Qhull 7.2 REQUIRED)
@@ -96,13 +96,13 @@ endif()
 
 # Create a slic3r executable
 # Process mainfests for various platforms.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/PrusaSlicer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer.rc @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/PrusaSlicer-gcodeviewer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer-gcodeviewer.rc @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/PrusaSlicer.manifest.in ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer.manifest @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/TismaSlicer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer.rc @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/TismaSlicer-gcodeviewer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer-gcodeviewer.rc @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/TismaSlicer.manifest.in ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer.manifest @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/osx/Info.plist.in ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)
 
 set(SLIC3R_CLI_SOURCES
-    PrusaSlicer.hpp
+    TismaSlicer.hpp
     CLI/CLI.hpp
     CLI/CLI_DynamicPrintConfig.hpp
     CLI/PrintHelp.cpp
@@ -121,9 +121,9 @@ if (SLIC3R_GUI)
 endif ()
 
 if (WIN32)
-    add_library(PrusaSlicer SHARED PrusaSlicer.cpp ${SLIC3R_CLI_SOURCES})
+    add_library(TismaSlicer SHARED TismaSlicer.cpp ${SLIC3R_CLI_SOURCES})
 else ()
-    add_executable(PrusaSlicer PrusaSlicer.cpp ${SLIC3R_CLI_SOURCES})
+    add_executable(TismaSlicer TismaSlicer.cpp ${SLIC3R_CLI_SOURCES})
 endif ()
 
 foreach(_source IN ITEMS ${SLIC3R_CLI_SOURCES})
@@ -133,52 +133,52 @@ foreach(_source IN ITEMS ${SLIC3R_CLI_SOURCES})
 endforeach()
 
 if (MINGW)
-    target_link_options(PrusaSlicer PUBLIC "-Wl,-allow-multiple-definition")
-    set_target_properties(PrusaSlicer PROPERTIES PREFIX "")
+    target_link_options(TismaSlicer PUBLIC "-Wl,-allow-multiple-definition")
+    set_target_properties(TismaSlicer PROPERTIES PREFIX "")
 endif (MINGW)
 
 if (NOT WIN32 AND NOT APPLE)
     # Binary name on unix like systems (Linux, Unix)
-    set_target_properties(PrusaSlicer PROPERTIES OUTPUT_NAME "prusa-slicer")
+    set_target_properties(TismaSlicer PROPERTIES OUTPUT_NAME "tisma-slicer")
 endif ()
 
 
-target_link_libraries(PrusaSlicer PRIVATE libslic3r libcereal slic3r-arrange-wrapper libseqarrange stb_image)
+target_link_libraries(TismaSlicer PRIVATE libslic3r libcereal slic3r-arrange-wrapper libseqarrange stb_image)
 
 if (APPLE)
 #    add_compile_options(-stdlib=libc++)
 #    add_definitions(-DBOOST_THREAD_DONT_USE_CHRONO -DBOOST_NO_CXX11_RVALUE_REFERENCES -DBOOST_THREAD_USES_MOVE)
     # -liconv: boost links to libiconv by default
-    target_link_libraries(PrusaSlicer PRIVATE "-liconv -framework IOKit" "-framework CoreFoundation" -lc++)
+    target_link_libraries(TismaSlicer PRIVATE "-liconv -framework IOKit" "-framework CoreFoundation" -lc++)
 elseif (MSVC)
-    # Manifest is provided through PrusaSlicer.rc, don't generate your own.
+    # Manifest is provided through TismaSlicer.rc, don't generate your own.
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
 else ()
     # Boost on Raspberry-Pi does not link to pthreads explicitely.
-    target_link_libraries(PrusaSlicer PRIVATE ${CMAKE_DL_LIBS} -lstdc++ Threads::Threads)
+    target_link_libraries(TismaSlicer PRIVATE ${CMAKE_DL_LIBS} -lstdc++ Threads::Threads)
 endif ()
 
 # Add the Slic3r GUI library, libcurl, OpenGL and GLU libraries.
 if (SLIC3R_GUI)
-    target_link_libraries(PrusaSlicer PRIVATE libslic3r_gui)
+    target_link_libraries(TismaSlicer PRIVATE libslic3r_gui)
     if (MSVC)
         # Generate debug symbols even in release mode.
-        target_link_options(PrusaSlicer PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
-        target_link_libraries(PrusaSlicer PRIVATE user32.lib Setupapi.lib)
+        target_link_options(TismaSlicer PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
+        target_link_libraries(TismaSlicer PRIVATE user32.lib Setupapi.lib)
     elseif (MINGW)
-        target_link_libraries(PrusaSlicer PRIVATE ws2_32 uxtheme setupapi)
+        target_link_libraries(TismaSlicer PRIVATE ws2_32 uxtheme setupapi)
     elseif (APPLE)
-        target_link_libraries(PrusaSlicer PRIVATE "-framework OpenGL")
+        target_link_libraries(TismaSlicer PRIVATE "-framework OpenGL")
     else ()
-        target_link_libraries(PrusaSlicer PRIVATE -ldl)
+        target_link_libraries(TismaSlicer PRIVATE -ldl)
     endif ()
     if (MSVC)
         # Tisma: system library, the MSVC linker finds it by name. find_library() only finds it inside a
         # Visual Studio developer prompt (vcvars), which the CI does not use.
-        target_link_libraries(PrusaSlicer PRIVATE psapi.lib)
+        target_link_libraries(TismaSlicer PRIVATE psapi.lib)
     elseif (WIN32)
         find_library(PSAPI_LIB NAMES Psapi)
-        target_link_libraries(PrusaSlicer PRIVATE ${PSAPI_LIB})
+        target_link_libraries(TismaSlicer PRIVATE ${PSAPI_LIB})
     endif ()
 endif ()
 
@@ -189,35 +189,35 @@ if (WIN32)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -municode")
     endif()
 
-    add_executable(PrusaSlicer_app_gui WIN32 PrusaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer.rc)
+    add_executable(TismaSlicer_app_gui WIN32 TismaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer.rc)
     # Generate debug symbols even in release mode.
     if(MSVC)
-        target_link_options(PrusaSlicer_app_gui PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
+        target_link_options(TismaSlicer_app_gui PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
     endif()
-    target_compile_definitions(PrusaSlicer_app_gui PRIVATE -DSLIC3R_WRAPPER_NOCONSOLE)
-    add_dependencies(PrusaSlicer_app_gui PrusaSlicer)
-    set_target_properties(PrusaSlicer_app_gui PROPERTIES OUTPUT_NAME "prusa-slicer")
-    target_link_libraries(PrusaSlicer_app_gui PRIVATE boost_headeronly)
+    target_compile_definitions(TismaSlicer_app_gui PRIVATE -DSLIC3R_WRAPPER_NOCONSOLE)
+    add_dependencies(TismaSlicer_app_gui TismaSlicer)
+    set_target_properties(TismaSlicer_app_gui PROPERTIES OUTPUT_NAME "tisma-slicer")
+    target_link_libraries(TismaSlicer_app_gui PRIVATE boost_headeronly)
 
-    add_executable(PrusaSlicer_app_console PrusaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer.rc)
+    add_executable(TismaSlicer_app_console TismaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer.rc)
     # Generate debug symbols even in release mode.
     if (MSVC)
-        target_link_options(PrusaSlicer_app_console PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
+        target_link_options(TismaSlicer_app_console PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
     endif ()
-    target_compile_definitions(PrusaSlicer_app_console PRIVATE -DSLIC3R_WRAPPER_CONSOLE)
-    add_dependencies(PrusaSlicer_app_console PrusaSlicer)
-    set_target_properties(PrusaSlicer_app_console PROPERTIES OUTPUT_NAME "prusa-slicer-console")
-    target_link_libraries(PrusaSlicer_app_console PRIVATE boost_headeronly)
+    target_compile_definitions(TismaSlicer_app_console PRIVATE -DSLIC3R_WRAPPER_CONSOLE)
+    add_dependencies(TismaSlicer_app_console TismaSlicer)
+    set_target_properties(TismaSlicer_app_console PROPERTIES OUTPUT_NAME "tisma-slicer-console")
+    target_link_libraries(TismaSlicer_app_console PRIVATE boost_headeronly)
 
-    add_executable(PrusaSlicer_app_gcodeviewer WIN32 PrusaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer-gcodeviewer.rc)
+    add_executable(TismaSlicer_app_gcodeviewer WIN32 TismaSlicer_app_msvc.cpp ${CMAKE_CURRENT_BINARY_DIR}/TismaSlicer-gcodeviewer.rc)
     # Generate debug symbols even in release mode.
     if (MSVC)
-        target_link_options(PrusaSlicer_app_gcodeviewer PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
+        target_link_options(TismaSlicer_app_gcodeviewer PUBLIC "$<$<CONFIG:RELEASE>:/DEBUG>")
     endif ()
-    target_compile_definitions(PrusaSlicer_app_gcodeviewer PRIVATE -DSLIC3R_WRAPPER_NOCONSOLE -DSLIC3R_WRAPPER_GCODEVIEWER)
-    add_dependencies(PrusaSlicer_app_gcodeviewer PrusaSlicer)
-    set_target_properties(PrusaSlicer_app_gcodeviewer PROPERTIES OUTPUT_NAME "prusa-gcodeviewer")
-    target_link_libraries(PrusaSlicer_app_gcodeviewer PRIVATE boost_headeronly)
+    target_compile_definitions(TismaSlicer_app_gcodeviewer PRIVATE -DSLIC3R_WRAPPER_NOCONSOLE -DSLIC3R_WRAPPER_GCODEVIEWER)
+    add_dependencies(TismaSlicer_app_gcodeviewer TismaSlicer)
+    set_target_properties(TismaSlicer_app_gcodeviewer PROPERTIES OUTPUT_NAME "tisma-gcodeviewer")
+    target_link_libraries(TismaSlicer_app_gcodeviewer PRIVATE boost_headeronly)
 endif ()
 
 # Link the resources dir to where Slic3r GUI expects it
@@ -226,7 +226,7 @@ if (WIN32)
         foreach (CONF ${CMAKE_CONFIGURATION_TYPES})
             file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CONF}" WIN_CONF_OUTPUT_DIR)
             file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/resources" WIN_RESOURCES_SYMLINK)
-            add_custom_command(TARGET PrusaSlicer POST_BUILD
+            add_custom_command(TARGET TismaSlicer POST_BUILD
                 COMMAND if exist "${WIN_CONF_OUTPUT_DIR}" "("
                         if not exist "${WIN_RESOURCES_SYMLINK}" "("
                             mklink /J "${WIN_RESOURCES_SYMLINK}" "${SLIC3R_RESOURCES_DIR_WIN}"
@@ -237,7 +237,7 @@ if (WIN32)
             )
 
             if (SLIC3R_GUI)
-                add_custom_command(TARGET PrusaSlicer POST_BUILD
+                add_custom_command(TARGET TismaSlicer POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy
                     "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
                     "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
@@ -245,13 +245,13 @@ if (WIN32)
         endforeach ()
     else ()
         file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources" WIN_RESOURCES_SYMLINK)
-        add_custom_command(TARGET PrusaSlicer POST_BUILD
+        add_custom_command(TARGET TismaSlicer POST_BUILD
             COMMAND if not exist "${WIN_RESOURCES_SYMLINK}" "(" mklink /J "${WIN_RESOURCES_SYMLINK}" "${SLIC3R_RESOURCES_DIR_WIN}" ")"
             COMMENT "Symlinking the resources directory into the build tree"
             VERBATIM
         )
         if (SLIC3R_GUI)
-            add_custom_command(TARGET PrusaSlicer POST_BUILD
+            add_custom_command(TARGET TismaSlicer POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
                 "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
@@ -259,24 +259,24 @@ if (WIN32)
     endif ()
 
     # This has to be a separate target due to the windows command line lenght limits
-    add_custom_target(PrusaSlicerDllsCopy ALL DEPENDS PrusaSlicer)
-    prusaslicer_copy_dlls(PrusaSlicerDllsCopy)
+    add_custom_target(TismaSlicerDllsCopy ALL DEPENDS TismaSlicer)
+    prusaslicer_copy_dlls(TismaSlicerDllsCopy)
 
 else ()
     if (APPLE)
         # On OSX, the name of the binary matches the name of the Application.
-        add_custom_command(TARGET PrusaSlicer POST_BUILD
-            COMMAND ln -sf PrusaSlicer prusa-slicer
-            COMMAND ln -sf PrusaSlicer prusa-gcodeviewer
-            COMMAND ln -sf PrusaSlicer PrusaGCodeViewer
-            WORKING_DIRECTORY "$<TARGET_FILE_DIR:PrusaSlicer>"
-            COMMENT "Symlinking the G-code viewer to PrusaSlicer, symlinking to prusa-slicer and prusa-gcodeviewer"
+        add_custom_command(TARGET TismaSlicer POST_BUILD
+            COMMAND ln -sf TismaSlicer tisma-slicer
+            COMMAND ln -sf TismaSlicer tisma-gcodeviewer
+            COMMAND ln -sf TismaSlicer TismaGCodeViewer
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:TismaSlicer>"
+            COMMENT "Symlinking the G-code viewer to TismaSlicer, symlinking to tisma-slicer and tisma-gcodeviewer"
             VERBATIM)
     else ()
-        add_custom_command(TARGET PrusaSlicer POST_BUILD
-            COMMAND ln -sf prusa-slicer prusa-gcodeviewer
-            WORKING_DIRECTORY "$<TARGET_FILE_DIR:PrusaSlicer>"
-            COMMENT "Symlinking the G-code viewer to PrusaSlicer"
+        add_custom_command(TARGET TismaSlicer POST_BUILD
+            COMMAND ln -sf tisma-slicer tisma-gcodeviewer
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:TismaSlicer>"
+            COMMENT "Symlinking the G-code viewer to TismaSlicer"
             VERBATIM)
     endif ()
     if (XCODE)
@@ -285,7 +285,7 @@ else ()
     else ()
         set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/../resources")
     endif ()
-    add_custom_command(TARGET PrusaSlicer POST_BUILD
+    add_custom_command(TARGET TismaSlicer POST_BUILD
         COMMAND ln -sfn "${SLIC3R_RESOURCES_DIR}" "${BIN_RESOURCES_DIR}"
         COMMENT "Symlinking the resources directory into the build tree"
         VERBATIM)
@@ -293,14 +293,14 @@ endif ()
 
 # Slic3r binary install target
 if (WIN32)
-    install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    install(TARGETS TismaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
     if (MSVC)
-        install(TARGETS PrusaSlicer_app_gui RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
-        install(TARGETS PrusaSlicer_app_console RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+        install(TARGETS TismaSlicer_app_gui RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+        install(TARGETS TismaSlicer_app_console RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
 else ()
-    install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(TARGETS TismaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
     # Install the symlink for gcodeviewer
-    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink prusa-slicer prusa-gcodeviewer WORKING_DIRECTORY \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})")
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink tisma-slicer tisma-gcodeviewer WORKING_DIRECTORY \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})")
 endif ()

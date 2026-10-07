@@ -4,7 +4,7 @@
 
 **Fabricación · Innovación · Flexibilidad**
 
-> Slicer no planar de Tisma basado en PrusaSlicer 2.9, con impresión por USB, arc overhangs y relleno denso bajo superficies superiores. Ver [doc/NonPlanarSlicer.md](doc/NonPlanarSlicer.md).
+> Slicer no planar de Tisma basado en PrusaSlicer 2.9, con impresión por USB, arc overhangs y relleno denso bajo superficies superiores. Ver [doc/TismaSlicer.md](doc/TismaSlicer.md).
 >
 > Identidad visual: los logos oficiales están en `resources-src/branding/originals/`; los iconos, la pantalla de inicio y la paleta (violeta `#7A24C9`) se generan con `python3 resources-src/branding/make_tisma_assets.py`.
 

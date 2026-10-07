@@ -76,7 +76,7 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          cmake --build %APP_BUILD% --config Release --target PrusaSlicer_app_gui PrusaSlicer_app_console PrusaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
+          cmake --build %APP_BUILD% --config Release --target TismaSlicer_app_gui TismaSlicer_app_console TismaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
 
       - name: Package
         shell: pwsh
@@ -84,8 +84,8 @@ jobs:
           $out = "TismaSlicer"
           New-Item -ItemType Directory -Force $out | Out-Null
           # Ninja (single configuration) puts the binaries in src/, Visual Studio in src/Release/.
-          $bin = @("$env:APP_BUILD/src/Release", "$env:APP_BUILD/src") | Where-Object { Test-Path "$_/prusa-slicer.exe" } | Select-Object -First 1
-          if (-not $bin) { throw "prusa-slicer.exe not found" }
+          $bin = @("$env:APP_BUILD/src/Release", "$env:APP_BUILD/src") | Where-Object { Test-Path "$_/tisma-slicer.exe" } | Select-Object -First 1
+          if (-not $bin) { throw "tisma-slicer.exe not found" }
           Get-ChildItem $bin -File |
             Where-Object { $_.Extension -in '.exe', '.dll' } |
             Copy-Item -Destination $out
@@ -93,8 +93,8 @@ jobs:
           $occt = @("$env:APP_BUILD/src/Release/OCCTWrapper.dll", "$env:APP_BUILD/src/OCCTWrapper.dll") | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $occt) { throw "OCCTWrapper.dll not found" }
           Copy-Item $occt -Destination $out -Force
-          # PrusaSlicer.dll needs GMP and MPFR (CGAL); upstream copies them with the PrusaSlicerDllsCopy target,
-          # which is not among the built targets. Without them prusa-slicer.exe exits silently.
+          # TismaSlicer.dll needs GMP and MPFR (CGAL); upstream copies them with the TismaSlicerDllsCopy target,
+          # which is not among the built targets. Without them tisma-slicer.exe exits silently.
           Copy-Item deps/+GMP/gmp/lib/win64/libgmp-10.dll, deps/+MPFR/mpfr/lib/win64/libmpfr-4.dll -Destination $out
           # Visual C++ runtime next to the executable (app-local deployment of the redistributable files), so a PC
           # without the Visual C++ Redistributable can run it too.
@@ -103,11 +103,11 @@ jobs:
           if (-not $crt) { throw "Visual C++ runtime not found" }
           Copy-Item "$($crt.FullName)/*.dll" -Destination $out
           Copy-Item -Recurse resources "$out/resources"
-          Copy-Item doc/NonPlanarSlicer.md "$out/LEEME.md"
+          Copy-Item doc/TismaSlicer.md "$out/LEEME.md"
           Get-ChildItem $out
-          # Smoke test: PrusaSlicer.dll must load (it prints the usage), otherwise the package is broken.
-          $help = & "$out/prusa-slicer-console.exe" --help 2>&1 | Out-String
-          if ($help -notmatch "Usage:") { Write-Output $help; throw "prusa-slicer-console.exe did not start (PrusaSlicer.dll not loaded?)" }
+          # Smoke test: TismaSlicer.dll must load (it prints the usage), otherwise the package is broken.
+          $help = & "$out/tisma-slicer-console.exe" --help 2>&1 | Out-String
+          if ($help -notmatch "Usage:") { Write-Output $help; throw "tisma-slicer-console.exe did not start (TismaSlicer.dll not loaded?)" }
           Write-Output ($help -split "`n" | Select-Object -First 4)
 
       - name: Sign binaries
@@ -118,7 +118,7 @@ jobs:
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
           $signtool = Get-ChildItem "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
           # Only our own binaries (the runtime and the third party DLLs keep their own signatures).
-          $files = Get-ChildItem TismaSlicer -File | Where-Object { $_.Name -match '^(prusa-.*\.exe|PrusaSlicer.*\.dll|OCCTWrapper\.dll)$' }
+          $files = Get-ChildItem TismaSlicer -File | Where-Object { $_.Name -match '^(tisma-.*\.exe|TismaSlicer.*\.dll|OCCTWrapper\.dll)$' }
           & $signtool.FullName sign /f $pfx /p $env:SIGN_PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 $files.FullName
           if ($LASTEXITCODE -ne 0) { throw "signtool failed" }
           Remove-Item $pfx
@@ -210,7 +210,7 @@ jobs:
           $dir = Join-Path $env:RUNNER_TEMP "tisma-install"
           $p = Start-Process $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CURRENTUSER", "/DIR=$dir", "/TASKS=assocmodels" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The installer failed ($($p.ExitCode))" }
-          $help = & "$dir/prusa-slicer-console.exe" --help 2>&1 | Out-String
+          $help = & "$dir/tisma-slicer-console.exe" --help 2>&1 | Out-String
           if ($help -notmatch "Usage:") { Write-Output $help; throw "The installed program did not start" }
           $p = Start-Process "$dir/unins000.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The uninstaller failed ($($p.ExitCode))" }

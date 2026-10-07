@@ -22,8 +22,8 @@
 #endif
 
 #define AppName      "Tisma Slicer"
-#define AppExe       "prusa-slicer.exe"
-#define ViewerExe    "prusa-gcodeviewer.exe"
+#define AppExe       "tisma-slicer.exe"
+#define ViewerExe    "tisma-gcodeviewer.exe"
 #define AppPublisher "Tisma"
 #define AppURL       "https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-"
 

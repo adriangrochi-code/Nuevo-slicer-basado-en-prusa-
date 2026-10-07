@@ -17476,11 +17476,11 @@ msgstr "Puede que necesites actualizar tu tarjeta de gráficos."
 
 #: src/slic3r/GUI/OpenGLManager.cpp:393
 msgid ""
-"As a workaround, you may run PrusaSlicer with a software rendered 3D "
-"graphics by running prusa-slicer.exe with the --sw-renderer parameter."
+"As a workaround, you may run Tisma Slicer with a software rendered 3D "
+"graphics by running tisma-slicer.exe with the --sw-renderer parameter."
 msgstr ""
-"Como solución, puedes ejecutar PrusaSlicer con gráficos 3D renderizados por "
-"software ejecutando prusa-slicer.exe con el parámetro --sw-renderer."
+"Como solución, puedes ejecutar Tisma Slicer con gráficos 3D renderizados por "
+"software ejecutando tisma-slicer.exe con el parámetro --sw-renderer."
 
 #: src/slic3r/GUI/OpenGLManager.cpp:395
 msgid "Unsupported OpenGL version"
