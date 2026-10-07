@@ -89,9 +89,10 @@ jobs:
         if: ${{ inputs.run_tests }}
         run: cmake --build build
 
+      # libseqarrange_tests (upstream sequential arrange, z3) runs for more than 2 hours (docs/TEST_BASELINE.md).
       - name: Unit tests
         if: ${{ inputs.run_tests }}
-        run: ctest --test-dir build --output-on-failure --timeout 3600 -j 2
+        run: ctest --test-dir build --output-on-failure --timeout 3600 -j 2 -E libseqarrange_tests
 
       - name: AppImage
         run: |
