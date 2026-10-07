@@ -202,9 +202,10 @@ void Mouse3DController::init()
       // Registration is done either by 4letter constant (CFBundleSignature - obsolete
       //and we dont have that) or Executable name in pascal string(first byte is string lenght).
       //If no packets are recieved the name might be different - check cmake. If debugging try commenting
-      // set_target_properties(PrusaSlicer PROPERTIES OUTPUT_NAME "prusa-slicer")
+      // set_target_properties(TismaSlicer PROPERTIES OUTPUT_NAME "tisma-slicer")
+      // The macOS executable is TismaSlicer (11 characters, \013).
       clientID = RegisterConnexionClient(
-          0, "\013PrusaSlicer", kConnexionClientModeTakeOver, kConnexionMaskAxis);
+          0, "\013TismaSlicer", kConnexionClientModeTakeOver, kConnexionMaskAxis);
         BOOST_LOG_TRIVIAL(info) << "3dx mac handler registered";
     }
   }

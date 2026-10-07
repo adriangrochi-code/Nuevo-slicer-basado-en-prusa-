@@ -428,7 +428,7 @@ void DesktopIntegrationDialog::perform_desktop_integration()
         // Desktop file
         std::string desktop_file_viewer = GUI::format(
             "[Desktop Entry]\n"
-            "Name=Prusa Gcode Viewer%1%\n"
+            "Name=Tisma G-code Viewer%1%\n"
             "GenericName=3D Printing Software\n"
             "Icon=TismaSlicer-gcodeviewer%2%\n"
             "Exec=\"%3%\" --gcodeviewer %%F\n"
