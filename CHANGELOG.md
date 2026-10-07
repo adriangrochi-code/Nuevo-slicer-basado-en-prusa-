@@ -16,6 +16,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
   de Elegoo, sin pasar por UVtools) y perfiles de Mars 4, Mars 4 Ultra, Mars 4 Max, Mars 5, Saturn 3, Saturn 3 Ultra y
   Saturn 4 con resina estándar genérica. La barra de estado y el resumen del laminado muestran tiempo y mililitros de
   resina.
+- **Calibraciones de resina**: torre de exposición (un tiempo por banda de capas, en impresoras GOO), bloque de
+  medidas y corrección dimensional del material con X, Y y Z medidos; «Aplicar un resultado» escribe la exposición.
+- **Modo resina sin funciones de FDM**: con una impresora de resina se ocultan Ingeniería y Estructuras, y Calibración
+  muestra las pruebas de resina en lugar de las de FDM.
 - **Perímetros escalonados** (alternativa a Brick Layers fuera de la patente US11331848B2, ver
   `docs/BRICK_LAYERS.md`): opción «Perímetros escalonados» en Capas y perímetros; uno de cada dos perímetros
   internos media capa más arriba, el externo sin cambios, flujo ajustado en la primera y la última capa.

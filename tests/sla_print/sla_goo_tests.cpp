@@ -266,3 +266,82 @@ TEST_CASE("Elegoo GOO printer profiles", "[sla_archives][goo]") {
     boost::system::error_code ec;
     fs::remove_all(data, ec);
 }
+
+TEST_CASE("GOO exposure tower calibration", "[sla_archives][goo]") {
+    DynamicPrintConfig cfg;
+    // Without the calibration: the normal exposure everywhere.
+    CHECK(Goo::layer_exposure(cfg, 5.f, 2.5f) == 2.5f);
+
+    cfg.set_key_value("calib_mode",        new ConfigOptionEnum<CalibMode>(CalibMode::ResinExposure));
+    cfg.set_key_value("calib_start",       new ConfigOptionFloat(1.5));
+    cfg.set_key_value("calib_end",         new ConfigOptionFloat(2.5));
+    cfg.set_key_value("calib_step",        new ConfigOptionFloat(0.25));
+    cfg.set_key_value("calib_band_height", new ConfigOptionFloat(2.));
+    // Base band (0, 2]: the normal exposure; the layer whose top is at 2.0 is still in the base.
+    CHECK(Goo::layer_exposure(cfg, 0.05f, 2.5f) == 2.5f);
+    CHECK(Goo::layer_exposure(cfg, 2.f, 2.5f) == 2.5f);
+    // Then 1.5, 1.75, 2.0, 2.25, 2.5 s, and the last value above the tower.
+    CHECK(Goo::layer_exposure(cfg, 2.05f, 2.5f) == 1.5f);
+    CHECK(Goo::layer_exposure(cfg, 4.f, 2.5f) == 1.5f);
+    CHECK(Goo::layer_exposure(cfg, 4.05f, 2.5f) == 1.75f);
+    CHECK(Goo::layer_exposure(cfg, 9.f, 2.5f) == 2.25f);
+    CHECK(Goo::layer_exposure(cfg, 11.f, 2.5f) == 2.5f);
+    CHECK(Goo::layer_exposure(cfg, 30.f, 2.5f) == 2.5f);
+
+    SECTION("decreasing exposures") {
+        cfg.set_key_value("calib_start", new ConfigOptionFloat(3.));
+        cfg.set_key_value("calib_end",   new ConfigOptionFloat(2.));
+        cfg.set_key_value("calib_step",  new ConfigOptionFloat(-0.5));
+        CHECK(Goo::layer_exposure(cfg, 3.f, 2.5f) == 3.f);
+        CHECK(Goo::layer_exposure(cfg, 5.f, 2.5f) == 2.5f);
+        CHECK(Goo::layer_exposure(cfg, 7.f, 2.5f) == 2.f);
+        CHECK(Goo::layer_exposure(cfg, 20.f, 2.5f) == 2.f);
+    }
+
+    SECTION("exported tower") {
+        // A 12 mm block sliced and exported with the calibration: the layers carry the exposure of their band.
+        SLAPrint print;
+        SLAFullPrintConfig fullcfg;
+        fullcfg.printer_technology.setInt(ptSLA);
+        fullcfg.set("sla_archive_format", "GOO");
+        fullcfg.set("supports_enable", false);
+        fullcfg.set("pad_enable", false);
+        fullcfg.set("layer_height", 0.05);
+        fullcfg.set("initial_layer_height", 0.05);
+        fullcfg.set("exposure_time", 2.5);
+        DynamicPrintConfig full;
+        full.apply(fullcfg);
+        full.set_key_value("material_ow_faded_layers", new ConfigOptionInt(3));
+        full.set_key_value("faded_layers", new ConfigOptionInt(3));
+        for (const char *key : { "calib_mode", "calib_start", "calib_end", "calib_step", "calib_band_height" })
+            full.set_key_value(key, cfg.option(key)->clone());
+
+        Model model;
+        ModelObject *obj = model.add_object();
+        obj->add_volume(TriangleMesh(its_make_cube(10., 4., 12.)));
+        obj->add_instance()->set_offset(Vec3d(30., 30., 0.));
+        print.set_status_callback([](const PrintBase::SlicingStatus&) {});
+        print.apply(model, full);
+        print.process();
+        const std::string fname = "output_goo_tower.goo";
+        print.export_print(fname, ThumbnailsList{}, "tower");
+
+        std::ifstream in(fname, std::ios::binary);
+        const std::vector<std::uint8_t> d { std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
+        const std::size_t after_previews = 194 + 116 * 116 * 2 + 2 + 290 * 290 * 2 + 2;
+        const std::uint32_t layers = be_u32(d, after_previews);
+        REQUIRE(layers == 240);
+        std::size_t at = Goo::LAYERS_OFFSET;
+        std::vector<float> exposure_at;
+        for (std::uint32_t i = 0; i < layers; ++ i) {
+            exposure_at.push_back(be_f32(d, at + 10));
+            at += 70 + be_u32(d, at + 66) + 2;
+        }
+        CHECK(exposure_at[0] > 2.5f);          // bottom layer
+        CHECK(exposure_at[10] == 2.5f);        // z 0.55: base
+        CHECK(exposure_at[39] == 2.5f);        // z 2.0: base
+        CHECK(exposure_at[40] == 1.5f);        // z 2.05: first band
+        CHECK(exposure_at[80] == 1.75f);       // z 4.05
+        CHECK(exposure_at[239] == 2.5f);       // z 12.0: fifth band
+    }
+}

@@ -12,8 +12,9 @@ class wxMenu;
 namespace Slic3r {
 namespace GUI {
 
-// Menu with all the calibration tests. Selecting one opens its dialog and loads the test in the plater.
-wxMenu* create_calibration_menu(wxWindow* parent);
+// Menu with all the calibration tests (FFF, or resin with resin = true). Selecting one opens its dialog and loads
+// the test in the plater.
+wxMenu* create_calibration_menu(wxWindow* parent, bool resin = false);
 // Opens the menu at the mouse position.
 void    show_calibration_menu(wxWindow* parent);
 

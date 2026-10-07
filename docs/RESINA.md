@@ -59,4 +59,28 @@ BOTTOM_LIGHT_PWM=255
 - **Falta probarlo en una impresora real.** Si la impresora rechaza el archivo o la pieza sale espejada, avisar
   con el modelo y la versión de firmware.
 
-En modo resina, Ingeniería y Estructuras no están disponibles: el análisis estructural es solo para FDM.
+## Interfaz en modo resina
+
+Con una impresora de resina se ocultan las funciones que solo sirven para FDM:
+
+- las pestañas **Ingeniería** y **Estructuras** (el análisis estructural y el relleno son de FDM); si estaban
+  abiertas al cambiar de impresora, se vuelve a Preparar;
+- las calibraciones de FDM: el menú y la pestaña **Calibración** pasan a mostrar las de resina.
+
+Ya estaban limitadas a FDM: las capas no planares, los voladizos en arco y el resto de los ajustes de impresión
+de FDM (están en la pestaña de impresión FDM, que en resina no aparece), las herramientas de pintar costuras,
+piel difusa y multimaterial, y los ajustes por plancha. **Dispositivos** queda, porque también maneja impresoras
+por red (PrusaLink, OctoPrint, ...).
+
+## Calibraciones de resina
+
+Calibración (pestaña o menú) con una impresora de resina:
+
+- **Torre de exposición** (solo impresoras GOO, que guardan la exposición de cada capa): una sola impresión con una
+  base y una banda por tiempo de exposición (por defecto de 1,5 a 3,5 s cada 0,25 s, bandas de 2 mm). Cada banda
+  tiene agujeros horizontales de 0,4, 0,6, 0,8, 1,0 y 1,4 mm (se cierran con exposición de más) y aletas de 0,15,
+  0,25, 0,35 y 0,5 mm atrás (faltan o se doblan con exposición de menos); una ranura al frente separa las bandas. Se
+  imprime sobre la placa, sin soportes ni pad. La banda elegida se aplica con «Aplicar un resultado de calibración»
+  (tiempo de exposición de la resina). Las capas de fondo mantienen su exposición.
+- **Bloque de medidas** de 30 × 30 × 10 mm y **Corrección dimensional de la resina**: con X, Y y Z medidos calcula la
+  corrección de escala del material (`material_correction_x/y/z` = actual × medida deseada / medida impresa).

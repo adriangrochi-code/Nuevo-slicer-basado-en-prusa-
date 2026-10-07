@@ -871,7 +871,8 @@ void MainFrame::create_nav_rail()
     engineering.icon        = "wrench";
     engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
     engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    engineering.is_visible  = is_expert;
+    // The analyses and the calibrations are for FFF printers: hidden with an SLA printer.
+    engineering.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
     m_nav_rail->add_item(engineering);
 
     // Structures: the lightest infill for the loads (phase 6), in the Engineering view; lattice and local
@@ -882,7 +883,7 @@ void MainFrame::create_nav_rail()
     structures.icon        = "infill";
     structures.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_structures(); update_nav_rail(); };
     structures.is_selected = []() { return false; };
-    structures.is_visible  = is_expert;
+    structures.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
     m_nav_rail->add_item(structures);
 
     NavRail::Item calib;
@@ -977,9 +978,9 @@ void MainFrame::update_nav_rail(bool visibility)
     if (m_nav_rail == nullptr)
         return;
     if (visibility) {
-        // Leaving the Expert mode while an advanced workspace is shown: back to Prepare.
         wxWindow* page = m_tabpanel->GetCurrentPage();
-        if (wxGetApp().get_mode() != comExpert && m_plater && m_plater->is_engineering_open())
+        // Leaving the Expert mode or switching to an SLA printer while an advanced workspace is shown: back to Prepare.
+        if (m_plater && (wxGetApp().get_mode() != comExpert || m_plater->printer_technology() != ptFFF) && m_plater->is_engineering_open())
             m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
     } else
@@ -1977,10 +1978,15 @@ void MainFrame::init_menubar_as_editor()
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
     m_menubar->Append(wxGetApp().get_config_menu(this), _L("&Configuration"));
-    m_menubar->Append(create_calibration_menu(this), _L("C&alibration"));
+    m_calibration_menu       = create_calibration_menu(this, false);
+    m_resin_calibration_menu = create_calibration_menu(this, true);
+    m_calibration_menu_pos   = m_menubar->GetMenuCount();
+    m_menubar->Append(m_calibration_menu, _L("C&alibration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
     SetMenuBar(m_menubar);
+    // With an SLA printer at start, without the FFF only menus.
+    update_technology_ui();
 
 #ifdef __APPLE__
     init_macos_application_menu(m_menubar, this);
@@ -2502,8 +2508,30 @@ void MainFrame::add_to_recent_projects(const wxString& filename)
     }
 }
 
+MainFrame::~MainFrame()
+{
+    // The Calibration menu not in the menu bar is not deleted by it.
+    for (wxMenu* menu : { m_calibration_menu, m_resin_calibration_menu })
+        if (menu != nullptr && menu->GetMenuBar() == nullptr)
+            delete menu;
+}
+
+// Tisma Slicer: Engineering and Structures only work with FFF printers (hidden with an SLA printer), and the
+// Calibration menu has the tests of the printer technology.
+void MainFrame::update_technology_ui()
+{
+    const bool fff = m_plater != nullptr && m_plater->printer_technology() == ptFFF;
+    if (m_menubar != nullptr && m_calibration_menu != nullptr && m_resin_calibration_menu != nullptr) {
+        wxMenu* wanted = fff ? m_calibration_menu : m_resin_calibration_menu;
+        if (wanted->GetMenuBar() == nullptr)
+            m_menubar->Replace(m_calibration_menu_pos, wanted, _L("C&alibration"));
+    }
+    update_nav_rail(true);
+}
+
 void MainFrame::technology_changed()
 {
+    update_technology_ui();
     PrinterTechnology pt = plater()->printer_technology();
     m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(pt));
 

@@ -180,6 +180,25 @@ MotionParams motion_params(const DynamicPrintConfig &cfg)
     return p;
 }
 
+float layer_exposure(const DynamicPrintConfig &cfg, float z, float normal_exposure)
+{
+    const auto *mode = cfg.option<ConfigOptionEnum<CalibMode>>("calib_mode");
+    if (mode == nullptr || mode->value != CalibMode::ResinExposure)
+        return normal_exposure;
+    const double band  = cfg.opt_float("calib_band_height");
+    const double start = cfg.opt_float("calib_start");
+    const double end   = cfg.opt_float("calib_end");
+    const double step  = cfg.opt_float("calib_step");
+    if (band <= 0. || step == 0.)
+        return normal_exposure;
+    // A layer belongs to the band where its top (z) is; the small epsilon keeps a layer at the band border below it.
+    const int k = int(std::floor((double(z) - 1e-4) / band)) - 1;
+    if (k < 0)
+        return normal_exposure;
+    const int last = int(std::floor(std::abs(end - start) / std::abs(step) + 1e-6));
+    return float(std::max(0.1, start + std::min(k, last) * step));
+}
+
 } // namespace Goo
 
 // --- Writer -----------------------------------------------------------------------------------------------------
@@ -398,7 +417,7 @@ void GooSLAArchive::export_print(const std::string     fname,
         w.u16(0);                    // pause flag
         w.f32(machine_z);            // pause position
         w.f32(z);
-        w.f32(bottom ? bottom_exposure : exposure);
+        w.f32(bottom ? bottom_exposure : Goo::layer_exposure(cfg, z, exposure));
         w.f32(0.f);                  // off time
         w.f32(mp.wait_after_cure);
         w.f32(mp.wait_after_lift);

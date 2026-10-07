@@ -295,7 +295,8 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "nonplanar_z_speed", int(CalibMode::NonPlanarZSpeed) },
     { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
     { "flow_rate",        int(CalibMode::FlowRate) },
-    { "coasting",         int(CalibMode::Coasting) }
+    { "coasting",         int(CalibMode::Coasting) },
+    { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
 
@@ -4174,7 +4175,8 @@ void PrintConfigDef::init_fff_params()
         { "nonplanar_z_speed", L("Non-planar: Z axis speed") },
         { "first_layer_offset", L("First layer Z offset") },
         { "flow_rate",        L("Flow rate") },
-        { "coasting",         L("Coasting distance") }
+        { "coasting",         L("Coasting distance") },
+        { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
 

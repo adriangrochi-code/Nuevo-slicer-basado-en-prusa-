@@ -169,7 +169,7 @@ protected:
 
 public:
     MainFrame(const int font_point_size);
-    ~MainFrame() = default;
+    ~MainFrame();
 
     void update_layout();
     void update_mode_markers();
@@ -259,6 +259,12 @@ public:
     TopBar*               m_tmp_top_bar { nullptr };
     // Tisma: navigation column at the left (PrusaSlicer 3.0 style)
     NavRail*              m_nav_rail    { nullptr };
+    // The Calibration menu has different tests for FFF and SLA printers: the one of the current technology is in the
+    // menu bar.
+    wxMenu*               m_calibration_menu       { nullptr };
+    wxMenu*               m_resin_calibration_menu { nullptr };
+    size_t                m_calibration_menu_pos   { 0 };
+    void                  update_technology_ui();
     PrinterChip*          m_printer_chip{ nullptr };
     wxBoxSizer*           m_rail_sizer  { nullptr };
     void                  create_nav_rail();

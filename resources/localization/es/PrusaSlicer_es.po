@@ -32991,3 +32991,42 @@ msgstr "Perímetros escalonados: probetas de resistencia"
 
 msgid "Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."
 msgstr "Dos tubos para romper, con y sin perímetros escalonados, para medir la resistencia que suman entre capas."
+
+msgid "Resin exposure tower"
+msgstr "Torre de exposición de resina"
+
+msgid "Prints a tower in one go with a different exposure time in each band of layers, from the bottom up (the first band is the base, with the exposure of the material). Each band has holes of 0.4, 0.6, 0.8, 1.0 and 1.4 mm across it and fins of 0.15, 0.25, 0.35 and 0.5 mm on the back. Needs a printer whose archive keeps the exposure of each layer (Elegoo GOO)."
+msgstr "Imprime de una vez una torre con un tiempo de exposición distinto en cada banda de capas, de abajo hacia arriba (la primera banda es la base, con la exposición del material). Cada banda tiene agujeros de 0,4, 0,6, 0,8, 1,0 y 1,4 mm que la atraviesan y aletas de 0,15, 0,25, 0,35 y 0,5 mm atrás. Necesita una impresora cuyo archivo guarde la exposición de cada capa (Elegoo GOO)."
+
+msgid "Count the bands from the bottom, above the base (separated by the grooves on the front). Too little exposure: the thin fins are missing or bent. Too much: the small holes are closed. Choose the band with the most open holes and the most fins: its time is start + step × band number (from 0) and goes to the exposure time of the material (Calibration > Apply a calibration result)."
+msgstr "Cuenta las bandas desde abajo, por encima de la base (las separan las ranuras del frente). Poca exposición: faltan las aletas finas o salen dobladas. Demasiada: los agujeros pequeños se cierran. Elige la banda con más agujeros abiertos y más aletas: su tiempo es inicio + paso × número de banda (desde 0) y va al tiempo de exposición del material (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Resin dimensions block"
+msgstr "Bloque de medidas de resina"
+
+msgid "A block of %1% x %1% x %2% mm printed on the plate, without supports.\n\nWash and cure it as usual, then measure X, Y and Z with a caliper away from the bottom edge (the first layers spread). Enter the values in Calibration > Resin dimensional correction: it calculates the correction of the material."
+msgstr "Un bloque de %1% x %1% x %2% mm impreso sobre la placa, sin soportes.\n\nLávalo y cúralo como siempre y mide X, Y y Z con un calibre lejos del borde de abajo (las primeras capas se ensanchan). Introduce las medidas en Calibración > Corrección dimensional de la resina: calcula la corrección del material."
+
+msgid "Resin dimensional correction"
+msgstr "Corrección dimensional de la resina"
+
+msgid "Measured sizes of the dimensions block (%1% x %1% x %2% mm), printed with the current correction of the material. The new correction is written to the material (save the preset afterwards)."
+msgstr "Medidas del bloque de medidas (%1% x %1% x %2% mm), impreso con la corrección actual del material. La corrección nueva se escribe en el material (después guarda el perfil)."
+
+msgid "Measured %1%"
+msgstr "%1% medido"
+
+msgid "Correction X %1% (now %2%), Y %3% (now %4%), Z %5% (now %6%)"
+msgstr "Corrección X %1% (ahora %2%), Y %3% (ahora %4%), Z %5% (ahora %6%)"
+
+msgid "Resin exposure time"
+msgstr "Tiempo de exposición de la resina"
+
+msgid "The exposure tower needs a printer whose archive keeps the exposure of each layer: for now the Elegoo printers (GOO format). With other printers, print a small test once per exposure time."
+msgstr "La torre de exposición necesita una impresora cuyo archivo guarde la exposición de cada capa: por ahora las Elegoo (formato GOO). Con otras impresoras, imprime una prueba pequeña por cada tiempo de exposición."
+
+msgid "A block to measure the shrinkage of the resin in X, Y and Z."
+msgstr "Un bloque para medir la contracción de la resina en X, Y y Z."
+
+msgid "Calculates the scaling correction of the material from the measured sizes of the dimensions block."
+msgstr "Calcula la corrección de escala del material con las medidas del bloque de medidas."

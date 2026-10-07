@@ -21,6 +21,7 @@
 #include <wx/spinctrl.h>
 #include <wx/stattext.h>
 
+#include "libslic3r/MeshBoolean.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -491,6 +492,7 @@ public:
         main->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
 
         m_along_x = ! test.band_label.empty();
+        m_base_band = test.mode == CalibMode::ResinExposure;
         m_summary = new wxStaticText(this, wxID_ANY, "");
         main->Add(m_summary, 0, wxALL, em);
 
@@ -518,7 +520,7 @@ private:
         const Params p = params();
         m_summary->SetLabel(m_along_x ?
             format_wxstr(_L("%1% steps, %2% mm long."), p.steps(), wxString::Format("%.1f", p.height())) :
-            format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height())));
+            format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height() + (m_base_band ? p.band : 0.))));
         Layout();
     }
 
@@ -528,6 +530,7 @@ private:
     wxSpinCtrlDouble* m_band  { nullptr };
     wxStaticText*     m_summary { nullptr };
     bool              m_along_x { false };
+    bool              m_base_band { false }; // a base below the steps (resin exposure tower)
 };
 
 void run_test(wxWindow* parent, const Test& test, const Params* initial = nullptr)
@@ -574,6 +577,191 @@ const std::vector<Test>& tests()
     static std::vector<Test> all = make_tests();
     return all;
 }
+
+// --- Resin (SLA) calibrations ---------------------------------------------------------------------------------
+
+// Exposure tower: a base band with the normal exposure, then one band per exposure time (written per layer by the
+// archive, docs/RESINA.md). Each band has horizontal holes, which close with too much exposure, and thin fins on
+// the back, which fail with too little; a groove on the front separates the bands.
+static const std::array<double, 5> RESIN_HOLES { 0.4, 0.6, 0.8, 1.0, 1.4 };
+static const std::array<double, 4> RESIN_FINS  { 0.15, 0.25, 0.35, 0.5 };
+
+static std::vector<Test> make_resin_tests()
+{
+    std::vector<Test> tests;
+    tests.push_back({ _L("Resin exposure tower"),
+        _L("Prints a tower in one go with a different exposure time in each band of layers, from the bottom up (the "
+           "first band is the base, with the exposure of the material). Each band has holes of 0.4, 0.6, 0.8, 1.0 and "
+           "1.4 mm across it and fins of 0.15, 0.25, 0.35 and 0.5 mm on the back. Needs a printer whose archive keeps "
+           "the exposure of each layer (Elegoo GOO)."),
+        _L("Count the bands from the bottom, above the base (separated by the grooves on the front). Too little exposure: "
+           "the thin fins are missing or bent. Too much: the small holes are closed. Choose the band with the most "
+           "open holes and the most fins: its time is start + step × band number (from 0) and goes to the exposure "
+           "time of the material (Calibration > Apply a calibration result)."),
+        "s", CalibMode::ResinExposure, { 1.5, 3.5, 0.25, 2. }, 2, 0.05, 60.,
+        [](ModelObject& obj, const Params& p, const Machine&) {
+            const double w = 30., d = 4., b = p.band;
+            const int    n = p.steps();
+            // One mesh, made with two booleans here: a simple object and no CSG in the slicing.
+            auto box = [](double x, double y, double z, double dx, double dy, double dz) {
+                indexed_triangle_set its = its_make_cube(dx, dy, dz);
+                its_translate(its, Vec3f(float(x), float(y), float(z)));
+                return its;
+            };
+            indexed_triangle_set tower = box(0., 0., 0., w, d, b * (n + 1));
+            indexed_triangle_set fins, cuts;
+            for (int k = 0; k < n; ++ k) {
+                const double z0 = b * (k + 1);
+                // Groove on the front at the bottom of the band.
+                its_merge(cuts, box(-0.5, -0.5, z0 - 0.15, w + 1., 0.8, 0.3));
+                for (size_t i = 0; i < RESIN_HOLES.size(); ++ i)
+                    if (RESIN_HOLES[i] <= b - 0.6) { // a wall of 0.3 mm above and below the hole
+                        indexed_triangle_set hole = its_make_cylinder(0.5 * RESIN_HOLES[i], d + 1., 2. * PI / 48.);
+                        // Z axis to Y axis: swap the coordinates (a mirror) and flip the triangles back outwards.
+                        for (stl_vertex& v : hole.vertices)
+                            v = stl_vertex(v.x() + float(3. + 4. * i), v.z() - 0.5f, v.y() + float(z0 + 0.5 * b));
+                        for (stl_triangle_vertex_indices& f : hole.indices)
+                            std::swap(f[1], f[2]);
+                        its_merge(cuts, hole);
+                    }
+                for (size_t i = 0; i < RESIN_FINS.size(); ++ i)
+                    its_merge(fins, box(22. + 2. * i, d - 0.2, z0 + 0.2, RESIN_FINS[i], 1.7, b - 0.4));
+            }
+            try {
+                MeshBoolean::cgal::plus(tower, fins);
+                MeshBoolean::cgal::minus(tower, cuts);
+                obj.add_volume(TriangleMesh(std::move(tower)));
+            } catch (const std::exception&) {
+                // Fallback: the parts and the negative volumes, joined by the slicing.
+                obj.clear_volumes();
+                add_box(obj, 0., 0., 0., w, d, b * (n + 1));
+                obj.add_volume(TriangleMesh(std::move(fins)));
+                obj.add_volume(TriangleMesh(std::move(cuts)), ModelVolumeType::NEGATIVE_VOLUME);
+            }
+            // On the plate, without supports nor pad: the heights of the bands are measured from the plate.
+            set(obj, "supports_enable", "0");
+            set(obj, "pad_enable", "0");
+        } });
+    tests.back().key = "resin_exposure";
+    return tests;
+}
+
+static const std::vector<Test>& resin_tests()
+{
+    static std::vector<Test> all = make_resin_tests();
+    return all;
+}
+
+// Block to measure the shrinkage of the resin: printed on the plate, measured with a caliper.
+static constexpr double RESIN_BLOCK_XY = 30., RESIN_BLOCK_Z = 10.;
+
+static void load_resin_dimension_block(wxWindow* parent)
+{
+    Model model;
+    ModelObject* obj = model.add_object();
+    obj->name = _u8L("Resin dimensions block");
+    add_box(*obj, 0., 0., 0., RESIN_BLOCK_XY, RESIN_BLOCK_XY, RESIN_BLOCK_Z);
+    set(*obj, "supports_enable", "0");
+    set(*obj, "pad_enable", "0");
+    obj->center_around_origin();
+    const Vec2d center = wxGetApp().plater()->build_volume().bed_center();
+    obj->add_instance()->set_offset(Vec3d(center.x(), center.y(), 0.5 * RESIN_BLOCK_Z));
+    DynamicPrintConfig calib;
+    calib.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+    wxGetApp().plater()->load_calibration(model, calib);
+    wxMessageBox(format_wxstr(_L("A block of %1% x %1% x %2% mm printed on the plate, without supports.\n\n"
+                                 "Wash and cure it as usual, then measure X, Y and Z with a caliper away from the bottom "
+                                 "edge (the first layers spread). Enter the values in Calibration > Resin dimensional "
+                                 "correction: it calculates the correction of the material."),
+                              int(RESIN_BLOCK_XY), int(RESIN_BLOCK_Z)),
+                 _L("Resin dimensions block"), wxOK | wxICON_INFORMATION, parent);
+}
+
+// The measured sizes of the block give the scaling of the material (material_correction_x/y/z): the new factor is
+// the current one times the size wanted over the size printed.
+class ResinDimensionsDialog : public wxDialog
+{
+public:
+    explicit ResinDimensionsDialog(wxWindow* parent)
+        : wxDialog(parent, wxID_ANY, _L("Resin dimensional correction"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+    {
+        wxGetApp().UpdateDlgDarkUI(this);
+        const int em = wxGetApp().em_unit();
+        auto main = new wxBoxSizer(wxVERTICAL);
+        auto info = new wxStaticText(this, wxID_ANY, format_wxstr(_L("Measured sizes of the dimensions block (%1% x %1% x %2% mm), "
+            "printed with the current correction of the material. The new correction is written to the material (save "
+            "the preset afterwards)."), int(RESIN_BLOCK_XY), int(RESIN_BLOCK_Z)));
+        info->Wrap(42 * em);
+        main->Add(info, 0, wxALL, em);
+
+        const DynamicPrintConfig* cfg = config();
+        auto grid = new wxFlexGridSizer(3, em, em);
+        const char* axes[3] = { "x", "y", "z" };
+        const double nominal[3] = { RESIN_BLOCK_XY, RESIN_BLOCK_XY, RESIN_BLOCK_Z };
+        for (int i = 0; i < 3; ++ i) {
+            m_current[i] = cfg ? cfg->opt_float(std::string("material_correction_") + axes[i]) : 1.;
+            grid->Add(new wxStaticText(this, wxID_ANY, format_wxstr(_L("Measured %1%"), wxString(axes[i]).Upper())), 0, wxALIGN_CENTER_VERTICAL);
+            m_measured[i] = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(12 * em, -1),
+                                                 wxSP_ARROW_KEYS, 0.5 * nominal[i], 1.5 * nominal[i], nominal[i], 0.01);
+            m_measured[i]->SetDigits(2);
+            grid->Add(m_measured[i], 0);
+            grid->Add(new wxStaticText(this, wxID_ANY, _L("mm")), 0, wxALIGN_CENTER_VERTICAL);
+            m_measured[i]->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update(); });
+            m_measured[i]->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update(); });
+        }
+        main->Add(grid, 0, wxLEFT | wxRIGHT, em);
+        m_result = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        main->Add(m_result, 0, wxALL, em);
+        if (wxSizer* btns = CreateStdDialogButtonSizer(wxOK | wxCANCEL))
+            main->Add(btns, 0, wxEXPAND | wxALL, em);
+        update();
+        SetSizerAndFit(main);
+        CenterOnParent();
+    }
+
+    std::array<double, 3> corrections() const
+    {
+        const double nominal[3] = { RESIN_BLOCK_XY, RESIN_BLOCK_XY, RESIN_BLOCK_Z };
+        std::array<double, 3> out;
+        for (int i = 0; i < 3; ++ i)
+            out[i] = m_current[i] * nominal[i] / m_measured[i]->GetValue();
+        return out;
+    }
+
+    void apply()
+    {
+        Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_MATERIAL);
+        if (tab == nullptr)
+            return;
+        DynamicPrintConfig conf = *tab->get_config();
+        const std::array<double, 3> c = corrections();
+        const char* axes[3] = { "x", "y", "z" };
+        for (int i = 0; i < 3; ++ i)
+            conf.set_key_value(std::string("material_correction_") + axes[i], new ConfigOptionFloat(std::round(c[i] * 10000.) / 10000.));
+        tab->load_config(conf);
+    }
+
+private:
+    static const DynamicPrintConfig* config()
+    {
+        Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_MATERIAL);
+        return tab ? tab->get_config() : nullptr;
+    }
+    void update()
+    {
+        const std::array<double, 3> c = corrections();
+        m_result->SetLabel(format_wxstr(_L("Correction X %1% (now %2%), Y %3% (now %4%), Z %5% (now %6%)"),
+            wxString::Format("%.4f", c[0]), wxString::Format("%.4f", m_current[0]),
+            wxString::Format("%.4f", c[1]), wxString::Format("%.4f", m_current[1]),
+            wxString::Format("%.4f", c[2]), wxString::Format("%.4f", m_current[2])));
+        Layout();
+        Fit();
+    }
+
+    std::array<wxSpinCtrlDouble*, 3> m_measured { nullptr, nullptr, nullptr };
+    std::array<double, 3>            m_current  { 1., 1., 1. };
+    wxStaticText*                    m_result   { nullptr };
+};
 
 const Test* find_test(const std::string& key)
 {
@@ -632,6 +820,9 @@ static std::vector<ResultTarget> result_targets()
     out.push_back({ CalibMode::Retraction, _L("Retraction length"), _L("mm"), Preset::TYPE_PRINTER,
         [set_all](DynamicPrintConfig& c, double v) { set_all(c, "retract_length", v); },
         [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "retract_length"); } });
+    out.push_back({ CalibMode::ResinExposure, _L("Resin exposure time"), "s", Preset::TYPE_SLA_MATERIAL,
+        [](DynamicPrintConfig& c, double v) { c.set_key_value("exposure_time", new ConfigOptionFloat(v)); },
+        [](const DynamicPrintConfig& c) { return c.opt_float("exposure_time"); } });
     out.push_back({ CalibMode::VolumetricSpeed, _L("Maximum volumetric speed"), _L("mm³/s"), Preset::TYPE_FILAMENT,
         [set_all](DynamicPrintConfig& c, double v) { set_all(c, "filament_max_volumetric_speed", v); },
         [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "filament_max_volumetric_speed"); } });
@@ -645,6 +836,10 @@ public:
         : wxDialog(parent, wxID_ANY, _L("Apply a calibration result"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
         , m_targets(result_targets())
     {
+        // The settings of the current printer technology only.
+        const bool sla = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA;
+        m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [sla](const ResultTarget& t) {
+            return (t.preset == Preset::TYPE_SLA_MATERIAL) != sla; }), m_targets.end());
         wxGetApp().UpdateDlgDarkUI(this);
         const int em = wxGetApp().em_unit();
         auto main = new wxBoxSizer(wxVERTICAL);
@@ -940,8 +1135,56 @@ static void load_stagger_coupons(wxWindow* parent)
                  _L("Staggered perimeters: strength coupons"), wxOK | wxICON_INFORMATION, parent);
 }
 
-wxMenu* create_calibration_menu(wxWindow* parent)
+static void append_apply_result(wxMenu* menu, wxWindow* parent)
 {
+    const int apply_id = wxWindow::NewControlId();
+    menu->Append(apply_id, _L("Apply a calibration result") + dots, _L("Writes the value read on a calibration print to its setting."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
+        ApplyResultDialog dlg(parent);
+        if (dlg.ShowModal() == wxID_OK)
+            dlg.apply_result();
+    }, apply_id);
+}
+
+static wxMenu* create_resin_calibration_menu(wxWindow* parent)
+{
+    auto menu = new wxMenu();
+    const std::vector<Test>& all = resin_tests();
+    for (size_t i = 0; i < all.size(); ++ i) {
+        const int id = wxWindow::NewControlId();
+        menu->Append(id, all[i].title + dots, all[i].description);
+        menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) {
+            // The exposure of each band is written by the archives that keep an exposure per layer.
+            const DynamicPrintConfig& printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+            if (printer.opt_string("sla_archive_format") != "GOO") {
+                wxMessageBox(_L("The exposure tower needs a printer whose archive keeps the exposure of each layer: for now "
+                                "the Elegoo printers (GOO format). With other printers, print a small test once per exposure "
+                                "time."), resin_tests()[i].title, wxOK | wxICON_INFORMATION, parent);
+                return;
+            }
+            run_test(parent, resin_tests()[i]);
+        }, id);
+    }
+    const int block_id = wxWindow::NewControlId();
+    menu->Append(block_id, _L("Resin dimensions block") + dots, _L("A block to measure the shrinkage of the resin in X, Y and Z."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_resin_dimension_block(parent); }, block_id);
+    const int dims_id = wxWindow::NewControlId();
+    menu->Append(dims_id, _L("Resin dimensional correction") + dots,
+                 _L("Calculates the scaling correction of the material from the measured sizes of the dimensions block."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
+        ResinDimensionsDialog dlg(parent);
+        if (dlg.ShowModal() == wxID_OK)
+            dlg.apply();
+    }, dims_id);
+    menu->AppendSeparator();
+    append_apply_result(menu, parent);
+    return menu;
+}
+
+wxMenu* create_calibration_menu(wxWindow* parent, bool resin)
+{
+    if (resin)
+        return create_resin_calibration_menu(parent);
     auto menu = new wxMenu();
     const std::vector<Test>& all = tests();
     for (size_t i = 0; i < all.size(); ++i) {
@@ -967,19 +1210,13 @@ wxMenu* create_calibration_menu(wxWindow* parent)
                  _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."));
     menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_stagger_coupons(parent); }, coupons_id);
     menu->AppendSeparator();
-    const int apply_id = wxWindow::NewControlId();
-    menu->Append(apply_id, _L("Apply a calibration result") + dots, _L("Writes the value read on a calibration print to its setting."));
-    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
-        ApplyResultDialog dlg(parent);
-        if (dlg.ShowModal() == wxID_OK)
-            dlg.apply_result();
-    }, apply_id);
+    append_apply_result(menu, parent);
     return menu;
 }
 
 void show_calibration_menu(wxWindow* parent)
 {
-    wxMenu* menu = create_calibration_menu(parent);
+    wxMenu* menu = create_calibration_menu(parent, wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA);
     parent->PopupMenu(menu, parent->ScreenToClient(wxGetMousePosition()));
     delete menu;
 }

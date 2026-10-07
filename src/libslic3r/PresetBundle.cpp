@@ -923,6 +923,10 @@ DynamicPrintConfig PresetBundle::full_sla_config() const
     out.apply(this->printers.get_edited_preset().config);
     // There are no project configuration values as of now, the project_config is reserved for FFF printers.
 //    out.apply(this->project_config);
+    // Tisma Slicer: except the calibration test (resin exposure tower), read by the archive writers.
+    for (const char *key : { "calib_mode", "calib_start", "calib_end", "calib_step", "calib_band_height" })
+        if (const ConfigOption *opt = this->project_config.option(key))
+            out.set_key_value(key, opt->clone());
 
     // Collect the "compatible_printers_condition" and "inherits" values over all presets (sla_prints, sla_materials, printers) into a single vector.
     std::vector<std::string> compatible_printers_condition;

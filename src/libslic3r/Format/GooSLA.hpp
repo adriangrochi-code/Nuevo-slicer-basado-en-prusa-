@@ -49,6 +49,11 @@ struct MotionParams {
 };
 MotionParams motion_params(const DynamicPrintConfig &material_notes_cfg);
 
+// Exposure of a layer (not a bottom layer) at the height z (mm). With the exposure tower calibration
+// (calib_mode = resin_exposure) the first band of calib_band_height mm is the base with the normal exposure, then
+// band k gets calib_start + k * calib_step (up to calib_end); otherwise the normal exposure.
+float layer_exposure(const DynamicPrintConfig &cfg, float z, float normal_exposure);
+
 } // namespace Goo
 
 class GooSLAArchive : public SLAArchiveWriter
