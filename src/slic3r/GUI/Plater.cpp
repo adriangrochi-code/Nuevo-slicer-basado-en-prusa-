@@ -3429,22 +3429,31 @@ void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
     std::vector<int> warning_steps = { evt.status.warning_step };
     std::vector<int> flagss = { int(evt.status.flags) };
 
-    if (warning_steps.front() == -1) {
+    // All the warnings are shown again: those of the print steps, then those of the steps of every object.
+    const bool all_warnings = warning_steps.front() == -1;
+    if (all_warnings) {
         flagss = { PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS, PrintBase::SlicingStatus::UPDATE_PRINT_OBJECT_STEP_WARNINGS };
         notification_manager->close_slicing_errors_and_warnings();
     }
 
     for (int flags : flagss ) {
-        if (warning_steps.front() == -1) {
+        // Tisma: the list of steps is made for each kind (it was made only for the first one, so the warnings of the
+        // object steps were closed above and never shown again), with the objects of the resin print too.
+        if (all_warnings) {
             warning_steps.clear();
+            object_ids = { evt.status.warning_object_id };
             if (flags == PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS) {
                 int i = 0;
                 while (i < int(printer_technology == ptFFF ? psCount : slapsCount)) { warning_steps.push_back(i); ++i; }
             } else {
                 int i = 0;
                 while (i < int(printer_technology == ptFFF ? posCount : slaposCount)) { warning_steps.push_back(i); ++i; }
-                for (const PrintObject* po : wxGetApp().plater()->active_fff_print().objects())
-                    object_ids.push_back(po->id());
+                if (printer_technology == ptFFF)
+                    for (const PrintObject* po : wxGetApp().plater()->active_fff_print().objects())
+                        object_ids.push_back(po->id());
+                else
+                    for (const SLAPrintObject* po : wxGetApp().plater()->active_sla_print().objects())
+                        object_ids.push_back(po->id());
             }
         }
 
