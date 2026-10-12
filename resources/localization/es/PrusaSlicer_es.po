@@ -31359,8 +31359,8 @@ msgstr "Ángulo del cono"
 msgid "Conical"
 msgstr "Cónica"
 
-msgid "Conical layers: slope of the cone. Positive values rise outwards."
-msgstr "Capas cónicas: pendiente del cono. Los valores positivos suben hacia afuera."
+msgid "Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", only its sign is used: the slope is the free angle of the print head."
+msgstr "Capas cónicas: pendiente del cono. Los valores positivos suben hacia afuera. Con «Ajustar al cabezal» solo se usa su signo: la pendiente es el ángulo libre del cabezal."
 
 msgid "Connect"
 msgstr "Conectar"
@@ -32552,8 +32552,8 @@ msgstr "Valor actual: %1%"
 msgid "Prints, with normal flat layers, a gauge of ramps in rows of 2, 5 and 10 mm of height; along each row the angle grows in steps (from left to right). Each ramp has a plateau behind it. It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration. Near the nozzle tip the head allows steep but low rises, farther away only gentler ones: that is why there are several heights."
 msgstr "Imprime, con capas planas normales, una galga de rampas en filas de 2, 5 y 10 mm de altura; a lo largo de cada fila el ángulo crece por pasos (de izquierda a derecha). Cada rampa tiene una meseta detrás. Se mide con la impresora fría y no se imprime nada curvo: es el primer paso, seguro, de la calibración. Cerca de la punta de la boquilla el cabezal admite subidas empinadas pero bajas; más lejos, solo más suaves: por eso hay varias alturas."
 
-msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the smallest. Enter the three angles in the non-planar calibration assistant."
-msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla hasta que su punta toque la cama al pie de una rampa. La rampa está libre si nada más toca la rampa ni su meseta: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. En cada fila, la rampa libre más empinada es el ángulo libre a esa altura: inicio + paso × número de rampa (desde la izquierda, empezando en 0). Compruébalo con la galga girada 90°, 180° y 270° (el cabezal no es simétrico) y quédate con el menor. Ingresa los tres ángulos en el asistente de calibración no planar."
+msgid "With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting at 0). The print head is not symmetric: as printed and turned 180° the ramps rise along Y, turned 90° and 270° along X. In the lowest row keep the smaller angle along X and the smaller along Y; in the other rows the smallest of the four. Enter them in the non-planar calibration assistant."
+msgstr "Con la impresora fría y la boquilla limpia, pon la galga sobre la cama y baja la boquilla hasta que su punta toque la cama al pie de una rampa. La rampa está libre si nada más toca la rampa ni su meseta: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de ventilación ni el sensor. En cada fila, la rampa libre más empinada es el ángulo libre a esa altura: inicio + paso × número de rampa (desde la izquierda, empezando en 0). El cabezal no es simétrico: tal como se imprimió y girada 180° las rampas suben a lo largo de Y, girada 90° y 270° a lo largo de X. En la fila más baja quédate con el menor ángulo en X y el menor en Y; en las otras filas, con el menor de los cuatro. Ingrésalos en el asistente de calibración no planar."
 
 msgid "Step 1: free angle on the static gauge at %1% mm"
 msgstr "Paso 1: ángulo libre en la galga estática a %1% mm"
@@ -33030,3 +33030,51 @@ msgstr "Un bloque para medir la contracción de la resina en X, Y y Z."
 
 msgid "Calculates the scaling correction of the material from the measured sizes of the dimensions block."
 msgstr "Calcula la corrección de escala del material con las medidas del bloque de medidas."
+
+msgid "Beginner mode: only the most common settings are shown. Speed, non-planar layers and the other settings are in the Normal and Expert modes."
+msgstr "Modo principiante: solo se muestran los ajustes más comunes. La velocidad, las capas no planares y los demás ajustes están en los modos Normal y Experto."
+
+msgid "Show all settings"
+msgstr "Mostrar todos los ajustes"
+
+msgid "Switch to the Expert mode"
+msgstr "Cambiar al modo Experto"
+
+msgid "Free angle along X"
+msgstr "Ángulo libre en X"
+
+msgid "Free angle along Y"
+msgstr "Ángulo libre en Y"
+
+msgid "Print head free angle along X (non-planar)"
+msgstr "Ángulo libre del cabezal en X (no planar)"
+
+msgid "Print head free angle along Y (non-planar)"
+msgstr "Ángulo libre del cabezal en Y (no planar)"
+
+msgid "Steepest slope of the layers rising along X that the print head allows without touching the part: the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising along X. The non-planar layers use it for their slope instead of the maximum layer slope of the print settings. 0 = not measured, use the maximum layer slope."
+msgstr "Pendiente más empinada de las capas que suben a lo largo de X que el cabezal permite sin tocar la pieza: la menor de las dos direcciones (+X y -X), medida con la galga estática con sus rampas subiendo a lo largo de X. Las capas no planares la usan para su pendiente en lugar de la pendiente máxima de la configuración de impresión. 0 = sin medir, se usa la pendiente máxima."
+
+msgid "Steepest slope of the layers rising along Y that the print head allows without touching the part: the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising along Y. The non-planar layers use it for their slope instead of the maximum layer slope of the print settings. 0 = not measured, use the maximum layer slope."
+msgstr "Pendiente más empinada de las capas que suben a lo largo de Y que el cabezal permite sin tocar la pieza: la menor de las dos direcciones (+Y y -Y), medida con la galga estática con sus rampas subiendo a lo largo de Y. Las capas no planares la usan para su pendiente en lugar de la pendiente máxima de la configuración de impresión. 0 = sin medir, se usa la pendiente máxima."
+
+msgid "Fit to the print head"
+msgstr "Ajustar al cabezal"
+
+msgid "Make the layers as curved as the print head allows, instead of using the wave amplitude and the cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer Settings > General > Print head), the waves rise at most the head clearance height from trough to crest, and the layer thickness stays within the allowed range. Conical layers keep the direction of the cone angle set here (rising outwards or inwards)."
+msgstr "Curva las capas tanto como permite el cabezal, en lugar de usar la amplitud de onda y el ángulo del cono de aquí: la pendiente de las capas es el ángulo libre del cabezal en X y en Y (Configuración de impresora > General > Cabezal), las ondas suben como mucho la altura libre del cabezal de valle a cresta y el espesor de capa queda dentro del rango permitido. Las capas cónicas mantienen el sentido del ángulo del cono de aquí (subiendo hacia afuera o hacia adentro)."
+
+msgid "Steepest layer slope the nozzle can print without the nozzle body hitting the part (3 axis printers). Slicing fails if the layers are steeper. Used where the free angles of the print head along X and Y are not measured (Printer Settings > General > Print head)."
+msgstr "Pendiente de capa más empinada que la boquilla puede imprimir sin que su cuerpo choque con la pieza (impresoras de 3 ejes). El laminado falla si las capas son más empinadas. Se usa donde no están medidos los ángulos libres del cabezal en X y en Y (Configuración de impresora > General > Cabezal)."
+
+msgid "Non-planar layers: the layers would be up to %1%° steep, more than the print head allows (%2%° along X, %3%° along Y). Enable \"Fit to the print head\", use a longer wavelength or a smaller amplitude / cone angle."
+msgstr "Capas no planares: las capas tendrían hasta %1%° de pendiente, más de lo que permite el cabezal (%2%° en X, %3%° en Y). Activa «Ajustar al cabezal», usa una longitud de onda mayor o una amplitud / ángulo de cono menor."
+
+msgid "Step 1: free angle along X at %1% mm (gauge turned 90° and 270°)"
+msgstr "Paso 1: ángulo libre en X a %1% mm (galga girada 90° y 270°)"
+
+msgid "Step 1: free angle along Y at %1% mm (gauge as printed and turned 180°)"
+msgstr "Paso 1: ángulo libre en Y a %1% mm (galga tal como se imprimió y girada 180°)"
+
+msgid "Free angles of the print head to apply: %1%° along X, %2%° along Y (the non-planar layers use them instead of the maximum layer slope)."
+msgstr "Ángulos libres del cabezal a aplicar: %1%° en X, %2%° en Y (las capas no planares los usan en lugar de la pendiente máxima)."

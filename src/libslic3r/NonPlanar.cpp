@@ -231,6 +231,24 @@ Deformation::Check Deformation::check(const BoundingBoxf3 &bbox) const
     return out;
 }
 
+double Deformation::head_slope_ratio(const BoundingBoxf3 &bbox, double tan_x, double tan_y) const
+{
+    if (! this->enabled() || ! bbox.defined || tan_x <= 0. || tan_y <= 0.)
+        return 0.;
+    constexpr int N = 32;
+    double out = 0.;
+    for (int i = 0; i <= N; ++ i)
+        for (int j = 0; j <= N; ++ j)
+            for (int k = 0; k <= N; ++ k) {
+                const double x = bbox.min.x() + (bbox.max.x() - bbox.min.x()) * i / N;
+                const double y = bbox.min.y() + (bbox.max.y() - bbox.min.y()) * j / N;
+                const double z = bbox.min.z() + (bbox.max.z() - bbox.min.z()) * k / N;
+                const Vec2d  g = m_field.grad(x, y, z) * m_ramp.value(z);
+                out = std::max(out, std::hypot(g.x() / tan_x, g.y() / tan_y));
+            }
+    return out;
+}
+
 double Deformation::max_offset(const BoundingBoxf3 &bbox) const
 {
     if (! this->enabled() || ! bbox.defined)
@@ -846,6 +864,71 @@ static FieldParams field_params(const PrintConfig &config)
     return p;
 }
 
+HeadLimits head_limits(const PrintConfig &config)
+{
+    auto tangent = [](double deg) { return deg > 0. ? std::tan(std::min(deg, 89.) * M_PI / 180.) : 0.; };
+    const double fallback = tangent(config.nonplanar_max_slope.value);
+    HeadLimits out;
+    out.tan_x  = config.nonplanar_head_free_angle_x.value > 0. ? tangent(config.nonplanar_head_free_angle_x.value) : fallback;
+    out.tan_y  = config.nonplanar_head_free_angle_y.value > 0. ? tangent(config.nonplanar_head_free_angle_y.value) : fallback;
+    out.height = std::max(0., config.nonplanar_head_clearance_height.value);
+    return out;
+}
+
+FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3 &object_bbox, const HeadLimits &head)
+{
+    if (head.tan_x <= 0. || head.tan_y <= 0.)
+        return field;
+    // The slope of a layer is its gradient times ramp(z) <= 1, so the steepest one is that of the field.
+    const double tan_min = std::min(head.tan_x, head.tan_y);
+    double tangent = 0.;   // conical: tangent of the cone angle
+    if (field.mode == Mode::Wave) {
+        const double k = TWO_PI / field.wavelength;
+        // Slope of a wave of unit amplitude relative to the head. Ridges slope along their direction only; the egg crate
+        // reaches its steepest slope along X and along Y, the twisted ridges along every direction.
+        double ratio = k / tan_min;
+        if (field.pattern == Pattern::Ridges) {
+            const double t = field.angle_deg * M_PI / 180.;
+            ratio = k * std::hypot(std::cos(t) / head.tan_x, std::sin(t) / head.tan_y);
+        }
+        field.amplitude = 1. / ratio;
+        // The wave rises 2 * amplitude from its troughs to its crests, which must pass below the print head.
+        if (head.height > 0.)
+            field.amplitude = std::min(field.amplitude, 0.5 * head.height);
+    } else if (field.mode == Mode::Conical) {
+        // The cone slopes the same in every direction: the smaller free angle. The sign (rising outwards or inwards)
+        // is the one set by the user.
+        tangent = std::copysign(tan_min, field.cone_angle_deg);
+        field.cone_angle_deg = std::atan(tangent) * 180. / M_PI;
+    } else
+        return field;
+
+    // Layer thickness: the deformation is linear in the amplitude / cone tangent, shrink it until J is acceptable.
+    if (object_bbox.defined) {
+        auto scaled = [&field, tangent](double s) {
+            FieldParams f = field;
+            if (f.mode == Mode::Wave)
+                f.amplitude *= s;
+            else
+                f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
+            return f;
+        };
+        auto acceptable = [&](double s) {
+            const Deformation::Check c = Deformation(scaled(s), ramp).check(object_bbox);
+            return c.j_min >= J_MIN && c.j_max <= J_MAX;
+        };
+        if (! acceptable(1.)) {
+            double lo = 0., hi = 1.;
+            for (int i = 0; i < 30; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (acceptable(mid) ? lo : hi) = mid;
+            }
+            field = scaled(lo);
+        }
+    }
+    return field;
+}
+
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox)
 {
     FieldParams field = field_params(config);
@@ -860,8 +943,13 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
     if (calibration_test(config)) {
         // Gentle transition (the layer thickness stays within J_MIN..J_MAX), curved up to the top.
         ramp.z_ramp = ramp.z_ramp_top = TEST_RAMP_HEIGHT;
-    } else if (config.nonplanar_flat_top.value && object_bbox.defined)
-        ramp.z_top = object_bbox.max.z();
+    } else {
+        if (config.nonplanar_flat_top.value && object_bbox.defined)
+            ramp.z_top = object_bbox.max.z();
+        // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user.
+        if (config.nonplanar_fit_head.value)
+            field = fit_to_head(field, ramp, object_bbox, head_limits(config));
+    }
     return Deformation(field, ramp);
 }
 

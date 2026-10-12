@@ -117,6 +117,10 @@ public:
     };
     // Samples the deformation over a bounding box (object coordinates).
     Check check(const BoundingBoxf3 &bbox) const;
+    // Steepest layer slope relative to the free angles of the print head along X and Y (given as tangents), over a
+    // bounding box: <= 1 if the head allows it. The head is modeled as an elliptic cone of these slopes around the
+    // nozzle, so a layer of gradient (gx, gy) fits if (gx / tan_x)^2 + (gy / tan_y)^2 <= 1.
+    double head_slope_ratio(const BoundingBoxf3 &bbox, double tan_x, double tan_y) const;
     // Maximum |offset| over the XY footprint of the bounding box.
     double max_offset(const BoundingBoxf3 &bbox) const;
 
@@ -243,7 +247,22 @@ private:
     std::string        m_feature;
 };
 
-// Deformation for a print object, from the print configuration.
+// What the print head allows (Tisma): free angles along X and Y as tangents and the clearance height (0 = unknown).
+struct HeadLimits
+{
+    double tan_x  { 0. };
+    double tan_y  { 0. };
+    double height { 0. };
+};
+// From the printer settings: nonplanar_head_free_angle_x / _y, or the maximum layer slope where not measured.
+HeadLimits head_limits(const PrintConfig &config);
+
+// The largest wave amplitude / cone angle the print head allows: the layer slope within the free angles along X and Y,
+// the wave height (peak to peak) within the clearance height and the layer thickness within J_MIN..J_MAX.
+// Conical: the sign of the cone angle (rising outwards or inwards) is kept.
+FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3 &object_bbox, const HeadLimits &head);
+
+// Deformation for a print object, from the print configuration (fitted to the print head if nonplanar_fit_head).
 // object_bbox: bounding box of the object in object (centered) coordinates.
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox);
 // Mesh subdivision length suited to the configured field.

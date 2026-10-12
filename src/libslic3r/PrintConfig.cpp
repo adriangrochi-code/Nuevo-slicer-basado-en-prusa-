@@ -2364,6 +2364,32 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("nonplanar_head_free_angle_x", coFloat);
+    def->label = L("Free angle along X");
+    def->full_label = L("Print head free angle along X (non-planar)");
+    def->tooltip = L("Steepest slope of the layers rising along X that the print head allows without touching the part: "
+                     "the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising "
+                     "along X. The non-planar layers use it for their slope instead of the maximum layer slope of the "
+                     "print settings. 0 = not measured, use the maximum layer slope.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("nonplanar_head_free_angle_y", coFloat);
+    def->label = L("Free angle along Y");
+    def->full_label = L("Print head free angle along Y (non-planar)");
+    def->tooltip = L("Steepest slope of the layers rising along Y that the print head allows without touching the part: "
+                     "the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising "
+                     "along Y. The non-planar layers use it for their slope instead of the maximum layer slope of the "
+                     "print settings. 0 = not measured, use the maximum layer slope.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.));
+
     def = this->add("nonplanar_head_clearance_radius", coFloat);
     def->label = L("Head clearance radius");
     def->full_label = L("Print head clearance radius (non-planar)");
@@ -3372,7 +3398,8 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_cone_angle", coFloat);
     def->label = L("Cone angle");
     def->category = L("Non-planar");
-    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards.");
+    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", "
+                   "only its sign is used: the slope is the free angle of the print head.");
     def->sidetext = L("°");
     def->min = -60;
     def->max = 60;
@@ -3405,11 +3432,23 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("nonplanar_fit_head", coBool);
+    def->label = L("Fit to the print head");
+    def->category = L("Non-planar");
+    def->tooltip = L("Make the layers as curved as the print head allows, instead of using the wave amplitude and the "
+                   "cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer "
+                   "Settings > General > Print head), the waves rise at most the head clearance height from trough to "
+                   "crest, and the layer thickness stays within the allowed range. Conical layers keep the direction "
+                   "of the cone angle set here (rising outwards or inwards).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
     def = this->add("nonplanar_max_slope", coFloat);
     def->label = L("Maximum layer slope");
     def->category = L("Non-planar");
     def->tooltip = L("Steepest layer slope the nozzle can print without the nozzle body hitting the part "
-                   "(3 axis printers). Slicing fails if the layers are steeper.");
+                   "(3 axis printers). Slicing fails if the layers are steeper. Used where the free angles of the print "
+                   "head along X and Y are not measured (Printer Settings > General > Print head).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;

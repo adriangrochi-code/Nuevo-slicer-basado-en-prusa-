@@ -15,6 +15,7 @@ static DynamicPrintConfig nonplanar_config(const char *mode)
         { "nonplanar_mode",           mode },
         { "nonplanar_pattern",        "ridges" },
         { "nonplanar_amplitude",      0.5 },
+        { "nonplanar_fit_head",       false },
         { "nonplanar_wavelength",     20 },
         { "use_relative_e_distances", true },
         { "arc_fitting",              "disabled" },
@@ -103,6 +104,43 @@ TEST_CASE("Non-planar layers are rejected when the print head would hit the part
         Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
         REQUIRE(print.validate().find("print head") == std::string::npos);
     }
+}
+
+TEST_CASE("Non-planar layers fitted to the free angles of the print head", "[NonPlanar]")
+{
+    DynamicPrintConfig config = nonplanar_config("wave");
+    // Ridges rising along X; the head allows 25° along X but only 5° along Y.
+    config.set_deserialize_strict({ { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 5 },
+                                    { "nonplanar_head_clearance_height", 3 }, { "nonplanar_ramp_height", 8 } });
+    // The amplitude set (0.5 mm) is steeper than 5° along Y.
+    config.set_deserialize_strict({ { "nonplanar_angle", 90 } });
+    {
+        Print print;
+        Model model;
+        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+        const std::string error = print.validate();
+        REQUIRE(error.find("5° along Y") != std::string::npos);
+    }
+    // Fitted, the same ridges are gentler and accepted; along X they get higher than the 0.5 mm set.
+    config.set_deserialize_strict({ { "nonplanar_fit_head", 1 } });
+    double height_y = 0.;
+    for (double angle : { 90., 0. }) {
+        config.set_deserialize_strict({ { "nonplanar_angle", angle } });
+        Print print;
+        Model model;
+        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+        REQUIRE(print.validate().empty());
+        const Extrusions e = analyse(Test::gcode(print));
+        double height = 0.;
+        for (const auto &[layer, zs] : e.z_by_layer)
+            height = std::max(height, *zs.rbegin() - *zs.begin());
+        if (angle == 90.) {
+            height_y = height;
+            REQUIRE(height < 2. * 0.5);
+        } else
+            REQUIRE(height > 2. * 0.5);
+    }
+    REQUIRE(height_y > 0.3);
 }
 
 // Tisma: calibration tests of the non-planar layers (they use their own curved layers).

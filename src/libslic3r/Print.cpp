@@ -85,8 +85,6 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
     static std::unordered_set<std::string> steps_gcode = {
         "autoemit_temperature_commands",
         "nonplanar_flow_policy",
-        "nonplanar_max_slope",
-        "nonplanar_head_clearance_height",
         "nonplanar_head_clearance_radius",
         "nonplanar_head_profile",
         "nonplanar_segment_length",
@@ -245,6 +243,12 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "nonplanar_flat_below"
             || opt_key == "nonplanar_ramp_height"
             || opt_key == "nonplanar_flat_top"
+            // Fitted to the print head (NonPlanar::fit_to_head()).
+            || opt_key == "nonplanar_fit_head"
+            || opt_key == "nonplanar_max_slope"
+            || opt_key == "nonplanar_head_free_angle_x"
+            || opt_key == "nonplanar_head_free_angle_y"
+            || opt_key == "nonplanar_head_clearance_height"
             // Calibration tests of the non-planar layers deform the mesh (see NonPlanar::calibration_test()).
             || opt_key == "calib_mode"
             || opt_key == "calib_start"
@@ -538,11 +542,16 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                           int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
                           int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
         // The calibration of the maximum slope prints steeper layers on purpose.
-        if (m_config.calib_mode.value != CalibMode::NonPlanarSlope && check.max_slope_deg > m_config.nonplanar_max_slope.value + EPSILON)
-            return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the maximum layer "
-                               "slope of %2%° the nozzle can print without colliding with the part. Use a longer "
-                               "wavelength or a smaller amplitude / cone angle."),
-                          int(std::round(check.max_slope_deg)), int(std::round(m_config.nonplanar_max_slope.value)));
+        // Tisma: the free angles of the print head along X and Y (or the maximum layer slope where not measured).
+        const NonPlanar::HeadLimits limits = NonPlanar::head_limits(m_config);
+        if (m_config.calib_mode.value != CalibMode::NonPlanarSlope &&
+            deformation.head_slope_ratio(bbox, limits.tan_x, limits.tan_y) > 1. + 1e-3)
+            return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the print head allows "
+                               "(%2%° along X, %3%° along Y). Enable \"Fit to the print head\", use a longer wavelength "
+                               "or a smaller amplitude / cone angle."),
+                          int(std::round(check.max_slope_deg)),
+                          int(std::round(std::atan(limits.tan_x) * 180. / M_PI)),
+                          int(std::round(std::atan(limits.tan_y) * 180. / M_PI)));
         // Tisma: the print head (heater block, cooling duct) must not hit the part already printed.
         NonPlanar::HeadClearance head{ m_config.nonplanar_head_clearance_height.value,
                                        m_config.nonplanar_head_clearance_radius.value };

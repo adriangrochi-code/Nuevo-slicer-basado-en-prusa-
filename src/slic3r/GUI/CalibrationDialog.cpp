@@ -363,8 +363,9 @@ std::vector<Test> make_tests()
            "touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: "
            "no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the "
            "steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting "
-           "at 0). Check it with the gauge turned 90°, 180° and 270° (the print head is not symmetric) and keep the "
-           "smallest. Enter the three angles in the non-planar calibration assistant."),
+           "at 0). The print head is not symmetric: as printed and turned 180° the ramps rise along Y, turned 90° and "
+           "270° along X. In the lowest row keep the smaller angle along X and the smaller along Y; in the other rows "
+           "the smallest of the four. Enter them in the non-planar calibration assistant."),
         "°", CalibMode::Disabled, { 15., 50., 5., 12. }, 0, 1., 75.,
         [](ModelObject& obj, const Params& p, const Machine& m) {
             // Rows from the front: ramp from the bed up to the height of the row, then a 25 mm plateau.
@@ -972,19 +973,24 @@ public:
                                 [print_test]() { print_test("nonplanar_head_gauge", {}); });
         m_head_radius = add_row(_L("Head clearance radius"), printer.opt_float("nonplanar_head_clearance_radius"), 0., 100., 0.5, 1,
                                 _L("mm"), wxString(), nullptr);
-        // Maximum slope, step 1: static gauge, one free angle per height of its rows.
-        for (size_t i = 0; i < 3; ++i) {
+        // Maximum slope, step 1: static gauge. The lowest row (the nozzle cone) along X and along Y: the print head is
+        // not symmetric (cooling duct, probe on one side). The higher rows: the smallest of the four directions.
+        const std::string key_low = "nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[0]));
+        m_free_angle_x = add_row(format_wxstr(_L("Step 1: free angle along X at %1% mm (gauge turned 90° and 270°)"), int(NONPLANAR_GAUGE_HEIGHTS[0])),
+                                 stored("nonplanar_calib_free_angle_x", stored(key_low.c_str(), 0.)), 0., 75., 1., 0, "°",
+                                 _L("Print the gauge"), [print_test]() { print_test("nonplanar_free_angle", {}); });
+        m_free_angle_y = add_row(format_wxstr(_L("Step 1: free angle along Y at %1% mm (gauge as printed and turned 180°)"), int(NONPLANAR_GAUGE_HEIGHTS[0])),
+                                 stored("nonplanar_calib_free_angle_y", stored(key_low.c_str(), 0.)), 0., 75., 1., 0, "°",
+                                 wxString(), nullptr);
+        for (size_t i = 1; i < 3; ++i) {
             const std::string key = "nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i]));
             m_free_angles[i] = add_row(format_wxstr(_L("Step 1: free angle on the static gauge at %1% mm"), int(NONPLANAR_GAUGE_HEIGHTS[i])),
-                                       stored(key.c_str(), 0.), 0., 75., 1., 0, "°",
-                                       i == 0 ? _L("Print the gauge") : wxString(),
-                                       i == 0 ? std::function<void()>([print_test]() { print_test("nonplanar_free_angle", {}); }) : nullptr);
+                                       stored(key.c_str(), 0.), 0., 75., 1., 0, "°", wxString(), nullptr);
         }
-        m_free_angle = m_free_angles[0];
         // Step 2: printed test around the free angle.
         m_printed_angle = add_row(_L("Step 2: steepest good step of the printed test"), stored("nonplanar_calib_printed_angle", 0.), 0., 75., 0.5, 1,
                                   "°", _L("Print the test"), [this, print_test]() {
-                                      const double a = m_free_angle->GetValue();
+                                      const double a = this->lowest_free_angle();
                                       if (a <= 0.) {
                                           wxMessageBox(_L("Measure the free angle on the static gauge first (step 1)."),
                                                        _L("Non-planar calibration assistant"), wxOK | wxICON_INFORMATION, this);
@@ -1014,7 +1020,7 @@ public:
         buttons->Add(new wxButton(this, wxID_CANCEL, _L("Close")));
         main->Add(buttons, 0, wxALIGN_RIGHT | wxALL, em);
 
-        for (wxSpinCtrlDouble* ctrl : { m_free_angles[0], m_free_angles[1], m_free_angles[2], m_printed_angle, m_tolerance }) {
+        for (wxSpinCtrlDouble* ctrl : { m_free_angle_x, m_free_angle_y, m_free_angles[1], m_free_angles[2], m_printed_angle, m_tolerance }) {
             ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_result(); });
             ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_result(); });
         }
@@ -1028,13 +1034,24 @@ public:
 private:
     std::function<void()> m_after;
 
-    // Maximum layer slope from the measurements: the smaller of the two steps minus the tolerance, 0 = unknown.
-    double slope() const
+    // The smaller measured of two values, 0 = none measured.
+    static double smaller(double a, double b) { return a > 0. && b > 0. ? std::min(a, b) : std::max(a, b); }
+
+    // Free angle of the nozzle cone in every direction (the lowest row of the gauge), 0 = not measured.
+    double lowest_free_angle() const { return smaller(m_free_angle_x->GetValue(), m_free_angle_y->GetValue()); }
+
+    // A free angle confirmed by the printed test (step 2) minus the tolerance, 0 = unknown.
+    double with_tolerance(double free_angle) const
     {
-        const double a = m_free_angle->GetValue(), b = m_printed_angle->GetValue();
-        const double measured = a > 0. && b > 0. ? std::min(a, b) : std::max(a, b);
+        const double measured = smaller(free_angle, m_printed_angle->GetValue());
         return measured > 0. ? std::max(1., measured - m_tolerance->GetValue()) : 0.;
     }
+
+    // Maximum layer slope from the measurements: the smaller of the two steps minus the tolerance, 0 = unknown.
+    double slope() const { return this->with_tolerance(this->lowest_free_angle()); }
+    // Free angles of the print head along X and Y to apply (only measured along their own axis), 0 = unknown.
+    double free_angle_x() const { return m_free_angle_x->GetValue() > 0. ? this->with_tolerance(m_free_angle_x->GetValue()) : 0.; }
+    double free_angle_y() const { return m_free_angle_y->GetValue() > 0. ? this->with_tolerance(m_free_angle_y->GetValue()) : 0.; }
 
     void update_result()
     {
@@ -1042,7 +1059,11 @@ private:
         wxString text = s <= 0. ? _L("Maximum layer slope: not measured yet.") :
             format_wxstr(_L("Maximum layer slope to apply: %1%° (now %2%°)."), wxString::Format("%.1f", s),
                          wxString::Format("%.1f", m_current_slope));
-        if (m_free_angle->GetValue() > 0. && m_printed_angle->GetValue() <= 0.)
+        if (this->free_angle_x() > 0. || this->free_angle_y() > 0.)
+            text += "\n" + format_wxstr(_L("Free angles of the print head to apply: %1%° along X, %2%° along Y (the "
+                                           "non-planar layers use them instead of the maximum layer slope)."),
+                                        wxString::Format("%.1f", this->free_angle_x()), wxString::Format("%.1f", this->free_angle_y()));
+        if (this->lowest_free_angle() > 0. && m_printed_angle->GetValue() <= 0.)
             text += "\n" + _L("Not confirmed with the printed test (step 2) yet.");
         m_result->SetLabel(text);
         Layout();
@@ -1052,7 +1073,9 @@ private:
     void save()
     {
         AppConfig& app = *wxGetApp().app_config;
-        for (size_t i = 0; i < 3; ++i)
+        app.set("nonplanar_calib_free_angle_x", float_to_string_decimal_point(m_free_angle_x->GetValue(), 1));
+        app.set("nonplanar_calib_free_angle_y", float_to_string_decimal_point(m_free_angle_y->GetValue(), 1));
+        for (size_t i = 1; i < 3; ++i)
             app.set("nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i])),
                     float_to_string_decimal_point(m_free_angles[i]->GetValue(), 1));
         app.set("nonplanar_calib_printed_angle", float_to_string_decimal_point(m_printed_angle->GetValue(), 1));
@@ -1068,9 +1091,13 @@ private:
             // Measured profile of the head: the free angle at each height of the static gauge.
             std::string profile;
             for (size_t i = 0; i < 3; ++i)
-                if (m_free_angles[i]->GetValue() > 0.)
+                if (const double a = i == 0 ? this->lowest_free_angle() : m_free_angles[i]->GetValue(); a > 0.)
                     profile += (profile.empty() ? "" : ";") + float_to_string_decimal_point(NONPLANAR_GAUGE_HEIGHTS[i], 0) + ":" +
-                               float_to_string_decimal_point(m_free_angles[i]->GetValue(), 1);
+                               float_to_string_decimal_point(a, 1);
+            if (const double a = this->free_angle_x(); a > 0.)
+                conf.set_key_value("nonplanar_head_free_angle_x", new ConfigOptionFloat(a));
+            if (const double a = this->free_angle_y(); a > 0.)
+                conf.set_key_value("nonplanar_head_free_angle_y", new ConfigOptionFloat(a));
             if (! profile.empty())
                 conf.set_key_value("nonplanar_head_profile", new ConfigOptionString(profile));
             if (m_z_speed->GetValue() > 0.)
@@ -1092,7 +1119,8 @@ private:
 
     wxSpinCtrlDouble* m_head_height   { nullptr };
     wxSpinCtrlDouble* m_head_radius   { nullptr };
-    wxSpinCtrlDouble* m_free_angle    { nullptr };   // the lowest height (the nozzle cone): the slope
+    wxSpinCtrlDouble* m_free_angle_x  { nullptr };   // the lowest height (the nozzle cone) along X and along Y
+    wxSpinCtrlDouble* m_free_angle_y  { nullptr };
     std::array<wxSpinCtrlDouble*, 3> m_free_angles { nullptr, nullptr, nullptr };
     wxSpinCtrlDouble* m_printed_angle { nullptr };
     wxSpinCtrlDouble* m_tolerance     { nullptr };

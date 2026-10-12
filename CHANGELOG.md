@@ -12,6 +12,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
+  calibración no planar los mide con la galga girada); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
+  del cono salen de esos ángulos y de la altura libre, no de valores fijos (`docs/NONPLANAR_ANALYSIS.md`).
+- **Modo principiante**: la configuración avisa que la mayoría de los ajustes están ocultos y ofrece mostrarlos todos.
+- **Bambu Lab por LAN en Windows**: corregido «TLS: schannel: the revocation status is unknown».
 - **Resina: impresoras Elegoo con formato GOO** (`docs/RESINA.md`): exportación directa a `.goo` (el formato abierto
   de Elegoo, sin pasar por UVtools) y perfiles de Mars 4, Mars 4 Ultra, Mars 4 Max, Mars 5, Saturn 3, Saturn 3 Ultra y
   Saturn 4 con resina estándar genérica. La barra de estado y el resumen del laminado muestran tiempo y mililitros de

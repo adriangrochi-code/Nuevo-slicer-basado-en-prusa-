@@ -469,7 +469,7 @@ std::string Preset::trim_vendor_repo_prefix(const std::string& id, const VendorP
 }
 
 static std::vector<std::string> s_Preset_print_options {
-    "layer_height", "first_layer_height", "perimeters", "spiral_vase", "nonplanar_mode", "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength", "nonplanar_angle", "nonplanar_twist", "nonplanar_cone_angle", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top", "nonplanar_max_slope", "nonplanar_segment_length", "nonplanar_flow_policy", "nonplanar_uniform_flow", "slice_closing_radius", "slicing_mode",
+    "layer_height", "first_layer_height", "perimeters", "spiral_vase", "nonplanar_mode", "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength", "nonplanar_angle", "nonplanar_twist", "nonplanar_cone_angle", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top", "nonplanar_fit_head", "nonplanar_max_slope", "nonplanar_segment_length", "nonplanar_flow_policy", "nonplanar_uniform_flow", "slice_closing_radius", "slicing_mode",
     "top_solid_layers", "top_solid_min_thickness", "bottom_solid_layers", "bottom_solid_min_thickness",
     "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs", "stagger_perimeters",
     "avoid_crossing_curled_overhangs", "avoid_crossing_perimeters", "thin_walls", "overhangs",
@@ -549,7 +549,7 @@ static std::vector<std::string> s_Preset_machine_limits_options {
 
 static std::vector<std::string> s_Preset_printer_options {
     "printer_technology", "autoemit_temperature_commands",
-    "bed_shape", "bed_custom_texture", "bed_custom_model", "binary_gcode", "belt_printer", "belt_angle", "nonplanar_head_clearance_height", "nonplanar_head_clearance_radius", "nonplanar_head_profile", "z_offset", "gcode_flavor", "use_relative_e_distances",
+    "bed_shape", "bed_custom_texture", "bed_custom_model", "binary_gcode", "belt_printer", "belt_angle", "nonplanar_head_clearance_height", "nonplanar_head_clearance_radius", "nonplanar_head_profile", "nonplanar_head_free_angle_x", "nonplanar_head_free_angle_y", "z_offset", "gcode_flavor", "use_relative_e_distances",
     "use_firmware_retraction", "use_volumetric_e", "variable_layer_height", "prefer_clockwise_movements",
     //FIXME the print host keys are left here just for conversion from the Printer preset to Physical Printer preset.
     "host_type", "print_host", "printhost_apikey", "printhost_cafile",

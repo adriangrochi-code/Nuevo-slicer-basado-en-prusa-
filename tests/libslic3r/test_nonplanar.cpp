@@ -258,3 +258,60 @@ TEST_CASE("Non-planar measured print head profile", "[NonPlanar]")
         CHECK(! check_head_collision(Deformation(f, Ramp{}), centered_box(60.f, 30.f), measured).collides);
     }
 }
+
+TEST_CASE("Non-planar layers fitted to the print head", "[NonPlanar]")
+{
+    const double tan30 = std::tan(30. * M_PI / 180.), tan10 = std::tan(10. * M_PI / 180.);
+    const HeadLimits head{ tan30, tan10, 0. };
+    // Tall object and long transition: only the slope limits the amplitude.
+    const BoundingBoxf3 bbox(Vec3d(-30., -30., 0.), Vec3d(30., 30., 60.));
+    Ramp ramp;
+    ramp.z_ramp = 40.;
+    FieldParams f;
+    f.mode       = Mode::Wave;
+    f.wavelength = 20.;
+    const double k = 2. * M_PI / f.wavelength;
+
+    SECTION("ridges rising along X use the free angle along X") {
+        f.pattern = Pattern::Ridges;
+        f.angle_deg = 0.;
+        const FieldParams fit = fit_to_head(f, ramp, bbox, head);
+        REQUIRE(fit.amplitude == Approx(tan30 / k));
+        REQUIRE(Deformation(fit, ramp).head_slope_ratio(bbox, head.tan_x, head.tan_y) == Approx(1.).margin(0.01));
+    }
+    SECTION("ridges rising along Y use the free angle along Y") {
+        f.pattern = Pattern::Ridges;
+        f.angle_deg = 90.;
+        REQUIRE(fit_to_head(f, ramp, bbox, head).amplitude == Approx(tan10 / k));
+    }
+    SECTION("egg crate and twisted ridges use the smaller free angle") {
+        // A slow twist, so that the layer thickness does not limit the amplitude.
+        f.twist_deg_per_mm = 0.1;
+        for (Pattern p : { Pattern::Egg, Pattern::Twisted }) {
+            f.pattern = p;
+            const FieldParams fit = fit_to_head(f, ramp, bbox, head);
+            REQUIRE(fit.amplitude == Approx(tan10 / k));
+            REQUIRE(Deformation(fit, ramp).head_slope_ratio(bbox, head.tan_x, head.tan_y) <= 1. + 1e-6);
+        }
+    }
+    SECTION("the waves rise at most the clearance height") {
+        f.pattern = Pattern::Ridges;
+        REQUIRE(fit_to_head(f, ramp, bbox, HeadLimits{ tan30, tan30, 0.4 }).amplitude == Approx(0.2));
+    }
+    SECTION("conical layers keep their direction") {
+        f.mode = Mode::Conical;
+        f.cone_angle_deg = -15.;
+        const FieldParams fit = fit_to_head(f, ramp, bbox, head);
+        REQUIRE(fit.cone_angle_deg == Approx(-10.));
+    }
+    SECTION("a short transition reduces the amplitude to keep the layer thickness") {
+        f.pattern = Pattern::Ridges;
+        ramp.z_ramp = 2.;
+        const FieldParams fit = fit_to_head(f, ramp, bbox, HeadLimits{ tan30, tan30, 0. });
+        REQUIRE(fit.amplitude < tan30 / k);
+        const Deformation::Check c = Deformation(fit, ramp).check(bbox);
+        REQUIRE(c.j_min >= J_MIN);
+        REQUIRE(c.j_max <= J_MAX);
+        REQUIRE((c.j_min < J_MIN + 0.02 || c.j_max > J_MAX - 0.02));   // as large as allowed
+    }
+}

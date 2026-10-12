@@ -36,6 +36,25 @@ hasta seguir del todo la tensión como en S³-Slicer. Lo que más resistencia da
 Las mejoras citadas (6,35×, 3,5×, +31–67 % de corte entre capas) son de otras máquinas, materiales y ensayos; en
 Tisma hay que medirlas con probetas propias.
 
+## Ajuste al cabezal (Tisma)
+
+Con «Ajustar al cabezal» (`nonplanar_fit_head`, activado por defecto) la amplitud de las ondas y el ángulo del cono no
+salen de los valores de la configuración de impresión sino de lo que mide el usuario en su cabezal (Configuración de
+impresora > General > Cabezal):
+
+- **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática en la fila más
+  baja (la de la boquilla): el cabezal no es simétrico (ventilador de capa, sensor de nivelación). Se modela como un
+  cono elíptico alrededor de la boquilla: una capa con gradiente (gx, gy) cabe si (gx / tan αx)² + (gy / tan αy)² ≤ 1.
+  Las crestas que suben a lo largo de X usan αx, a lo largo de Y usan αy, en otra dirección la combinación; la
+  huevera y las crestas torcidas, el menor de los dos; el cono, el menor con el sentido elegido. Sin medir (0) se usa
+  la pendiente máxima de la configuración de impresión.
+- **Altura libre** (`nonplanar_head_clearance_height`): la onda sube como mucho esa altura de valle a cresta
+  (amplitud ≤ altura / 2).
+- El espesor de capa sigue dentro de 60–140 % del nominal: si la transición es corta, la amplitud se reduce lo justo.
+
+La comprobación de colisiones con el perfil medido sigue igual. El modelo de cono elíptico es una aproximación propia
+de Tisma a partir de las dos medidas; no sale de una fuente externa.
+
 ## Fuentes
 
 - S³-Slicer: https://github.com/zhangty019/S3_DeformFDM, https://history.siggraph.org/?p=215754
