@@ -387,6 +387,15 @@ public:
     // Get edges around the selected area by seed fill.
     std::vector<Vec2i> get_seed_fill_contour() const;
 
+    // Tisma: a leaf (not split) triangle with its state and the index of the original triangle it belongs to.
+    struct LeafTriangle {
+        std::array<Vec3f, 3> vertices;
+        int                  source_triangle;
+        TriangleStateType    state;
+    };
+    // Tisma: all the leaf triangles, used to reproject the painting on a new tessellation of the same surface.
+    std::vector<LeafTriangle> get_leaf_triangles() const;
+
     // Set facet of the mesh to a given state. Only works for original triangles.
     void set_facet(int facet_idx, TriangleStateType state);
 

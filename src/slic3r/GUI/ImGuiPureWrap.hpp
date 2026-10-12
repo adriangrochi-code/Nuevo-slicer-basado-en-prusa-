@@ -155,9 +155,10 @@ namespace ImGuiPureWrap
     const ImVec4 COL_GREY_DARK         = { 0.33f, 0.33f, 0.33f, 1.0f };
     const ImVec4 COL_GREY_LIGHT        = { 0.4f, 0.4f, 0.4f, 1.0f };
     // Accent colors (Tisma purple; the names are kept from PrusaSlicer).
-    const ImVec4 COL_ORANGE_DARK       = { 0.357f, 0.235f, 0.769f, 1.0f };
-    const ImVec4 COL_ORANGE_LIGHT      = { 0.518f, 0.400f, 0.878f, 1.0f };
-    const ImVec4 COL_WINDOW_BACKGROUND = { 0.078f, 0.078f, 0.090f, 0.92f };
+    const ImVec4 COL_ORANGE_DARK       = { 0.478f, 0.141f, 0.788f, 1.0f };
+    const ImVec4 COL_ORANGE_LIGHT      = { 0.616f, 0.251f, 0.914f, 1.0f };
+    // Tisma (Órbita Pro): graphite panels #1F1F24.
+    const ImVec4 COL_WINDOW_BACKGROUND = { 0.122f, 0.122f, 0.141f, 0.97f };
     const ImVec4 COL_BUTTON_BACKGROUND = COL_ORANGE_DARK;
     const ImVec4 COL_BUTTON_HOVERED    = COL_ORANGE_LIGHT;
     const ImVec4 COL_BUTTON_ACTIVE     = COL_BUTTON_HOVERED;

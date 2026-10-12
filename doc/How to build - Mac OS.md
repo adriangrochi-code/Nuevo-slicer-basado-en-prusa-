@@ -159,5 +159,5 @@ mkdir build
 cd build
 cmake .. -DCMAKE_PREFIX_PATH="$PWD/../deps/build/destdir/usr/local"
 make
-src/prusa-slicer
+src/tisma-slicer
 ```

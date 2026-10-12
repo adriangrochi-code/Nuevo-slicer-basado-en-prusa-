@@ -1,0 +1,31 @@
+name: CI
+
+# Every pull request and every push to main: Windows, Linux (with the unit tests) and macOS builds. The packages are
+# kept 14 days as artifacts of the run (development builds); nightly.yml and release.yml publish them.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # Queue instead of cancelling: a dependency build cut in the middle would never reach the cache.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    uses: ./.github/workflows/build_windows.yml
+    secrets: inherit
+
+  linux:
+    uses: ./.github/workflows/build_linux.yml
+    with:
+      run_tests: true
+
+  macos:
+    uses: ./.github/workflows/build_macos.yml

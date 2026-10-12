@@ -95,6 +95,9 @@ public:
 	void set_gcode_result(GCodeProcessorResult* result) { m_gcode_result = result; }
 
 	GCodeProcessorResult *get_gcode_result() { return m_gcode_result; }
+	// Tisma: the G-code of the finished slicing of the selected bed (FFF), empty if the slicing is not finished.
+	// It is a temporary file, rewritten by the next slicing: read it right away.
+	std::string sliced_gcode_path() const;
 
 	// The following wxCommandEvent will be sent to the UI thread / Plater window, when the slicing is finished
 	// and the background processing will transition into G-code export.

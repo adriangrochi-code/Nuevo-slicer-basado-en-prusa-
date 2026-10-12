@@ -19,6 +19,7 @@
 #include "GLCanvas3D.hpp"
 #include "Plater.hpp"
 #include "Camera.hpp"
+#include "TismaShading.hpp"
 
 #include <GL/glew.h>
 
@@ -29,10 +30,11 @@
 #include <numeric>
 
 static const float GROUND_Z = -0.02f;
-static const Slic3r::ColorRGBA DEFAULT_MODEL_COLOR             = Slic3r::ColorRGBA::DARK_GRAY();
+// Tisma, Órbita Pro: dark bed (#2B2B31) with a quiet grid.
+static const Slic3r::ColorRGBA DEFAULT_MODEL_COLOR             = { 0.169f, 0.169f, 0.192f, 1.0f };
 static const Slic3r::ColorRGBA PICKING_MODEL_COLOR             = Slic3r::ColorRGBA::BLACK();
-static const Slic3r::ColorRGBA DEFAULT_SOLID_GRID_COLOR        = { 0.9f, 0.9f, 0.9f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_TRANSPARENT_GRID_COLOR  = { 0.9f, 0.9f, 0.9f, 0.6f };
+static const Slic3r::ColorRGBA DEFAULT_SOLID_GRID_COLOR        = { 0.290f, 0.290f, 0.322f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_TRANSPARENT_GRID_COLOR  = { 0.290f, 0.290f, 0.322f, 0.6f };
 static const Slic3r::ColorRGBA DISABLED_MODEL_COLOR            = { 0.6f, 0.6f, 0.6f, 0.75f };
 
 namespace Slic3r {
@@ -497,6 +499,10 @@ void Bed3D::render_texture(bool bottom, GLCanvas3D& canvas, const Transform3d& v
         shader->set_uniform("projection_matrix", projection_matrix);
         shader->set_uniform("transparent_background", bottom || ! is_active);
         shader->set_uniform("svg_source", boost::algorithm::iends_with(m_texture.get_source(), ".svg"));
+        // Tisma (phase 7): shadows of the objects and of the toolpaths over the bed.
+        TismaShading* tisma_shading = TismaShading::current();
+        if (tisma_shading != nullptr)
+            tisma_shading->apply(*shader, !bottom);
 
         glsafe(::glEnable(GL_DEPTH_TEST));
         if (bottom)
@@ -524,6 +530,8 @@ void Bed3D::render_texture(bool bottom, GLCanvas3D& canvas, const Transform3d& v
         if (bottom)
             glsafe(::glDepthMask(GL_TRUE));
 
+        if (tisma_shading != nullptr)
+            tisma_shading->stop_shadows(*shader);
         shader->stop_using();
     }
 }
@@ -572,7 +580,12 @@ void Bed3D::render_model(const Transform3d& view_matrix, const Transform3d& proj
             shader->set_uniform("projection_matrix", projection_matrix);
             const Matrix3d view_normal_matrix = view_matrix.matrix().block(0, 0, 3, 3) * model_matrix.matrix().block(0, 0, 3, 3).inverse().transpose();
             shader->set_uniform("view_normal_matrix", view_normal_matrix);
+            TismaShading* tisma_shading = TismaShading::current();
+            if (tisma_shading != nullptr)
+                tisma_shading->apply(*shader, true);
             m_model.model.render();
+            if (tisma_shading != nullptr)
+                tisma_shading->stop_shadows(*shader);
             shader->stop_using();
         }
     }
@@ -608,6 +621,9 @@ void Bed3D::render_default(bool bottom, bool picking, bool show_texture, const T
 
         shader->set_uniform("view_model_matrix", view_matrix);
         shader->set_uniform("projection_matrix", projection_matrix);
+        TismaShading* tisma_shading = picking ? nullptr : TismaShading::current();
+        if (tisma_shading != nullptr)
+            tisma_shading->apply(*shader, !bottom);
 
         glsafe(::glEnable(GL_DEPTH_TEST));
         glsafe(::glEnable(GL_BLEND));
@@ -635,6 +651,8 @@ void Bed3D::render_default(bool bottom, bool picking, bool show_texture, const T
 
         glsafe(::glDisable(GL_BLEND));
 
+        if (tisma_shading != nullptr)
+            tisma_shading->stop_shadows(*shader);
         shader->stop_using();
     }
 }

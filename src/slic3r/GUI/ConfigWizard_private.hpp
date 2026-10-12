@@ -21,6 +21,9 @@
 #include <wx/spinctrl.h>
 #include <wx/listbox.h>
 #include <wx/checklst.h>
+#include <wx/srchctrl.h>
+#include <wx/statbmp.h>
+#include <wx/stattext.h>
 #include <wx/radiobut.h>
 #include <wx/html/htmlwin.h>
 
@@ -132,6 +135,8 @@ struct PrinterPicker: wxPanel
     void select_one(size_t i, bool select);
     bool any_selected() const;
     std::set<std::string> get_selected_models() const ;
+    // Tisma Slicer: checks or unchecks the variant of a model as if clicked; false if this picker doesn't show it.
+    bool set_variant(const std::string &model, const std::string &variant, bool select);
 
     int get_width() const { return width; }
     const std::vector<int>& get_button_indexes() { return m_button_indexes; }
@@ -490,6 +495,51 @@ struct PageVendors: ConfigWizardPage
     PageVendors(ConfigWizard *parent, std::string repos_id = std::string(), std::string name = std::string());
 };
 
+// Tisma Slicer: printer browser. A list of brands (the bundles of a brand from several sources, e.g. Prusa's
+// and the ones converted from OrcaSlicer, are one brand), the printers (model and nozzle) of the selected brand to
+// check, and a search by name over all brands. Checking a printer is the same as checking it in its vendor's page.
+struct PageBrands: ConfigWizardPage
+{
+    struct Entry {
+        std::string                         repo_id;
+        const VendorProfile                *vendor;
+        const VendorProfile::PrinterModel  *model;
+        std::string                         variant;
+        wxString                            label;       // in the list of a brand
+        wxString                            full_label;  // in the search results (with the brand)
+        std::wstring                        search_text; // brand, model and nozzle, lower case
+    };
+    struct Brand {
+        wxString            name;
+        std::vector<size_t> entries;
+    };
+
+    PageBrands(ConfigWizard *parent);
+
+    void on_activate() override;
+
+private:
+    wxSearchCtrl       *m_search;
+    wxListBox          *m_brands_list;
+    wxCheckListBox     *m_printers_list;
+    wxStaticBitmap     *m_preview;
+    wxStaticText       *m_preview_name;
+    wxStaticText       *m_summary;
+    std::vector<Entry>  m_entries;
+    std::vector<Brand>  m_brands;
+    std::vector<int>    m_shown_brands;   // row of the brands list -> brand, -1: the results of the search
+    std::vector<size_t> m_shown_entries;  // row of the printers list -> entry
+
+    bool    is_selected(const Entry &entry) const;
+    size_t  selected_count(const Brand &brand) const;
+    bool    matches(const Entry &entry) const;
+    void    update_brands();
+    void    update_printers();
+    void    update_preview();
+    void    update_summary();
+    void    on_check(int row);
+};
+
 struct PageFirmware: ConfigWizardPage
 {
     const ConfigOptionDef &gcode_opt;
@@ -633,6 +683,7 @@ struct ConfigWizard::priv
     wxButton *btn_cancel = nullptr;
 
     PageWelcome      *page_welcome = nullptr;
+    PageBrands       *page_brands = nullptr;
     ConfigWizardWebViewPage *page_login = nullptr;
     PageUpdateManager*page_update_manager = nullptr;
     PageMaterials    *page_filaments = nullptr;
@@ -695,6 +746,12 @@ struct ConfigWizard::priv
     void select_default_materials_for_printer_model(const VendorProfile::PrinterModel &printer_model, Technology technology);
     void select_default_materials_for_printer_models(Technology technology, const std::set<const VendorProfile::PrinterModel*> &printer_models);
     void on_3rdparty_install(const VendorProfile *vendor, bool install);
+    // Tisma Slicer: asks whether to add the system presets of the vendor when user presets have the same names.
+    bool confirm_vendor_install(const VendorProfile *vendor);
+    // Tisma Slicer: the printers page of the vendor (created if needed), nullptr if its repository isn't shown.
+    PagePrinters* vendor_printers_page(const VendorProfile *vendor, Technology technology);
+    // Tisma Slicer: checks or unchecks a printer in its vendor's page (PageBrands); false if not done.
+    bool pick_printer(const VendorProfile *vendor, const VendorProfile::PrinterModel &model, const std::string &variant, bool enable);
 
     bool can_finish();
     bool can_go_next();

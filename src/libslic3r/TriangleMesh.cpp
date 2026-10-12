@@ -215,6 +215,28 @@ void TriangleMesh::from_facets(std::vector<stl_facet> &&facets, bool repair)
     fill_initial_stats(this->its, this->m_stats);
 }
 
+void TriangleMesh::from_facets(std::vector<stl_facet> &&facets, bool repair, std::vector<uint16_t> &facet_tags)
+{
+    stl_file stl;
+    stl.stats.type                = inmemory;
+    stl.stats.number_of_facets    = uint32_t(facets.size());
+    stl.stats.original_num_facets = int(stl.stats.number_of_facets);
+
+    stl_allocate(&stl);
+    stl.facet_start               = std::move(facets);
+
+    if (repair)
+        trianglemesh_repair_on_import(stl);
+
+    // stl_generate_shared_vertices() keeps the order of the facets.
+    facet_tags.resize(stl.stats.number_of_facets);
+    for (uint32_t i = 0; i < stl.stats.number_of_facets; ++ i)
+        facet_tags[i] = uint16_t(uint8_t(stl.facet_start[i].extra[0])) | (uint16_t(uint8_t(stl.facet_start[i].extra[1])) << 8);
+
+    stl_generate_shared_vertices(&stl, this->its);
+    fill_initial_stats(this->its, this->m_stats);
+}
+
 bool TriangleMesh::ReadSTLFile(const char* input_file, bool repair)
 { 
     stl_file stl;

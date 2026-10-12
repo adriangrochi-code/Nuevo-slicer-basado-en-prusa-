@@ -43,6 +43,7 @@ class ImGuiWrapper
     bool m_requires_extra_frame{ false };
     std::map<wchar_t, int> m_custom_glyph_rects_ids;
     std::string m_clipboard_text;
+    static inline ImFont* s_large_font { nullptr };
 
 public:
     struct LastSliderStatus {
@@ -66,6 +67,9 @@ public:
     bool update_key_data(wxKeyEvent &evt);
 
     float get_font_size() const { return m_font_size; }
+    // Tisma (Órbita Pro): font 1.6 times larger for the main figures of a result (Latin characters only),
+    // or nullptr before the fonts are built.
+    static ImFont* large_font() { return s_large_font; }
     float get_style_scaling() const { return m_style_scaling; }
     const ImWchar *get_glyph_ranges() const { return m_glyph_ranges; } // language specific
 

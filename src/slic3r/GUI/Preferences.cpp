@@ -19,6 +19,7 @@
 #include "ButtonsDescription.hpp"
 #include "OG_CustomCtrl.hpp"
 #include "GLCanvas3D.hpp"
+#include "TismaShading.hpp"
 #include "ConfigWizard.hpp"
 #include "Search.hpp"
 
@@ -62,6 +63,14 @@ namespace Slic3r {
 	};
 
 	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NotifyReleaseMode)
+
+	static const t_config_enum_values s_keys_map_TismaRenderQualityMode = {
+		{"classic",     TismaRenderClassic},
+		{"per_pixel",   TismaRenderPerPixel},
+		{"shadows",     TismaRenderShadows},
+	};
+
+	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaRenderQualityMode)
 
 namespace GUI {
 
@@ -461,6 +470,10 @@ void PreferencesDialog::build()
 	// Add "Camera" tab
 	m_optgroup_camera = create_options_tab(L("Camera"), tabs);
 	m_optgroup_camera->on_change = [this](t_config_option_key opt_key, boost::any value) {
+		if (opt_key == GUI::TismaShading::CONFIG_KEY) {
+			m_values[opt_key] = std::to_string(boost::any_cast<int>(value));
+			return;
+		}
 		if (auto it = m_values.find(opt_key);it != m_values.end()) {
 			m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
 			return;
@@ -483,7 +496,24 @@ void PreferencesDialog::build()
 		L("If enabled, reverses the direction of zoom with mouse wheel"),
 		app_config->get_bool("reverse_mouse_wheel_zoom"));
 
+	{
+		// The OpenGL context may not exist yet: OpenGL 2.x always renders as Classic.
+		m_optgroup_camera->append_separator();
+		append_enum_option<TismaRenderQualityMode>(m_optgroup_camera, GUI::TismaShading::CONFIG_KEY,
+			L("Rendering quality"),
+			L("Quality of the 3D view of the objects, of the bed and of the G-code preview. "
+			  "Classic: lighting per vertex, as PrusaSlicer 2.9. "
+			  "Per pixel: smooth lighting and highlights, rounded toolpaths. "
+			  "Shadows: per pixel lighting and shadows of the main light (needs a faster graphics card)."),
+			new ConfigOptionEnum<TismaRenderQualityMode>(TismaRenderQualityMode(int(GUI::TismaShading::configured_quality()))),
+			{ { "classic",   L("Classic") },
+			  { "per_pixel", L("Per pixel") },
+			  { "shadows",   L("Shadows") }
+			});
+	}
+
 	activate_options_tab(m_optgroup_camera);
+	m_optgroup_camera->get_field(GUI::TismaShading::CONFIG_KEY)->set_value(boost::any(int(GUI::TismaShading::configured_quality())), false);
 
 	// Add "GUI" tab
 	m_optgroup_gui = create_options_tab(L("GUI"), tabs);
@@ -862,6 +892,10 @@ void PreferencesDialog::revert(wxEvent&)
 		}
 		if (key == "notify_release") {
 			m_optgroup_gui->set_value(key, s_keys_map_NotifyReleaseMode.at(app_config->get(key)));
+			continue;
+		}
+		if (key == GUI::TismaShading::CONFIG_KEY) {
+			m_optgroup_camera->set_value(key, int(GUI::TismaShading::configured_quality()));
 			continue;
 		}
 		if (key == "old_settings_layout_mode") {

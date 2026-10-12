@@ -21,6 +21,7 @@
 #include "slic3r/GUI/BedShapeDialog.hpp"
 #include "slic3r/Utils/Serial.hpp"
 #include "Tab.hpp"
+#include "QuickSettings.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Utils.hpp"
@@ -43,6 +44,7 @@
 #include <wx/app.h>
 #include <wx/button.h>
 #include <wx/scrolwin.h>
+#include <wx/stattext.h>
 #include <wx/sizer.h>
 
 #include <wx/bmpcbox.h>
@@ -285,6 +287,20 @@ void Tab::create_preset_tab()
     m_treectrl->SetBackgroundColour(m_parent->GetBackgroundColour());
 #endif
     m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
+
+    // Tisma: the Beginner mode hides most pages (speed, non-planar, advanced...). Say so and offer to show them all.
+    m_simple_mode_hint = new wxBoxSizer(wxVERTICAL);
+    auto simple_mode_text = new wxStaticText(panel, wxID_ANY,
+        _L("Beginner mode: only the most common settings are shown. Speed, non-planar layers and the other settings "
+           "are in the Normal and Expert modes."));
+    simple_mode_text->Wrap(19 * m_em_unit);
+    m_simple_mode_hint->Add(simple_mode_text, 0, wxBOTTOM, m_em_unit / 2);
+    auto show_all_btn = new wxButton(panel, wxID_ANY, _L("Show all settings"));
+    show_all_btn->SetToolTip(_L("Switch to the Expert mode"));
+    show_all_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().save_mode(comExpert); });
+    m_simple_mode_hint->Add(show_all_btn, 0, wxEXPAND);
+    m_left_sizer->Add(m_simple_mode_hint, 0, wxEXPAND | wxTOP, m_em_unit / 2);
+    m_left_sizer->Show(m_simple_mode_hint, wxGetApp().get_mode() == comSimple);
     // Index of the last icon inserted into m_treectrl
     m_icon_count = -1;
     m_treectrl->AddRoot("root");
@@ -908,6 +924,8 @@ void Tab::reload_config()
 void Tab::update_mode()
 {
     m_mode = wxGetApp().get_mode();
+    if (m_simple_mode_hint != nullptr)
+        m_left_sizer->Show(m_simple_mode_hint, m_mode == comSimple);
 
     update_visibility();
     update_sla_prusa_specific_visibility();
@@ -1118,6 +1136,9 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         bool val = m_config->opt_float("brim_width") > 0.0 ? true : false;
         og_freq_chng_params->set_value("brim", val);
     }
+
+    if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+        quick_settings->update_value(m_type, opt_key);
 
     if (opt_key == "wipe_tower" || opt_key == "single_extruder_multi_material" || opt_key == "extruders_count" )
         update_wiping_button_visibility();
@@ -1406,6 +1427,10 @@ void Tab::update_frequently_changed_parameters()
     const boost::any val = og_freq_chng_params->get_config_value(*m_config, updated_value_key);
     og_freq_chng_params->set_value(updated_value_key, val);
 
+    if (m_type == Preset::TYPE_PRINT)
+        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+            quick_settings->reload_config();
+
     if (is_fff)
     {
         og_freq_chng_params->set_value("brim", bool(m_config->opt_float("brim_width") > 0.0));
@@ -1467,6 +1492,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters", category_path + "extra-perimeters-if-needed");
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
+        optgroup->append_single_option_line("stagger_perimeters");
         optgroup->append_single_option_line("ensure_vertical_shell_thickness", category_path + "ensure-vertical-shell-thickness");
         optgroup->append_single_option_line("avoid_crossing_curled_overhangs", category_path + "avoid-crossing-curled-overhangs");
         optgroup->append_single_option_line("avoid_crossing_perimeters", category_path + "avoid-crossing-perimeters");
@@ -1652,6 +1678,7 @@ void TabPrint::build()
     page = add_options_page(L("Non-planar"), "layers");
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
+        optgroup->append_single_option_line("nonplanar_fit_head");
         optgroup->append_single_option_line("nonplanar_max_slope");
 
         optgroup = page->new_optgroup(L("Wave"));
@@ -2333,6 +2360,7 @@ void TabFilament::build()
         optgroup->append_line(line);
 
         optgroup->append_single_option_line("filament_infill_max_speed", "max-simple-infill-speed");
+        optgroup->append_single_option_line("filament_coast_distance");
         optgroup->append_single_option_line("filament_infill_max_crossing_speed", "max-crossing-infill-speed");
 
         optgroup = page->new_optgroup(L("Shrinkage compensation"));
@@ -2820,6 +2848,19 @@ void TabPrinter::build_fff()
         optgroup->append_single_option_line("silent_mode");
         optgroup->append_single_option_line("remaining_times");
         optgroup->append_single_option_line("binary_gcode");
+
+        // Tisma: belt printers.
+        optgroup = page->new_optgroup(L("Belt printer"));
+        optgroup->append_single_option_line("belt_printer");
+        optgroup->append_single_option_line("belt_angle");
+
+        // Tisma: print head geometry for the collision check of non-planar layers.
+        optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
+        optgroup->append_single_option_line("nonplanar_head_clearance_height");
+        optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+        optgroup->append_single_option_line("nonplanar_head_free_angle_x");
+        optgroup->append_single_option_line("nonplanar_head_free_angle_y");
+        optgroup->append_single_option_line("nonplanar_head_profile");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
@@ -3868,6 +3909,10 @@ void Tab::load_current_preset()
             if (m_type == Preset::TYPE_SLA_PRINT || m_type == Preset::TYPE_PRINT)
                 update_frequently_changed_parameters();
         }
+
+        // Another preset: the quick settings of the sidebar show its values.
+        if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
+            quick_settings->reload_config();
 
         m_opt_status_value = (m_presets->get_selected_preset_parent() ? osSystemValue : 0) | osInitValue;
         init_options_list();

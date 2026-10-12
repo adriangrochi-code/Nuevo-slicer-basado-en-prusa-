@@ -62,6 +62,20 @@ public:
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
     //
+    // Tisma Slicer (phase 7): per-pixel lighting and shadows of the toolpaths.
+    // shadow_map_tex_id: depth texture rendered from the light; eye_to_shadow_matrix: from the eye space of the
+    // view matrix given to render() to the clip space of the light. Not used with OpenGL ES.
+    //
+    struct Shading
+    {
+        bool per_pixel{ false };
+        unsigned int shadow_map_tex_id{ 0 };
+        Mat4x4 eye_to_shadow_matrix{};
+        float shadow_intensity{ 0.75f };
+    };
+    void set_shading(const Shading& shading);
+
+    //
     // ************************************************************************
     // Settings
     // The following methods can be used to query/customize the parameters

@@ -1847,6 +1847,17 @@ void GCodeViewer::load_wipetower_shell(const Print& print)
     }
 }
 
+void GCodeViewer::render_toolpaths_for_shadows(const Transform3d& light_view, const Transform3d& light_projection)
+{
+    if (!has_data())
+        return;
+    Transform3d tr = light_view;
+    tr.translate(s_multiple_beds.get_bed_translation(s_multiple_beds.get_active_bed()));
+    m_viewer.set_shading({});
+    m_viewer.render(libvgcode::convert(static_cast<Matrix4f>(tr.matrix().cast<float>())),
+                    libvgcode::convert(static_cast<Matrix4f>(light_projection.matrix().cast<float>())));
+}
+
 void GCodeViewer::render_toolpaths()
 {
     const Camera& camera = wxGetApp().plater()->get_camera();

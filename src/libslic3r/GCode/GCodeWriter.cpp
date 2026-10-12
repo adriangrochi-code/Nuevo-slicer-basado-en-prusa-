@@ -435,6 +435,24 @@ std::string GCodeWriter::extrude_to_xy(const Vec2d &point, double dE, const std:
     return w.string();
 }
 
+std::string GCodeWriter::coast_to_xy(const Vec2d &point, const std::string_view comment)
+{
+    m_pos.head<2>() = point.head<2>();
+    GCodeG1Formatter w;
+    w.emit_xy(point);
+    w.emit_comment(this->config.gcode_comments, comment);
+    return w.string();
+}
+
+std::string GCodeWriter::coast_to_xyz(const Vec3d &point, const std::string_view comment)
+{
+    m_pos = point;
+    GCodeG1Formatter w;
+    w.emit_xyz(point);
+    w.emit_comment(this->config.gcode_comments, comment);
+    return w.string();
+}
+
 std::string GCodeWriter::extrude_to_xyz(const Vec3d &point, double dE, const std::string_view comment)
 {
     m_pos = point;
@@ -467,6 +485,24 @@ std::string GCodeWriter::extrude_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &i
 }
 
 #if 0
+std::string GCodeWriter::coast_to_xy(const Vec2d &point, const std::string_view comment)
+{
+    m_pos.head<2>() = point.head<2>();
+    GCodeG1Formatter w;
+    w.emit_xy(point);
+    w.emit_comment(this->config.gcode_comments, comment);
+    return w.string();
+}
+
+std::string GCodeWriter::coast_to_xyz(const Vec3d &point, const std::string_view comment)
+{
+    m_pos = point;
+    GCodeG1Formatter w;
+    w.emit_xyz(point);
+    w.emit_comment(this->config.gcode_comments, comment);
+    return w.string();
+}
+
 std::string GCodeWriter::extrude_to_xyz(const Vec3d &point, double dE, const std::string_view comment)
 {
     m_pos = point;

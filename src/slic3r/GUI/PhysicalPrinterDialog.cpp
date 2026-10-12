@@ -569,6 +569,23 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
         m_optgroup->append_single_option_line(option);
     }
 
+    m_optgroup->append_single_option_line("bambu_use_ams");
+    {
+        Line line{ "", "" };
+        line.full_width = 1;
+        line.widget = [this](wxWindow* parent) {
+            m_bambu_hint = new wxStaticText(parent, wxID_ANY,
+                _L("Bambu Lab: on the printer turn on LAN only mode and Developer mode (Settings > LAN only). "
+                   "Hostname = IP address of the printer, API key = access code shown there. "
+                   "The serial number is read from the printer."));
+            m_bambu_hint->Wrap(50 * wxGetApp().em_unit());
+            auto sizer = new wxBoxSizer(wxHORIZONTAL);
+            sizer->Add(m_bambu_hint, 1, wxEXPAND);
+            return sizer;
+        };
+        m_optgroup->append_line(line);
+    }
+
 #ifdef WIN32
     option = m_optgroup->get_option("printhost_ssl_ignore_revoke");
     option.opt.width = Field::def_width_wider();
@@ -670,9 +687,19 @@ void PhysicalPrinterDialog::update(bool printer_change)
             }
         }
         
+        const bool bambu = opt->value == htBambuLan;
+        m_optgroup->show_field("bambu_use_ams", bambu);
+        if (m_bambu_hint)
+            m_bambu_hint->Show(bambu);
+        if (bambu)
+            m_printhost_browse_btn->Hide();
+
         m_last_host_type = opt->value;
     }
     else {
+        m_optgroup->hide_field("bambu_use_ams");
+        if (m_bambu_hint)
+            m_bambu_hint->Hide();
         m_optgroup->set_value("host_type", int(PrintHostType::htOctoPrint), false);
         m_optgroup->hide_field("host_type");
 

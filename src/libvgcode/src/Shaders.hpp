@@ -10,6 +10,54 @@
 
 namespace libvgcode {
 
+// Tisma Slicer (phase 7): per-pixel lighting and shadows of the toolpaths, enabled by uniforms (see Viewer::set_shading()).
+// Without them the color lit in the vertex shader is used, as in PrusaSlicer.
+#define TISMA_TOOLPATHS_FRAGMENT_SHADER(EMISSION) \
+"#version 150\n" \
+"const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n" \
+"const float light_top_diffuse = 0.6 * 0.8;\n" \
+"const float light_top_specular = 0.6 * 0.125;\n" \
+"const float light_top_shininess = 20.0;\n" \
+"const vec3  light_front_dir = vec3(0.6985074, 0.1397015, 0.6985074);\n" \
+"const float light_front_diffuse = 0.6 * 0.3;\n" \
+"const float ambient = 0.3;\n" \
+"const float emission = " EMISSION ";\n" \
+"uniform bool per_pixel;\n" \
+"uniform bool shadows_enabled;\n" \
+"uniform mat4 eye_to_shadow_matrix;\n" \
+"uniform sampler2D shadow_map;\n" \
+"uniform float shadow_intensity;\n" \
+"in vec3 color;\n" \
+"in vec3 base_color;\n" \
+"in vec3 eye_pos;\n" \
+"in vec3 eye_nrm;\n" \
+"out vec4 fragment_color;\n" \
+"float shadow_factor(float NdotL) {\n" \
+"  vec4 p = eye_to_shadow_matrix * vec4(eye_pos, 1.0);\n" \
+"  vec3 c = p.xyz / p.w * 0.5 + 0.5;\n" \
+"  if (c.x < 0.0 || c.x > 1.0 || c.y < 0.0 || c.y > 1.0 || c.z > 1.0) return 1.0;\n" \
+"  float bias = max(0.0025 * (1.0 - NdotL), 0.0005);\n" \
+"  vec2 texel = 1.0 / vec2(textureSize(shadow_map, 0));\n" \
+"  float shadow = 0.0;\n" \
+"  for (int x = -1; x <= 1; ++x)\n" \
+"    for (int y = -1; y <= 1; ++y)\n" \
+"      shadow += (c.z - bias > texture(shadow_map, c.xy + vec2(x, y) * texel).r) ? 1.0 : 0.0;\n" \
+"  return 1.0 - shadow_intensity * shadow / 9.0;\n" \
+"}\n" \
+"void main() {\n" \
+"  if (!per_pixel && !shadows_enabled) {\n" \
+"    fragment_color = vec4(color, 1.0);\n" \
+"    return;\n" \
+"  }\n" \
+"  vec3 n = normalize(eye_nrm);\n" \
+"  float top_NdotL = max(dot(n, light_top_dir), 0.0);\n" \
+"  float shadow = shadows_enabled ? shadow_factor(top_NdotL) : 1.0;\n" \
+"  float top_diffuse = light_top_diffuse * top_NdotL;\n" \
+"  float front_diffuse = light_front_diffuse * max(dot(n, light_front_dir), 0.0);\n" \
+"  float top_specular = light_top_specular * pow(max(dot(-normalize(eye_pos), reflect(-light_top_dir, n)), 0.0), light_top_shininess);\n" \
+"  fragment_color = vec4(base_color * (ambient + emission + front_diffuse + shadow * (top_diffuse + top_specular)), 1.0);\n" \
+"}\n"
+
 static const char* Segments_Vertex_Shader =
 "#version 150\n"
 "#define POINTY_CAPS\n"
@@ -32,6 +80,9 @@ static const char* Segments_Vertex_Shader =
 "uniform usamplerBuffer segment_index_tex;\n"
 "in int vertex_id;\n"
 "out vec3 color;\n"
+"out vec3 base_color;\n"
+"out vec3 eye_pos;\n"
+"out vec3 eye_nrm;\n"
 "vec3 decode_color(float color) {\n"
 "  int c = int(round(color));\n"
 "  int r = (c >> 16) & 0xFF;\n"
@@ -134,16 +185,13 @@ static const char* Segments_Vertex_Shader =
 "  vec3 eye_normal = (view_matrix * vec4(normalize(pos - endpoint_pos), 0.0)).xyz;\n"
 "  vec3 color_base = decode_color(texelFetch(color_tex, id).r);\n"
 "  color = color_base * lighting(eye_position, eye_normal);\n"
+"  base_color = color_base;\n"
+"  eye_pos = eye_position;\n"
+"  eye_nrm = eye_normal;\n"
 "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
 "}\n";
 
-static const char* Segments_Fragment_Shader =
-"#version 150\n"
-"in vec3 color;\n"
-"out vec4 fragment_color;\n"
-"void main() {\n"
-"  fragment_color = vec4(color, 1.0);\n"
-"}\n";
+static const char* Segments_Fragment_Shader = TISMA_TOOLPATHS_FRAGMENT_SHADER("0.15");
 
 static const char* Options_Vertex_Shader =
 "#version 150\n"
@@ -165,6 +213,9 @@ static const char* Options_Vertex_Shader =
 "in vec3 in_position;\n"
 "in vec3 in_normal;\n"
 "out vec3 color;\n"
+"out vec3 base_color;\n"
+"out vec3 eye_pos;\n"
+"out vec3 eye_nrm;\n"
 "vec3 decode_color(float color) {\n"
 "  int c = int(round(color));\n"
 "  int r = (c >> 16) & 0xFF;\n"
@@ -192,16 +243,13 @@ static const char* Options_Vertex_Shader =
 "  vec3 eye_normal = (view_matrix * vec4(in_normal, 0.0)).xyz;\n"
 "  vec3 color_base = decode_color(texelFetch(color_tex, id).r);\n"
 "  color = color_base * lighting(eye_position, eye_normal);\n"
+"  base_color = color_base;\n"
+"  eye_pos = eye_position;\n"
+"  eye_nrm = eye_normal;\n"
 "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
 "}\n";
 
-static const char* Options_Fragment_Shader =
-"#version 150\n"
-"in vec3 color;\n"
-"out vec4 fragment_color;\n"
-"void main() {\n"
-"  fragment_color = vec4(color, 1.0);\n"
-"}\n";
+static const char* Options_Fragment_Shader = TISMA_TOOLPATHS_FRAGMENT_SHADER("0.25");
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 static const char* Cog_Marker_Vertex_Shader =

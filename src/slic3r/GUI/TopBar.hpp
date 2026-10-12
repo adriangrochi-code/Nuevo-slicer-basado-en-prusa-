@@ -42,6 +42,8 @@ class TopBarItemsCtrl : public wxControl
 
         void sys_color_changed();
         void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
+        // Text drawn by render() (wxPanel::SetLabel does not change it).
+        void SetText(const wxString& label) { m_label = label; Refresh(); }
     };
 
     class ButtonWithPopup : public Button
@@ -71,6 +73,7 @@ class TopBarItemsCtrl : public wxControl
 
     int             m_btns_width            { 0 };
     bool            m_collapsed_btns        { false };
+    bool            m_page_btns_shown       { true };
 
     std::function<void()> m_cb_settings_btn { nullptr };
 
@@ -101,7 +104,15 @@ public:
     void TriggerSearch();
     void ShowFull();
     void ShowJustMode();
+    // Pages are selected from the navigation column of Tisma: hide their buttons.
+    void ShowPageButtons(bool show);
+    // Tisma: name of the current project (PrusaSlicer 3.0 style project tab). Clicking it shows the plater.
+    void SetProjectName(const wxString& name);
     void SetSettingsButtonTooltip(const wxString& tooltip);
+    // Tisma (Órbita Pro): workspace tabs at the left end of the bar (they replace the project name, which
+    // stays in the window title) and a window (the printer chip) at the right end.
+    void SetWorkspaceTabs(wxWindow* tabs);
+    void AddRightWindow(wxWindow* win);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
@@ -114,6 +125,10 @@ private:
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_account_btn   {nullptr};
     Button*                         m_settings_btn  {nullptr};
+    Button*                         m_project_btn   {nullptr};
+    wxWindow*                       m_workspace_tabs{nullptr};
+    wxBoxSizer*                     m_left_sizer    {nullptr};
+    wxBoxSizer*                     m_right_sizer   {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

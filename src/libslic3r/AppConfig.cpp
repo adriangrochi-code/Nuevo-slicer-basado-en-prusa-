@@ -38,7 +38,10 @@ static const std::string MODEL_PREFIX = "model:";
 // Thus we will let PrusaSlicer 2.3.2 and couple of follow-up versions to download the version number from an alternate file until the PrusaSlicer 2.3.0/2.3.1
 // are phased out, then we will revert to the original name.
 // For 2.6.0-alpha1 we have switched back to the original. The file should contain data for AppUpdater.cpp
-static const std::string VERSION_CHECK_URL = "https://files.prusa3d.com/wp-content/uploads/repository/PrusaSlicer-settings-master/live/PrusaSlicer.version";
+// Tisma: Prusa's version file announces PrusaSlicer releases (and offers their installers), not Tisma's.
+// Tisma has no version server yet, so the check is off unless "version_check_url" is set in the app config.
+static const std::string VERSION_CHECK_URL = "";
+//static const std::string VERSION_CHECK_URL = "https://files.prusa3d.com/wp-content/uploads/repository/PrusaSlicer-settings-master/live/PrusaSlicer.version";
 //static const std::string VERSION_CHECK_URL = "https://files.prusa3d.com/wp-content/uploads/repository/PrusaSlicer-settings-master/live/PrusaSlicer.version2";
 // Url to index archive zip that contains latest indicies
 static const std::string INDEX_ARCHIVE_URL= "https://files.prusa3d.com/wp-content/uploads/repository/vendor_indices.zip";
@@ -228,9 +231,9 @@ void AppConfig::set_defaults()
     if (get("use_legacy_3DConnexion").empty())
         set("use_legacy_3DConnexion", "0");
 
-    // Light interface by default (Tisma palette).
+    // Dark interface by default (Tisma palette, PrusaSlicer 3.0 style).
     if (get("dark_color_mode").empty())
-        set("dark_color_mode", "0");
+        set("dark_color_mode", "1");
 
     if (get("sys_menu_enabled").empty())
         set("sys_menu_enabled", "1");

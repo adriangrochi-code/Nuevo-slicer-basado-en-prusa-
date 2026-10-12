@@ -160,6 +160,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
     std::optional<Point> previous_position
 );
 
+std::optional<Geometry::ArcWelder::Segment> get_first_point(const ExtruderExtrusions &extrusions);
 std::optional<Geometry::ArcWelder::Segment> get_first_point(const std::vector<ExtruderExtrusions> &extrusions);
 
 const PrintInstance * get_first_instance(

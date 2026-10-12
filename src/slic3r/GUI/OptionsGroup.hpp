@@ -115,6 +115,10 @@ using t_opt_map = std::map< std::string, std::pair<std::string, int> >;
 class OptionsGroup {
 protected:
 	wxStaticBox*	stb {nullptr};
+	// Tisma: groups of the settings tabs have a flat title (separator + text) instead of a static box.
+	wxStaticText*	m_flat_title {nullptr};
+	wxWindow*		m_flat_line  {nullptr};
+	void			update_flat_title_colors();
 public:
     const bool		staticbox {true};
     const wxString	title;
@@ -194,8 +198,8 @@ public:
     // Show/hide a whole line in custom_control, if this line contains opt_key
     void            show_line(const t_config_option_key& opt_key, bool show);
 
-	void			set_name(const wxString& new_name) { stb->SetLabel(new_name); }
-	wxString		get_name() const { return stb->GetLabel(); }
+	void			set_name(const wxString& new_name) { if (stb) stb->SetLabel(new_name); else if (m_flat_title) m_flat_title->SetLabel(new_name); }
+	wxString		get_name() const { return stb ? stb->GetLabel() : m_flat_title ? m_flat_title->GetLabel() : wxString(); }
 
 	inline void		enable() { for (auto& field : m_fields) field.second->enable(); }
     inline void		disable() { for (auto& field : m_fields) field.second->disable(); }

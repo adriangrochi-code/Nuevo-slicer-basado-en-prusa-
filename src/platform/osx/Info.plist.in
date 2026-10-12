@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key>
-  <string>@SLIC3R_APP_KEY@</string>
+  <string>TismaSlicer</string>
   <key>CFBundleGetInfoString</key>
   <string>@SLIC3R_APP_NAME@ Copyright (C) 2011-2019 Alessandro Ranellucci, (C) 2016-2026 Prusa Reseach</string>
   <key>CFBundleIconFile</key>
   <string>PrusaSlicer.icns</string>
   <key>CFBundleName</key>
-  <string>@SLIC3R_APP_KEY@</string>
+  <string>@SLIC3R_APP_NAME@</string>
   <key>CFBundleShortVersionString</key>
   <string>@SLIC3R_APP_NAME@ @SLIC3R_BUILD_ID@</string>
   <key>CFBundleIdentifier</key>
-  <string>com.prusa3d.slic3r/</string>
+  <string>com.tisma.slicer</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>

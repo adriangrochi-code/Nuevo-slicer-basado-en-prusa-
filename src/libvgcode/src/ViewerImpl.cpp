@@ -766,6 +766,10 @@ void ViewerImpl::init(const std::string& opengl_context_version)
            m_uni_segments_colors_tex_id != -1 &&
            m_uni_segments_segment_index_tex_id != -1);
 
+#ifndef ENABLE_OPENGL_ES
+    init_shading_uniforms(m_uni_shading[0], m_segments_shader_id);
+#endif // ENABLE_OPENGL_ES
+
     m_segment_template.init();
 
     // options shader
@@ -788,6 +792,10 @@ void ViewerImpl::init(const std::string& opengl_context_version)
            m_uni_options_height_width_angle_tex_id != -1 &&
            m_uni_options_colors_tex_id != -1 &&
            m_uni_options_segment_index_tex_id != -1);
+
+#ifndef ENABLE_OPENGL_ES
+    init_shading_uniforms(m_uni_shading[1], m_options_shader_id);
+#endif // ENABLE_OPENGL_ES
 
     m_option_template.init(16);
 
@@ -1865,6 +1873,9 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     glsafe(glUniformMatrix4fv(m_uni_segments_view_matrix_id, 1, GL_FALSE, view_matrix.data()));
     glsafe(glUniformMatrix4fv(m_uni_segments_projection_matrix_id, 1, GL_FALSE, projection_matrix.data()));
     glsafe(glUniform3fv(m_uni_segments_camera_position_id, 1, camera_position.data()));
+#ifndef ENABLE_OPENGL_ES
+    const int prev_shadow_texture = apply_shading(m_uni_shading[0]);
+#endif // ENABLE_OPENGL_ES
 
     glsafe(glDisable(GL_CULL_FACE));
 
@@ -1908,6 +1919,7 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_segments_buf_id));
 
     m_segment_template.render(m_enabled_segments_count);
+    restore_shading(prev_shadow_texture);
 #endif // ENABLE_OPENGL_ES
 
     if (curr_cull_face)
@@ -1923,6 +1935,49 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     }
 #endif // ENABLE_OPENGL_ES
     glsafe(glActiveTexture(curr_active_texture));
+}
+
+// Texture unit of the shadow map, after the 4 texture buffers of the toolpaths.
+static constexpr int SHADOW_MAP_TEXTURE_UNIT = 4;
+
+void ViewerImpl::init_shading_uniforms(ShadingUniforms& uniforms, unsigned int shader_id)
+{
+    uniforms.per_pixel            = glGetUniformLocation(shader_id, "per_pixel");
+    uniforms.shadows_enabled      = glGetUniformLocation(shader_id, "shadows_enabled");
+    uniforms.eye_to_shadow_matrix = glGetUniformLocation(shader_id, "eye_to_shadow_matrix");
+    uniforms.shadow_map           = glGetUniformLocation(shader_id, "shadow_map");
+    uniforms.shadow_intensity     = glGetUniformLocation(shader_id, "shadow_intensity");
+    glcheck();
+}
+
+int ViewerImpl::apply_shading(const ShadingUniforms& uniforms)
+{
+    const bool shadows = m_shading.shadow_map_tex_id != 0;
+    if (uniforms.per_pixel != -1)
+        glsafe(glUniform1i(uniforms.per_pixel, m_shading.per_pixel ? 1 : 0));
+    if (uniforms.shadows_enabled != -1)
+        glsafe(glUniform1i(uniforms.shadows_enabled, shadows ? 1 : 0));
+    if (!shadows)
+        return -1;
+    if (uniforms.eye_to_shadow_matrix != -1)
+        glsafe(glUniformMatrix4fv(uniforms.eye_to_shadow_matrix, 1, GL_FALSE, m_shading.eye_to_shadow_matrix.data()));
+    if (uniforms.shadow_intensity != -1)
+        glsafe(glUniform1f(uniforms.shadow_intensity, m_shading.shadow_intensity));
+    if (uniforms.shadow_map != -1)
+        glsafe(glUniform1i(uniforms.shadow_map, SHADOW_MAP_TEXTURE_UNIT));
+    int prev_texture = 0;
+    glsafe(glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT));
+    glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_texture));
+    glsafe(glBindTexture(GL_TEXTURE_2D, m_shading.shadow_map_tex_id));
+    return prev_texture;
+}
+
+void ViewerImpl::restore_shading(int prev_texture)
+{
+    if (prev_texture < 0)
+        return;
+    glsafe(glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT));
+    glsafe(glBindTexture(GL_TEXTURE_2D, GLuint(prev_texture)));
 }
 
 void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
@@ -1952,6 +2007,9 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glUniform1i(m_uni_options_segment_index_tex_id, 3));
     glsafe(glUniformMatrix4fv(m_uni_options_view_matrix_id, 1, GL_FALSE, view_matrix.data()));
     glsafe(glUniformMatrix4fv(m_uni_options_projection_matrix_id, 1, GL_FALSE, projection_matrix.data()));
+#ifndef ENABLE_OPENGL_ES
+    const int prev_shadow_texture = apply_shading(m_uni_shading[1]);
+#endif // ENABLE_OPENGL_ES
 
     glsafe(glEnable(GL_CULL_FACE));
 
@@ -1995,6 +2053,7 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_options_buf_id));
 
     m_option_template.render(m_enabled_options_count);
+    restore_shading(prev_shadow_texture);
 #endif // ENABLE_OPENGL_ES
 
     if (!curr_cull_face)

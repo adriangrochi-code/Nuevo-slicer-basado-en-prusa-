@@ -21,11 +21,16 @@
 #include "BRepBuilderAPI_Transform.hxx"
 #include "TopExp_Explorer.hxx"
 #include "BRep_Tool.hxx"
+#include "BRepCheck_Analyzer.hxx"
+#include "BRepCheck_ListOfStatus.hxx"
+#include "BRepCheck_Result.hxx"
+#include "TopTools_IndexedMapOfShape.hxx"
+#include "TopExp.hxx"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
 
-const double STEP_TRANS_CHORD_ERROR = 0.005;
-const double STEP_TRANS_ANGLE_RES = 1;
+const double STEP_TRANS_CHORD_ERROR = Slic3r::OCCT_DEFAULT_LINEAR_DEFLECTION;
+const double STEP_TRANS_ANGLE_RES = Slic3r::OCCT_DEFAULT_ANGULAR_DEFLECTION;
 
 // const int LOAD_STEP_STAGE_READ_FILE          = 0;
 // const int LOAD_STEP_STAGE_GET_SOLID          = 1;
@@ -79,6 +84,27 @@ static void getNamedSolids(const TopLoc_Location& location, const Handle(XCAFDoc
     }
 }
 
+// Tisma: checks the topology and geometry of a solid with BRepCheck_Analyzer. Returns false and a short report
+// (number of invalid faces, edges and vertices) when problems are found.
+static bool check_solid(const TopoDS_Shape &shape, std::string &report)
+{
+    BRepCheck_Analyzer analyzer(shape, Standard_True);
+    if (analyzer.IsValid())
+        return true;
+    int bad[3] = { 0, 0, 0 };
+    const TopAbs_ShapeEnum types[3] = { TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX };
+    for (int i = 0; i < 3; ++ i) {
+        TopTools_IndexedMapOfShape map;
+        TopExp::MapShapes(shape, types[i], map);
+        for (int j = 1; j <= map.Extent(); ++ j)
+            if (! analyzer.IsValid(map(j)))
+                ++ bad[i];
+    }
+    report = "invalid faces: " + std::to_string(bad[0]) + ", edges: " + std::to_string(bad[1]) +
+             ", vertices: " + std::to_string(bad[2]);
+    return false;
+}
+
 extern "C" OCCTWRAPPER_EXPORT bool load_step_internal(const char *path, OCCTResult* res /*BBS:, ImportStepProgressFn proFn*/, std::optional<std::pair<double, double>> deflections /*= std::nullopt*/)
 {
 try {
@@ -128,7 +154,8 @@ try {
     std::string obj_name((last_slash == nullptr) ? path : last_slash + 1);
     res->object_name = obj_name;
 
-    for (const NamedSolid &namedSolid : namedSolids) {
+    for (size_t solid_idx = 0; solid_idx < namedSolids.size(); ++ solid_idx) {
+        const NamedSolid &namedSolid = namedSolids[solid_idx];
         BRepMesh_IncrementalMesh mesh(namedSolid.solid, 
                                       deflections.has_value() ? deflections.value().first  : STEP_TRANS_CHORD_ERROR, false, 
                                       deflections.has_value() ? deflections.value().second : STEP_TRANS_ANGLE_RES, true);
@@ -136,7 +163,13 @@ try {
 
         std::vector<Vec3f>      vertices;
         std::vector<stl_facet> &facets = res->volumes.back().facets;
+        res->volumes.back().solid_index = int(solid_idx);
+        res->volumes.back().brep_valid  = check_solid(namedSolid.solid, res->volumes.back().brep_report);
+        int face_idx = -1;
         for (TopExp_Explorer anExpSF(namedSolid.solid, TopAbs_FACE); anExpSF.More(); anExpSF.Next()) {
+            // Tisma: the face index is counted also for the faces without triangulation, so that it stays stable.
+            ++ face_idx;
+            const unsigned int face_id = face_idx < int(OCCT_FACE_ID_NONE) ? unsigned(face_idx) : OCCT_FACE_ID_NONE;
             const int aNodeOffset = int(vertices.size());
             const TopoDS_Shape& aFace = anExpSF.Current();
             TopLoc_Location aLoc;
@@ -169,13 +202,14 @@ try {
                 facet.vertex[1] = vertices[anId[1] + aNodeOffset - 1];
                 facet.vertex[2] = vertices[anId[2] + aNodeOffset - 1];
                 facet.normal    = (facet.vertex[1] - facet.vertex[0]).cross(facet.vertex[2] - facet.vertex[1]).normalized();
-                facet.extra[0]  = 0;
-                facet.extra[1]  = 0;
+                facet.extra[0]  = char(face_id & 0xFF);
+                facet.extra[1]  = char((face_id >> 8) & 0xFF);
                 facets.emplace_back(std::move(facet));
             }
         }
 
         res->volumes.back().volume_name = namedSolid.name;
+        res->volumes.back().face_count  = face_idx + 1;
 
         if (vertices.empty())
             res->volumes.pop_back();        

@@ -1,0 +1,39 @@
+name: Release please
+
+# Versioning from the Conventional Commits of main (CONTRIBUTING.md): release-please keeps a release pull request
+# with the next version (feat -> minor, fix -> patch while 0.x) and its CHANGELOG.md section. Merging it creates the
+# vX.Y.Z tag and release, and then builds and publishes the packages of the three platforms (release.yml).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  packages:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
+    permissions:
+      contents: write

@@ -7,6 +7,7 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Print.hpp"
+#include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/libslic3r.h"
 
 #include "test_data.hpp"
@@ -268,4 +269,108 @@ SCENARIO("Stacked cubes", "[Multi]")
             REQUIRE(T1_shells.empty());
         }
     }
+}
+
+// Upstream SPE-3866 (ported by Tisma): without a wipe tower, a tool change at the start of a layer happens where the
+// previous layer ended, not after a travel to the next object (the old nozzle would ooze over it).
+TEST_CASE("Tool change without a wipe tower is not preceded by a travel to another object", "[Multi]")
+{
+    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
+    config.set_deserialize_strict({
+        { "nozzle_diameter",     "0.4,0.4" },
+        { "wipe_tower",          false },
+        { "travel_ramping_lift", "1,1" },
+        { "travel_slope",        "30,30" },
+        { "skirts",              0 },
+        { "layer_height",        0.2 },
+        { "first_layer_height",  0.2 },
+        { "toolchange_gcode",    "T[next_extruder] ; TEST_TOOLCHANGE" },
+        { "layer_gcode",         "; TEST_LAYER_CHANGE" },
+    });
+
+    int checked = 0;
+    // A tall cube with the first extruder and a low one with the second: above the low cube, the layer starts with a
+    // tool change when the low cube ended with the second extruder (two heights: one of them ends so).
+    for (double low_height : { 10., 10.2 }) {
+        Model model;
+        for (int i = 0; i < 2; ++ i) {
+            ModelObject *object = model.add_object();
+            object->name = "object.stl";
+            ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
+            volume->config.set("extruder", i + 1);
+            if (i == 1)
+                volume->scale(Vec3d(1., 1., low_height / 20.));
+            volume->translate(i * 40., 0., 0.);
+            object->add_instance();
+            object->ensure_on_bed();
+        }
+        Print print;
+        print.apply(model, config);
+        print.validate();
+        const std::string gcode = Test::gcode(print);
+
+        GCodeReader parser;
+        Vec2f last_extrusion{ 0.f, 0.f };
+        bool  extruded = false;
+        bool  layer_started = false;
+        parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+            const std::string_view comment = line.comment();
+            if (comment.find("TEST_LAYER_CHANGE") != std::string_view::npos) {
+                layer_started = true;
+            } else if (comment.find("TEST_TOOLCHANGE") != std::string_view::npos) {
+                if (layer_started && extruded) {
+                    // No XY travel between the end of the previous layer and the tool change.
+                    CHECK(std::abs(self.x() - last_extrusion.x()) < 0.01f);
+                    CHECK(std::abs(self.y() - last_extrusion.y()) < 0.01f);
+                    ++ checked;
+                }
+            } else if (line.extruding(self) && line.dist_XY(self) > 0.f) {
+                last_extrusion = { line.new_X(self), line.new_Y(self) };
+                extruded       = true;
+                layer_started  = false;
+            }
+        });
+    }
+    CHECK(checked > 0);
+}
+
+// Upstream SPE-3414 (ported by Tisma): the default extruder of a part painted entirely with another extruder is not used.
+TEST_CASE("Default extruder of a fully painted part is not used", "[Multi]")
+{
+    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
+    config.set_deserialize_strict({
+        { "nozzle_diameter", "0.4,0.4,0.4" },
+        { "wipe_tower",      false },
+        { "skirts",          0 },
+        { "support_material", false },
+    });
+
+    auto extruders_used = [&config](TriangleStateType paint, bool all_facets, double max_width) {
+        DynamicPrintConfig cfg = config;
+        cfg.set_key_value("mmu_segmented_region_max_width", new ConfigOptionFloat(max_width));
+        Model model;
+        ModelObject *object = model.add_object();
+        object->name = "object.stl";
+        ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
+        volume->config.set("extruder", 1);
+        TriangleSelector selector(volume->mesh());
+        for (int i = all_facets ? 0 : 1; i < int(volume->mesh().facets_count()); ++ i)
+            selector.set_facet(i, paint);
+        volume->mm_segmentation_facets.set(selector);
+        object->add_instance();
+        object->ensure_on_bed();
+        Print print;
+        print.apply(model, cfg);
+        print.validate();
+        return print.extruders();
+    };
+
+    // 0-based extruders.
+    CHECK(extruders_used(TriangleStateType::Extruder2, true, 0.) == std::vector<unsigned int>{ 1 });
+    // A facet keeps the default extruder.
+    CHECK(extruders_used(TriangleStateType::Extruder2, false, 0.) == std::vector<unsigned int>{ 0, 1 });
+    // The painting reaches only 2 mm deep: the inside keeps the default extruder.
+    CHECK(extruders_used(TriangleStateType::Extruder2, true, 2.) == std::vector<unsigned int>{ 0, 1 });
+    // Painted with an extruder the printer doesn't have: printed with the default one.
+    CHECK(extruders_used(TriangleStateType(5), true, 0.) == std::vector<unsigned int>{ 0 });
 }

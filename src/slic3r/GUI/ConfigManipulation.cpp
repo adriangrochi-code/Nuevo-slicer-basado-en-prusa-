@@ -288,11 +288,14 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
         const bool nonplanar = mode != NonPlanarMode::Disabled;
         const bool wave      = mode == NonPlanarMode::Wave;
         const auto pattern   = config->option<ConfigOptionEnum<NonPlanarPattern>>("nonplanar_pattern")->value;
-        for (auto el : { "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top",
-                         "nonplanar_flow_policy", "nonplanar_segment_length" })
+        // Fitted to the print head: the amplitude comes from its free angles and clearance height.
+        const bool fit_head  = config->opt_bool("nonplanar_fit_head");
+        for (auto el : { "nonplanar_fit_head", "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_ramp_height",
+                         "nonplanar_flat_top", "nonplanar_flow_policy", "nonplanar_segment_length" })
             toggle_field(el, nonplanar);
-        for (auto el : { "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength" })
+        for (auto el : { "nonplanar_pattern", "nonplanar_wavelength" })
             toggle_field(el, wave);
+        toggle_field("nonplanar_amplitude", wave && ! fit_head);
         toggle_field("nonplanar_angle", wave && pattern != NonPlanarPattern::Egg);
         toggle_field("nonplanar_twist", wave && pattern == NonPlanarPattern::Twisted);
         toggle_field("nonplanar_cone_angle", mode == NonPlanarMode::Conical);

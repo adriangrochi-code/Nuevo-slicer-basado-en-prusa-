@@ -4,6 +4,9 @@
 #define SLIC3R_APP_NAME "@SLIC3R_APP_NAME@"
 #define SLIC3R_APP_KEY "@SLIC3R_APP_KEY@"
 #define SLIC3R_VERSION "@SLIC3R_VERSION@"
+// Tisma Slicer: its own version (SLIC3R_VERSION is the version of PrusaSlicer it is based on).
+#define TISMA_VERSION "@TISMA_VERSION@"
+#define TISMA_VERSION_TEXT "@TISMA_VERSION@ (PrusaSlicer @SLIC3R_VERSION@)"
 #define SLIC3R_BUILD_ID "@SLIC3R_BUILD_ID@"
 
 #endif /* __SLIC3R_VERSION_H */

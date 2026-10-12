@@ -194,6 +194,7 @@ protected:
 	wxBoxSizer*			m_hsizer;
 	wxBoxSizer*			m_h_buttons_sizer;
 	wxBoxSizer*			m_left_sizer;
+	wxBoxSizer*			m_simple_mode_hint {nullptr};
 	wxTreeCtrl*			m_treectrl;
 
 	wxScrolledWindow*	m_page_view {nullptr};

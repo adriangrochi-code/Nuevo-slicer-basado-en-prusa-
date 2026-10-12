@@ -110,6 +110,7 @@ static const t_config_enum_values s_keys_map_PrintHostType {
     { "repetier",       htRepetier },
     { "mks",            htMKS },
     { "prusaconnectnew", htPrusaConnectNew },
+    { "bambulab",       htBambuLan },
 
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrintHostType)
@@ -279,6 +280,25 @@ static t_config_enum_values s_keys_map_NonPlanarMode {
     { "conical",  int(NonPlanarMode::Conical) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
+
+static t_config_enum_values s_keys_map_CalibMode {
+    { "disabled",         int(CalibMode::Disabled) },
+    { "temperature",      int(CalibMode::Temperature) },
+    { "pressure_advance", int(CalibMode::PressureAdvance) },
+    { "retraction",       int(CalibMode::Retraction) },
+    { "volumetric_speed", int(CalibMode::VolumetricSpeed) },
+    { "perimeter_speed",  int(CalibMode::PerimeterSpeed) },
+    { "acceleration",     int(CalibMode::Acceleration) },
+    { "cornering",        int(CalibMode::Cornering) },
+    { "input_shaping",    int(CalibMode::InputShaping) },
+    { "nonplanar_slope",  int(CalibMode::NonPlanarSlope) },
+    { "nonplanar_z_speed", int(CalibMode::NonPlanarZSpeed) },
+    { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
+    { "flow_rate",        int(CalibMode::FlowRate) },
+    { "coasting",         int(CalibMode::Coasting) },
+    { "resin_exposure",   int(CalibMode::ResinExposure) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
 
 static t_config_enum_values s_keys_map_NonPlanarPattern {
     { "egg",     int(NonPlanarPattern::Egg) },
@@ -536,6 +556,13 @@ void PrintConfigDef::init_common_params()
     def->label = L("Ignore HTTPS certificate revocation checks");
     def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
                      "One may want to enable this option for self signed certificates if connection fails.");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("bambu_use_ams", coBool);
+    def->label = L("Print from the AMS");
+    def->tooltip = L("Bambu Lab printers: take the filament from the AMS instead of the external spool.");
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionBool(false));
@@ -1211,6 +1238,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("stagger_perimeters", coBool);
+    def->label = L("Staggered perimeters (Experimental)");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Print every second internal perimeter half a layer higher, so that the layer lines of neighbouring "
+                    "perimeters are not aligned and the wall interlocks like a brick wall: stronger between layers. "
+                    "The external perimeter is not moved. The first layer and the last layer under a top surface are "
+                    "printed with more or less flow to keep the wall flat. Not used with spiral vase, non-planar layers "
+                    "or belt printers.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("extruder", coInt);
     def->label = L("Extruder");
     def->category = L("Extruders");
@@ -1566,6 +1604,19 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Enter your filament cost per kg here. This is only for statistical information.");
     def->sidetext = L("money/kg");
     def->min = 0;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_coast_distance", coFloats);
+    def->label = L("Coasting distance");
+    def->tooltip = L("Stops extruding this many millimeters before the end of each extrusion and travels the rest with the "
+                     "nozzle still moving, so the pressure left in the nozzle finishes the line (as coasting in Simplify3D). "
+                     "It reduces blobs and zits at the seam and stringing; too much leaves a gap at the seam. Paths shorter "
+                     "than three times this distance are not affected. 0 turns it off. Calibrate it with Calibration > "
+                     "Coasting distance.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 5;
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
     def = this->add("filament_spool_weight", coFloats);
@@ -2269,6 +2320,86 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    // Tisma: belt printers (src/libslic3r/BeltPrinter.hpp).
+    def = this->add("belt_printer", coBool);
+    def->label = L("Belt printer");
+    def->tooltip = L("The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; "
+                     "it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, "
+                     "Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, "
+                     "sequential printing, spiral vase and arc fitting are not available on a belt.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("belt_angle", coFloat);
+    def->label = L("Gantry angle");
+    def->full_label = L("Belt printer gantry angle");
+    def->tooltip = L("Angle between the gantry (the printing plane) and the belt. Most belt printers use 45°.");
+    def->sidetext = L("°");
+    def->min = 10;
+    def->max = 80;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(45.));
+
+    // Tisma: geometry of the print head for the collision check of non-planar layers.
+    def = this->add("nonplanar_head_clearance_height", coFloat);
+    def->label = L("Head clearance height");
+    def->full_label = L("Print head clearance height (non-planar)");
+    def->tooltip = L("Vertical distance from the nozzle tip to the lowest point of the print head around it (heater "
+                     "block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers "
+                     "are refused if the part already printed would rise higher than this within the head clearance "
+                     "radius. 0 disables the check.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(3.));
+
+    def = this->add("nonplanar_head_profile", coString);
+    def->label = L("Measured head profile");
+    def->full_label = L("Measured print head profile (non-planar)");
+    def->tooltip = L("Free angle of the print head measured with the static gauge at several heights, as "
+                     "height:angle pairs separated by semicolons (for example 2:45;5:30;10:20). Near the nozzle tip the "
+                     "head allows steep but low rises, farther away only gentler ones. When set, the collision check of "
+                     "the non-planar layers uses it instead of the head clearance height. Filled by the non-planar "
+                     "calibration assistant.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionString(""));
+
+    def = this->add("nonplanar_head_free_angle_x", coFloat);
+    def->label = L("Free angle along X");
+    def->full_label = L("Print head free angle along X (non-planar)");
+    def->tooltip = L("Steepest slope of the layers rising along X that the print head allows without touching the part: "
+                     "the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising "
+                     "along X. The non-planar layers use it for their slope instead of the maximum layer slope of the "
+                     "print settings. 0 = not measured, use the maximum layer slope.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("nonplanar_head_free_angle_y", coFloat);
+    def->label = L("Free angle along Y");
+    def->full_label = L("Print head free angle along Y (non-planar)");
+    def->tooltip = L("Steepest slope of the layers rising along Y that the print head allows without touching the part: "
+                     "the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising "
+                     "along Y. The non-planar layers use it for their slope instead of the maximum layer slope of the "
+                     "print settings. 0 = not measured, use the maximum layer slope.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("nonplanar_head_clearance_radius", coFloat);
+    def->label = L("Head clearance radius");
+    def->full_label = L("Print head clearance radius (non-planar)");
+    def->tooltip = L("Horizontal distance from the nozzle to the farthest point of the print head parts that are "
+                     "lower than the head clearance height above the nozzle tip (heater block, cooling duct).");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(15.));
+
     def = this->add("machine_limits_usage", coEnum);
     def->label = L("How to apply limits");
     def->full_label = L("Purpose of Machine Limits");
@@ -2559,7 +2690,8 @@ void PrintConfigDef::init_fff_params()
         { "flashair",       "FlashAir" },
         { "astrobox",       "AstroBox" },
         { "repetier",       "Repetier" },
-        { "mks",            "MKS" }
+        { "mks",            "MKS" },
+        { "bambulab",       "Bambu Lab (LAN)" }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
@@ -3266,7 +3398,8 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_cone_angle", coFloat);
     def->label = L("Cone angle");
     def->category = L("Non-planar");
-    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards.");
+    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", "
+                   "only its sign is used: the slope is the free angle of the print head.");
     def->sidetext = L("°");
     def->min = -60;
     def->max = 60;
@@ -3299,11 +3432,23 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("nonplanar_fit_head", coBool);
+    def->label = L("Fit to the print head");
+    def->category = L("Non-planar");
+    def->tooltip = L("Make the layers as curved as the print head allows, instead of using the wave amplitude and the "
+                   "cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer "
+                   "Settings > General > Print head), the waves rise at most the head clearance height from trough to "
+                   "crest, and the layer thickness stays within the allowed range. Conical layers keep the direction "
+                   "of the cone angle set here (rising outwards or inwards).");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
     def = this->add("nonplanar_max_slope", coFloat);
     def->label = L("Maximum layer slope");
     def->category = L("Non-planar");
     def->tooltip = L("Steepest layer slope the nozzle can print without the nozzle body hitting the part "
-                   "(3 axis printers). Slicing fails if the layers are steeper.");
+                   "(3 axis printers). Slicing fails if the layers are steeper. Used where the free angles of the print "
+                   "head along X and Y are not measured (Printer Settings > General > Print head).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;
@@ -4050,6 +4195,47 @@ void PrintConfigDef::init_fff_params()
     def->label = "";
     def->tooltip = "";
     def->set_default_value(new ConfigOptionBool{ false });
+
+    // Calibration tests (project options, set by the Calibration menu).
+    def = this->add("calib_mode", coEnum);
+    def->label = L("Calibration test");
+    def->tooltip = L("Value changed along the height of the print by the calibration test.");
+    def->set_enum<CalibMode>({
+        { "disabled",         L("Disabled") },
+        { "temperature",      L("Temperature") },
+        { "pressure_advance", L("Pressure advance") },
+        { "retraction",       L("Retraction length") },
+        { "volumetric_speed", L("Maximum volumetric speed") },
+        { "perimeter_speed",  L("Perimeter speed") },
+        { "acceleration",     L("Acceleration") },
+        { "cornering",        L("Cornering (jerk / square corner velocity)") },
+        { "input_shaping",    L("Input shaping frequency") },
+        { "nonplanar_slope",  L("Non-planar: maximum layer slope") },
+        { "nonplanar_z_speed", L("Non-planar: Z axis speed") },
+        { "first_layer_offset", L("First layer Z offset") },
+        { "flow_rate",        L("Flow rate") },
+        { "coasting",         L("Coasting distance") },
+        { "resin_exposure",   L("Resin exposure time") }
+    });
+    def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+
+    def = this->add("calib_start", coFloat);
+    def->label = L("Start value");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_end", coFloat);
+    def->label = L("End value");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_step", coFloat);
+    def->label = L("Step");
+    def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("calib_band_height", coFloat);
+    def->label = L("Height of each step");
+    def->sidetext = L("mm");
+    def->set_default_value(new ConfigOptionFloat(5.));
+
 
     def = this->add("wipe_tower_width", coFloat);
     def->label = L("Width");

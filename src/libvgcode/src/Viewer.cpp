@@ -42,6 +42,11 @@ void Viewer::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
     m_impl->render(view_matrix, projection_matrix);
 }
 
+void Viewer::set_shading(const Shading& shading)
+{
+    m_impl->set_shading(shading);
+}
+
 EViewType Viewer::get_view_type() const
 {
     return m_impl->get_view_type();

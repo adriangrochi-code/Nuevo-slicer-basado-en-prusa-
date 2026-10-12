@@ -214,8 +214,9 @@ void GLVolume::NonManifoldEdges::update()
     m_update_needed = false;
 }
 
-const ColorRGBA GLVolume::SELECTED_COLOR         = ColorRGBA::GREEN();
-const ColorRGBA GLVolume::HOVER_SELECT_COLOR     = { 0.4f, 0.9f, 0.1f, 1.0f };
+// Tisma (Órbita Pro): selection in the Tisma violet instead of bright green.
+const ColorRGBA GLVolume::SELECTED_COLOR         = { 0.643f, 0.420f, 0.910f, 1.0f };
+const ColorRGBA GLVolume::HOVER_SELECT_COLOR     = { 0.788f, 0.635f, 0.961f, 1.0f };
 const ColorRGBA GLVolume::HOVER_DESELECT_COLOR   = { 1.0f, 0.75f, 0.75f, 1.0f };
 const ColorRGBA GLVolume::OUTSIDE_COLOR          = { 0.0f, 0.38f, 0.8f, 1.0f };
 const ColorRGBA GLVolume::SELECTED_OUTSIDE_COLOR = { 0.19f, 0.58f, 1.0f, 1.0f };

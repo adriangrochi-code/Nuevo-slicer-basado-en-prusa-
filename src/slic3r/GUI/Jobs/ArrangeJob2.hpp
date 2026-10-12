@@ -6,6 +6,7 @@
 #define ARRANGEJOB2_HPP
 
 #include <optional>
+#include <set>
 
 #include "Job.hpp"
 
@@ -31,6 +32,9 @@ enum class ArrangeSelectionMode { SelectionOnly, Full, CurrentBedFull, CurrentBe
 
 arr2::SceneBuilder build_scene(
     Plater &plater, ArrangeSelectionMode mode = ArrangeSelectionMode::Full);
+
+// Tisma: indices of the plates the user locked against arrange.
+std::set<int> locked_plates(const Model &model);
 
 struct ArrCtl : public arr2::ArrangeTaskBase::Ctl
 {

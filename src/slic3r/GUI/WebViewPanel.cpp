@@ -9,6 +9,8 @@
 #include "slic3r/GUI/WebView.hpp"
 #include "slic3r/GUI/WebViewPlatformUtils.hpp"
 #include "slic3r/GUI/MsgDialog.hpp"
+#include "slic3r/GUI/NotificationManager.hpp"
+#include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/Field.hpp"
 #include "slic3r/Utils/Http.hpp"
 #include "libslic3r/AppConfig.hpp"
@@ -24,6 +26,12 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <nlohmann/json.hpp>
 #include <regex>
+#include <fstream>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/beast/core/detail/base64.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/nowide/fstream.hpp>
+#include <wx/button.h>
 
 // if set to 1 the fetch() JS function gets override to include JWT in authorization header
 // if set to 0, the /slicer/login is invoked from WebKit (passing JWT token only to this request)
@@ -1817,5 +1825,229 @@ void PrintablesWebViewPanel::hide_loading_overlay()
     run_script(script);
 }
 
+// ------------------------------------------------------------------------------------------------- Thingiverse (Tisma)
+
+static const char* THINGIVERSE_URL     = "https://www.thingiverse.com/";
+static const char* THINGIVERSE_HANDLER = "TismaThingiverse";
+static std::string thingiverse_hook_script();
+
+ThingiverseWebViewPanel::ThingiverseWebViewPanel(wxWindow* parent)
+    : WebViewPanel(parent, GUI::from_u8(THINGIVERSE_URL), { THINGIVERSE_HANDLER }, "other_loading", "other_error", false)
+{
+    const int em = wxGetApp().em_unit();
+    m_btn_back     = new wxButton(this, wxID_ANY, _L("Back"));
+    m_btn_home     = new wxButton(this, wxID_ANY, _L("Home"));
+    m_btn_download = new wxButton(this, wxID_ANY, _L("Download and import this thing"));
+    auto btn_browser = new wxButton(this, wxID_ANY, _L("Open in the browser"));
+    m_btn_download->SetToolTip(_L("Downloads all the files of the thing shown (\"Download all files\" of the site) and loads them into the plater."));
+    m_sizer_top->Add(m_btn_back, 0, wxALL, em / 2);
+    m_sizer_top->Add(m_btn_home, 0, wxTOP | wxBOTTOM | wxRIGHT, em / 2);
+    m_sizer_top->AddStretchSpacer(1);
+    m_sizer_top->Add(btn_browser, 0, wxTOP | wxBOTTOM | wxRIGHT, em / 2);
+    m_sizer_top->Add(m_btn_download, 0, wxTOP | wxBOTTOM | wxRIGHT, em / 2);
+
+    m_btn_back->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { if (m_browser && m_browser->CanGoBack()) m_browser->GoBack(); });
+    m_btn_home->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { load_url(GUI::from_u8(THINGIVERSE_URL)); });
+    btn_browser->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        wxGetApp().open_browser_with_warning_dialog(m_browser ? m_browser->GetCurrentURL() : GUI::from_u8(THINGIVERSE_URL));
+    });
+    // The button of the site, whose download the page script hands to the application.
+    m_btn_download->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        run_script(GUI::from_u8(thingiverse_hook_script() + R"JS(
+            (function () {
+                const button = Array.from(document.querySelectorAll('button, a')).find(function (e) {
+                    return /download all files/i.test(e.textContent || '');
+                });
+                if (button) button.click();
+            })();
+        )JS"));
+    });
+    update_buttons();
+}
+
+void ThingiverseWebViewPanel::late_create()
+{
+    WebViewPanel::late_create();
+    if (m_browser == nullptr)
+        return;
+    // Downloads made by the page itself, in every page of the site.
+    m_browser->AddUserScript(GUI::from_u8(thingiverse_hook_script()));
+    // The site changes pages without loading them: follow the title to enable the buttons.
+    m_browser->Bind(wxEVT_WEBVIEW_TITLE_CHANGED, [this](wxWebViewEvent& evt) { update_buttons(); evt.Skip(); });
+    // Links opening a new window (downloads, other sites): downloads here, the rest in the same page.
+    m_browser->Bind(wxEVT_WEBVIEW_NEWWINDOW, [this](wxWebViewEvent& evt) {
+        const std::string url = into_u8(evt.GetURL());
+        if (is_model_download(url))
+            download(url);
+        else if (! url.empty())
+            load_url(evt.GetURL());
+    });
+}
+
+bool ThingiverseWebViewPanel::is_model_download(const std::string& url)
+{
+    static const std::regex url_re(R"(^https://([^/?#]+)(/[^?#]*)?)", std::regex::icase);
+    std::smatch m;
+    if (! std::regex_search(url, m, url_re))
+        return false;
+    const std::string host = m[1];
+    const std::string path = m[2];
+    if (! (boost::iequals(host, "thingiverse.com") || boost::iends_with(host, ".thingiverse.com")))
+        return false;
+    for (const char* ext : { ".stl", ".3mf", ".obj", ".amf", ".step", ".stp", ".zip" })
+        if (boost::iends_with(path, ext))
+            return true;
+    return false;
+}
+
+bool ThingiverseWebViewPanel::is_thing_page(const std::string& page_url)
+{
+    static const std::regex thing_re(R"(^https://(www\.)?thingiverse\.com/thing:\d+)", std::regex::icase);
+    return std::regex_search(page_url, thing_re);
+}
+
+void ThingiverseWebViewPanel::on_navigation_request(wxWebViewEvent& evt)
+{
+    const std::string url = into_u8(evt.GetURL());
+    if (is_model_download(url)) {
+        evt.Veto();
+        download(url);
+    }
+}
+
+void ThingiverseWebViewPanel::on_loaded(wxWebViewEvent& evt)
+{
+    WebViewPanel::on_loaded(evt);
+    update_buttons();
+}
+
+void ThingiverseWebViewPanel::update_buttons()
+{
+    const bool has_browser = m_browser != nullptr;
+    m_btn_back->Enable(has_browser && m_browser->CanGoBack());
+    m_btn_download->Enable(has_browser && is_thing_page(into_u8(m_browser->GetCurrentURL())));
+}
+
+// Installed in every page of the site: downloads its model files itself (with the cookies of the site) and hands them
+// to the application, also those the site makes with JavaScript (links to blob: URLs with a download attribute).
+static std::string thingiverse_hook_script()
+{
+    return R"JS(
+        (function () {
+            if (window.__tismaSend) return;
+            const handler = )JS" + nlohmann::json(THINGIVERSE_HANDLER).dump() + R"JS(;
+            const post = function (msg) {
+                const text = JSON.stringify(msg);
+                if (window[handler] && window[handler].postMessage) window[handler].postMessage(text);
+                else window.webkit.messageHandlers[handler].postMessage(text);
+            };
+            window.__tismaSend = function (href, name) {
+                const url = href.startsWith('blob:') ? location.href : href;
+                fetch(href, { credentials: 'include' }).then(function (response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    // A page instead of a file (the site moved it, or asks for a check).
+                    if (/text\/html/i.test(response.headers.get('content-type') || '')) throw new Error('not a file');
+                    const cd = response.headers.get('content-disposition');
+                    if (!name && cd) { const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd); if (m) name = decodeURIComponent(m[1]); }
+                    return response.blob();
+                }).then(function (blob) {
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                        post({ event: 'file', url: url, name: name || '', data: String(reader.result).split(',')[1] || '' });
+                    };
+                    reader.onerror = function () { post({ event: 'error', url: url, message: 'read' }); };
+                    reader.readAsDataURL(blob);
+                }).catch(function (e) { post({ event: 'error', url: url, message: String(e) }); });
+            };
+            const wanted = function (a) {
+                if (!a || !a.href) return false;
+                return a.hasAttribute('download') || a.href.startsWith('blob:') ||
+                       /\.(stl|3mf|obj|amf|step|stp|zip)([?#]|$)/i.test(a.href);
+            };
+            const click = HTMLAnchorElement.prototype.click;
+            HTMLAnchorElement.prototype.click = function () {
+                if (wanted(this)) { window.__tismaSend(this.href, this.getAttribute('download')); return; }
+                return click.apply(this, arguments);
+            };
+            document.addEventListener('click', function (e) {
+                const a = e.target && e.target.closest ? e.target.closest('a') : null;
+                if (wanted(a)) { e.preventDefault(); e.stopPropagation(); window.__tismaSend(a.href, a.getAttribute('download')); }
+            }, true);
+        })();
+    )JS";
+}
+
+void ThingiverseWebViewPanel::download(const std::string& url)
+{
+    if (m_browser == nullptr || m_pending.count(url))
+        return;
+    m_pending.insert(url);
+    wxGetApp().notification_manager()->push_notification(NotificationType::CustomNotification,
+        NotificationManager::NotificationLevel::RegularNotificationLevel, _u8L("Downloading from Thingiverse..."));
+    run_script(GUI::from_u8(thingiverse_hook_script() + "window.__tismaSend(" + nlohmann::json(url).dump() + ", '');"));
+}
+
+void ThingiverseWebViewPanel::on_script_message(wxWebViewEvent& evt)
+{
+    nlohmann::json msg;
+    try {
+        msg = nlohmann::json::parse(into_u8(evt.GetString()));
+    } catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Thingiverse: invalid message: " << e.what();
+        return;
+    }
+    const std::string url = msg.value("url", "");
+    m_pending.erase(url);
+    if (msg.value("event", "") != "file") {
+        // The page could not download it (blocked by the site): try it from the application.
+        BOOST_LOG_TRIVIAL(warning) << "Thingiverse: the page could not download " << url << ": " << msg.value("message", "");
+        if (is_model_download(url))
+            wxGetApp().start_thingiverse_download(url);
+        else
+            show_error(this, GUI::format(_L("The file could not be downloaded from Thingiverse: %1%"), msg.value("message", "")));
+        return;
+    }
+    const std::string data = msg.value("data", "");
+    std::string content(boost::beast::detail::base64::decoded_size(data.size()), '\0');
+    content.resize(boost::beast::detail::base64::decode(content.data(), data.data(), data.size()).first);
+    if (content.empty() || boost::istarts_with(content, "<!doctype html") || boost::istarts_with(content, "<html")) {
+        show_error(this, _u8L("Thingiverse did not send a model file. Try the download button of the file on the page."));
+        return;
+    }
+
+    // File name: the one the site gives, else the end of the URL; only the name, never a path.
+    std::string name = boost::filesystem::path(msg.value("name", "")).filename().string();
+    if (name.empty() || name == "." || name == "..")
+        name = boost::filesystem::path(url.substr(0, url.find_first_of("?#"))).filename().string();
+    if (name.empty() || name == "." || name == "..")
+        name = "thingiverse";
+    name.erase(std::remove_if(name.begin(), name.end(), [](char c) { return c == ':' || c == '/' || c == '\\'; }), name.end());
+    // An archive without its extension.
+    if (content.size() > 2 && content[0] == 'P' && content[1] == 'K' && ! boost::iends_with(name, ".zip") && ! boost::iends_with(name, ".3mf"))
+        name += ".zip";
+
+    const boost::filesystem::path folder = wxGetApp().download_folder();
+    if (folder.empty()) {
+        show_error(this, _u8L("Could not start URL download. Destination folder is not set. Please choose destination folder in Configuration Wizard."));
+        return;
+    }
+    boost::filesystem::path path = folder / name;
+    for (int i = 1; boost::filesystem::exists(path); ++ i)
+        path = folder / (boost::filesystem::path(name).stem().string() + "(" + std::to_string(i) + ")" + boost::filesystem::path(name).extension().string());
+    {
+        boost::nowide::ofstream out(path.string(), std::ios::binary);
+        out.write(content.data(), std::streamsize(content.size()));
+        if (! out) {
+            show_error(this, GUI::format(_L("Can't create file at %1%"), path.string()));
+            return;
+        }
+    }
+    BOOST_LOG_TRIVIAL(info) << "Thingiverse: downloaded " << url << " to " << path;
+    // As a dropped file: a zip archive opens the dialog to choose the models in it.
+    wxGetApp().mainframe->select_tab(size_t(0));
+    wxArrayString files;
+    files.Add(from_path(path));
+    wxGetApp().plater()->load_files(files);
+}
 
 } // namespace slic3r::GUI

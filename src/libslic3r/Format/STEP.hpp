@@ -11,10 +11,14 @@
 
 #include <utility>
 #include <optional>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace Slic3r {
 
 class Model;
+class TriangleMesh;
 
 //typedef std::function<void(int load_stage, int current, int total, bool& cancel)> ImportStepProgressFn;
 
@@ -23,6 +27,11 @@ class Model;
 // * first value is linear deflection
 // * second value is angle deflection
 extern bool load_step(const char *path_str, Model *model /*LMBBS:, ImportStepProgressFn proFn = nullptr*/, std::optional<std::pair<double, double>> deflections = std::nullopt);
+
+// Tisma: tessellates one solid of a STEP file (index as in OCCTVolume::solid_index). Returns the mesh and, for every
+// triangle, the tag with the index of its B-Rep face (0xFFFF when unknown).
+extern bool step_tessellate_solid(const char *path, int solid_index, double linear_deflection, double angular_deflection,
+                                  TriangleMesh &mesh_out, std::vector<uint16_t> &face_tags_out, std::string &error);
 
 }; // namespace Slic3r
 

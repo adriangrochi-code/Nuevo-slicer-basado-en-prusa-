@@ -23,6 +23,9 @@ in vec3 v_normal;
 
 // x = tainted, y = specular;
 out vec2 intensity;
+// Tisma: normal and position in eye space for the per pixel lighting and the shadows.
+out vec3 tisma_eye_normal;
+out vec3 tisma_eye_pos;
 
 void main()
 {
@@ -41,5 +44,7 @@ void main()
     NdotL = max(dot(normal, LIGHT_FRONT_DIR), 0.0);
     intensity.x += NdotL * LIGHT_FRONT_DIFFUSE;
 
+    tisma_eye_normal = normal;
+    tisma_eye_pos = position.xyz;
     gl_Position = projection_matrix * position;
 }

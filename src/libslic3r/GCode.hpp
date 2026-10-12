@@ -53,6 +53,8 @@
 
 namespace Slic3r {
 
+namespace Belt { class GCodeTransform; }
+
 // Forward declarations.
 class GCodeGenerator;
 struct WipeTowerData;
@@ -189,6 +191,8 @@ private:
         void set_find_replace(GCodeFindReplace *find_replace, bool enabled) { m_find_replace_backup = find_replace; m_find_replace = enabled ? find_replace : nullptr; }
         void find_replace_enable() { m_find_replace = m_find_replace_backup; }
         void find_replace_supress() { m_find_replace = nullptr; }
+        // Tisma, belt printers: converts the moves to the axes of the machine (nullptr = off: custom start / end G-code).
+        void set_belt_transform(Belt::GCodeTransform *belt) { m_belt = belt; }
 
         bool is_open() const { return f; }
         bool is_error() const;
@@ -214,6 +218,7 @@ private:
         GCodeFindReplace *m_find_replace { nullptr };
         // If suppressed, the backoup holds m_find_replace.
         GCodeFindReplace *m_find_replace_backup { nullptr };
+        Belt::GCodeTransform *m_belt { nullptr };
         GCodeProcessor   &m_processor;
     };
     void            _do_export(Print &print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb);
@@ -281,7 +286,7 @@ private:
         coordf_t previous_layer_z,
         coordf_t print_z,
         bool vase_mode,
-        const Point &first_point,
+        const std::optional<Point> first_point,
         const bool first_layer
     );
     std::string extrude_smooth_path(
@@ -467,6 +472,28 @@ private:
     bool                                m_brim_done;
     // Flag indicating whether the nozzle temperature changes from 1st to 2nd layer were performed.
     bool                                m_second_layer_things_done;
+    // Tisma calibration tests: index of the last emitted step, -1 before the first one.
+    int                                 m_calib_last_step { -1 };
+    // Value of the current step of a calibration test, 0 if none.
+    double                              m_calib_value { 0. };
+    // Calibration tests along X (first layer offset, flow): G-code X where the steps start.
+    std::optional<double>               m_calib_x0;
+    // Coasting (Tisma): distance along the path passed to _extrude() from which it stops extruding, < 0 = never.
+    double                              m_coast_start{ -1. };
+    // Tisma, staggered perimeters (docs/BRICK_LAYERS.md): the perimeter being extruded is raised by m_stagger_dz
+    // with its flow scaled by m_stagger_flow; m_stagger_raised = the nozzle is still above the layer after it.
+    bool                                m_stagger_allowed{ false };
+    double                              m_stagger_dz{ 0. };
+    double                              m_stagger_flow{ 1. };
+    bool                                m_stagger_raised{ false };
+    // Islands of the layers above and below, shrunk by half a perimeter, cached for the current layer.
+    const Layer                        *m_stagger_layer{ nullptr };
+    ExPolygons                          m_stagger_upper;
+    ExPolygons                          m_stagger_lower;
+    std::pair<double, double>           stagger_perimeter(const ExtrusionEntity &entity, const PrintRegion &region);
+    // Value of the step of the calibration along X under the start of the path, if any.
+    std::optional<double>               calib_value_along_x(const Geometry::ArcWelder::Path &path) const;
+    std::string                         emit_calibration_step(const Print &print, double print_z, bool force);
     // G-code that is due to be written before the next extrusion
     std::string                         m_pending_pre_extrusion_gcode;
     // Pointer to currently exporting PrintObject and instance index.

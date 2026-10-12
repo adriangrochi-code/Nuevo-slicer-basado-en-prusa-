@@ -5,7 +5,12 @@ uniform mat4 projection_matrix;
 
 in vec3 v_position;
 
+// Tisma: position in eye space for the shadows.
+out vec3 tisma_eye_pos;
+
 void main()
 {
-    gl_Position = projection_matrix * view_model_matrix * vec4(v_position, 1.0);
+    vec4 eye_pos = view_model_matrix * vec4(v_position, 1.0);
+    tisma_eye_pos = eye_pos.xyz;
+    gl_Position = projection_matrix * eye_pos;
 }

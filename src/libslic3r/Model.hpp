@@ -25,6 +25,9 @@
 #include "TextConfiguration.hpp"
 #include "EmbossShape.hpp"
 #include "TriangleSelector.hpp"
+#include "CadSource.hpp"
+#include "ModelPlate.hpp"
+#include "Engineering.hpp"
 #include "Feature/FullSpectrum/VirtualExtruder.hpp"
 
 #include <map>
@@ -408,6 +411,9 @@ public:
     CutConnectors           cut_connectors;
     CutId                 cut_id;
 
+    // Tisma: working conditions for the structural analysis (phase 5): supports, loads, temperature, material.
+    EngineeringSetup        engineering;
+
     /* This vector accumulates the total translation applied to the object by the
         center_around_origin() method. Callers might want to apply the same translation
         to new volumes before adding them to this object in order to preserve alignment
@@ -676,7 +682,7 @@ private:
             m_bounding_box_approx, m_bounding_box_approx_valid, 
             m_bounding_box_exact, m_bounding_box_exact_valid, m_min_max_z_valid,
             m_raw_bounding_box, m_raw_bounding_box_valid, m_raw_mesh_bounding_box, m_raw_mesh_bounding_box_valid,
-            cut_connectors, cut_id);
+            cut_connectors, cut_id, engineering);
 	}
 
     // Called by Print::validate() from the UI thread.
@@ -837,6 +843,11 @@ public:
     // Is set only when volume is Embossed Shape
     // Contain 2d information about embossed shape to be editabled
     std::optional<EmbossShape> emboss_shape; 
+
+    // Tisma: B-Rep origin of the mesh when it was imported from a STEP file (face of every triangle, STEP contents).
+    // Only valid while it matches the mesh, see CadSource::matches().
+    std::shared_ptr<const CadSource> cad_source;
+    bool                has_cad_source() const { return cad_source && cad_source->matches(this->mesh()); }
 
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; }
@@ -1013,7 +1024,8 @@ private:
         name(other.name), source(other.source), m_mesh(other.m_mesh), m_convex_hull(other.m_convex_hull),
         config(other.config), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
         supported_facets(other.supported_facets), seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets),
-        fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
+        fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape),
+        cad_source(other.cad_source)
     {
 		assert(this->id().valid()); 
         assert(this->config.id().valid()); 
@@ -1081,6 +1093,27 @@ private:
         assert(this->mm_segmentation_facets.id().invalid());
         assert(this->fuzzy_skin_facets.id().invalid());
 	}
+    // Tisma: the STEP contents stay in the registry of CadSource.hpp, the Undo / Redo stack only keeps their key.
+    template<class Archive> void save_cad_source(Archive &ar) const {
+        const bool has_cad = cad_source && cad_source->step;
+        ar(has_cad);
+        if (has_cad)
+            ar(cad_source->step->key, cad_source->solid_index, cad_source->linear_deflection, cad_source->angular_deflection,
+               cad_face_ids_to_string(cad_source->face_ids), cad_source->face_count, cad_source->brep_valid, cad_source->brep_report);
+    }
+    template<class Archive> void load_cad_source(Archive &ar) {
+        bool has_cad = false;
+        ar(has_cad);
+        cad_source.reset();
+        if (has_cad) {
+            auto        cad = std::make_shared<CadSource>();
+            std::string key, face_ids;
+            ar(key, cad->solid_index, cad->linear_deflection, cad->angular_deflection, face_ids, cad->face_count, cad->brep_valid, cad->brep_report);
+            cad->step = cad_step_file_find(key);
+            if (cad->step && cad_face_ids_from_string(face_ids, cad->face_ids))
+                cad_source = std::move(cad);
+        }
+    }
 	template<class Archive> void load(Archive &ar) {
 		bool has_convex_hull;
         ar(name, source, m_mesh, m_type, m_material_id, m_transformation, m_is_splittable, has_convex_hull, cut_info);
@@ -1091,6 +1124,7 @@ private:
         cereal::load_by_value(ar, config);
         cereal::load(ar, text_configuration);
         cereal::load(ar, emboss_shape);
+        load_cad_source(ar);
 		assert(m_mesh);
 		if (has_convex_hull) {
 			cereal::load_optional(ar, m_convex_hull);
@@ -1110,6 +1144,7 @@ private:
         cereal::save_by_value(ar, config);
         cereal::save(ar, text_configuration);
         cereal::save(ar, emboss_shape);
+        save_cad_source(ar);
 		if (has_convex_hull)
 			cereal::save_optional(ar, m_convex_hull);
 	}
@@ -1276,6 +1311,11 @@ public:
     const CustomGCode::Info& custom_gcode_per_print_z() const;
     std::vector<CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }
 
+    // Tisma: per plate name, lock and setting overrides, indexed by bed.
+    std::vector<ModelPlate> plates = std::vector<ModelPlate>(MAX_NUMBER_OF_BEDS);
+    ModelPlate&       plate(int bed_index)       { return plates[bed_index]; }
+    const ModelPlate& plate(int bed_index) const { return plates[bed_index]; }
+
     std::string sla_workflow_uuid; // This is a temporary place to put this, just for the 2.9.x series.
     // It is probably the less invasive way to make this propagate from the frontend to the backend.
 
@@ -1366,7 +1406,7 @@ private:
 	friend class cereal::access;
 	friend class UndoRedo::StackImpl;
 	template<class Archive> void serialize(Archive &ar) {
-		ar(materials, objects, wipe_tower_vector);
+		ar(materials, objects, wipe_tower_vector, plates);
     }
 };
 

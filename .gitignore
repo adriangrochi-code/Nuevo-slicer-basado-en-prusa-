@@ -21,3 +21,7 @@ deps/build-linux/*
 **/.idea/
 .pkg_cache
 CMakeUserPresets.json
+
+# SVG previews written by the libseqarrange tests
+src/libseqarrange/*_test_*.svg
+src/libseqarrange/*.svg

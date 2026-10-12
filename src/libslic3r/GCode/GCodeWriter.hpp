@@ -111,6 +111,9 @@ public:
      * @param comment Description of the movement purpose.
      */
     std::string extrude_to_xy(const Vec2d &point, double dE, const std::string_view comment = {});
+    // Coasting (Tisma): move at the current feed rate without extruding (no E word).
+    std::string coast_to_xy(const Vec2d &point, const std::string_view comment = {});
+    std::string coast_to_xyz(const Vec3d &point, const std::string_view comment = {});
     std::string extrude_to_xyz(const Vec3d &point, double dE, const std::string_view comment = {});
 
     std::string extrude_to_xy_G2G3IJ(const Vec2d &point, const Vec2d &ij, const bool ccw, double dE, const std::string_view comment);

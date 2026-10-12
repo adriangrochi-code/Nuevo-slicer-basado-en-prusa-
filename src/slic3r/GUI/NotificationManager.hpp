@@ -147,7 +147,9 @@ enum class NotificationType
     // Transient error on Prusa Account communication - user is informed and has option to cancel (logout)
     AccountTransientRetry,
     // Failed to download secret repo archive
-    FailedSecretVendorUpdateSync
+    FailedSecretVendorUpdateSync,
+    // Tisma: a calibration test of the project changes a value along the height of the print.
+    CalibrationActive
 };
 
 class NotificationManager
