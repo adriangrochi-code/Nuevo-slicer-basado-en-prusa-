@@ -33210,3 +33210,27 @@ msgstr "Impresora USB (se detecta al conectarla)"
 
 msgid "last 10 minutes, dashed: target"
 msgstr "últimos 10 minutos, punteado: objetivo"
+
+msgid "Prints, with normal flat layers, V grooves with different opening angles φ and different depths: φ grows in steps along each row, and the rows are H/3, 2H/3 and H deep (all with the same flat top). In the first block the walls of the grooves slope along X (rows from the front), in the second along Y (rows from the left). It is measured with the printer cold, nothing curved is printed: the first, safe step of the calibration."
+msgstr "Imprime, con capas planas normales, ranuras en V con distintos ángulos de apertura φ y distintas profundidades: φ crece por pasos a lo largo de cada fila, y las filas tienen H/3, 2H/3 y H de profundidad (todas con la misma cara superior plana). En el primer bloque las paredes de las ranuras se inclinan a lo largo de X (filas desde el frente), en el segundo a lo largo de Y (filas desde la izquierda). Se mide con la impresora fría, no se imprime nada curvo: el primer paso, seguro, de la calibración."
+
+msgid "With the printer cold and the nozzle clean, put the gauge on the bed as printed and lower the nozzle into a groove until its tip touches the bottom. The groove is free if nothing else touches the gauge: no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the narrowest free groove gives φ = start + step × groove number (starting at 0). Enter the depth of the row as the free height and the φ of each block in the non-planar calibration assistant (once for each depth): the free angle of the head at that height is (180° − φ) / 2. The slicer keeps the non-planar layers where the head fits and checks the rest."
+msgstr "Con la impresora fría y la boquilla limpia, apoya la galga en la cama como se imprimió y baja la boquilla dentro de una ranura hasta que la punta toque el fondo. La ranura está libre si nada más toca la galga: ninguna otra parte de la boquilla, el bloque calefactor, su funda, el ducto de refrigeración ni el sensor. En cada fila, la ranura libre más angosta da φ = inicio + paso × número de ranura (desde 0). Ingresa la profundidad de la fila como altura libre y el φ de cada bloque en el asistente de calibración no planar (una vez por cada profundidad): el ángulo libre del cabezal a esa altura es (180° − φ) / 2. El laminador mantiene las capas no planares donde entra el cabezal y comprueba el resto."
+
+msgid "Deepest groove H"
+msgstr "Ranura más profunda H"
+
+msgid "%1% grooves in each row, rows %2%, %3% and %4% mm deep."
+msgstr "%1% ranuras en cada fila, filas de %2%, %3% y %4% mm de profundidad."
+
+msgid "Step 1: deepest groove H of the gauge"
+msgstr "Paso 1: ranura más profunda H de la galga"
+
+msgid "Step 1: free height (depth of the row read)"
+msgstr "Paso 1: altura libre (profundidad de la fila leída)"
+
+msgid "Step 1: narrowest free groove φ in that row, walls along X (first block)"
+msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de X (primer bloque)"
+
+msgid "Step 1: narrowest free groove φ in that row, walls along Y (second block)"
+msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de Y (segundo bloque)"

@@ -13,7 +13,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 ## Sin publicar (0.10.0)
 
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
-  calibración no planar los mide con la galga girada); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
+  calibración no planar los mide con una galga plana de ranuras en V de distintos ángulos y profundidades, en X y en
+  Y: se ingresa la altura libre y el ángulo de cada fila); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
   del cono salen de esos ángulos y de la altura libre, no de valores fijos (`docs/NONPLANAR_ANALYSIS.md`).
 - **Impresión por USB como en Cura**: la impresora se detecta sola (puerto y velocidad) al enchufarla; al laminar, el
   botón principal es «Imprimir por USB» y la flecha de al lado despliega las demás salidas (exportar G-code, tarjeta SD,

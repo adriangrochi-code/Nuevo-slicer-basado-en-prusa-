@@ -41,6 +41,9 @@ namespace GUI {
 
 namespace {
 
+// Rows of the V groove gauge of the non-planar calibration, H/3, 2H/3 and H deep.
+constexpr int NONPLANAR_GAUGE_ROWS = 3;
+
 struct Params
 {
     double start;
@@ -138,8 +141,6 @@ void add_heightfield_block(ModelObject& obj, double size_x, double size_y, doubl
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
-// Heights of the rows of the static gauge of the free nozzle angle [mm].
-constexpr double NONPLANAR_GAUGE_HEIGHTS[3] = { 2., 5., 10. };
 
 // Prism along X (from x, width dx) of a convex profile in the YZ plane (counter-clockwise seen from +X), shifted by y0.
 void add_prism_x(ModelObject& obj, double x, double dx, double y0, const std::vector<Vec2d>& profile)
@@ -158,6 +159,29 @@ void add_prism_x(ModelObject& obj, double x, double dx, double y0, const std::ve
         its.indices.emplace_back(i, j, n + j);
         its.indices.emplace_back(i, n + j, n + i);
     }
+    obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Prism of a profile in the XZ plane (x, z) at x0, extruded along Y from y to y + dy.
+void add_prism_y(ModelObject& obj, double x0, double y, double dy, const std::vector<Vec2d>& profile)
+{
+    indexed_triangle_set its;
+    const int n = int(profile.size());
+    for (int side = 0; side < 2; ++side)
+        for (const Vec2d& p : profile)
+            its.vertices.emplace_back(float(x0 + p.x()), float(y + side * dy), float(p.y()));
+    for (int i = 1; i + 1 < n; ++i) {
+        its.indices.emplace_back(0, i, i + 1);
+        its.indices.emplace_back(n, n + i + 1, n + i);
+    }
+    for (int i = 0; i < n; ++i) {
+        const int j = (i + 1) % n;
+        its.indices.emplace_back(i, n + j, j);
+        its.indices.emplace_back(i, n + i, n + j);
+    }
+    // Outward normals whatever the orientation of the profile.
+    if (its_volume(its) < 0.f)
+        its_flip_triangles(its);
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
@@ -355,39 +379,55 @@ std::vector<Test> make_tests()
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
-        _L("Prints, with normal flat layers, a gauge of ramps in rows of 2, 5 and 10 mm of height; along each row the "
-           "angle grows in steps (from left to right). Each ramp has a plateau behind it. It is measured with the "
-           "printer cold, nothing curved is printed: the first, safe step of the calibration. Near the nozzle tip the "
-           "head allows steep but low rises, farther away only gentler ones: that is why there are several heights."),
-        _L("With the printer cold and the nozzle clean, put the gauge on the bed and lower the nozzle until its tip "
-           "touches the bed at the foot of a ramp. The ramp is free if nothing else touches the ramp or its plateau: "
-           "no other part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the "
-           "steepest free ramp is the free angle at that height: start + step × ramp number (from the left, starting "
-           "at 0). The print head is not symmetric: as printed and turned 180° the ramps rise along Y, turned 90° and "
-           "270° along X. In the lowest row keep the smaller angle along X and the smaller along Y; in the other rows "
-           "the smallest of the four. Enter them in the non-planar calibration assistant."),
-        "°", CalibMode::Disabled, { 15., 50., 5., 12. }, 0, 1., 75.,
+        _L("Prints, with normal flat layers, V grooves with different opening angles φ and different depths: φ grows "
+           "in steps along each row, and the rows are H/3, 2H/3 and H deep (all with the same flat top). In the first "
+           "block the walls of the grooves slope along X (rows from the front), in the second along Y (rows from the "
+           "left). It is measured with the printer cold, nothing curved is printed: the first, safe step of the "
+           "calibration."),
+        _L("With the printer cold and the nozzle clean, put the gauge on the bed as printed and lower the nozzle into "
+           "a groove until its tip touches the bottom. The groove is free if nothing else touches the gauge: no other "
+           "part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the narrowest "
+           "free groove gives φ = start + step × groove number (starting at 0). Enter the depth of the row as the free "
+           "height and the φ of each block in the non-planar calibration assistant (once for each depth): the free "
+           "angle of the head at that height is (180° − φ) / 2. The slicer keeps the non-planar layers where the head "
+           "fits and checks the rest."),
+        "°", CalibMode::Disabled, { 60., 150., 10., 3. }, 0, 5., 170.,
         [](ModelObject& obj, const Params& p, const Machine& m) {
-            // Rows from the front: ramp from the bed up to the height of the row, then a 25 mm plateau.
-            const double heights[] = { NONPLANAR_GAUGE_HEIGHTS[0], NONPLANAR_GAUGE_HEIGHTS[1], NONPLANAR_GAUGE_HEIGHTS[2] };
-            const double plateau = 25., base = 1., gap = 2., row_gap = 4.;
-            double y0 = 0.;
-            for (double h : heights) {
-                double row_depth = 0.;
+            const double deepest = std::clamp(p.band, 1.5, 15.), base = 1., land = 4., length = 10., block_gap = 6.;
+            // All the rows have the same flat top, a shallower row has a thicker floor: nothing higher than the top
+            // of the row stands next to the nozzle.
+            const double top = base + deepest;
+            // A row of grooves of one depth across u (X or Y), each one made of two convex halves (the prisms are fans).
+            auto row = [&](bool along_x, double offset, double depth) {
+                double u = 0.;
+                auto add = [&](const std::vector<Vec2d>& profile) {
+                    if (along_x)
+                        add_prism_y(obj, u, offset, length, profile);
+                    else
+                        add_prism_x(obj, offset, length, u, profile);
+                };
                 for (int i = 0; i < p.steps(); ++i) {
-                    const double angle = std::clamp(p.start + i * p.signed_step(), 1., 75.);
-                    const double reach = h / std::tan(angle * M_PI / 180.);
-                    row_depth = std::max(row_depth, reach + plateau);
-                    // Profile in the YZ plane, extruded along X.
-                    add_prism_x(obj, i * p.band, p.band - gap, y0,
-                                { { 0., 0. }, { reach + plateau, 0. }, { reach + plateau, base + h }, { reach, base + h }, { 0., base } });
+                    const double phi = std::clamp(p.start + i * p.signed_step(), 5., 170.);
+                    const double w = depth * std::tan(0.5 * phi * M_PI / 180.);   // half width at the top
+                    const double c = 0.5 * land + w;                             // half width of the cell
+                    add({ { 0., 0. }, { c, 0. }, { c, top - depth }, { c - w, top }, { 0., top } });
+                    u += c;
+                    add({ { 0., 0. }, { c, 0. }, { c, top }, { w, top }, { 0., top - depth } });
+                    u += c;
                 }
-                y0 += row_depth + row_gap;
-            }
+                return u;
+            };
+            // Walls sloping along X: the grooves run along Y, side by side along X, the rows one behind the other.
+            double width = 0.;
+            for (int k = 0; k < NONPLANAR_GAUGE_ROWS; ++k)
+                width = std::max(width, row(true, k * length, deepest * (k + 1) / NONPLANAR_GAUGE_ROWS));
+            // Walls sloping along Y: the grooves run along X, side by side along Y, at the right.
+            for (int k = 0; k < NONPLANAR_GAUGE_ROWS; ++k)
+                row(false, width + block_gap + k * length, deepest * (k + 1) / NONPLANAR_GAUGE_ROWS);
             set_layer_height(obj, m.layer);
             set(obj, "perimeters", "2");
-            set(obj, "fill_density", "10%");
-        }, _L("Width of each step") });
+            set(obj, "fill_density", "15%");
+        }, _L("Deepest groove H") });
     tests.back().key = "nonplanar_free_angle";
 
     tests.push_back({ _L("Non-planar: maximum layer slope"),
@@ -494,6 +534,8 @@ public:
 
         m_along_x = ! test.band_label.empty();
         m_base_band = test.mode == CalibMode::ResinExposure;
+        // The V groove gauge: the band is the depth of the grooves, not a length.
+        m_count_only = test.key == "nonplanar_free_angle";
         m_summary = new wxStaticText(this, wxID_ANY, "");
         main->Add(m_summary, 0, wxALL, em);
 
@@ -519,7 +561,9 @@ private:
     void update_summary()
     {
         const Params p = params();
-        m_summary->SetLabel(m_along_x ?
+        m_summary->SetLabel(m_count_only ? format_wxstr(_L("%1% grooves in each row, rows %2%, %3% and %4% mm deep."), p.steps(),
+                                                        wxString::Format("%.1f", p.band / 3.), wxString::Format("%.1f", 2. * p.band / 3.),
+                                                        wxString::Format("%.1f", p.band)) : m_along_x ?
             format_wxstr(_L("%1% steps, %2% mm long."), p.steps(), wxString::Format("%.1f", p.height())) :
             format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height() + (m_base_band ? p.band : 0.))));
         Layout();
@@ -532,6 +576,7 @@ private:
     wxStaticText*     m_summary { nullptr };
     bool              m_along_x { false };
     bool              m_base_band { false }; // a base below the steps (resin exposure tower)
+    bool              m_count_only { false };
 };
 
 void run_test(wxWindow* parent, const Test& test, const Params* initial = nullptr)
@@ -973,20 +1018,19 @@ public:
                                 [print_test]() { print_test("nonplanar_head_gauge", {}); });
         m_head_radius = add_row(_L("Head clearance radius"), printer.opt_float("nonplanar_head_clearance_radius"), 0., 100., 0.5, 1,
                                 _L("mm"), wxString(), nullptr);
-        // Maximum slope, step 1: static gauge. The lowest row (the nozzle cone) along X and along Y: the print head is
-        // not symmetric (cooling duct, probe on one side). The higher rows: the smallest of the four directions.
-        const std::string key_low = "nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[0]));
-        m_free_angle_x = add_row(format_wxstr(_L("Step 1: free angle along X at %1% mm (gauge turned 90° and 270°)"), int(NONPLANAR_GAUGE_HEIGHTS[0])),
-                                 stored("nonplanar_calib_free_angle_x", stored(key_low.c_str(), 0.)), 0., 75., 1., 0, "°",
-                                 _L("Print the gauge"), [print_test]() { print_test("nonplanar_free_angle", {}); });
-        m_free_angle_y = add_row(format_wxstr(_L("Step 1: free angle along Y at %1% mm (gauge as printed and turned 180°)"), int(NONPLANAR_GAUGE_HEIGHTS[0])),
-                                 stored("nonplanar_calib_free_angle_y", stored(key_low.c_str(), 0.)), 0., 75., 1., 0, "°",
-                                 wxString(), nullptr);
-        for (size_t i = 1; i < 3; ++i) {
-            const std::string key = "nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i]));
-            m_free_angles[i] = add_row(format_wxstr(_L("Step 1: free angle on the static gauge at %1% mm"), int(NONPLANAR_GAUGE_HEIGHTS[i])),
-                                       stored(key.c_str(), 0.), 0., 75., 1., 0, "°", wxString(), nullptr);
-        }
+        // Maximum slope, step 1: static gauge of V grooves of several angles and depths; for a depth (free height),
+        // the narrowest free groove φ with the walls sloping along X and along Y (the print head is not symmetric:
+        // cooling duct, probe on one side).
+        m_gauge_depth = add_row(_L("Step 1: deepest groove H of the gauge"), stored("nonplanar_calib_gauge_depth", 3.), 1.5, 15., 0.5, 1,
+                                _L("mm"), _L("Print the gauge"), [this, print_test]() {
+                                    print_test("nonplanar_free_angle", Params{ 60., 150., 10., m_gauge_depth->GetValue() });
+                                });
+        m_groove_depth = add_row(_L("Step 1: free height (depth of the row read)"), stored("nonplanar_calib_groove_depth", 3.), 0.5, 15., 0.5, 1,
+                                 _L("mm"), wxString(), nullptr);
+        m_phi_x = add_row(_L("Step 1: narrowest free groove φ in that row, walls along X (first block)"), stored("nonplanar_calib_groove_x", 0.),
+                          0., 170., 5., 0, "°", wxString(), nullptr);
+        m_phi_y = add_row(_L("Step 1: narrowest free groove φ in that row, walls along Y (second block)"), stored("nonplanar_calib_groove_y", 0.),
+                          0., 170., 5., 0, "°", wxString(), nullptr);
         // Step 2: printed test around the free angle.
         m_printed_angle = add_row(_L("Step 2: steepest good step of the printed test"), stored("nonplanar_calib_printed_angle", 0.), 0., 75., 0.5, 1,
                                   "°", _L("Print the test"), [this, print_test]() {
@@ -1020,7 +1064,7 @@ public:
         buttons->Add(new wxButton(this, wxID_CANCEL, _L("Close")));
         main->Add(buttons, 0, wxALIGN_RIGHT | wxALL, em);
 
-        for (wxSpinCtrlDouble* ctrl : { m_free_angle_x, m_free_angle_y, m_free_angles[1], m_free_angles[2], m_printed_angle, m_tolerance }) {
+        for (wxSpinCtrlDouble* ctrl : { m_groove_depth, m_phi_x, m_phi_y, m_printed_angle, m_tolerance }) {
             ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_result(); });
             ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_result(); });
         }
@@ -1037,8 +1081,11 @@ private:
     // The smaller measured of two values, 0 = none measured.
     static double smaller(double a, double b) { return a > 0. && b > 0. ? std::min(a, b) : std::max(a, b); }
 
-    // Free angle of the nozzle cone in every direction (the lowest row of the gauge), 0 = not measured.
-    double lowest_free_angle() const { return smaller(m_free_angle_x->GetValue(), m_free_angle_y->GetValue()); }
+    // Free angle of the head from the narrowest free V groove: its walls slope (180° - φ) / 2. 0 = not measured.
+    static double groove_free_angle(double phi) { return phi > 0. ? 0.5 * (180. - phi) : 0.; }
+    double static_x() const { return groove_free_angle(m_phi_x->GetValue()); }
+    double static_y() const { return groove_free_angle(m_phi_y->GetValue()); }
+    double lowest_free_angle() const { return smaller(static_x(), static_y()); }
 
     // A free angle confirmed by the printed test (step 2) minus the tolerance, 0 = unknown.
     double with_tolerance(double free_angle) const
@@ -1050,8 +1097,8 @@ private:
     // Maximum layer slope from the measurements: the smaller of the two steps minus the tolerance, 0 = unknown.
     double slope() const { return this->with_tolerance(this->lowest_free_angle()); }
     // Free angles of the print head along X and Y to apply (only measured along their own axis), 0 = unknown.
-    double free_angle_x() const { return m_free_angle_x->GetValue() > 0. ? this->with_tolerance(m_free_angle_x->GetValue()) : 0.; }
-    double free_angle_y() const { return m_free_angle_y->GetValue() > 0. ? this->with_tolerance(m_free_angle_y->GetValue()) : 0.; }
+    double free_angle_x() const { return static_x() > 0. ? this->with_tolerance(static_x()) : 0.; }
+    double free_angle_y() const { return static_y() > 0. ? this->with_tolerance(static_y()) : 0.; }
 
     void update_result()
     {
@@ -1073,11 +1120,10 @@ private:
     void save()
     {
         AppConfig& app = *wxGetApp().app_config;
-        app.set("nonplanar_calib_free_angle_x", float_to_string_decimal_point(m_free_angle_x->GetValue(), 1));
-        app.set("nonplanar_calib_free_angle_y", float_to_string_decimal_point(m_free_angle_y->GetValue(), 1));
-        for (size_t i = 1; i < 3; ++i)
-            app.set("nonplanar_calib_free_angle_" + std::to_string(int(NONPLANAR_GAUGE_HEIGHTS[i])),
-                    float_to_string_decimal_point(m_free_angles[i]->GetValue(), 1));
+        app.set("nonplanar_calib_gauge_depth",  float_to_string_decimal_point(m_gauge_depth->GetValue(), 1));
+        app.set("nonplanar_calib_groove_depth", float_to_string_decimal_point(m_groove_depth->GetValue(), 1));
+        app.set("nonplanar_calib_groove_x", float_to_string_decimal_point(m_phi_x->GetValue(), 1));
+        app.set("nonplanar_calib_groove_y", float_to_string_decimal_point(m_phi_y->GetValue(), 1));
         app.set("nonplanar_calib_printed_angle", float_to_string_decimal_point(m_printed_angle->GetValue(), 1));
         app.set("nonplanar_calib_tolerance",     float_to_string_decimal_point(m_tolerance->GetValue(), 1));
     }
@@ -1088,12 +1134,18 @@ private:
             DynamicPrintConfig conf = *tab->get_config();
             conf.set_key_value("nonplanar_head_clearance_height", new ConfigOptionFloat(m_head_height->GetValue()));
             conf.set_key_value("nonplanar_head_clearance_radius", new ConfigOptionFloat(m_head_radius->GetValue()));
-            // Measured profile of the head: the free angle at each height of the static gauge.
+            // Measured profile of the head (height:angle): the free angle at the depth of the row read replaces the
+            // one measured before at the same depth, the other depths are kept (one apply for each row).
             std::string profile;
-            for (size_t i = 0; i < 3; ++i)
-                if (const double a = i == 0 ? this->lowest_free_angle() : m_free_angles[i]->GetValue(); a > 0.)
-                    profile += (profile.empty() ? "" : ";") + float_to_string_decimal_point(NONPLANAR_GAUGE_HEIGHTS[i], 0) + ":" +
-                               float_to_string_decimal_point(a, 1);
+            if (const double a = this->lowest_free_angle(); a > 0.) {
+                auto pairs = NonPlanar::parse_head_profile(conf.opt_string("nonplanar_head_profile"));
+                const double h = m_groove_depth->GetValue();
+                pairs.erase(std::remove_if(pairs.begin(), pairs.end(), [h](const auto& p) { return std::abs(p.first - h) < 1e-3; }), pairs.end());
+                pairs.emplace_back(h, a);
+                std::sort(pairs.begin(), pairs.end());
+                for (const auto& [ph, pa] : pairs)
+                    profile += (profile.empty() ? "" : ";") + float_to_string_decimal_point(ph, 1) + ":" + float_to_string_decimal_point(pa, 1);
+            }
             if (const double a = this->free_angle_x(); a > 0.)
                 conf.set_key_value("nonplanar_head_free_angle_x", new ConfigOptionFloat(a));
             if (const double a = this->free_angle_y(); a > 0.)
@@ -1119,9 +1171,10 @@ private:
 
     wxSpinCtrlDouble* m_head_height   { nullptr };
     wxSpinCtrlDouble* m_head_radius   { nullptr };
-    wxSpinCtrlDouble* m_free_angle_x  { nullptr };   // the lowest height (the nozzle cone) along X and along Y
-    wxSpinCtrlDouble* m_free_angle_y  { nullptr };
-    std::array<wxSpinCtrlDouble*, 3> m_free_angles { nullptr, nullptr, nullptr };
+    wxSpinCtrlDouble* m_gauge_depth   { nullptr };   // deepest V grooves of the static gauge (rows H/3, 2H/3, H)
+    wxSpinCtrlDouble* m_groove_depth  { nullptr };   // depth of the row read: the free height of the angles
+    wxSpinCtrlDouble* m_phi_x         { nullptr };   // narrowest free groove, walls sloping along X
+    wxSpinCtrlDouble* m_phi_y         { nullptr };
     wxSpinCtrlDouble* m_printed_angle { nullptr };
     wxSpinCtrlDouble* m_tolerance     { nullptr };
     wxSpinCtrlDouble* m_z_speed       { nullptr };

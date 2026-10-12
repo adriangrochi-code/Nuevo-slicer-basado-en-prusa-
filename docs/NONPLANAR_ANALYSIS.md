@@ -42,8 +42,12 @@ Con «Ajustar al cabezal» (`nonplanar_fit_head`, activado por defecto) la ampli
 salen de los valores de la configuración de impresión sino de lo que mide el usuario en su cabezal (Configuración de
 impresora > General > Cabezal):
 
-- **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática en la fila más
-  baja (la de la boquilla): el cabezal no es simétrico (ventilador de capa, sensor de nivelación). Se modela como un
+- **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática de ranuras en
+  V: se imprime plana, con ranuras de ángulo de apertura φ creciente y filas de profundidad H/3, 2H/3 y H (todas con la
+  misma cara superior), un bloque con las paredes inclinadas a lo largo de X y otro a lo largo de Y. Con la impresora
+  fría se baja la boquilla en cada ranura: la más angosta que entra sin que toque nada más da φ, y el ángulo libre a esa
+  altura (la profundidad de la fila) es (180° − φ) / 2. El asistente guarda cada par altura:ángulo en el perfil del
+  cabezal (`nonplanar_head_profile`, una vez por fila) y el de la fila leída en los ángulos libres. El cabezal no es simétrico (ventilador de capa, sensor de nivelación). Se modela como un
   cono elíptico alrededor de la boquilla: una capa con gradiente (gx, gy) cabe si (gx / tan αx)² + (gy / tan αy)² ≤ 1.
   Las crestas que suben a lo largo de X usan αx, a lo largo de Y usan αy, en otra dirección la combinación; la
   huevera y las crestas torcidas, el menor de los dos; el cono, el menor con el sentido elegido. Sin medir (0) se usa
