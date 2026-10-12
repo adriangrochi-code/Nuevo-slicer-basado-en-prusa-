@@ -19,7 +19,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
   botón principal es «Imprimir por USB» y la flecha de al lado despliega las demás salidas (exportar G-code, tarjeta SD,
   enviar a la impresora). La página Device muestra el monitor: temperaturas con precalentado y gráfico, movimiento de
   los ejes, extrusor y ventilador, G-code, impresión activa (progreso, tiempo, pausar, cancelar) y terminal.
-- **Flecha para ocultar los ajustes** de la barra derecha: quedan los botones de laminar y de salida.
+- **Flecha para ocultar los ajustes** de la barra derecha: la barra desaparece y la vista 3D ocupa todo el ancho, con
+  los botones de laminar y de salida flotando abajo a la derecha (como en Cura); «<<» vuelve a mostrar los ajustes.
 - **Thingiverse en lugar de Printables**: la página Thingiverse busca modelos y «Descargar e importar este modelo» (o
   el botón de descarga del sitio) los baja y los carga en la plataforma; un zip abre el selector de archivos.
 - **Ingeniería con Estructuras en un solo botón**, visible en todos los modos con impresoras FFF.

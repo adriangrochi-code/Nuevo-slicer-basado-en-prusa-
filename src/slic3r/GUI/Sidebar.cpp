@@ -70,6 +70,12 @@
 #include "MsgDialog.hpp"
 #include "FullSpectrumDialog.hpp"
 #include "MainFrame.hpp"
+#include "GLCanvas3D.hpp"
+#include "GUI_Preview.hpp"
+#include "ImGuiWrapper.hpp"
+#include "ImGuiPureWrap.hpp"
+
+#include <imgui/imgui.h>
 
 using Slic3r::Preset;
 using Slic3r::GUI::format_wxstr;
@@ -763,18 +769,7 @@ Sidebar::Sidebar(Plater *parent)
     m_btn_export_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { run_action(main_action()); });
     m_btn_more_actions->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { show_actions_menu(); });
     m_btn_compact->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { set_compact(! m_compact); });
-    m_btn_reslice->Bind(wxEVT_BUTTON, [this](wxCommandEvent&)
-    {
-        if (m_plater->canvas3D()->get_gizmos_manager().is_in_editing_mode(true))
-            return;
-
-        const bool export_gcode_after_slicing = wxGetKeyState(WXK_SHIFT);
-        if (export_gcode_after_slicing)
-            m_plater->export_gcode(true);
-        else
-            m_plater->reslice();
-        m_plater->select_view_3D("Preview");
-    });
+    m_btn_reslice->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { slice_now(); });
 
 #ifdef _WIN32
     m_btn_reslice->Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent& event) {
@@ -1795,7 +1790,7 @@ void Sidebar::run_action(OutputAction action)
     }
 }
 
-void Sidebar::show_actions_menu()
+void Sidebar::show_actions_menu(bool at_mouse)
 {
     wxMenu menu;
     const OutputAction current = main_action();
@@ -1815,14 +1810,94 @@ void Sidebar::show_actions_menu()
     }
     if (menu.GetMenuItemCount() == 0)
         return;
+    if (at_mouse) {
+        // From the floating buttons of the compact mode: the sidebar is hidden.
+        m_plater->PopupMenu(&menu);
+        return;
+    }
     // Over the arrow, as the menu of Cura.
     const wxPoint pos = m_btn_more_actions->GetPosition();
     PopupMenu(&menu, wxPoint(pos.x, pos.y));
 }
 
+void Sidebar::slice_now()
+{
+    if (m_plater->canvas3D()->get_gizmos_manager().is_in_editing_mode(true))
+        return;
+
+    const bool export_gcode_after_slicing = wxGetKeyState(WXK_SHIFT);
+    if (export_gcode_after_slicing)
+        m_plater->export_gcode(true);
+    else
+        m_plater->reslice();
+    m_plater->select_view_3D("Preview");
+}
+
+void Sidebar::render_compact_actions(GLCanvas3D &canvas)
+{
+    NotificationManager *notifications = m_plater->get_notification_manager();
+    if (! m_compact || ! wxGetApp().is_editor() || m_autoslicing_mode) {
+        if (notifications != nullptr)
+            notifications->set_bottom_offset(0.f);
+        return;
+    }
+    const Size  size  = canvas.get_canvas_size();
+    const float scale = wxGetApp().imgui()->get_style_scaling();
+    const float margin = 10.f * scale, height = 32.f * scale;
+    // In the preview the buttons stay left of the layers slider and above the moves slider.
+    float right = margin, bottom = margin;
+    if (m_plater->is_preview_shown())
+        if (const Preview *preview = dynamic_cast<const Preview*>(canvas.get_wxglcanvas_parent())) {
+            right  += preview->get_layers_slider_width();
+            bottom += preview->get_moves_slider_height();
+        }
+    ImGuiPureWrap::set_next_window_pos(float(size.get_width()) - right, float(size.get_height()) - bottom, ImGuiCond_Always, 1.f, 1.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.f * scale);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.f * scale);
+    ImGui::PushStyleColor(ImGuiCol_Button,        ImGuiPSWrap::to_ImVec4(ColorRGBA(0x7A / 255.f, 0x24 / 255.f, 0xC9 / 255.f, 1.f)));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGuiPSWrap::to_ImVec4(ColorRGBA(0x8E / 255.f, 0x34 / 255.f, 0xDF / 255.f, 1.f)));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImGuiPSWrap::to_ImVec4(ColorRGBA(0x5B / 255.f, 0x0F / 255.f, 0xA7 / 255.f, 1.f)));
+    ImGui::PushStyleColor(ImGuiCol_Text,          ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
+    ImGuiPureWrap::begin("##tisma_compact_actions", ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+    // The actions run after the frame: they may open dialogs or change the layout.
+    if (ImGui::Button("<<##show_settings", ImVec2(height, height)))
+        wxGetApp().CallAfter([this]() { set_compact(false); });
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", into_u8(_L("Show the settings")).c_str());
+    ImGui::SameLine();
+    auto action_button = [height, scale](const wxString &label, bool enabled) {
+        if (! enabled)
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.4f);
+        const bool clicked = ImGui::Button(into_u8(label).c_str(), ImVec2(220.f * scale, height)) && enabled;
+        if (! enabled)
+            ImGui::PopStyleVar();
+        return clicked;
+    };
+    if (m_btn_reslice->IsShown()) {
+        if (action_button(m_btn_reslice->GetLabel(), m_btn_reslice->IsEnabled()))
+            wxGetApp().CallAfter([this]() { slice_now(); });
+    } else if (m_btn_export_gcode->IsShown()) {
+        if (action_button(m_btn_export_gcode->GetLabel(), m_btn_export_gcode->IsEnabled()))
+            wxGetApp().CallAfter([this]() { run_action(main_action()); });
+        ImGui::SameLine();
+        if (ImGui::Button("^##more_actions", ImVec2(height, height)))
+            wxGetApp().CallAfter([this]() { show_actions_menu(true); });
+    }
+    // The notifications are drawn above the buttons (from the next frame on).
+    if (notifications != nullptr)
+        notifications->set_bottom_offset(ImGui::GetWindowHeight() + margin);
+    ImGuiPureWrap::end();
+    ImGui::PopStyleColor(4);
+    ImGui::PopStyleVar(2);
+}
+
 void Sidebar::set_compact(bool compact)
 {
     m_compact = compact;
+    // The whole sidebar is hidden: the buttons float over the 3D view (render_compact_actions()).
+    this->Show(! compact);
+    m_plater->canvas3D()->set_as_dirty();
     m_scrolled_panel->Show(! compact);
     GetSizer()->Show(size_t(0), compact);
     m_btn_compact->SetLabel(wxString::FromUTF8(compact ? "\xc2\xab" : "\xc2\xbb"));   // « or »
@@ -1839,7 +1914,8 @@ void Sidebar::collapse(bool collapse)
 {
     is_collapsed = collapse;
 
-    this->Show(!collapse);
+    // In the compact mode the sidebar stays hidden (its buttons float over the 3D view).
+    this->Show(!collapse && !m_compact);
     m_plater->Layout();
 
     // save collapsing state to the AppConfig

@@ -2331,6 +2331,8 @@ void GLCanvas3D::render()
     if (! s_multiple_beds.is_autoslicing())
         wxGetApp().plater()->render_sliders(*this);
 
+    wxGetApp().plater()->sidebar().render_compact_actions(*this);
+
     wxGetApp().imgui()->render();
 
     m_canvas->SwapBuffers();

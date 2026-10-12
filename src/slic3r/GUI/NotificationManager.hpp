@@ -302,6 +302,8 @@ public:
 	void apply_in_preview() { set_in_preview(m_in_preview); }
 	// Move to left to avoid colision with variable layer height gizmo.
 	void set_move_from_overlay(bool move) { m_move_from_overlay = move; }
+	// Tisma: room kept at the bottom of the canvas (the floating buttons of the compact sidebar).
+	void set_bottom_offset(float offset) { m_bottom_offset = offset; }
 	// perform update_state on each notification and ask for more frames if needed, return true for render needed
 	bool update_notifications(GLCanvas3D& canvas);
 	// returns number of all notifications shown
@@ -917,6 +919,7 @@ private:
 	bool                         m_in_preview { false };
 	// True if the layer editing is enabled in Plater, so that the notifications are shifted left of it.
 	bool                         m_move_from_overlay { false };
+	float                        m_bottom_offset { 0.f };
 	// Timestamp of last rendering
 	int64_t						 m_last_render { 0LL };
 	// Notification types that can be shown multiple types at once (compared by text)
