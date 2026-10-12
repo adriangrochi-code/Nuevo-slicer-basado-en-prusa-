@@ -91,7 +91,7 @@ jobs:
 
           ### Downloads
           - Windows: \`TismaSlicer-$version-windows-x64-setup.exe\` (installer) or the zip.
-          - Linux: \`TismaSlicer-$version-linux-x86_64.AppImage\` (needs GTK 3 and WebKitGTK 4.1, e.g. Ubuntu 22.04+).
+          - Linux: \`TismaSlicer-$version-linux-x86_64.AppImage\` (needs GTK 3, WebKitGTK 4.1 and hidapi, e.g. Ubuntu 22.04+).
           - macOS: \`TismaSlicer-$version-macos-arm64.dmg\` (Apple silicon) or \`-x86_64.dmg\` (Intel). Not notarized:
             right click > Open the first time.
 

@@ -26,6 +26,9 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 360
     env:
+      # CMake 4 on the runners refuses projects declaring cmake_minimum_required < 3.5 (Blosc and other
+      # dependencies): accept them with the 3.5 policies, as CMake itself suggests.
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       # Short paths: the dependency builds hit the Windows path length limit otherwise.
       DEPS_BUILD: C:/d
       DEPS_DEST: C:/dd

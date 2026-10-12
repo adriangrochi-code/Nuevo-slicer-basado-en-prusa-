@@ -29,6 +29,9 @@ jobs:
       matrix:
         arch: [arm64, x86_64]
     env:
+      # CMake 4 on the runners refuses projects declaring cmake_minimum_required < 3.5 (Blosc and other
+      # dependencies): accept them with the 3.5 policies, as CMake itself suggests.
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       MACOSX_DEPLOYMENT_TARGET: "11.0"
       DEPS_BUILD: ${{ github.workspace }}/deps/build-${{ matrix.arch }}
       DEPS_DEST: ${{ github.workspace }}/deps/build-${{ matrix.arch }}/destdir

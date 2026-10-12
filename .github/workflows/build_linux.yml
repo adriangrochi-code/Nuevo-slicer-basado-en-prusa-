@@ -34,6 +34,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 360
     env:
+      # CMake 4 on the runners refuses projects declaring cmake_minimum_required < 3.5 (Blosc and other
+      # dependencies): accept them with the 3.5 policies, as CMake itself suggests.
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       DEPS_BUILD: ${{ github.workspace }}/deps/build
       DEPS_DEST: ${{ github.workspace }}/deps/build/destdir
     steps:
@@ -52,7 +55,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential autoconf libtool m4 texinfo pkg-config ninja-build file \
-            libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libwebkit2gtk-4.1-dev \
+            libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libwebkit2gtk-4.1-dev libhidapi-dev \
             xvfb xauth
 
       - name: Restore dependencies
