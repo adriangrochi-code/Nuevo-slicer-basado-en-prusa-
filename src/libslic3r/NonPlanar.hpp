@@ -15,6 +15,7 @@
 // is scaled by J and the feed rate adjusted to keep the volumetric flow, and the feed
 // rate is limited so that the Z axis stays within its firmware speed / acceleration.
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -26,14 +27,18 @@ struct indexed_triangle_set;
 
 namespace Slic3r {
 
+class ModelVolume;
 class PrintConfig;
 
 namespace NonPlanar {
 
 // SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
-enum class Mode { Disabled, Wave, Conical, SlopeTest };
+// Overhangs (Tisma): the layers are tilted only under the overhangs that would need supports (OverhangField).
+enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
+
+class OverhangField;
 
 struct FieldParams
 {
@@ -54,6 +59,10 @@ struct FieldParams
     double  slope_start_deg  { 10. };
     double  slope_step_deg   { 5. };
     double  slope_end_deg    { 40. };
+    // Overhangs: the layer shape computed from the mesh (shared by the copies of the parameters), scaled by
+    // overhang_scale (reduced until the layer thickness and the slope are acceptable).
+    std::shared_ptr<const OverhangField> overhangs;
+    double  overhang_scale   { 1. };
     // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
     std::pair<double, double> slope_test_tangent(double x) const;
 };
@@ -152,6 +161,70 @@ struct HeadClearance
 
 // Parses "height:angle;height:angle..." (nonplanar_head_profile); invalid pairs are skipped.
 std::vector<std::pair<double, double>> parse_head_profile(const std::string &text);
+// From the printer settings (nonplanar_head_clearance_height / _radius / _profile).
+HeadClearance head_clearance(const PrintConfig &config);
+
+// Tisma: layers tilted only under the overhangs that would need supports.
+//
+// An overhang that leans out by more than the printable angle (from the vertical) needs supports with flat layers.
+// If the layers sink towards the overhang by an angle b, the overhang leans out by b less relative to them (the layer
+// normal tilts the same way as the overhang), so it may print without supports: the supports are generated on the
+// deformed mesh, where the overhang is that much less steep. The layer surface sinks as it moves away from the part
+// already printed below the overhang (the cross section where the overhang starts), as steep as the print head allows
+// along X and Y, up to the farthest point of the overhang, and stays flat inside that cross section. Each group of
+// overhangs (a zone, by height) brings its shape in gradually below the overhang and takes it back out above it, so
+// that the layer thickness stays within J_MIN..J_MAX. The first layers stay flat.
+class OverhangField
+{
+public:
+    struct Zone
+    {
+        // How much the layers sink (mm) at the nodes of the grid, nx * ny, row by row.
+        std::vector<float> sink;
+        // Weight of the zone over the height: 0 below z_in0, full from z_in1 to z_out0, 0 above z_out1.
+        double z_in0 { 0. }, z_in1 { 0. }, z_out0 { 0. }, z_out1 { 0. };
+        // Overhang heights of the zone and the steepest overhang (degrees from the vertical), for reports and tests.
+        double z_min { 0. }, z_max { 0. }, steepest_deg { 0. };
+
+        double weight(double z) const;
+        double dweight(double z) const;
+    };
+
+    Vec2d             origin { Vec2d::Zero() };   // node (0, 0)
+    double            cell   { 1. };
+    int               nx     { 0 };
+    int               ny     { 0 };
+    std::vector<Zone> zones;
+
+    bool empty() const { return zones.empty(); }
+    // Depth the layers sink at (x, y, z) (>= 0), its horizontal gradient and its derivative along z.
+    double sink(double x, double y, double z) const;
+    Vec2d  sink_grad(double x, double y, double z) const;
+    double sink_dz(double x, double y, double z) const;
+    // Upper bound of sink(x, y, z) for any z.
+    double bound(double x, double y) const;
+    // Value and gradient of a zone at (x, y), bilinear between the nodes.
+    std::pair<double, Vec2d> sample(const Zone &zone, double x, double y) const;
+};
+
+struct OverhangParams
+{
+    // Steepest overhang that prints well on flat layers, degrees from the vertical.
+    double threshold_deg { 45. };
+    // Overhangs flatter than this (ceilings, bridges) are left to the bridges and supports.
+    double ceiling_deg   { 80. };
+    // Free angles of the print head along X and Y (tangents) and its clearance (part already printed nearby).
+    double tan_x         { 0. };
+    double tan_y         { 0. };
+    HeadClearance head;
+    // Layers below this height stay flat (first layers on the bed).
+    double z_flat        { 0.6 };
+};
+
+// Overhang field of a mesh (object coordinates, real space), empty if no overhang needs it.
+std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle_set &mesh, const OverhangParams &params);
+// The model parts of an object transformed to object coordinates (the mesh the non-planar layers are built from).
+indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo);
 
 struct HeadCollision
 {
@@ -263,8 +336,10 @@ HeadLimits head_limits(const PrintConfig &config);
 FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3 &object_bbox, const HeadLimits &head);
 
 // Deformation for a print object, from the print configuration (fitted to the print head if nonplanar_fit_head).
-// object_bbox: bounding box of the object in object (centered) coordinates.
-Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox);
+// object_bbox: bounding box of the object in object (centered) coordinates. mesh: the object in the same coordinates,
+// needed by the overhangs mode (without it the layers stay flat).
+Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
+                             const indexed_triangle_set *mesh = nullptr);
 // Mesh subdivision length suited to the configured field.
 double mesh_max_edge(const PrintConfig &config);
 GCodeFilterParams make_filter_params(const PrintConfig &config);

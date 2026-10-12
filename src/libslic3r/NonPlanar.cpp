@@ -12,7 +12,9 @@
 
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/Model.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 
 namespace Slic3r {
 namespace NonPlanar {
@@ -64,6 +66,9 @@ double Field::g(double x, double y, double z) const
         const double k = TWO_PI / m_params.wavelength;
         return m_params.slope_test_tangent(x).first / k * std::sin(k * dy);
     }
+    case Mode::Overhangs:
+        // The layers sink towards the overhangs.
+        return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.;
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         if (m_params.pattern == Pattern::Egg)
@@ -92,6 +97,8 @@ Vec2d Field::grad(double x, double y, double z) const
         const auto [tangent, dtangent] = m_params.slope_test_tangent(x);
         return { dtangent / k * std::sin(k * dy), tangent * std::cos(k * dy) };
     }
+    case Mode::Overhangs:
+        return m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero();
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         const double a = m_params.amplitude * k;
@@ -107,6 +114,8 @@ Vec2d Field::grad(double x, double y, double z) const
 
 double Field::dgdz(double x, double y, double z) const
 {
+    if (m_params.mode == Mode::Overhangs)
+        return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.;
     if (m_params.mode != Mode::Wave || m_params.pattern != Pattern::Twisted)
         return 0.;
     const double k  = TWO_PI / m_params.wavelength;
@@ -124,6 +133,8 @@ double Field::bound(double x, double y) const
         return std::abs(m_params.amplitude);
     if (m_params.mode == Mode::SlopeTest)
         return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
+    if (m_params.mode == Mode::Overhangs)
+        return m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.;
     return std::abs(this->g(x, y, 0.));
 }
 
@@ -303,6 +314,13 @@ std::vector<std::pair<double, double>> parse_head_profile(const std::string &tex
     return out;
 }
 
+HeadClearance head_clearance(const PrintConfig &config)
+{
+    HeadClearance head{ config.nonplanar_head_clearance_height.value, config.nonplanar_head_clearance_radius.value };
+    head.profile = parse_head_profile(config.nonplanar_head_profile.value);
+    return head;
+}
+
 HeadCollision check_head_collision(const Deformation &deformation, const indexed_triangle_set &mesh, const HeadClearance &head)
 {
     HeadCollision out;
@@ -376,6 +394,382 @@ HeadCollision check_head_collision(const Deformation &deformation, const indexed
             }
     }
     out.collides = worst > 0.;
+    return out;
+}
+
+
+// -------------------------------------------------------------------- Overhangs (Tisma)
+
+double OverhangField::Zone::weight(double z) const
+{
+    const double in  = z_in1 > z_in0 ? smoothstep((z - z_in0) / (z_in1 - z_in0)) : (z >= z_in1 ? 1. : 0.);
+    const double out = z_out1 > z_out0 ? 1. - smoothstep((z - z_out0) / (z_out1 - z_out0)) : (z <= z_out0 ? 1. : 0.);
+    return in * out;
+}
+
+double OverhangField::Zone::dweight(double z) const
+{
+    const double t_in = z_in1 > z_in0 ? (z - z_in0) / (z_in1 - z_in0) : (z >= z_in1 ? 1. : 0.);
+    const double t_out = z_out1 > z_out0 ? (z - z_out0) / (z_out1 - z_out0) : (z <= z_out0 ? 0. : 1.);
+    const double in   = smoothstep(t_in);
+    const double din  = z_in1 > z_in0 ? dsmoothstep(t_in) / (z_in1 - z_in0) : 0.;
+    const double out  = 1. - smoothstep(t_out);
+    const double dout = z_out1 > z_out0 ? - dsmoothstep(t_out) / (z_out1 - z_out0) : 0.;
+    return din * out + in * dout;
+}
+
+std::pair<double, Vec2d> OverhangField::sample(const Zone &zone, double x, double y) const
+{
+    if (nx < 2 || ny < 2)
+        return { 0., Vec2d::Zero() };
+    // Outside of the grid the nearest edge value (no gradient across).
+    const double u = std::clamp((x - origin.x()) / cell, 0., double(nx - 1));
+    const double v = std::clamp((y - origin.y()) / cell, 0., double(ny - 1));
+    const int    i = std::min(int(u), nx - 2);
+    const int    j = std::min(int(v), ny - 2);
+    const double fu = u - i, fv = v - j;
+    const double f00 = zone.sink[j * nx + i],       f10 = zone.sink[j * nx + i + 1];
+    const double f01 = zone.sink[(j + 1) * nx + i], f11 = zone.sink[(j + 1) * nx + i + 1];
+    const double value = (1. - fv) * ((1. - fu) * f00 + fu * f10) + fv * ((1. - fu) * f01 + fu * f11);
+    const double inside_x = (x - origin.x()) / cell > 0. && (x - origin.x()) / cell < double(nx - 1) ? 1. : 0.;
+    const double inside_y = (y - origin.y()) / cell > 0. && (y - origin.y()) / cell < double(ny - 1) ? 1. : 0.;
+    const Vec2d grad(inside_x * ((1. - fv) * (f10 - f00) + fv * (f11 - f01)) / cell,
+                     inside_y * ((1. - fu) * (f01 - f00) + fu * (f11 - f10)) / cell);
+    return { value, grad };
+}
+
+double OverhangField::sink(double x, double y, double z) const
+{
+    double out = 0.;
+    for (const Zone &zone : zones)
+        if (const double w = zone.weight(z); w > 0.)
+            out += w * this->sample(zone, x, y).first;
+    return out;
+}
+
+Vec2d OverhangField::sink_grad(double x, double y, double z) const
+{
+    Vec2d out = Vec2d::Zero();
+    for (const Zone &zone : zones)
+        if (const double w = zone.weight(z); w > 0.)
+            out += w * this->sample(zone, x, y).second;
+    return out;
+}
+
+double OverhangField::sink_dz(double x, double y, double z) const
+{
+    double out = 0.;
+    for (const Zone &zone : zones)
+        if (const double dw = zone.dweight(z); dw != 0.)
+            out += dw * this->sample(zone, x, y).first;
+    return out;
+}
+
+double OverhangField::bound(double x, double y) const
+{
+    double out = 0.;
+    for (const Zone &zone : zones)
+        out += this->sample(zone, x, y).first;
+    return out;
+}
+
+namespace {
+
+// Exact squared distance transform of one row / column (Felzenszwalb & Huttenlocher, "Distance Transforms of Sampled
+// Functions", Theory of Computing 8, 2012) with the samples `step` apart.
+void distance_transform_1d(const std::vector<double> &f, double step, std::vector<double> &d,
+                           std::vector<int> &v, std::vector<double> &z)
+{
+    const int n = int(f.size());
+    v.assign(n, 0);
+    z.assign(n + 1, 0.);
+    int k = 0;
+    z[0] = - std::numeric_limits<double>::infinity();
+    z[1] =   std::numeric_limits<double>::infinity();
+    auto pos = [step](int q) { return step * q; };
+    auto intersection = [&](int q, int p) {
+        return ((f[q] + pos(q) * pos(q)) - (f[p] + pos(p) * pos(p))) / (2. * (pos(q) - pos(p)));
+    };
+    for (int q = 1; q < n; ++ q) {
+        // z[0] is -infinity: the loop stops at k = 0 at the latest.
+        double s = intersection(q, v[k]);
+        while (s <= z[k])
+            s = intersection(q, v[-- k]);
+        ++ k;
+        v[k]     = q;
+        z[k]     = s;
+        z[k + 1] = std::numeric_limits<double>::infinity();
+    }
+    d.assign(n, 0.);
+    k = 0;
+    for (int q = 0; q < n; ++ q) {
+        while (z[k + 1] < pos(q))
+            ++ k;
+        const double dq = pos(q) - pos(v[k]);
+        d[q] = dq * dq + f[v[k]];
+    }
+}
+
+// Nodes of the grid inside the expolygons (even-odd along each row of nodes).
+std::vector<char> rasterize(const ExPolygons &expolygons, const Vec2d &origin, double cell, int nx, int ny)
+{
+    std::vector<char> out(size_t(nx) * size_t(ny), 0);
+    std::vector<std::pair<Vec2d, Vec2d>> edges;
+    auto add = [&edges](const Polygon &polygon) {
+        for (size_t i = 0; i < polygon.points.size(); ++ i)
+            edges.emplace_back(unscaled(polygon.points[i]), unscaled(polygon.points[(i + 1) % polygon.points.size()]));
+    };
+    for (const ExPolygon &expolygon : expolygons) {
+        add(expolygon.contour);
+        for (const Polygon &hole : expolygon.holes)
+            add(hole);
+    }
+    std::vector<double> xs;
+    for (int j = 0; j < ny; ++ j) {
+        const double y = origin.y() + cell * j;
+        xs.clear();
+        for (const auto &[a, b] : edges)
+            if ((a.y() <= y) != (b.y() <= y))
+                xs.emplace_back(a.x() + (y - a.y()) * (b.x() - a.x()) / (b.y() - a.y()));
+        std::sort(xs.begin(), xs.end());
+        for (size_t k = 0; k + 1 < xs.size(); k += 2) {
+            const int i0 = std::max(0, int(std::ceil((xs[k] - origin.x()) / cell)));
+            const int i1 = std::min(nx - 1, int(std::floor((xs[k + 1] - origin.x()) / cell)));
+            for (int i = i0; i <= i1; ++ i)
+                out[size_t(j) * nx + i] = 1;
+        }
+    }
+    return out;
+}
+
+// Squared distance of each node to the nearest seed, along X `step_x` and along Y `step_y` per node (exact).
+std::vector<double> distance_transform(const std::vector<char> &seed, int nx, int ny, double step_x, double step_y)
+{
+    constexpr double FAR = 1e20;
+    std::vector<double> dist(size_t(nx) * ny), row, out_row, z;
+    std::vector<int> v;
+    for (int j = 0; j < ny; ++ j) {
+        row.resize(nx);
+        for (int i = 0; i < nx; ++ i)
+            row[i] = seed[size_t(j) * nx + i] ? 0. : FAR;
+        distance_transform_1d(row, step_x, out_row, v, z);
+        std::copy(out_row.begin(), out_row.end(), dist.begin() + size_t(j) * nx);
+    }
+    for (int i = 0; i < nx; ++ i) {
+        row.resize(ny);
+        for (int j = 0; j < ny; ++ j)
+            row[j] = dist[size_t(j) * nx + i];
+        distance_transform_1d(row, step_y, out_row, v, z);
+        for (int j = 0; j < ny; ++ j)
+            dist[size_t(j) * nx + i] = out_row[j];
+    }
+    return dist;
+}
+
+// Removes the nodes closer than `distance` to the outside (round in every direction); unchanged if nothing remains.
+void erode(std::vector<char> &inside, int nx, int ny, double cell, double distance)
+{
+    std::vector<char> outside(inside.size());
+    for (size_t i = 0; i < inside.size(); ++ i)
+        outside[i] = ! inside[i];
+    if (std::find(outside.begin(), outside.end(), 1) == outside.end())
+        return;
+    const std::vector<double> dist = distance_transform(outside, nx, ny, cell, cell);
+    std::vector<char> out = inside;
+    for (size_t i = 0; i < out.size(); ++ i)
+        if (out[i] && dist[i] < distance * distance)
+            out[i] = 0;
+    if (std::find(out.begin(), out.end(), 1) != out.end())
+        inside.swap(out);
+}
+
+// Average over the 3 x 3 neighbourhood (does not make the field steeper).
+void smooth(std::vector<float> &f, int nx, int ny)
+{
+    std::vector<float> tmp(f.size());
+    for (int j = 0; j < ny; ++ j)
+        for (int i = 0; i < nx; ++ i) {
+            double sum = 0.;
+            for (int dj = -1; dj <= 1; ++ dj)
+                for (int di = -1; di <= 1; ++ di)
+                    sum += f[size_t(std::clamp(j + dj, 0, ny - 1)) * nx + std::clamp(i + di, 0, nx - 1)];
+            tmp[size_t(j) * nx + i] = float(sum / 9.);
+        }
+    f.swap(tmp);
+}
+
+struct OverhangFacet
+{
+    double z_min, z_max, angle_deg;
+    Vec2d  points[4];   // vertices and centroid
+};
+
+} // namespace
+
+std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle_set &mesh, const OverhangParams &params)
+{
+    if (mesh.indices.empty() || params.tan_x <= 0. || params.tan_y <= 0.)
+        return nullptr;
+
+    // Steepest slope the print head allows anywhere around the nozzle: the part already printed rises by the slope
+    // times the distance, which must stay below what the head allows at that distance (heater block, cooling duct).
+    double tan_head = std::numeric_limits<double>::max();
+    if (params.head.radius > 0. && (params.head.height > 0. || ! params.head.profile.empty()))
+        for (int i = 1; i <= 64; ++ i) {
+            const double r = params.head.radius * i / 64.;
+            tan_head = std::min(tan_head, params.head.allowed_rise(r) / r);
+        }
+    // Margin for the interpolation between the nodes of the grid.
+    constexpr double SAFETY = 0.9;
+    const double tan_x = SAFETY * std::min(params.tan_x, tan_head);
+    const double tan_y = SAFETY * std::min(params.tan_y, tan_head);
+    if (tan_x <= 1e-3 || tan_y <= 1e-3)
+        return nullptr;
+
+    // Sinking the layers by tan(b) per mm shears an overhang in the slice space (where the supports are generated): the
+    // cotangent of its angle from the vertical grows by tan(b). An overhang is tilted only if the print head allows
+    // enough to bring it below the printable angle: a partial tilt would leave its supports and make them taller.
+    const auto cot = [](double deg) { return 1. / std::tan(std::clamp(deg, 1., 89.) * M_PI / 180.); };
+    // Aim 5 degrees below the printable angle, accept 2 degrees below.
+    const double cot_aim = cot(params.threshold_deg - 5.), cot_accept = cot(params.threshold_deg - 2.);
+
+    // Overhangs steeper than the threshold (from the vertical) that the head can fix, except ceilings and what lies on
+    // the bed.
+    BoundingBoxf3 bbox;
+    for (const stl_vertex &v : mesh.vertices)
+        bbox.merge(v.cast<double>());
+    std::vector<OverhangFacet> facets;
+    for (const stl_triangle_vertex_indices &f : mesh.indices) {
+        const Vec3d a = mesh.vertices[f[0]].cast<double>(), b = mesh.vertices[f[1]].cast<double>(), c = mesh.vertices[f[2]].cast<double>();
+        const Vec3d n = (b - a).cross(c - a);
+        const double len = n.norm();
+        if (len < 1e-12 || n.z() >= 0.)
+            continue;
+        const double angle = std::asin(std::clamp(- n.z() / len, 0., 1.)) * 180. / M_PI;
+        if (angle <= params.threshold_deg || angle > params.ceiling_deg)
+            continue;
+        OverhangFacet of;
+        of.z_min = std::min({ a.z(), b.z(), c.z() });
+        of.z_max = std::max({ a.z(), b.z(), c.z() });
+        if (of.z_min <= bbox.min.z() + params.z_flat)
+            continue;
+        // Slope the head allows towards the overhang (the elliptic cone of the free angles along X and Y).
+        const Vec2d dir = n.head<2>().normalized();
+        const double tan_dir = 1. / std::hypot(dir.x() / tan_x, dir.y() / tan_y);
+        if (cot(angle) + tan_dir < cot_accept)
+            continue;
+        of.angle_deg = angle;
+        of.points[0] = a.head<2>();
+        of.points[1] = b.head<2>();
+        of.points[2] = c.head<2>();
+        of.points[3] = (a + b + c).head<2>() / 3.;
+        facets.emplace_back(of);
+    }
+    if (facets.empty())
+        return nullptr;
+    std::sort(facets.begin(), facets.end(), [](const OverhangFacet &l, const OverhangFacet &r) { return l.z_min < r.z_min; });
+
+    auto field = std::make_shared<OverhangField>();
+    const double margin = 2.;
+    const double extent = std::max(bbox.max.x() - bbox.min.x(), bbox.max.y() - bbox.min.y()) + 2. * margin;
+    field->cell   = std::max(0.25, extent / 500.);
+    field->origin = bbox.min.head<2>() - Vec2d(margin, margin);
+    field->nx     = int(std::ceil((bbox.max.x() - bbox.min.x() + 2. * margin) / field->cell)) + 1;
+    field->ny     = int(std::ceil((bbox.max.y() - bbox.min.y() + 2. * margin) / field->cell)) + 1;
+    const int nx = field->nx, ny = field->ny;
+
+    // Group the facets by height: overhangs closer than this share one zone.
+    constexpr double MERGE_GAP = 2.;
+    // Layer thickness while the zone comes in (thinner) and goes out (thicker), within J_MIN..J_MAX with a margin:
+    // the steepest smoothstep is 1.5 / its length.
+    constexpr double DZ_IN = 0.55, DZ_OUT = 0.25;
+    for (size_t begin = 0; begin < facets.size();) {
+        size_t end = begin + 1;
+        double z_max = facets[begin].z_max;
+        while (end < facets.size() && facets[end].z_min <= z_max + MERGE_GAP) {
+            z_max = std::max(z_max, facets[end].z_max);
+            ++ end;
+        }
+        OverhangField::Zone zone;
+        zone.z_min = facets[begin].z_min;
+        zone.z_max = z_max;
+        for (size_t i = begin; i < end; ++ i)
+            zone.steepest_deg = std::max(zone.steepest_deg, facets[i].angle_deg);
+        // The layers lean only as much as the steepest overhang of the zone needs, if the head allows it.
+        const double need = std::max(0., cot_aim - cot(zone.steepest_deg));
+        const double tx = std::min(tan_x, need), ty = std::min(tan_y, need);
+        if (tx <= 1e-3 || ty <= 1e-3) {
+            begin = end;
+            continue;
+        }
+
+        // The part already printed where the overhangs start: the layers stay flat there.
+        const std::vector<ExPolygons> sections = slice_mesh_ex(mesh, { float(zone.z_min - 0.05) }, MeshSlicingParamsEx{});
+        std::vector<char> inside = sections.empty() ? std::vector<char>() : rasterize(sections.front(), field->origin, field->cell, nx, ny);
+        if (std::find(inside.begin(), inside.end(), 1) == inside.end()) {
+            begin = end;
+            continue;
+        }
+        // The smoothing below rounds the edge of the flat part over two nodes on each side: start the slope that much
+        // inside, so that it is full where the overhang starts.
+        constexpr int SMOOTH_NODES = 2;
+        erode(inside, nx, ny, field->cell, SMOOTH_NODES * field->cell);
+        // Distance from it in the metric of the print head: one unit is the rise allowed along X and Y, so the sink
+        // is as steep as the head allows in every direction ((gx / tx)^2 + (gy / ty)^2 = 1).
+        std::vector<double> dist = distance_transform(inside, nx, ny, tx * field->cell, ty * field->cell);
+        for (double &d : dist)
+            d = std::sqrt(d);
+        zone.sink.assign(dist.begin(), dist.end());
+        // Down to the farthest point of the overhangs of the zone (and the smoothing beyond it), flat further out.
+        double deepest = 0.;
+        for (size_t i = begin; i < end; ++ i)
+            for (const Vec2d &p : facets[i].points)
+                deepest = std::max(deepest, field->sample(zone, p.x(), p.y()).first);
+        deepest += SMOOTH_NODES * field->cell * std::max(tx, ty);
+        for (float &value : zone.sink)
+            value = std::min(value, float(deepest));
+        smooth(zone.sink, nx, ny);
+        smooth(zone.sink, nx, ny);
+        // Brought in below the overhangs and taken out above them; less deep if there is no room above the flat
+        // first layers.
+        double length_in  = 1.5 * deepest / DZ_IN;
+        double length_out = 1.5 * deepest / DZ_OUT;
+        const double room = zone.z_min - (bbox.min.z() + params.z_flat);
+        if (deepest <= 1e-3 || room <= 0.) {
+            begin = end;
+            continue;
+        }
+        if (length_in > room) {
+            const double s = room / length_in;
+            // Not enough room to bring in a tilt that fixes the overhangs: leave them flat (with their supports).
+            if (s * std::min(tx, ty) < cot_accept - cot(zone.steepest_deg)) {
+                begin = end;
+                continue;
+            }
+            for (float &value : zone.sink)
+                value *= float(s);
+            length_in  *= s;
+            length_out *= s;
+        }
+        zone.z_in0  = zone.z_min - length_in;
+        zone.z_in1  = zone.z_min;
+        zone.z_out0 = zone.z_max;
+        zone.z_out1 = zone.z_max + length_out;
+        field->zones.emplace_back(std::move(zone));
+        begin = end;
+    }
+    return field->empty() ? nullptr : field;
+}
+
+indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo)
+{
+    indexed_triangle_set out;
+    for (const ModelVolume *volume : volumes)
+        if (volume->is_model_part()) {
+            indexed_triangle_set part = volume->mesh().its;
+            its_transform(part, trafo * volume->get_matrix());
+            its_merge(out, part);
+        }
     return out;
 }
 
@@ -841,6 +1235,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarMode::Disabled: p.mode = Mode::Disabled; break;
     case NonPlanarMode::Wave:     p.mode = Mode::Wave;     break;
     case NonPlanarMode::Conical:  p.mode = Mode::Conical;  break;
+    case NonPlanarMode::Overhangs: p.mode = Mode::Overhangs; break;
     }
     switch (config.nonplanar_pattern.value) {
     case NonPlanarPattern::Egg:     p.pattern = Pattern::Egg;     break;
@@ -929,12 +1324,60 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
     return field;
 }
 
-Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox)
+// Overhangs mode: the field from the mesh, reduced until the layer thickness and the slope are acceptable.
+static FieldParams overhang_field(FieldParams field, const PrintConfig &config, const BoundingBoxf3 &object_bbox,
+                                  const indexed_triangle_set *mesh)
+{
+    if (mesh == nullptr || ! object_bbox.defined) {
+        field.mode = Mode::Disabled;
+        return field;
+    }
+    const HeadLimits limits = head_limits(config);
+    OverhangParams params;
+    params.threshold_deg = config.nonplanar_overhang_threshold.value;
+    params.tan_x         = limits.tan_x;
+    params.tan_y         = limits.tan_y;
+    params.head          = head_clearance(config);
+    params.z_flat        = config.nonplanar_flat_below.value;
+    field.overhangs = build_overhang_field(*mesh, params);
+    if (! field.overhangs) {
+        field.mode = Mode::Disabled;
+        return field;
+    }
+    // Ramp of value 1: the zones bring the deformation in and out themselves.
+    Ramp ramp;
+    ramp.z_flat = -1e6;
+    ramp.z_ramp = 1.;
+    auto acceptable = [&](double s) {
+        FieldParams f = field;
+        f.overhang_scale = s;
+        const Deformation d(f, ramp);
+        const Deformation::Check c = d.check(object_bbox);
+        return c.j_min >= J_MIN && c.j_max <= J_MAX && d.head_slope_ratio(object_bbox, limits.tan_x, limits.tan_y) <= 1.;
+    };
+    if (! acceptable(1.)) {
+        double lo = 0., hi = 1.;
+        for (int i = 0; i < 20; ++ i) {
+            const double mid = 0.5 * (lo + hi);
+            (acceptable(mid) ? lo : hi) = mid;
+        }
+        field.overhang_scale = lo;
+    }
+    return field;
+}
+
+Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh)
 {
     FieldParams field = field_params(config);
     if (object_bbox.defined) {
         field.center   = 0.5 * (object_bbox.min.head<2>() + object_bbox.max.head<2>());
         field.slope_x0 = object_bbox.min.x();
+    }
+    if (field.mode == Mode::Overhangs && ! calibration_test(config)) {
+        Ramp ramp;
+        ramp.z_flat = -1e6;
+        ramp.z_ramp = 1.;
+        return Deformation(overhang_field(field, config, object_bbox, mesh), ramp);
     }
     Ramp ramp;
     ramp.z_flat     = config.nonplanar_flat_below.value;
@@ -961,6 +1404,8 @@ double mesh_max_edge(const PrintConfig &config)
         return Z_SPEED_TEST_WAVELENGTH / 10.;
     if (config.nonplanar_mode.value == NonPlanarMode::Wave)
         return std::clamp(config.nonplanar_wavelength.value / 10., 0.3, 1.5);
+    if (config.nonplanar_mode.value == NonPlanarMode::Overhangs)
+        return 1.;
     return 2.;
 }
 

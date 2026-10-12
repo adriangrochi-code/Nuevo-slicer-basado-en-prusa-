@@ -277,7 +277,8 @@ CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PerimeterGeneratorType)
 static t_config_enum_values s_keys_map_NonPlanarMode {
     { "disabled", int(NonPlanarMode::Disabled) },
     { "wave",     int(NonPlanarMode::Wave) },
-    { "conical",  int(NonPlanarMode::Conical) }
+    { "conical",  int(NonPlanarMode::Conical) },
+    { "overhangs", int(NonPlanarMode::Overhangs) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
 
@@ -3338,11 +3339,14 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Print curved layers instead of flat ones. The object is deformed, sliced as usual and "
                    "the G-code is transformed back, so all perimeters, infill and supports follow the "
                    "curved layers. Wave: interlocking layers for a more homogeneous strength between layers. "
-                   "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers).");
+                   "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). "
+                   "Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, "
+                   "as much as the print head allows, so that fewer supports are needed.");
     def->set_enum<NonPlanarMode>({
         { "disabled", L("Disabled") },
         { "wave",     L("Wave") },
-        { "conical",  L("Conical") }
+        { "conical",  L("Conical") },
+        { "overhangs", L("Overhangs (fewer supports)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Disabled));
@@ -3442,6 +3446,18 @@ void PrintConfigDef::init_fff_params()
                    "of the cone angle set here (rising outwards or inwards).");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("nonplanar_overhang_threshold", coFloat);
+    def->label = L("Printable overhang");
+    def->category = L("Non-planar");
+    def->tooltip = L("Overhangs mode: the steepest overhang, measured from the vertical, that prints well on flat layers. "
+                   "Under steeper overhangs the layers sink towards the overhang by the missing angle (as much as the "
+                   "print head allows), so that the overhang leans out less relative to them and needs fewer supports.");
+    def->sidetext = L("°");
+    def->min = 0;
+    def->max = 89;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(45));
 
     def = this->add("nonplanar_max_slope", coFloat);
     def->label = L("Maximum layer slope");

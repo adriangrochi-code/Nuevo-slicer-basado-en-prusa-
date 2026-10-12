@@ -290,9 +290,13 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
         const auto pattern   = config->option<ConfigOptionEnum<NonPlanarPattern>>("nonplanar_pattern")->value;
         // Fitted to the print head: the amplitude comes from its free angles and clearance height.
         const bool fit_head  = config->opt_bool("nonplanar_fit_head");
-        for (auto el : { "nonplanar_fit_head", "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_ramp_height",
-                         "nonplanar_flat_top", "nonplanar_flow_policy", "nonplanar_segment_length" })
+        // Overhangs: tilted under the overhangs as much as the print head allows, brought in and out by itself.
+        const bool overhangs = mode == NonPlanarMode::Overhangs;
+        for (auto el : { "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_flow_policy", "nonplanar_segment_length" })
             toggle_field(el, nonplanar);
+        for (auto el : { "nonplanar_fit_head", "nonplanar_ramp_height", "nonplanar_flat_top" })
+            toggle_field(el, nonplanar && ! overhangs);
+        toggle_field("nonplanar_overhang_threshold", overhangs);
         for (auto el : { "nonplanar_pattern", "nonplanar_wavelength" })
             toggle_field(el, wave);
         toggle_field("nonplanar_amplitude", wave && ! fit_head);

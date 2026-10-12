@@ -315,3 +315,123 @@ TEST_CASE("Non-planar layers fitted to the print head", "[NonPlanar]")
         REQUIRE((c.j_min < J_MIN + 0.02 || c.j_max > J_MAX - 0.02));   // as large as allowed
     }
 }
+
+// Solid of revolution around Z: the profile goes from the bottom to the top as (radius, z), radius > 0.
+static indexed_triangle_set lathe(const std::vector<Vec2d> &profile, int segments = 72)
+{
+    indexed_triangle_set its;
+    const int n = int(profile.size());
+    for (int s = 0; s < segments; ++ s) {
+        const double a = 2. * M_PI * s / segments;
+        for (const Vec2d &p : profile)
+            its.vertices.emplace_back(float(p.x() * std::cos(a)), float(p.x() * std::sin(a)), float(p.y()));
+    }
+    const int bottom = int(its.vertices.size());
+    its.vertices.emplace_back(0.f, 0.f, float(profile.front().y()));
+    const int top = int(its.vertices.size());
+    its.vertices.emplace_back(0.f, 0.f, float(profile.back().y()));
+    for (int s = 0; s < segments; ++ s) {
+        const int a = s * n, b = ((s + 1) % segments) * n;
+        for (int i = 0; i + 1 < n; ++ i) {
+            its.indices.emplace_back(a + i, b + i, b + i + 1);
+            its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
+        }
+        its.indices.emplace_back(bottom, b, a);
+        its.indices.emplace_back(top, a + n - 1, b + n - 1);
+    }
+    return its;
+}
+
+// Stem of radius 5 up to z = 20 (room for the transition), flaring out at 60° from the vertical up to z = 25, then a
+// cap 3 mm thick.
+static indexed_triangle_set mushroom()
+{
+    const double r_cap = 5. + 5. * std::tan(60. * M_PI / 180.);
+    return lathe({ { 5., 0. }, { 5., 20. }, { r_cap, 25. }, { r_cap, 28. } });
+}
+
+TEST_CASE("Non-planar layers tilted under the overhangs", "[NonPlanar]")
+{
+    // 35° of free angle: enough to bring the 60° flare below 45°.
+    const double tan35 = std::tan(35. * M_PI / 180.);
+    OverhangParams params;
+    params.threshold_deg = 45.;
+    params.tan_x = params.tan_y = tan35;
+    params.z_flat = 0.6;
+    const indexed_triangle_set its = mushroom();
+
+    SECTION("no overhang, no deformation") {
+        REQUIRE(build_overhang_field(its_make_cube(20., 20., 20.), params) == nullptr);
+        REQUIRE(build_overhang_field(lathe({ { 5., 0. }, { 5., 20. } }), params) == nullptr);
+    }
+    SECTION("one zone at the flare, flat inside the stem") {
+        const auto field = build_overhang_field(its, params);
+        REQUIRE(field != nullptr);
+        REQUIRE(field->zones.size() == 1);
+        const OverhangField::Zone &zone = field->zones.front();
+        REQUIRE(zone.z_min == Approx(20.).margin(0.01));
+        REQUIRE(zone.z_max == Approx(25.).margin(0.01));
+        REQUIRE(zone.steepest_deg == Approx(60.).margin(1.));
+        // Brought in below the flare, above the flat first layers, and taken out above it.
+        REQUIRE(zone.z_in0 >= params.z_flat);
+        REQUIRE(zone.z_in1 == Approx(20.).margin(0.01));
+        REQUIRE(zone.z_out1 > zone.z_out0);
+        // Flat inside the stem, sinking towards the rim of the cap.
+        REQUIRE(field->sink(0., 0., 22.) == Approx(0.).margin(1e-3));
+        REQUIRE(field->sink(2., 1., 22.) == Approx(0.).margin(1e-3));
+        REQUIRE(field->sink(10., 0., 22.) > field->sink(7., 0., 22.));
+        REQUIRE(field->sink(7., 0., 22.) > 0.);
+        // Nothing below the transition nor far above the overhang.
+        REQUIRE(field->sink(10., 0., zone.z_in0 - 0.1) == 0.);
+        REQUIRE(field->sink(10., 0., zone.z_out1 + 0.1) == 0.);
+    }
+    SECTION("the layers lean towards the overhang within the free angles of the print head") {
+        // Along Y the head allows too little for the flare: the overhangs facing Y are left out, the field still
+        // respects the free angle along Y.
+        params.tan_y = std::tan(10. * M_PI / 180.);
+        const auto field = build_overhang_field(its, params);
+        REQUIRE(field != nullptr);
+        FieldParams f;
+        f.mode = Mode::Overhangs;
+        f.overhangs = field;
+        Ramp ramp;
+        ramp.z_flat = -1e6;
+        ramp.z_ramp = 1.;
+        const Deformation d(f, ramp);
+        const BoundingBoxf3 bbox(Vec3d(-14., -14., 0.), Vec3d(14., 14., 28.));
+        REQUIRE(d.head_slope_ratio(bbox, params.tan_x, params.tan_y) <= 1. + 1e-6);
+        // At the flare the layer normal leans outwards, as the overhang.
+        REQUIRE(d.layer_normal(9., 0., 22.).x() > 0.05);
+        REQUIRE(d.layer_normal(0., 9., 22.).y() > 0.02);
+        REQUIRE(d.layer_normal(-9., 0., 22.).x() < -0.05);
+        // The slope along Y is limited to its own free angle.
+        REQUIRE(d.layer_slope(0., 9., 22.) <= params.tan_y + 1e-6);
+        REQUIRE(d.layer_slope(9., 0., 22.) > params.tan_y);
+    }
+    SECTION("the print head clearance limits the slope") {
+        // The heater block 2 mm above the nozzle tip, 10 mm around it: at most 2 mm of rise over 10 mm.
+        params.head.height = 2.;
+        params.head.radius = 10.;
+        // Not enough for the 60° flare: left flat, with its supports.
+        REQUIRE(build_overhang_field(its, params) == nullptr);
+        // Enough for a 48° flare.
+        const double r = 5. + 5. * std::tan(48. * M_PI / 180.);
+        const auto field = build_overhang_field(lathe({ { 5., 0. }, { 5., 10. }, { r, 15. }, { r, 18. } }), params);
+        REQUIRE(field != nullptr);
+        const OverhangField::Zone &zone = field->zones.front();
+        for (double x = 5.; x < 14.; x += 0.5)
+            REQUIRE(field->sample(zone, x, 0.).second.norm() <= 0.2 + 1e-6);
+    }
+    SECTION("a gentle overhang needs only a little tilt") {
+        // 47° from the vertical: sheared to 40° (5° below the printable angle), cot(40°) - cot(47°) = tan(14.5°), less
+        // than the head allows.
+        const double r = 5. + 5. * std::tan(47. * M_PI / 180.);
+        const auto field = build_overhang_field(lathe({ { 5., 0. }, { 5., 10. }, { r, 15. }, { r, 18. } }), params);
+        REQUIRE(field != nullptr);
+        const OverhangField::Zone &zone = field->zones.front();
+        const double slope = field->sample(zone, 8., 0.).second.norm();
+        REQUIRE(slope > std::tan(14. * M_PI / 180.));
+        REQUIRE(slope < std::tan(15. * M_PI / 180.));
+    }
+}
+

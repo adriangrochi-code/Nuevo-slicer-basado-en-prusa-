@@ -59,6 +59,32 @@ impresora > General > Cabezal):
 La comprobación de colisiones con el perfil medido sigue igual. El modelo de cono elíptico es una aproximación propia
 de Tisma a partir de las dos medidas; no sale de una fuente externa.
 
+## Voladizos: no planar solo donde hace falta soporte (Tisma)
+
+Modo «Voladizos (menos soportes)» (`nonplanar_mode = overhangs`): la pieza se imprime con capas planas y las capas se
+inclinan solo en las zonas con voladizos más inclinados que «Voladizo imprimible» (`nonplanar_overhang_threshold`,
+desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
+
+- **Dirección**: las capas *bajan* hacia el voladizo. Así la normal de la capa se inclina hacia donde crece el voladizo
+  y el voladizo sobresale menos respecto de la capa. En el espacio de laminado (donde PrusaSlicer genera los soportes)
+  esto es un cizallamiento: la cotangente del ángulo del voladizo desde la vertical crece en tan(b), con b la inclinación
+  de la capa. Se apunta 5° por debajo del ángulo imprimible.
+- **Forma**: por cada grupo de voladizos (zona, por altura) se toma la sección de la pieza donde empieza el voladizo (lo
+  ya impreso debajo); dentro de ella las capas siguen planas y fuera bajan con la distancia a esa sección, medida en la
+  métrica del cabezal (pendiente ≤ ángulo libre en X y en Y, cono elíptico), hasta el punto más lejano del voladizo. Se
+  calcula en una grilla (transformada de distancia exacta de Felzenszwalb y Huttenlocher, *Distance Transforms of
+  Sampled Functions*, Theory of Computing 8, 2012) y se suaviza.
+- **Cabezal**: además de los ángulos libres, la pendiente queda limitada por la holgura del cabezal (lo ya impreso no
+  puede subir más de lo que permite el bloque calefactor a esa distancia: altura libre / radio, o el perfil medido con
+  la galga de ranuras en V). Con el cabezal por defecto (3 mm a 15 mm) eso es ~10°.
+- **Transición**: cada zona entra de a poco debajo del voladizo y sale arriba, con el espesor de capa dentro de
+  60–140 %; las primeras capas quedan planas (`nonplanar_flat_below`). Si no hay lugar, la zona se inclina menos.
+- **Resultado medido** (test `Non-planar layers tilted under the overhangs need fewer supports`): un hongo con ala a 55°
+  y cabezal de 25° pasa de 1341 mm de filamento de soporte a 0; con el cabezal por defecto (holgura 3 mm a 15 mm), de
+  1237 mm a 609 mm (−51 %).
+- **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
+  la transición salen curvas.
+
 ## Fuentes
 
 - S³-Slicer: https://github.com/zhangty019/S3_DeformFDM, https://history.siggraph.org/?p=215754

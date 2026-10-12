@@ -1679,6 +1679,7 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
         optgroup->append_single_option_line("nonplanar_fit_head");
+        optgroup->append_single_option_line("nonplanar_overhang_threshold");
         optgroup->append_single_option_line("nonplanar_max_slope");
 
         optgroup = page->new_optgroup(L("Wave"));

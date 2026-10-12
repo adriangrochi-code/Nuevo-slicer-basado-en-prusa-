@@ -12,6 +12,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **No planar solo en voladizos** (modo «Voladizos»): las capas se inclinan únicamente bajo los voladizos que
+  necesitarían soporte, tanto como permite el cabezal; menos soporte y material (`docs/NONPLANAR_ANALYSIS.md`).
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
   calibración no planar los mide con una galga plana de ranuras en V de distintos ángulos y profundidades, en X y en
   Y: se ingresa la altura libre y el ángulo de cada fila); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo

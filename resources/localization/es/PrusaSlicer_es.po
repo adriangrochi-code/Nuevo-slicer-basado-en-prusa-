@@ -33234,3 +33234,15 @@ msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de 
 
 msgid "Step 1: narrowest free groove φ in that row, walls along Y (second block)"
 msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de Y (segundo bloque)"
+
+msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed."
+msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes."
+
+msgid "Overhangs (fewer supports)"
+msgstr "Voladizos (menos soportes)"
+
+msgid "Printable overhang"
+msgstr "Voladizo imprimible"
+
+msgid "Overhangs mode: the steepest overhang, measured from the vertical, that prints well on flat layers. Under steeper overhangs the layers sink towards the overhang by the missing angle (as much as the print head allows), so that the overhang leans out less relative to them and needs fewer supports."
+msgstr "Modo voladizos: el voladizo más inclinado, medido desde la vertical, que se imprime bien con capas planas. Bajo voladizos más inclinados las capas bajan hacia el voladizo el ángulo que falta (tanto como permite el cabezal), así el voladizo sobresale menos respecto de ellas y necesita menos soportes."
