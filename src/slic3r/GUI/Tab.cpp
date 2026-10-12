@@ -44,6 +44,7 @@
 #include <wx/app.h>
 #include <wx/button.h>
 #include <wx/scrolwin.h>
+#include <wx/stattext.h>
 #include <wx/sizer.h>
 
 #include <wx/bmpcbox.h>
@@ -286,6 +287,20 @@ void Tab::create_preset_tab()
     m_treectrl->SetBackgroundColour(m_parent->GetBackgroundColour());
 #endif
     m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
+
+    // Tisma: the Beginner mode hides most pages (speed, non-planar, advanced...). Say so and offer to show them all.
+    m_simple_mode_hint = new wxBoxSizer(wxVERTICAL);
+    auto simple_mode_text = new wxStaticText(panel, wxID_ANY,
+        _L("Beginner mode: only the most common settings are shown. Speed, non-planar layers and the other settings "
+           "are in the Normal and Expert modes."));
+    simple_mode_text->Wrap(19 * m_em_unit);
+    m_simple_mode_hint->Add(simple_mode_text, 0, wxBOTTOM, m_em_unit / 2);
+    auto show_all_btn = new wxButton(panel, wxID_ANY, _L("Show all settings"));
+    show_all_btn->SetToolTip(_L("Switch to the Expert mode"));
+    show_all_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().save_mode(comExpert); });
+    m_simple_mode_hint->Add(show_all_btn, 0, wxEXPAND);
+    m_left_sizer->Add(m_simple_mode_hint, 0, wxEXPAND | wxTOP, m_em_unit / 2);
+    m_left_sizer->Show(m_simple_mode_hint, wxGetApp().get_mode() == comSimple);
     // Index of the last icon inserted into m_treectrl
     m_icon_count = -1;
     m_treectrl->AddRoot("root");
@@ -909,6 +924,8 @@ void Tab::reload_config()
 void Tab::update_mode()
 {
     m_mode = wxGetApp().get_mode();
+    if (m_simple_mode_hint != nullptr)
+        m_left_sizer->Show(m_simple_mode_hint, m_mode == comSimple);
 
     update_visibility();
     update_sla_prusa_specific_visibility();
@@ -1661,6 +1678,7 @@ void TabPrint::build()
     page = add_options_page(L("Non-planar"), "layers");
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
+        optgroup->append_single_option_line("nonplanar_fit_head");
         optgroup->append_single_option_line("nonplanar_max_slope");
 
         optgroup = page->new_optgroup(L("Wave"));
@@ -2840,6 +2858,8 @@ void TabPrinter::build_fff()
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
         optgroup->append_single_option_line("nonplanar_head_clearance_height");
         optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+        optgroup->append_single_option_line("nonplanar_head_free_angle_x");
+        optgroup->append_single_option_line("nonplanar_head_free_angle_y");
         optgroup->append_single_option_line("nonplanar_head_profile");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
