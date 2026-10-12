@@ -221,19 +221,24 @@ void GLGizmoRotate::init_data_from_selection(const Selection& selection)
 
 void GLGizmoRotate3D::on_render_input_window(float x, float y, float bottom_limit)
 {
-    if (wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() != ptSLA)
-        return;
+    // Tisma: also for FFF printers, with their own methods.
+    const PrinterTechnology technology = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
+    if (technology != m_rotoptimizewin_state.technology)
+        load_rotoptimize_state(technology);
 
     RotoptimzeWindow popup{m_imgui, m_rotoptimizewin_state, {x, y, bottom_limit}};
 }
 
-void GLGizmoRotate3D::load_rotoptimize_state()
+void GLGizmoRotate3D::load_rotoptimize_state(PrinterTechnology technology)
 {
+    m_rotoptimizewin_state = {};
+    m_rotoptimizewin_state.technology = technology;
+
     std::string accuracy_str =
-        wxGetApp().app_config->get("sla_auto_rotate", "accuracy");
+        wxGetApp().app_config->get(RotoptimizeJob::config_section(technology), "accuracy");
 
     std::string method_str =
-        wxGetApp().app_config->get("sla_auto_rotate", "method_id");
+        wxGetApp().app_config->get(RotoptimizeJob::config_section(technology), "method_id");
 
     if (!accuracy_str.empty()) {
         float accuracy = std::stof(accuracy_str);
@@ -244,7 +249,7 @@ void GLGizmoRotate3D::load_rotoptimize_state()
 
     if (!method_str.empty()) {
         int method_id = std::stoi(method_str);
-        if (method_id < int(RotoptimizeJob::get_methods_count()))
+        if (method_id >= 0 && method_id < int(RotoptimizeJob::get_methods_count(technology)))
             m_rotoptimizewin_state.method_id = method_id;
     }
 }
@@ -649,26 +654,27 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
     padding.x *= 2.f;
     padding.y *= 2.f;
 
-    for (size_t i = 0; i < RotoptimizeJob::get_methods_count(); ++i) {
+    const PrinterTechnology technology = state.technology;
+    for (size_t i = 0; i < RotoptimizeJob::get_methods_count(technology); ++i) {
         float w =
-            ImGui::CalcTextSize(RotoptimizeJob::get_method_name(i).c_str()).x +
+            ImGui::CalcTextSize(RotoptimizeJob::get_method_name(i, technology).c_str()).x +
             padding.x + ImGui::GetFrameHeight();
         max_text_w = std::max(w, max_text_w);
     }
 
     ImGui::PushItemWidth(max_text_w);
 
-    if (ImGui::BeginCombo("", RotoptimizeJob::get_method_name(state.method_id).c_str())) {
-        for (size_t i = 0; i < RotoptimizeJob::get_methods_count(); ++i) {
-            if (ImGui::Selectable(RotoptimizeJob::get_method_name(i).c_str())) {
+    if (ImGui::BeginCombo("", RotoptimizeJob::get_method_name(state.method_id, technology).c_str())) {
+        for (size_t i = 0; i < RotoptimizeJob::get_methods_count(technology); ++i) {
+            if (ImGui::Selectable(RotoptimizeJob::get_method_name(i, technology).c_str())) {
                 state.method_id = i;
-                wxGetApp().app_config->set("sla_auto_rotate",
+                wxGetApp().app_config->set(RotoptimizeJob::config_section(technology),
                                            "method_id",
                                            std::to_string(state.method_id));
             }
 
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("%s", RotoptimizeJob::get_method_description(i).c_str());
+                ImGui::SetTooltip("%s", RotoptimizeJob::get_method_description(i, technology).c_str());
         }
 
         ImGui::EndCombo();
@@ -677,7 +683,7 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
     ImVec2 sz = ImGui::GetItemRectSize();
 
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("%s", RotoptimizeJob::get_method_description(state.method_id).c_str());
+        ImGui::SetTooltip("%s", RotoptimizeJob::get_method_description(state.method_id, technology).c_str());
 
     ImGui::Separator();
 

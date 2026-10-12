@@ -33276,3 +33276,15 @@ msgstr "Ventosa en %1%: un hueco cerrado abajo y abierto hacia el film, de %2% m
 
 msgid "%1% suction cups in total."
 msgstr "%1% ventosas en total."
+
+msgid "Lowest peel force"
+msgstr "Menor fuerza de despegue"
+
+msgid "Among the orientations needing few supports, choose one without suction cups (hollows closed below and open towards the film) and with the smallest largest layer: the force that tears each layer from the film grows with its area."
+msgstr "Entre las orientaciones que necesitan pocos soportes, elige una sin ventosas (huecos cerrados abajo y abiertos hacia el film) y con la capa más grande lo más chica posible: la fuerza que despega cada capa del film crece con su área."
+
+msgid "Least support material"
+msgstr "Menos material de soporte"
+
+msgid "Lay the object on one of its faces so that the overhangs steeper than the support threshold need the least support material, preferring a large contact with the bed for adhesion."
+msgstr "Apoya el objeto sobre una de sus caras de modo que los voladizos más empinados que el umbral de soporte necesiten el menor material de soporte, prefiriendo un contacto grande con la cama para la adherencia."

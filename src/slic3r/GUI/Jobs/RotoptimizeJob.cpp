@@ -22,11 +22,13 @@ namespace Slic3r { namespace GUI {
 
 void RotoptimizeJob::prepare()
 {
+    m_technology = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
+
     std::string accuracy_str =
-        wxGetApp().app_config->get("sla_auto_rotate", "accuracy");
+        wxGetApp().app_config->get(config_section(m_technology), "accuracy");
 
     std::string method_str =
-        wxGetApp().app_config->get("sla_auto_rotate", "method_id");
+        wxGetApp().app_config->get(config_section(m_technology), "method_id");
 
     if (!accuracy_str.empty())
         m_accuracy = std::stof(accuracy_str);
@@ -35,7 +37,7 @@ void RotoptimizeJob::prepare()
         m_method_id = std::stoi(method_str);
 
     m_accuracy = std::max(0.f, std::min(m_accuracy, 1.f));
-    m_method_id = std::max(size_t(0), std::min(get_methods_count() - 1, m_method_id));
+    m_method_id = std::max(size_t(0), std::min(get_methods_count(m_technology) - 1, m_method_id));
 
     m_default_print_cfg = wxGetApp().preset_bundle->full_config();
 
@@ -75,8 +77,8 @@ void RotoptimizeJob::process(Ctl &ctl)
         ModelObject *o = m_plater->model().objects[size_t(objrot.idx)];
         if (!o) continue;
 
-        if (Methods[m_method_id].findfn)
-            objrot.rot = Methods[m_method_id].findfn(*o, params);
+        if (method(m_technology, m_method_id).findfn)
+            objrot.rot = method(m_technology, m_method_id).findfn(*o, params);
 
         prev_status += 100 / m_selected_object_ids.size();
 
@@ -129,14 +131,14 @@ void RotoptimizeJob::finalize(bool canceled, std::exception_ptr &eptr)
         m_plater->update();
 }
 
-std::string RotoptimizeJob::get_method_name(size_t i)
+std::string RotoptimizeJob::get_method_name(size_t i, PrinterTechnology technology)
 {
-    return into_u8(_(Methods[i].name));
+    return into_u8(_(method(technology, i).name));
 }
 
-std::string RotoptimizeJob::get_method_description(size_t i)
+std::string RotoptimizeJob::get_method_description(size_t i, PrinterTechnology technology)
 {
-    return into_u8(_(Methods[i].descr));
+    return into_u8(_(method(technology, i).descr));
 }
 
 }}

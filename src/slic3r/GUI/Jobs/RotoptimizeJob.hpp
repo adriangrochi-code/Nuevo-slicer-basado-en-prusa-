@@ -34,8 +34,30 @@ class RotoptimizeJob : public Job
            // Just a min area bounding box that is done for all methods anyway.
            {L("Lowest Z height"),
             sla::find_min_z_height_rotation,
+            L("Rotate the model to have the lowest z height for faster print time.")},
+           // Tisma.
+           {L("Lowest peel force"),
+            sla::find_least_peel_rotation,
+            L("Among the orientations needing few supports, choose one without suction cups (hollows closed below "
+              "and open towards the film) and with the smallest largest layer: the force that tears each layer "
+              "from the film grows with its area.")}};
+
+    // Tisma: the methods for FFF printers.
+    static inline const FindMethod MethodsFFF[]
+        = {{L("Least support material"),
+            sla::find_least_fff_support_rotation,
+            L("Lay the object on one of its faces so that the overhangs steeper than the support threshold need the "
+              "least support material, preferring a large contact with the bed for adhesion.")},
+           {L("Lowest Z height"),
+            sla::find_min_z_height_rotation,
             L("Rotate the model to have the lowest z height for faster print time.")}};
 
+    static const FindMethod& method(PrinterTechnology technology, size_t i)
+    {
+        return technology == ptSLA ? Methods[i] : MethodsFFF[i];
+    }
+
+    PrinterTechnology m_technology = ptSLA;
     size_t m_method_id = 0;
     float  m_accuracy  = 0.75;
 
@@ -60,11 +82,20 @@ public:
 
     void finalize(bool canceled, std::exception_ptr &) override;
 
-    static constexpr size_t get_methods_count() { return std::size(Methods); }
+    static constexpr size_t get_methods_count(PrinterTechnology technology = ptSLA)
+    {
+        return technology == ptSLA ? std::size(Methods) : std::size(MethodsFFF);
+    }
 
-    static std::string get_method_name(size_t i);
+    static std::string get_method_name(size_t i, PrinterTechnology technology = ptSLA);
 
-    static std::string get_method_description(size_t i);
+    static std::string get_method_description(size_t i, PrinterTechnology technology = ptSLA);
+
+    // Tisma: the section of the application configuration that keeps the method and the accuracy.
+    static const char* config_section(PrinterTechnology technology)
+    {
+        return technology == ptSLA ? "sla_auto_rotate" : "fff_auto_rotate";
+    }
 };
 
 }} // namespace Slic3r::GUI

@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Orientación automática para FDM y resina**: en el gizmo de rotación, «Menos material de soporte» (FDM: apoya la
+  pieza donde los voladizos piden menos soporte y con buen contacto con la cama) y «Menor fuerza de despegue» (resina:
+  sin ventosas y con la capa más grande lo más chica posible) (`docs/ORIENTATION.md`).
 - **Resina: detector de ventosas**: al laminar avisa de los huecos cerrados abajo y abiertos hacia el film que el vacío
   puede arrancar, con la altura, el área y cómo arreglarlo (`docs/RESINA.md`).
 - **Avisos de laminado de cada pieza**: ya no desaparecen al terminar de laminar (afectaba sobre todo a resina).
