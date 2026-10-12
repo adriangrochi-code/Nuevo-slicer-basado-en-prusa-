@@ -12,14 +12,22 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **296 impresoras nuevas tomadas de UltiMaker Cura** (las que Tisma no tenía), con procesos genéricos y filamentos de
+  1,75 / 2,85 mm; todas laminan (`docs/PRINTER_PROFILES.md`).
+- **Anti-aliasing en Z**: las caras superiores inclinadas siguen al modelo en lugar de salir en escalones; el relleno
+  superior y los perímetros bajan dentro de la última capa con menos flujo (`docs/Z_ANTIALIASING.md`).
+- **No planar solo en voladizos** (modo «Voladizos»): las capas se inclinan únicamente bajo los voladizos que
+  necesitarían soporte, tanto como permite el cabezal; menos soporte y material (`docs/NONPLANAR_ANALYSIS.md`).
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
-  calibración no planar los mide con la galga girada); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
+  calibración no planar los mide con una galga plana de ranuras en V de distintos ángulos y profundidades, en X y en
+  Y: se ingresa la altura libre y el ángulo de cada fila); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
   del cono salen de esos ángulos y de la altura libre, no de valores fijos (`docs/NONPLANAR_ANALYSIS.md`).
 - **Impresión por USB como en Cura**: la impresora se detecta sola (puerto y velocidad) al enchufarla; al laminar, el
   botón principal es «Imprimir por USB» y la flecha de al lado despliega las demás salidas (exportar G-code, tarjeta SD,
   enviar a la impresora). La página Device muestra el monitor: temperaturas con precalentado y gráfico, movimiento de
   los ejes, extrusor y ventilador, G-code, impresión activa (progreso, tiempo, pausar, cancelar) y terminal.
-- **Flecha para ocultar los ajustes** de la barra derecha: quedan los botones de laminar y de salida.
+- **Flecha para ocultar los ajustes** de la barra derecha: la barra desaparece y la vista 3D ocupa todo el ancho, con
+  los botones de laminar y de salida flotando abajo a la derecha (como en Cura); «<<» vuelve a mostrar los ajustes.
 - **Thingiverse en lugar de Printables**: la página Thingiverse busca modelos y «Descargar e importar este modelo» (o
   el botón de descarga del sitio) los baja y los carga en la plataforma; un zip abre el selector de archivos.
 - **Ingeniería con Estructuras en un solo botón**, visible en todos los modos con impresoras FFF.

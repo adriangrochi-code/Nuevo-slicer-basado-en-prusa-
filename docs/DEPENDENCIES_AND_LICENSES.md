@@ -72,6 +72,7 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | Origen | Versión | Licencia | Notas |
 |---|---|---|---|
 | Perfiles de impresoras, procesos y filamentos de OrcaSlicer (con imágenes y camas) | commit `1d577ea` | AGPL-3.0 | Convertidos con `tools/profiles/convert_orca_profiles.py`. Ver `docs/PRINTER_PROFILES.md`. |
+| Definiciones de impresoras de UltiMaker Cura (`resources/definitions`, `resources/extruders`) | commit `5bea2f8` | LGPL-3.0 (compatible con AGPL-3.0; texto en `resources/licenses/Cura-LGPL-3.0.txt`) | Solo los datos de la máquina, convertidos con `tools/profiles/convert_cura_profiles.py` a `resources/profiles/Cura_*.ini`. Ver `docs/PRINTER_PROFILES.md`. |
 
 ## 3. Dependencias incluidas (`bundled_deps/`)
 

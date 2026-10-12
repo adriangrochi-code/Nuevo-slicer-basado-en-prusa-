@@ -297,6 +297,8 @@ set(SLIC3R_SOURCES
     MultiPoint.cpp
     NonPlanar.cpp
     NonPlanar.hpp
+    ZAntiAliasing.cpp
+    ZAntiAliasing.hpp
     MultiPoint.hpp
     MutablePriorityQueue.hpp
     NormalUtils.cpp

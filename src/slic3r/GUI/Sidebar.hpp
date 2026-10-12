@@ -43,6 +43,7 @@ namespace Slic3r {
 namespace GUI {
 
 class ConfigOptionsGroup;
+class GLCanvas3D;
 class FreqChangedParams;
 class QuickSettings;
 class ObjectInfo;
@@ -105,12 +106,13 @@ class Sidebar : public wxPanel
     OutputAction    main_action() const;
     void            update_main_action() const;
     void            run_action(OutputAction action);
-    void            show_actions_menu();
+    void            show_actions_menu(bool at_mouse = false);
     static wxString action_label(OutputAction action, const wxString &export_label);
     // Tisma: arrow that hides the settings of the sidebar and keeps the slice and output buttons.
     ::Button*       m_btn_compact               { nullptr };
     bool            m_compact                   { false };
     void            set_compact(bool compact);
+    void            slice_now();
     // Sets whether an output action is available; true if it changed.
     bool            set_available(OutputAction action, bool available) const;
                                                              //
@@ -184,6 +186,9 @@ public:
     void switch_from_autoslicing_mode();
 
     void collapse(bool collapse);
+    // Tisma: with the settings hidden, the slice and output buttons float over the 3D view (drawn with ImGui).
+    void render_compact_actions(GLCanvas3D &canvas);
+    bool is_compact() const { return m_compact; }
     void set_extruders_count(size_t extruders_count);
 
     void update_mode();

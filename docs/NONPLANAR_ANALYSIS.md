@@ -42,8 +42,12 @@ Con «Ajustar al cabezal» (`nonplanar_fit_head`, activado por defecto) la ampli
 salen de los valores de la configuración de impresión sino de lo que mide el usuario en su cabezal (Configuración de
 impresora > General > Cabezal):
 
-- **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática en la fila más
-  baja (la de la boquilla): el cabezal no es simétrico (ventilador de capa, sensor de nivelación). Se modela como un
+- **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática de ranuras en
+  V: se imprime plana, con ranuras de ángulo de apertura φ creciente y filas de profundidad H/3, 2H/3 y H (todas con la
+  misma cara superior), un bloque con las paredes inclinadas a lo largo de X y otro a lo largo de Y. Con la impresora
+  fría se baja la boquilla en cada ranura: la más angosta que entra sin que toque nada más da φ, y el ángulo libre a esa
+  altura (la profundidad de la fila) es (180° − φ) / 2. El asistente guarda cada par altura:ángulo en el perfil del
+  cabezal (`nonplanar_head_profile`, una vez por fila) y el de la fila leída en los ángulos libres. El cabezal no es simétrico (ventilador de capa, sensor de nivelación). Se modela como un
   cono elíptico alrededor de la boquilla: una capa con gradiente (gx, gy) cabe si (gx / tan αx)² + (gy / tan αy)² ≤ 1.
   Las crestas que suben a lo largo de X usan αx, a lo largo de Y usan αy, en otra dirección la combinación; la
   huevera y las crestas torcidas, el menor de los dos; el cono, el menor con el sentido elegido. Sin medir (0) se usa
@@ -54,6 +58,34 @@ impresora > General > Cabezal):
 
 La comprobación de colisiones con el perfil medido sigue igual. El modelo de cono elíptico es una aproximación propia
 de Tisma a partir de las dos medidas; no sale de una fuente externa.
+
+## Voladizos: no planar solo donde hace falta soporte (Tisma)
+
+Modo «Voladizos (menos soportes)» (`nonplanar_mode = overhangs`): la pieza se imprime con capas planas y las capas se
+inclinan solo en las zonas con voladizos más inclinados que «Voladizo imprimible» (`nonplanar_overhang_threshold`,
+desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
+
+- **Dirección**: las capas *bajan* hacia el voladizo. Así la normal de la capa se inclina hacia donde crece el voladizo
+  y el voladizo sobresale menos respecto de la capa. En el espacio de laminado (donde PrusaSlicer genera los soportes)
+  esto es un cizallamiento: la cotangente del ángulo del voladizo desde la vertical crece en tan(b), con b la inclinación
+  de la capa. Se apunta 5° por debajo del ángulo imprimible.
+- **Forma**: por cada grupo de voladizos (zona, por altura) se toma la sección de la pieza donde empieza el voladizo (lo
+  ya impreso debajo); dentro de ella las capas siguen planas y fuera bajan con la distancia a esa sección, medida en la
+  métrica del cabezal (pendiente ≤ ángulo libre en X y en Y, cono elíptico), hasta el punto más lejano del voladizo. Se
+  calcula en una grilla (transformada de distancia exacta de Felzenszwalb y Huttenlocher, *Distance Transforms of
+  Sampled Functions*, Theory of Computing 8, 2012) y se suaviza.
+- **Cabezal**: además de los ángulos libres, la pendiente queda limitada por la holgura del cabezal (lo ya impreso no
+  puede subir más de lo que permite el bloque calefactor a esa distancia: altura libre / radio, o el perfil medido con
+  la galga de ranuras en V). Con el cabezal por defecto (3 mm a 15 mm) eso es ~10°.
+- **Transición**: cada zona entra de a poco debajo del voladizo y sale arriba, con el espesor de capa dentro de
+  60–140 %; las primeras capas quedan planas (`nonplanar_flat_below`). Si no hay lugar, la zona se inclina menos.
+- **Resultado medido** (test `Non-planar layers tilted under the overhangs need fewer supports`): un hongo con ala a 55°
+  y cabezal de 25° pasa de 1341 mm de filamento de soporte a 0. Con el cabezal por defecto (holgura 3 mm a 15 mm, ~10°)
+  un ala a 48° queda sin soporte y una a 55° no se toca (queda igual que en planar).
+- **Solo si alcanza**: un voladizo se inclina solo si la inclinación posible lo deja imprimible; inclinarlo a medias
+  dejaría el soporte y además lo haría más alto (más material).
+- **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
+  la transición salen curvas.
 
 ## Fuentes
 

@@ -85,9 +85,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
     static std::unordered_set<std::string> steps_gcode = {
         "autoemit_temperature_commands",
         "nonplanar_flow_policy",
-        "nonplanar_head_clearance_radius",
-        "nonplanar_head_profile",
         "nonplanar_segment_length",
+        "zaa_enabled",
+        "zaa_min_thickness",
         "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
         "avoid_crossing_perimeters_max_detour",
@@ -249,6 +249,10 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "nonplanar_head_free_angle_x"
             || opt_key == "nonplanar_head_free_angle_y"
             || opt_key == "nonplanar_head_clearance_height"
+            // The overhangs mode tilts the layers as much as the clearance of the print head allows.
+            || opt_key == "nonplanar_overhang_threshold"
+            || opt_key == "nonplanar_head_clearance_radius"
+            || opt_key == "nonplanar_head_profile"
             // Calibration tests of the non-planar layers deform the mesh (see NonPlanar::calibration_test()).
             || opt_key == "calib_mode"
             || opt_key == "calib_start"
@@ -533,7 +537,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         for (const ModelVolume *model_volume : object.model_object()->volumes)
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
-        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox);
+        const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh);
         const NonPlanar::Deformation::Check check = deformation.check(bbox);
         if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
@@ -553,17 +558,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                           int(std::round(std::atan(limits.tan_x) * 180. / M_PI)),
                           int(std::round(std::atan(limits.tan_y) * 180. / M_PI)));
         // Tisma: the print head (heater block, cooling duct) must not hit the part already printed.
-        NonPlanar::HeadClearance head{ m_config.nonplanar_head_clearance_height.value,
-                                       m_config.nonplanar_head_clearance_radius.value };
-        head.profile = NonPlanar::parse_head_profile(m_config.nonplanar_head_profile.value);
+        const NonPlanar::HeadClearance head = NonPlanar::head_clearance(m_config);
         if ((head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
-            indexed_triangle_set mesh;
-            for (const ModelVolume *model_volume : object.model_object()->volumes)
-                if (model_volume->is_model_part()) {
-                    indexed_triangle_set part = model_volume->mesh().its;
-                    its_transform(part, object.trafo_centered() * model_volume->get_matrix());
-                    its_merge(mesh, part);
-                }
             const NonPlanar::HeadCollision collision = NonPlanar::check_head_collision(deformation, mesh, head);
             if (collision.collides)
                 return format(_u8L("Non-planar layers: the print head would hit the part. At %1% mm of height, the part "
@@ -575,6 +571,17 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                               float_to_string_decimal_point(collision.distance, 1),
                               float_to_string_decimal_point(head.allowed_rise(collision.distance), 1));
         }
+    }
+
+    if (m_config.zaa_enabled) {
+        if (NonPlanar::enabled(m_config))
+            return _u8L("Z anti-aliasing cannot be combined with non-planar layers.");
+        if (m_config.spiral_vase)
+            return _u8L("Z anti-aliasing cannot be combined with the Spiral Vase mode.");
+        if (m_config.belt_printer)
+            return _u8L("Z anti-aliasing cannot be used with belt printers.");
+        if (m_config.arc_fitting != ArcFittingType::Disabled)
+            return _u8L("Z anti-aliasing requires Arc fitting to be disabled.");
     }
 
     if (m_config.avoid_crossing_perimeters && m_config.avoid_crossing_curled_overhangs) {

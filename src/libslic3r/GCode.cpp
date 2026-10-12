@@ -1082,7 +1082,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         for (const ModelVolume *model_volume : object.model_object()->volumes)
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
-        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox));
+        const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
+        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox, &mesh));
         NonPlanar::GCodeFilterParams params = NonPlanar::make_filter_params(print.config());
         // G-code coordinates of the object origin and of the object bottom.
         params.origin = unscaled<double>(object.instances().front().shift);
@@ -1093,9 +1094,20 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         m_nonplanar = make_unique<NonPlanar::GCodeFilter>(*m_nonplanar_deformation, params);
     }
 
+    // Z anti-aliasing (Print::validate() rejects it with the other filters that change the Z of the moves).
+    m_zaa.reset();
+    m_zaa_surface.reset();
+    if (print.config().zaa_enabled.value && ! m_nonplanar) {
+        m_zaa_surface = make_unique<ZAA::Surface>(ZAA::print_mesh(print));
+        ZAA::FilterParams params;
+        params.min_thickness = std::clamp(print.config().zaa_min_thickness.value / 100., 0.05, 1.);
+        params.relative_e    = print.config().use_relative_e_distances.value;
+        m_zaa = make_unique<ZAA::Filter>(*m_zaa_surface, params);
+    }
+
     // Staggered perimeters change the Z of the moves: not with the G-code filters that also do (spiral vase,
-    // non-planar layers, belt printers).
-    m_stagger_allowed = ! print.config().spiral_vase.value && ! m_nonplanar && ! print.config().belt_printer.value;
+    // non-planar layers, Z anti-aliasing, belt printers).
+    m_stagger_allowed = ! print.config().spiral_vase.value && ! m_nonplanar && ! m_zaa && ! print.config().belt_printer.value;
     m_stagger_layer   = nullptr;
     m_stagger_dz      = 0.;
     m_stagger_flow    = 1.;
@@ -1697,9 +1709,16 @@ void GCodeGenerator::process_layers(
             return nonplanar->process_layer(s);
         });
 
+    const auto zaa = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [zaa = this->m_zaa.get()](std::string s) -> std::string {
+            return zaa->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_nonplanar)
         pipeline_to_string = pipeline_to_string & nonplanar;
+    if (m_zaa)
+        pipeline_to_string = pipeline_to_string & zaa;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 
@@ -1804,9 +1823,16 @@ void GCodeGenerator::process_layers(
             return nonplanar->process_layer(s);
         });
 
+    const auto zaa = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [zaa = this->m_zaa.get()](std::string s) -> std::string {
+            return zaa->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_nonplanar)
         pipeline_to_string = pipeline_to_string & nonplanar;
+    if (m_zaa)
+        pipeline_to_string = pipeline_to_string & zaa;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 

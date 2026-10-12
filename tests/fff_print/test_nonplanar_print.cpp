@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <map>
 #include <set>
@@ -8,6 +9,7 @@
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using Catch::Approx;
 
 static DynamicPrintConfig nonplanar_config(const char *mode)
 {
@@ -201,4 +203,102 @@ TEST_CASE("Non-planar calibration: Z speed grows by steps", "[NonPlanar][Calibra
     }
     // The waves need more than the slowest step: it is limited there.
     CHECK(max_speed[0] > 0.8);
+}
+
+// Stem of radius 5 up to z = 10, flaring out at `angle` degrees from the vertical up to z = 15, then a cap 3 mm thick.
+static TriangleMesh mushroom(double angle)
+{
+    const double r_cap = 5. + 5. * std::tan(angle * M_PI / 180.);
+    const std::vector<Vec2d> profile { { 5., 0. }, { 5., 10. }, { r_cap, 15. }, { r_cap, 18. } };
+    constexpr int segments = 72;
+    indexed_triangle_set its;
+    const int n = int(profile.size());
+    for (int s = 0; s < segments; ++ s) {
+        const double a = 2. * M_PI * s / segments;
+        for (const Vec2d &p : profile)
+            its.vertices.emplace_back(float(p.x() * std::cos(a)), float(p.x() * std::sin(a)), float(p.y()));
+    }
+    const int bottom = int(its.vertices.size());
+    its.vertices.emplace_back(0.f, 0.f, 0.f);
+    const int top = int(its.vertices.size());
+    its.vertices.emplace_back(0.f, 0.f, float(profile.back().y()));
+    for (int s = 0; s < segments; ++ s) {
+        const int a = s * n, b = ((s + 1) % segments) * n;
+        for (int i = 0; i + 1 < n; ++ i) {
+            its.indices.emplace_back(a + i, b + i, b + i + 1);
+            its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
+        }
+        its.indices.emplace_back(bottom, b, a);
+        its.indices.emplace_back(top, a + n - 1, b + n - 1);
+    }
+    return TriangleMesh(std::move(its));
+}
+
+// Filament length extruded as support material.
+static double support_filament(const std::string &gcode)
+{
+    double out = 0.;
+    bool support = false;
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (line.comment().rfind("TYPE:", 0) == 0)
+            support = line.comment().find("Support") != std::string::npos;
+        if (support && line.cmd_is("G1") && line.extruding(self))
+            out += line.dist_E(self);
+    });
+    return out;
+}
+
+TEST_CASE("Non-planar layers tilted under the overhangs need fewer supports", "[NonPlanar]")
+{
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 45 },
+                                    { "nonplanar_overhang_threshold", 45 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 },
+                                    // A print head that does not limit the slope here.
+                                    { "nonplanar_head_clearance_height", 10 }, { "nonplanar_head_clearance_radius", 10 } });
+    const double planar = support_filament(Test::slice({ mushroom(55.) }, config));
+    REQUIRE(planar > 0.);
+
+    config.set_deserialize_strict({ { "nonplanar_mode", "overhangs" } });
+    Print print;
+    Model model;
+    Test::init_print({ mushroom(55.) }, print, model, config);
+    REQUIRE(print.validate().empty());
+    const std::string gcode = Test::gcode(print);
+    const double tilted = support_filament(gcode);
+    // Sheared below the printable angle in the slice space: no supports left.
+    REQUIRE(tilted < 0.05 * planar);
+    // The layers of the cap are curved, those of the stem below the transition flat.
+    const Extrusions e = analyse(gcode);
+    bool curved = false;
+    for (const auto &[layer, zs] : e.z_by_layer) {
+        if (layer < 0.65)
+            REQUIRE(zs.size() == 1);
+        if (layer > 11. && layer < 15. && *zs.rbegin() - *zs.begin() > 1.)
+            curved = true;
+    }
+    REQUIRE(curved);
+}
+
+TEST_CASE("Non-planar layers tilted under the overhangs stay within the print head clearance", "[NonPlanar]")
+{
+    // The default print head (3 mm of clearance 15 mm around the nozzle) allows only about 10°.
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 45 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 } });
+    auto supports = [&config](double angle, const char *mode) {
+        config.set_deserialize_strict({ { "nonplanar_mode", mode } });
+        Print print;
+        Model model;
+        Test::init_print({ mushroom(angle) }, print, model, config);
+        REQUIRE(print.validate().empty());
+        return support_filament(Test::gcode(print));
+    };
+    // Enough to bring a 48° flare below 45°: no supports left.
+    const double planar48 = supports(48., "disabled");
+    REQUIRE(planar48 > 0.);
+    REQUIRE(supports(48., "overhangs") < 0.05 * planar48);
+    // Not enough for a 55° flare: left flat, the supports are not made taller.
+    REQUIRE(supports(55., "overhangs") == Approx(supports(55., "disabled")).epsilon(0.01));
 }

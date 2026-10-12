@@ -1493,6 +1493,8 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
         optgroup->append_single_option_line("stagger_perimeters");
+        optgroup->append_single_option_line("zaa_enabled");
+        optgroup->append_single_option_line("zaa_min_thickness");
         optgroup->append_single_option_line("ensure_vertical_shell_thickness", category_path + "ensure-vertical-shell-thickness");
         optgroup->append_single_option_line("avoid_crossing_curled_overhangs", category_path + "avoid-crossing-curled-overhangs");
         optgroup->append_single_option_line("avoid_crossing_perimeters", category_path + "avoid-crossing-perimeters");
@@ -1679,6 +1681,7 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
         optgroup->append_single_option_line("nonplanar_fit_head");
+        optgroup->append_single_option_line("nonplanar_overhang_threshold");
         optgroup->append_single_option_line("nonplanar_max_slope");
 
         optgroup = page->new_optgroup(L("Wave"));

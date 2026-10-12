@@ -1,5 +1,5 @@
-// Tisma Slicer: the vendor bundles converted from OrcaSlicer (resources/profiles/Orca_*.ini) load in Tisma without
-// substitutions, and their printers, processes and filaments resolve their parents.
+// Tisma Slicer: the vendor bundles converted from OrcaSlicer (resources/profiles/Orca_*.ini) and from UltiMaker Cura
+// (Cura_*.ini) load in Tisma without substitutions, and their printers, processes and filaments resolve their parents.
 #include <catch2/catch_test_macros.hpp>
 
 #include <boost/filesystem.hpp>
@@ -13,14 +13,14 @@
 using namespace Slic3r;
 namespace fs = boost::filesystem;
 
-TEST_CASE("Vendor bundles converted from OrcaSlicer load", "[VendorBundles]")
+static size_t load_bundles(const std::string &prefix, size_t min_bundles)
 {
     const fs::path profiles = fs::path(TEST_DATA_DIR) / ".." / ".." / "resources" / "profiles";
     std::vector<fs::path> bundles;
     for (const fs::directory_entry &entry : fs::directory_iterator(profiles))
-        if (entry.path().extension() == ".ini" && entry.path().filename().string().rfind("Orca_", 0) == 0)
+        if (entry.path().extension() == ".ini" && entry.path().filename().string().rfind(prefix, 0) == 0)
             bundles.push_back(entry.path());
-    REQUIRE(bundles.size() > 30);
+    REQUIRE(bundles.size() > min_bundles);
 
     // A data directory for the bundles (nothing is saved there).
     const fs::path data = fs::temp_directory_path() / fs::unique_path("tisma-bundles-%%%%-%%%%");
@@ -38,7 +38,17 @@ TEST_CASE("Vendor bundles converted from OrcaSlicer load", "[VendorBundles]")
         CHECK(loaded > 0);
         presets += loaded;
     }
-    CHECK(presets > 5000);
     boost::system::error_code ec;
     fs::remove_all(data, ec);
+    return presets;
+}
+
+TEST_CASE("Vendor bundles converted from OrcaSlicer load", "[VendorBundles]")
+{
+    CHECK(load_bundles("Orca_", 30) > 5000);
+}
+
+TEST_CASE("Vendor bundles converted from UltiMaker Cura load", "[VendorBundles]")
+{
+    CHECK(load_bundles("Cura_", 100) > 600);
 }

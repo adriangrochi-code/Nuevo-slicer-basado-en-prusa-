@@ -42,6 +42,7 @@
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/GCode/Travels.hpp"
 #include "libslic3r/NonPlanar.hpp"
+#include "libslic3r/ZAntiAliasing.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
 
@@ -461,6 +462,9 @@ private:
     // Non-planar layers: transforms the planar G-code of each layer back to curved layers.
     std::unique_ptr<NonPlanar::Deformation> m_nonplanar_deformation;
     std::unique_ptr<NonPlanar::GCodeFilter> m_nonplanar;
+    // Z anti-aliasing: lowers the top extrusions to the surface of the model.
+    std::unique_ptr<ZAA::Surface>           m_zaa_surface;
+    std::unique_ptr<ZAA::Filter>            m_zaa;
     std::unique_ptr<GCode::WipeTowerIntegration> m_wipe_tower;
 
     // Current fan speed set by dynamic fan speed control.

@@ -81,7 +81,8 @@ static std::optional<NonPlanar::Deformation> nonplanar_deformation(
     for (const ModelVolume *model_volume : model_volumes)
         if (model_volume->is_model_part())
             bbox.merge(model_volume->mesh().transformed_bounding_box(object_trafo * model_volume->get_matrix()));
-    return NonPlanar::make_deformation(print_config, bbox);
+    const indexed_triangle_set mesh = NonPlanar::object_mesh(model_volumes, object_trafo);
+    return NonPlanar::make_deformation(print_config, bbox, &mesh);
 }
 
 // Slice single triangle mesh.
