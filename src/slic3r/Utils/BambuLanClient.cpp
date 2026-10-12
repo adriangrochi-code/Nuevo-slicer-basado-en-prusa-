@@ -295,6 +295,14 @@ std::string bambu_project_file_command(const std::string &file_name, bool use_am
 // ------------------------------------------------------------------------------------------------------------------
 namespace {
 
+// The Bambu Lab printer certificates name no revocation list nor OCSP responder, so Schannel (Windows) fails with
+// "the revocation status is unknown" unless the revocation check is off. The chain is still verified against the
+// Bambu Lab CA. Ignored by the other TLS backends.
+void set_no_revoke(CURL *curl)
+{
+    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, long(CURLSSLOPT_NO_REVOKE));
+}
+
 class TlsStream
 {
 public:
@@ -317,6 +325,7 @@ public:
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
         if (!cafile.empty())
             curl_easy_setopt(m_curl, CURLOPT_CAINFO, cafile.c_str());
+        set_no_revoke(m_curl);
         curl_easy_setopt(m_curl, CURLOPT_CERTINFO, 1L);
         char errbuf[CURL_ERROR_SIZE] = "";
         curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, errbuf);
@@ -613,6 +622,7 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
     if (!cafile.empty())
         curl_easy_setopt(curl, CURLOPT_CAINFO, cafile.c_str());
+    set_no_revoke(curl);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
