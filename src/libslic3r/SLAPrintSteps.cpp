@@ -12,6 +12,7 @@
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include "libslic3r/SLA/SupportTreeSlicer.hpp"
 #include <libslic3r/SLA/ZCorrection.hpp>
+#include <libslic3r/SLA/SuctionCups.hpp>
 #include <libslic3r/ElephantFootCompensation.hpp>
 #include <libslic3r/CSGMesh/ModelToCSGMesh.hpp>
 #include <libslic3r/CSGMesh/SliceCSGMesh.hpp>
@@ -607,6 +608,22 @@ void SLAPrint::Steps::slice_model(SLAPrintObject &po)
     // Also apply Z-compensation. That is only done for model (not supports).
     po.m_model_slices = sla::apply_zcorrection(po.m_model_slices,
                                         m_print->m_material_config.zcorrection_layers.getInt());
+
+    // Tisma: hollows closed at the bottom and open towards the film (suction cups) can tear the print off.
+    if (const std::vector<sla::SuctionCup> cups = sla::find_suction_cups(po.m_model_slices, po.get_elevation() <= EPSILON);
+        ! cups.empty()) {
+        const sla::SuctionCup &c = cups.front();
+        const double bottom = po.m_model_height_levels.front();
+        auto height = [&](size_t layer) { return float_to_string_decimal_point(po.m_model_height_levels[layer] - bottom, 1); };
+        po.active_step_add_warning(PrintStateBase::WarningLevel::NON_CRITICAL,
+            format(_u8L("Suction cup in %1%: a hollow closed at the bottom and open towards the film, from %2% mm to %3% mm "
+                        "above the bottom of the part (up to %4% mm²). The vacuum while peeling can tear the print off or "
+                        "deform it. Drill a drain hole of 3 to 5 mm in its floor (Hollow and drill) or rotate the part so "
+                        "that the hollow opens towards the build plate.%5%"),
+                   po.model_object()->name, height(c.first_layer), height(c.last_layer),
+                   int(std::round(c.max_area)),
+                   cups.size() > 1 ? " " + format(_u8L("%1% suction cups in total."), cups.size()) : std::string()));
+    }
 
     // Prepare data for the support point generator only when supports are enabled
     if (po.m_config.supports_enable.getBool())

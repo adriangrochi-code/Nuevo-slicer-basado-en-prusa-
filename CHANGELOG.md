@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Resina: detector de ventosas**: al laminar avisa de los huecos cerrados abajo y abiertos hacia el film que el vacío
+  puede arrancar, con la altura, el área y cómo arreglarlo (`docs/RESINA.md`).
+- **Avisos de laminado de cada pieza**: ya no desaparecen al terminar de laminar (afectaba sobre todo a resina).
 - **296 impresoras nuevas tomadas de UltiMaker Cura** (las que Tisma no tenía), con procesos genéricos y filamentos de
   1,75 / 2,85 mm; todas laminan (`docs/PRINTER_PROFILES.md`).
 - **Anti-aliasing en Z**: las caras superiores inclinadas siguen al modelo en lugar de salir en escalones; el relleno

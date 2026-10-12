@@ -33270,3 +33270,9 @@ msgstr "El anti-aliasing en Z no se puede usar con impresoras de cinta."
 
 msgid "Z anti-aliasing requires Arc fitting to be disabled."
 msgstr "El anti-aliasing en Z requiere el ajuste de arcos desactivado."
+
+msgid "Suction cup in %1%: a hollow closed at the bottom and open towards the film, from %2% mm to %3% mm above the bottom of the part (up to %4% mm²). The vacuum while peeling can tear the print off or deform it. Drill a drain hole of 3 to 5 mm in its floor (Hollow and drill) or rotate the part so that the hollow opens towards the build plate.%5%"
+msgstr "Ventosa en %1%: un hueco cerrado abajo y abierto hacia el film, de %2% mm a %3% mm sobre la base de la pieza (hasta %4% mm²). El vacío al despegar puede arrancar o deformar la impresión. Hacé un agujero de drenaje de 3 a 5 mm en su piso (Vaciado y taladrado) o girá la pieza para que el hueco quede abierto hacia la plataforma.%5%"
+
+msgid "%1% suction cups in total."
+msgstr "%1% ventosas en total."

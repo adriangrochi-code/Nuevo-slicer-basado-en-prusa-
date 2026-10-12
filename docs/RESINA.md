@@ -84,3 +84,19 @@ Calibración (pestaña o menú) con una impresora de resina:
   (tiempo de exposición de la resina). Las capas de fondo mantienen su exposición.
 - **Bloque de medidas** de 30 × 30 × 10 mm y **Corrección dimensional de la resina**: con X, Y y Z medidos calcula la
   corrección de escala del material (`material_correction_x/y/z` = actual × medida deseada / medida impresa).
+
+## Detector de ventosas
+
+Al laminar, Tisma busca en los cortes de cada pieza los huecos cerrados abajo (por la propia pieza, el pad o la
+plataforma) y abiertos hacia el film: al despegar cada capa el film los sella y el vacío puede arrancar o deformar la
+impresión («cupping», ver la documentación de [Mango3D](https://doc.mango3d.io/?p=2272) y
+[Nexa3D](https://support.nexa3d.com/hc/en-us/articles/4412843390363-Cupping)). La detección es propia
+(`src/libslic3r/SLA/SuctionCups.cpp`):
+
+- Capa por capa, el aire que rodea la pieza y el que sigue hacia abajo hasta él está ventilado; un hueco encerrado sin
+  salida hacia abajo es una ventosa, desde su piso hasta donde se cierra o termina la pieza.
+- Una salida cuenta solo si tiene al menos 3 mm² (unos 2 mm de diámetro); los huecos de menos de 4 mm² no se avisan.
+- Un hueco en la primera capa está cerrado por la plataforma o el pad si la pieza no está elevada sobre soportes.
+- Aviso al laminar con la pieza, las alturas y el área, y cómo arreglarlo: agujero de drenaje de 3 a 5 mm en el piso
+  (Vaciado y taladrado) o girar la pieza para que el hueco abra hacia la plataforma.
+
