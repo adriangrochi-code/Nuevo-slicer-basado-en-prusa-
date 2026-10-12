@@ -1070,6 +1070,8 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionBool,               nonplanar_flat_top))
     ((ConfigOptionBool,               nonplanar_fit_head))
     ((ConfigOptionFloat,              nonplanar_overhang_threshold))
+    ((ConfigOptionBool,               zaa_enabled))
+    ((ConfigOptionPercent,            zaa_min_thickness))
     ((ConfigOptionFloat,              nonplanar_max_slope))
     ((ConfigOptionFloat,              nonplanar_segment_length))
     ((ConfigOptionEnum<NonPlanarFlowPolicy>, nonplanar_flow_policy))

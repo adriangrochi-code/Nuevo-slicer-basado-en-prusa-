@@ -297,6 +297,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
         for (auto el : { "nonplanar_fit_head", "nonplanar_ramp_height", "nonplanar_flat_top" })
             toggle_field(el, nonplanar && ! overhangs);
         toggle_field("nonplanar_overhang_threshold", overhangs);
+        toggle_field("zaa_min_thickness", config->opt_bool("zaa_enabled"));
         for (auto el : { "nonplanar_pattern", "nonplanar_wavelength" })
             toggle_field(el, wave);
         toggle_field("nonplanar_amplitude", wave && ! fit_head);

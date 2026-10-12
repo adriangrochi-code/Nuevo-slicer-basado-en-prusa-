@@ -12,6 +12,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Anti-aliasing en Z**: las caras superiores inclinadas siguen al modelo en lugar de salir en escalones; el relleno
+  superior y los perímetros bajan dentro de la última capa con menos flujo (`docs/Z_ANTIALIASING.md`).
 - **No planar solo en voladizos** (modo «Voladizos»): las capas se inclinan únicamente bajo los voladizos que
   necesitarían soporte, tanto como permite el cabezal; menos soporte y material (`docs/NONPLANAR_ANALYSIS.md`).
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de

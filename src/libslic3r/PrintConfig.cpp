@@ -3447,6 +3447,26 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
 
+    def = this->add("zaa_enabled", coBool);
+    def->label = L("Z anti-aliasing");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top "
+                   "infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness "
+                   "left, so that the top follows the model. Needs absolute XYZ and no arc fitting; not with non-planar "
+                   "layers, spiral vase or belt printers.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("zaa_min_thickness", coPercent);
+    def->label = L("Z anti-aliasing: thinnest extrusion");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("The extrusions are lowered at most down to this thickness, in percent of the layer height.");
+    def->sidetext = L("%");
+    def->min = 5;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercent(25));
+
     def = this->add("nonplanar_overhang_threshold", coFloat);
     def->label = L("Printable overhang");
     def->category = L("Non-planar");
