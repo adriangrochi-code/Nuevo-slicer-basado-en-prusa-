@@ -1,3 +1,9 @@
+# Tisma: OCCT 7.6 needs C++11; AppleClang compiled it as C++98 without an explicit standard.
+set(_occt_cxx_standard "")
+if (APPLE)
+    set(_occt_cxx_standard -DCMAKE_CXX_STANDARD=11)
+endif ()
+
 add_cmake_project(OCCT
 	# Versions newer than 7.6.1 contain a bug that causes chamfers to be triangulated incorrectly.
 	# So, before any updating, it is necessary to check whether SPE-2257 is still happening.
@@ -7,6 +13,7 @@ add_cmake_project(OCCT
 
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/occt_toolkit.cmake ./adm/cmake/
     CMAKE_ARGS
+        ${_occt_cxx_standard}
         -DINSTALL_DIR_LAYOUT=Unix # LMBBS
         -DBUILD_LIBRARY_TYPE=Static
         -DUSE_TK=OFF

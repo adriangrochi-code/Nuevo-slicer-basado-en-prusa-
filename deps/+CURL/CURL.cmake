@@ -45,8 +45,20 @@ set(_curl_platform_flags
 
 if (WIN32)
   set(_curl_platform_flags ${_curl_platform_flags} -DCURL_USE_SCHANNEL=ON)
-# macOS uses the curl of the system (SYSTEM_PROVIDED_PACKAGES in deps/CMakeLists.txt); SecureTransport was
-# removed from curl 8.
+elseif(APPLE)
+  # SecureTransport was removed from curl 8: OpenSSL from the dependencies (not the one of Homebrew, which may be
+  # of the other architecture and is not shipped), certificates verified by the system (USE_APPLE_SECTRUST).
+  set(_curl_platform_flags
+
+    ${_curl_platform_flags}
+
+    -DCURL_USE_OPENSSL:BOOL=ON
+    -DUSE_APPLE_SECTRUST:BOOL=ON
+    -DOPENSSL_ROOT_DIR:PATH=${${PROJECT_NAME}_DEP_INSTALL_PREFIX}
+    -DOPENSSL_USE_STATIC_LIBS:BOOL=ON
+    -DCURL_CA_BUNDLE:STRING=none
+    -DCURL_CA_PATH:STRING=none
+  )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(_curl_platform_flags 
 
@@ -81,7 +93,7 @@ add_cmake_project(CURL
 )
 
 set(DEP_CURL_DEPENDS ZLIB)
-if (UNIX AND NOT APPLE)
+if (UNIX)
   list(APPEND DEP_CURL_DEPENDS OpenSSL)
 endif ()
 
