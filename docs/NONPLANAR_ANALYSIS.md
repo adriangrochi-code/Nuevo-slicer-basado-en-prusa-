@@ -80,8 +80,10 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Transición**: cada zona entra de a poco debajo del voladizo y sale arriba, con el espesor de capa dentro de
   60–140 %; las primeras capas quedan planas (`nonplanar_flat_below`). Si no hay lugar, la zona se inclina menos.
 - **Resultado medido** (test `Non-planar layers tilted under the overhangs need fewer supports`): un hongo con ala a 55°
-  y cabezal de 25° pasa de 1341 mm de filamento de soporte a 0; con el cabezal por defecto (holgura 3 mm a 15 mm), de
-  1237 mm a 609 mm (−51 %).
+  y cabezal de 25° pasa de 1341 mm de filamento de soporte a 0. Con el cabezal por defecto (holgura 3 mm a 15 mm, ~10°)
+  un ala a 48° queda sin soporte y una a 55° no se toca (queda igual que en planar).
+- **Solo si alcanza**: un voladizo se inclina solo si la inclinación posible lo deja imprimible; inclinarlo a medias
+  dejaría el soporte y además lo haría más alto (más material).
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
