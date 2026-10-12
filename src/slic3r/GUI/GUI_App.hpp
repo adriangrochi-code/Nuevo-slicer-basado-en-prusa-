@@ -23,6 +23,8 @@
 #include <mutex>
 #include <stack>
 
+#include <boost/filesystem/path.hpp>
+
 class wxMenuItem;
 class wxMenuBar;
 class wxTopLevelWindow;
@@ -411,6 +413,10 @@ public:
 
     // URL download - PrusaSlicer gets system call to open prusaslicer:// URL which should contain address of download
     void            start_download(std::string url);
+    // Tisma: downloads a model from Thingiverse (browsed in its page) and loads it into the plater.
+    void            start_thingiverse_download(const std::string& url);
+    // Folder of the URL downloads (Configuration Wizard), otherwise the Downloads folder of the user; empty if none.
+    boost::filesystem::path download_folder() const;
 
     void            open_wifi_config_dialog(bool forced, const wxString& drive_path = {});
     bool            get_wifi_config_dialog_shown() const { return m_wifi_config_dialog_shown; }

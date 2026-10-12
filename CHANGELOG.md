@@ -15,6 +15,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
   calibración no planar los mide con la galga girada); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
   del cono salen de esos ángulos y de la altura libre, no de valores fijos (`docs/NONPLANAR_ANALYSIS.md`).
+- **Thingiverse en lugar de Printables**: la página Thingiverse busca modelos y «Descargar e importar este modelo» (o
+  el botón de descarga del sitio) los baja y los carga en la plataforma; un zip abre el selector de archivos.
+- **Ingeniería con Estructuras en un solo botón**, visible en todos los modos con impresoras FFF.
+- **Lista de objetos abajo en la barra derecha**, como en PrusaSlicer (la columna de objetos a la izquierda se quitó).
 - **Modo principiante**: la configuración avisa que la mayoría de los ajustes están ocultos y ofrece mostrarlos todos.
 - **Bambu Lab por LAN en Windows**: corregido «TLS: schannel: the revocation status is unknown».
 - **Resina: impresoras Elegoo con formato GOO** (`docs/RESINA.md`): exportación directa a `.goo` (el formato abierto

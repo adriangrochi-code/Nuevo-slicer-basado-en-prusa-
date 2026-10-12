@@ -839,14 +839,13 @@ void MainFrame::create_nav_rail()
     m_nav_rail = new NavRail(top_bar, true);
 
     auto is_fff       = []() { return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF; };
-    auto is_expert    = []() { return wxGetApp().get_mode() == comExpert; };
     auto current_page = [this]() -> wxWindow* { return m_tabpanel ? m_tabpanel->GetCurrentPage() : nullptr; };
     auto select_page  = [this](wxWindow* page) {
         if (int idx = m_tabpanel->FindPage(page); idx != wxNOT_FOUND)
             m_tabpanel->SetSelection(idx);
     };
 
-    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering, Structures, Configuration.
+    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering (with Structures), Configuration.
     NavRail::Item prepare;
     prepare.label       = _L("Prepare");
     prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
@@ -863,28 +862,19 @@ void MainFrame::create_nav_rail()
     slice.is_selected = [this, current_page]() { return current_page() == m_plater && m_plater->is_preview_shown(); };
     m_nav_rail->add_item(slice);
 
-    // Advanced workspaces: only in the Expert mode, the basic modes stay as in PrusaSlicer.
-    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5).
+    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5). The
+    // structures (lightest infill, reinforcements, lattice: phase 6) are sections of the same view, so they share
+    // its button.
     NavRail::Item engineering;
     engineering.label       = _L("Engineering");
-    engineering.tooltip     = _L("Structural analysis at the working temperature: supports, loads and material");
+    engineering.tooltip     = _L("Structural analysis at the working temperature (supports, loads and material) and "
+                                 "structures: lightest infill, reinforcements and lattice");
     engineering.icon        = "wrench";
     engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
     engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    // The analyses and the calibrations are for FFF printers: hidden with an SLA printer.
-    engineering.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
+    // In every mode (it is a main function of Tisma); the analyses are for FFF printers: hidden with an SLA printer.
+    engineering.is_visible  = [is_fff]() { return is_fff(); };
     m_nav_rail->add_item(engineering);
-
-    // Structures: the lightest infill for the loads (phase 6), in the Engineering view; lattice and local
-    // reinforcements will follow (docs/IMPLEMENTATION_ROADMAP.md).
-    NavRail::Item structures;
-    structures.label       = _L("Structures");
-    structures.tooltip     = _L("Lightest infill for the loads: uniform or by zones");
-    structures.icon        = "infill";
-    structures.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_structures(); update_nav_rail(); };
-    structures.is_selected = []() { return false; };
-    structures.is_visible  = [is_expert, is_fff]() { return is_expert() && is_fff(); };
-    m_nav_rail->add_item(structures);
 
     NavRail::Item calib;
     calib.label    = _L("Calibration");
@@ -906,13 +896,15 @@ void MainFrame::create_nav_rail()
     usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
     m_nav_rail->add_item(usb);
 
-    if (m_printables_webview) {
-        NavRail::Item printables;
-        printables.label       = "Printables";
-        printables.icon        = "open_browser";
-        printables.on_click    = [select_page, this]() { select_page(m_printables_webview); };
-        printables.is_selected = [this, current_page]() { return current_page() == m_printables_webview; };
-        m_nav_rail->add_item(printables);
+    // Thingiverse instead of Printables (whose page needs the Prusa account of PrusaSlicer).
+    if (m_thingiverse_webview) {
+        NavRail::Item thingiverse;
+        thingiverse.label       = "Thingiverse";
+        thingiverse.tooltip     = _L("Find models on Thingiverse and download them into the plater");
+        thingiverse.icon        = "open_browser";
+        thingiverse.on_click    = [select_page, this]() { select_page(m_thingiverse_webview); };
+        thingiverse.is_selected = [this, current_page]() { return current_page() == m_thingiverse_webview; };
+        m_nav_rail->add_item(thingiverse);
     }
 
     // Configuration: printer, filament and process profiles, preferences.
@@ -979,8 +971,8 @@ void MainFrame::update_nav_rail(bool visibility)
         return;
     if (visibility) {
         wxWindow* page = m_tabpanel->GetCurrentPage();
-        // Leaving the Expert mode or switching to an SLA printer while an advanced workspace is shown: back to Prepare.
-        if (m_plater && (wxGetApp().get_mode() != comExpert || m_plater->printer_technology() != ptFFF) && m_plater->is_engineering_open())
+        // Switching to an SLA printer while Engineering is shown: back to Prepare.
+        if (m_plater && m_plater->printer_technology() != ptFFF && m_plater->is_engineering_open())
             m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
     } else
@@ -999,6 +991,10 @@ void MainFrame::create_preset_tabs()
     // Tisma: Devices page (selected from the navigation column).
     m_devices_panel = new DevicesPanel(m_tabpanel);
     m_tabpanel->AddNewPage(m_devices_panel, _L("Devices"), "");
+    m_thingiverse_webview = new ThingiverseWebViewPanel(m_tabpanel);
+    m_tabpanel->AddNewPage(m_thingiverse_webview, "Thingiverse", "");
+    // The browser is created and the site loaded the first time the page is shown.
+    m_thingiverse_webview->set_create_browser();
     add_printables_webview_tab();
    
     m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
@@ -2516,7 +2512,7 @@ MainFrame::~MainFrame()
             delete menu;
 }
 
-// Tisma Slicer: Engineering and Structures only work with FFF printers (hidden with an SLA printer), and the
+// Tisma Slicer: Engineering (with Structures) only works with FFF printers (hidden with an SLA printer), and the
 // Calibration menu has the tests of the printer technology.
 void MainFrame::update_technology_ui()
 {

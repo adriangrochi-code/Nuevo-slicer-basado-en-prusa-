@@ -2,6 +2,7 @@
 #define slic3r_WebViewPanel_hpp_
 
 #include <map>
+#include <set>
 #include <wx/wx.h>
 #include <wx/event.h>
 
@@ -256,6 +257,37 @@ historyForward
 navigace vpred triggerovana z mobilni aplikace
 */
 };
+// Tisma: Thingiverse in a page of the application. Its model files are downloaded by the page itself (it has passed
+// the Cloudflare check of the site) and handed to the application, which saves them in the download folder and loads
+// them into the plater. If the page cannot download a file, the application downloads it, and as a last resort the
+// system browser opens it.
+class ThingiverseWebViewPanel : public WebViewPanel
+{
+public:
+    explicit ThingiverseWebViewPanel(wxWindow* parent);
+    void on_navigation_request(wxWebViewEvent& evt) override;
+    void on_loaded(wxWebViewEvent& evt) override;
+    void on_script_message(wxWebViewEvent& evt) override;
+
+    // A link to a model file (or an archive of them) of Thingiverse.
+    static bool is_model_download(const std::string& url);
+    // The page of a thing (thing:<id>).
+    static bool is_thing_page(const std::string& page_url);
+
+protected:
+    void late_create() override;
+
+private:
+    void download(const std::string& url);
+    void update_buttons();
+
+    wxButton* m_btn_back     { nullptr };
+    wxButton* m_btn_home     { nullptr };
+    wxButton* m_btn_download { nullptr };
+    // URLs being downloaded by the page, for the fallbacks.
+    std::set<std::string> m_pending;
+};
+
 } // namespace Slic3r::GUI
 
 #endif /* slic3r_WebViewPanel_hpp_ */

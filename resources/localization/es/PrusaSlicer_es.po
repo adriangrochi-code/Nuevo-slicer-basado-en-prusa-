@@ -33078,3 +33078,27 @@ msgstr "Paso 1: ángulo libre en Y a %1% mm (galga tal como se imprimió y girad
 
 msgid "Free angles of the print head to apply: %1%° along X, %2%° along Y (the non-planar layers use them instead of the maximum layer slope)."
 msgstr "Ángulos libres del cabezal a aplicar: %1%° en X, %2%° en Y (las capas no planares los usan en lugar de la pendiente máxima)."
+
+msgid "Structural analysis at the working temperature (supports, loads and material) and structures: lightest infill, reinforcements and lattice"
+msgstr "Análisis estructural a la temperatura de trabajo (apoyos, cargas y material) y estructuras: relleno más liviano, refuerzos y lattice"
+
+msgid "Download and import this thing"
+msgstr "Descargar e importar este modelo"
+
+msgid "Open in the browser"
+msgstr "Abrir en el navegador"
+
+msgid "Downloads all the files of the thing shown (\"Download all files\" of the site) and loads them into the plater."
+msgstr "Descarga todos los archivos del modelo mostrado («Download all files» del sitio) y los carga en la plataforma."
+
+msgid "Find models on Thingiverse and download them into the plater"
+msgstr "Busca modelos en Thingiverse y descárgalos a la plataforma"
+
+msgid "Downloading from Thingiverse..."
+msgstr "Descargando desde Thingiverse..."
+
+msgid "Thingiverse did not send a model file. Try the download button of the file on the page."
+msgstr "Thingiverse no envió un archivo de modelo. Prueba con el botón de descarga del archivo en la página."
+
+msgid "The file could not be downloaded from Thingiverse: %1%"
+msgstr "No se pudo descargar el archivo desde Thingiverse: %1%"

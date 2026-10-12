@@ -70,6 +70,8 @@ public:
     void start_download(const std::string& full_url);
 
     void start_download_printables(const std::string& url, bool load_after, const std::string& printables_url, GUI_App* app);
+    // Tisma: download from a model site browsed in the application (Thingiverse), only from the given domains.
+    void start_download_from_site(const std::string& url, const std::vector<std::string>& domains, bool load_after);
     // cancel = false -> just pause
     bool user_action_callback(DownloaderUserAction action, int id);
 private:

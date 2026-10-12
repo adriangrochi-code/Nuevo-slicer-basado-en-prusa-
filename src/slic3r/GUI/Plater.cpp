@@ -779,12 +779,6 @@ void Plater::priv::init()
     panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
-    // Órbita Pro: the objects at the left of the 3D view, the print settings at the right.
-    if (wxWindow* objects = sidebar->objects_panel()) {
-        hsizer->Add(objects, 0, wxEXPAND, 0);
-        // The G-code viewer has no objects.
-        objects->Show(wxGetApp().is_editor());
-    }
     // The 3D view with the status bar under it.
     auto *center_sizer = new wxBoxSizer(wxVERTICAL);
     center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
@@ -6720,14 +6714,6 @@ void Plater::open_engineering()
     if (gizmos.get_current_type() != GLGizmosManager::Engineering)
         gizmos.open_gizmo(GLGizmosManager::Engineering);
     canvas->set_as_dirty();
-}
-
-void Plater::open_structures()
-{
-    open_engineering();
-    if (is_engineering_open())
-        if (auto *gizmo = dynamic_cast<GLGizmoEngineering*>(p->view3D->get_canvas3d()->get_gizmos_manager().get_gizmo(GLGizmosManager::Engineering)))
-            gizmo->show_infill_section();
 }
 
 void Plater::close_engineering()

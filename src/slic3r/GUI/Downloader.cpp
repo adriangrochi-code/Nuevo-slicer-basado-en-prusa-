@@ -208,6 +208,24 @@ void Downloader::start_download_printables(const std::string& url, bool load_aft
 	m_downloads.back()->start();
 }
 
+void Downloader::start_download_from_site(const std::string& url, const std::vector<std::string>& domains, bool load_after)
+{
+    assert(m_initialized);
+
+    if (!boost::starts_with(url, "https://") || !is_any_subdomain(url, domains)) {
+        std::string msg = format(_L("Download won't start. Download URL doesn't point to allowed subdomains : %1%"), url);
+        BOOST_LOG_TRIVIAL(error) << msg;
+        wxGetApp().notification_manager()->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::RegularNotificationLevel, msg);
+        return;
+    }
+
+    size_t id = get_next_id();
+    m_downloads.emplace_back(std::make_unique<Download>(id, url, this, m_dest_folder, load_after));
+    NotificationManager* ntf_mngr = wxGetApp().notification_manager();
+    ntf_mngr->push_download_URL_progress_notification(id, m_downloads.back()->get_filename(), std::bind(&Downloader::user_action_callback, this, std::placeholders::_1, std::placeholders::_2));
+    m_downloads.back()->start();
+}
+
 void Downloader::on_progress(wxCommandEvent& event)
 {
 	size_t id = event.GetInt();

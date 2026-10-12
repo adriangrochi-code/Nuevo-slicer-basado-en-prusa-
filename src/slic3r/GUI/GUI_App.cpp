@@ -2707,7 +2707,7 @@ void GUI_App::update_mode()
 
     mainframe->m_tmp_top_bar->UpdateMode();
     mainframe->m_tabpanel->UpdateMode();
-    // Advanced workspaces are shown only in the Expert mode.
+    // The workspaces depend on the printer technology (Engineering only for FFF printers).
     mainframe->update_nav_rail(true);
 
     for (auto tab : tabs_list)
@@ -3908,6 +3908,27 @@ void GUI_App::start_download(std::string url)
         }
     m_downloader->init(dest_folder);
     m_downloader->start_download(url);
+}
+
+boost::filesystem::path GUI_App::download_folder() const
+{
+    boost::filesystem::path dest_folder(app_config->get("url_downloader_dest"));
+    if (dest_folder.empty() || !boost::filesystem::is_directory(dest_folder))
+        dest_folder = into_path(wxStandardPaths::Get().GetUserDir(wxStandardPaths::Dir_Downloads));
+    return boost::filesystem::is_directory(dest_folder) ? dest_folder : boost::filesystem::path();
+}
+
+void GUI_App::start_thingiverse_download(const std::string& url)
+{
+    if (!plater_)
+        return;
+    const boost::filesystem::path dest_folder = download_folder();
+    if (dest_folder.empty()) {
+        show_error(nullptr, _u8L("Could not start URL download. Destination folder is not set. Please choose destination folder in Configuration Wizard."));
+        return;
+    }
+    m_downloader->init(dest_folder);
+    m_downloader->start_download_from_site(url, { "thingiverse.com" }, true);
 }
 
 void GUI_App::open_wifi_config_dialog(bool forced, const wxString& drive_path/* = {}*/)
