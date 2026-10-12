@@ -1981,9 +1981,10 @@ PageBrands::PageBrands(ConfigWizard *parent)
 {
     auto *p = wizard_p();
 
-    // Brands: the bundles of the repositories shown by the wizard. The bundles converted from OrcaSlicer, named
-    // "<brand> (OrcaSlicer)" when there is another bundle of the brand, are listed under the brand.
-    static const std::string CONVERTED = " (OrcaSlicer)";
+    // Brands: the bundles of the repositories shown by the wizard. The bundles converted from OrcaSlicer and from
+    // UltiMaker Cura, named "<brand> (OrcaSlicer)" / "<brand> (Cura)" when there is another bundle of the brand, are
+    // listed under the brand.
+    static const std::vector<std::string> CONVERTED_SUFFIXES { " (OrcaSlicer)", " (Cura)" };
     std::map<std::wstring, size_t> brand_by_name;
     for (const auto &repo : p->repositories)
         for (const auto &[id, bundle] : p->bundles) {
@@ -1991,9 +1992,13 @@ PageBrands::PageBrands(ConfigWizard *parent)
             if (vendor == nullptr || vendor->repo_id != repo.id_name || vendor->templates_profile || vendor->models.empty())
                 continue;
             std::string name = vendor->name;
-            const bool converted = boost::algorithm::ends_with(name, CONVERTED);
-            if (converted)
-                name.erase(name.size() - CONVERTED.size());
+            bool converted = false;
+            for (const std::string &suffix : CONVERTED_SUFFIXES)
+                if (boost::algorithm::ends_with(name, suffix)) {
+                    name.erase(name.size() - suffix.size());
+                    converted = true;
+                    break;
+                }
             const auto [it, added] = brand_by_name.emplace(lower(from_u8(name)), m_brands.size());
             if (added)
                 m_brands.push_back({ from_u8(name), {} });

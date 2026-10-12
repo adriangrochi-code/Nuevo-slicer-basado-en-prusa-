@@ -19,6 +19,30 @@ Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`C
 página del fabricante aparece en el índice para elegir más boquillas o ver las fotos, y desaparece al desmarcar todas
 sus impresoras. El resto del asistente (filamentos, perfiles instalados) no cambia.
 
+## Impresoras de UltiMaker Cura
+
+- Origen: `resources/definitions` y `resources/extruders` de [Cura](https://github.com/Ultimaker/Cura) (commit en la
+  cabecera de cada archivo), licencia **LGPL-3.0** (texto en `resources/licenses/Cura-LGPL-3.0.txt`).
+- Solo se toma la máquina: tamaño y forma de la cama (rectangular o elíptica, origen en el centro), altura, boquilla,
+  firmware, G-code de inicio y fin, retracción. Los perfiles de calidad y materiales de Cura no se convierten: cada
+  paquete trae tres procesos genéricos por boquilla (fino, estándar, borrador: 30 / 50 / 70 % de la boquilla) y las
+  impresoras usan los filamentos genéricos de la biblioteca de Orca (1,75 mm) o los genéricos de 2,85 mm del paquete.
+- Archivos: `resources/profiles/Cura_<fabricante>.ini`, mostrados como «Fabricante» o «Fabricante (Cura)» si Tisma ya
+  tiene ese fabricante (en el asistente se listan bajo la misma marca).
+- Conversión: `tools/profiles/convert_cura_profiles.py <Cura>/resources resources/profiles --commit <sha>`.
+  - G-code: variables de Cura traducidas (temperaturas, altura de capa, extrusor…), las demás reemplazadas por el valor
+    de la definición; los corchetes literales pasan a paréntesis; `M82` pasa a `M83` (Tisma usa E relativa).
+  - Se omiten: modelos que Tisma ya tiene (mismo nombre en cualquier paquete), definiciones ocultas o abstractas,
+    impresoras de varios extrusores, firmwares que Tisma no genera (Griffin, UltiGCode, MakerBot, BFB, Mach3, E
+    volumétrica), G-code con condicionales o variables desconocidas, y las que no son de filamento.
+
+| Resultado de la conversión (Cura 5bea2f8) | |
+|---|---|
+| Impresoras nuevas | 296 (110 paquetes) |
+| Ya estaban en Tisma | 193 |
+| Omitidas: varios extrusores / firmware o no FFF / G-code | 93 / 10 / 21 |
+| Laminan un cubo (`validate_bundles.py`) | 296 de 296 |
+
 ## Perfiles de OrcaSlicer
 
 - Origen: `resources/profiles` de [OrcaSlicer](https://github.com/SoftFever/OrcaSlicer) (commit indicado en la cabecera
