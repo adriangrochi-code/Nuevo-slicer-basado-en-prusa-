@@ -26,7 +26,7 @@
 #include "PhysicalPrinterDialog.hpp"
 #include "Plater.hpp"
 #include "TismaTheme.hpp"
-#include "USBPrintDialog.hpp"
+#include "USBMonitorPanel.hpp"
 #include "WebViewPanel.hpp"
 #include "format.hpp"
 #include "../Utils/PrintHost.hpp"
@@ -59,9 +59,7 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
                            "The printers of the local network can be searched in the dialog."));
     left->Add(btn_add, 0, wxEXPAND | wxBOTTOM, em / 4);
     m_btn_edit = new wxButton(this, wxID_ANY, _L("Edit printer") + dots);
-    left->Add(m_btn_edit, 0, wxEXPAND | wxBOTTOM, em / 4);
-    auto *btn_usb = new wxButton(this, wxID_ANY, _L("Print via USB") + dots);
-    left->Add(btn_usb, 0, wxEXPAND);
+    left->Add(m_btn_edit, 0, wxEXPAND);
     main->Add(left, 0, wxEXPAND | wxALL, em);
 
     // Right: the selected printer.
@@ -84,6 +82,10 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_web = new PrinterWebViewPanel(this, L"");
     m_web->Hide();
     right->Add(m_web, 1, wxEXPAND);
+    // The USB printer: detected by itself, controlled and printed from here.
+    m_usb = new USBMonitorPanel(this);
+    m_usb->Hide();
+    right->Add(m_usb, 1, wxEXPAND);
     main->Add(right, 1, wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, em);
 
     SetSizer(main);
@@ -92,7 +94,6 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_list->Bind(wxEVT_LISTBOX_DCLICK, [this](wxCommandEvent &) { edit_printer(); });
     btn_add->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { add_network_printer(); });
     m_btn_edit->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { edit_printer(); });
-    btn_usb->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { USBPrintDialog::run(wxGetApp().mainframe); });
     m_btn_send->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { send_sliced(); });
     m_btn_browser->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { open_in_browser(); });
     m_start->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
@@ -119,7 +120,7 @@ void DevicesPanel::update_list()
     m_list->Clear();
     const std::string usb_port = wxGetApp().app_config->get("usb_print_port");
     m_entries.push_back({ Entry::Type::USB, {} });
-    m_list->Append(usb_port.empty() ? _L("USB printer (not connected yet)") : format_wxstr(_L("USB printer (%1%)"), from_u8(usb_port)));
+    m_list->Append(usb_port.empty() ? _L("USB printer (detected when connected)") : format_wxstr(_L("USB printer (%1%)"), from_u8(usb_port)));
     for (const PhysicalPrinter &printer : wxGetApp().preset_bundle->physical_printers) {
         const auto *host = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
         const std::string address = printer.config.opt_string("print_host");
@@ -131,8 +132,8 @@ void DevicesPanel::update_list()
     for (size_t i = 0; i < m_entries.size(); ++ i)
         if ((m_entries[i].type == Entry::Type::USB ? std::string("\\usb") : m_entries[i].name) == selected)
             sel = int(i);
-    // The first network printer if nothing was selected.
-    if (selected.empty() && m_entries.size() > 1)
+    // Nothing selected: the USB printer if one was connected, else the first network printer.
+    if (selected.empty() && m_entries.size() > 1 && usb_port.empty())
         sel = 1;
     m_list->SetSelection(sel);
     on_select();
@@ -161,10 +162,11 @@ void DevicesPanel::on_select()
     m_btn_send->Enable(network);
     m_btn_browser->Enable(network);
     m_start->Enable(network);
+    m_usb->Show(! network);
     if (! network) {
         m_title->SetLabel(_L("USB printer"));
-        m_hint->SetLabel(_L("The USB printer is controlled from the \"Print via USB\" window: connection, temperatures, console and "
-                            "printing. Add a network printer to see its web interface here (camera, temperatures, calibrations)."));
+        m_hint->SetLabel(_L("Plug the printer in with its USB cable: it is detected by itself. After slicing, \"Print via USB\" "
+                            "sends the plate here."));
         m_web->Hide();
         m_url.clear();
         Layout();
@@ -244,6 +246,15 @@ void DevicesPanel::on_select()
     Layout();
 }
 
+void DevicesPanel::select_usb()
+{
+    // The USB printer is always the first entry.
+    if (! m_entries.empty() && m_list->GetSelection() != 0) {
+        m_list->SetSelection(0);
+        on_select();
+    }
+}
+
 void DevicesPanel::add_network_printer()
 {
     PhysicalPrinterDialog dlg(this, wxEmptyString);
@@ -263,10 +274,8 @@ void DevicesPanel::edit_printer()
     const int sel = m_list->GetSelection();
     if (sel == wxNOT_FOUND || size_t(sel) >= m_entries.size())
         return;
-    if (m_entries[sel].type == Entry::Type::USB) {
-        USBPrintDialog::run(wxGetApp().mainframe);
+    if (m_entries[sel].type == Entry::Type::USB)
         return;
-    }
     PhysicalPrinterDialog dlg(this, from_u8(m_entries[sel].name));
     if (dlg.ShowModal() == wxID_OK) {
         wxGetApp().sidebar().update_presets(Preset::TYPE_PRINTER);
@@ -330,6 +339,7 @@ void DevicesPanel::sys_color_changed()
     m_hint->SetForegroundColour(TismaTheme::text_muted(dark));
     wxGetApp().UpdateDarkUI(m_list);
     m_web->sys_color_changed();
+    m_usb->sys_color_changed();
     Refresh();
 }
 

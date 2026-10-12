@@ -61,7 +61,7 @@
 #include "MsgDialog.hpp"
 #include "TopBar.hpp"
 #include "NavRail.hpp"
-#include "USBPrintDialog.hpp"
+#include "USBMonitorPanel.hpp"
 #include "DevicesPanel.hpp"
 #include "CalibrationDialog.hpp"
 #include "ConfigWizard.hpp"
@@ -890,8 +890,6 @@ void MainFrame::create_nav_rail()
     usb.on_click    = [this, select_page]() {
         if (m_devices_panel)
             select_page(m_devices_panel);
-        else
-            USBPrintDialog::run(this);
     };
     usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
     m_nav_rail->add_item(usb);
@@ -959,8 +957,6 @@ void MainFrame::create_nav_rail()
         [this, select_page]() {
             if (m_devices_panel)
                 select_page(m_devices_panel);
-            else
-                USBPrintDialog::run(this);
         });
     top_bar->AddRightWindow(m_printer_chip);
 }
@@ -1070,6 +1066,16 @@ void MainFrame::show_connect_tab(const wxString& url)
     m_connect_webview->set_load_default_url_on_next_error(true);
     m_connect_webview->load_url(url);
 }
+void MainFrame::show_usb_printer()
+{
+    if (m_devices_panel == nullptr)
+        return;
+    if (int idx = m_tabpanel->FindPage(m_devices_panel); idx != wxNOT_FOUND)
+        m_tabpanel->SetSelection(idx);
+    m_devices_panel->select_usb();
+    update_nav_rail();
+}
+
 void MainFrame::show_printables_tab(const std::string& url)
 {
      if (!m_printables_webview_added) {

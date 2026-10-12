@@ -22,6 +22,7 @@ namespace Slic3r {
 namespace GUI {
 
 class PrinterWebViewPanel;
+class USBMonitorPanel;
 
 class DevicesPanel : public wxPanel
 {
@@ -30,6 +31,8 @@ public:
 
     // Reloads the list of printers (after adding or editing one).
     void update_list();
+    // Selects the USB printer.
+    void select_usb();
     void sys_color_changed();
 
 private:
@@ -57,6 +60,7 @@ private:
     wxButton            *m_btn_browser{ nullptr };
     wxCheckBox          *m_start      { nullptr };
     PrinterWebViewPanel *m_web        { nullptr };
+    USBMonitorPanel     *m_usb        { nullptr };
     bool                 m_web_created{ false };
     std::string          m_url;
     // Bambu Lab printers: the status request in flight (older answers are ignored).

@@ -88,6 +88,9 @@ public:
     double       response_timeout { 15. };
     // Temperature polling period when the printer does not auto-report.
     double       poll_period { 5. };
+    // While connecting, M110 is sent again this often: the board may still be booting after the port opened it (DTR
+    // reset) and have missed it.
+    double       connect_retry { 2. };
 
 private:
     void send_next(double now);
@@ -107,6 +110,7 @@ private:
     double                    m_last_activity { 0. };
     double                    m_last_poll { 0. };
     double                    m_last_report { -1e10 };     // last temperature report
+    double                    m_last_connect { 0. };       // last M110 while connecting
     bool                      m_finishing { false };       // cancel commands in progress
     Temperatures              m_temperatures;
     std::vector<std::string>  m_log;

@@ -84,7 +84,7 @@
 #include "slic3r/Config/Snapshot.hpp"
 #include "ConfigSnapshotDialog.hpp"
 #include "FirmwareDialog.hpp"
-#include "USBPrintDialog.hpp"
+#include "USBMonitorPanel.hpp"
 #include "slic3r/GUI/Preferences.hpp" // IWYU pragma: keep
 #include "Tab.hpp"
 #include "SysInfoDialog.hpp"
@@ -2854,7 +2854,7 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
             FirmwareDialog::run(mainframe);
             break;
         case ConfigMenuUSBPrint:
-            USBPrintDialog::run(mainframe);
+            USBMonitorPanel::show();
             break;
         case ConfigMenuWifiConfigFile:
         {

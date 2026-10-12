@@ -15,6 +15,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 - **No planar ajustado al cabezal**: ángulo libre en X y en Y en Configuración de impresora > Cabezal (el asistente de
   calibración no planar los mide con la galga girada); con «Ajustar al cabezal» la amplitud de las ondas y el ángulo
   del cono salen de esos ángulos y de la altura libre, no de valores fijos (`docs/NONPLANAR_ANALYSIS.md`).
+- **Impresión por USB como en Cura**: la impresora se detecta sola (puerto y velocidad) al enchufarla; al laminar, el
+  botón principal es «Imprimir por USB» y la flecha de al lado despliega las demás salidas (exportar G-code, tarjeta SD,
+  enviar a la impresora). La página Device muestra el monitor: temperaturas con precalentado y gráfico, movimiento de
+  los ejes, extrusor y ventilador, G-code, impresión activa (progreso, tiempo, pausar, cancelar) y terminal.
+- **Flecha para ocultar los ajustes** de la barra derecha: quedan los botones de laminar y de salida.
 - **Thingiverse en lugar de Printables**: la página Thingiverse busca modelos y «Descargar e importar este modelo» (o
   el botón de descarga del sitio) los baja y los carga en la plataforma; un zip abre el selector de archivos.
 - **Ingeniería con Estructuras en un solo botón**, visible en todos los modos con impresoras FFF.

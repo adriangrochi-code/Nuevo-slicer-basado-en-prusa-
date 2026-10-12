@@ -187,3 +187,21 @@ TEST_CASE("USB: temperatures, lost ok and fatal errors", "[USBPrinter]")
     sender.on_line("Error:Printer halted. kill() called!", now);
     REQUIRE(sender.state() == State::Error);
 }
+
+TEST_CASE("USB: connecting retries M110 while the board boots", "[USBPrinter]")
+{
+    FakeMarlin printer;
+    GCodeSender sender(printer);
+    double now = 0.;
+    sender.connect(now);
+    // The board was resetting: the first M110 is lost.
+    printer.responses.clear();
+    sender.tick(now += 1.);
+    REQUIRE(sender.state() == State::Connecting);
+    REQUIRE(printer.responses.empty());
+    // After connect_retry, M110 again; this time the printer answers.
+    sender.tick(now += 1.5);
+    REQUIRE(printer.responses.size() == 1);
+    pump(sender, printer, now);
+    REQUIRE(sender.state() == State::Idle);
+}

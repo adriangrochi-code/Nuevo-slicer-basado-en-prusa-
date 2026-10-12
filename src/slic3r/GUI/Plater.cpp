@@ -20,7 +20,7 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/BitmapCache.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
-#include "slic3r/GUI/USBPrintDialog.hpp"
+#include "slic3r/GUI/USBMonitorPanel.hpp"
 #include "slic3r/Utils/PrusaConnect.hpp"
 
 #include <cstddef>
@@ -4227,7 +4227,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
     const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // Tisma: a USB printer was connected once.
-    const bool usb_print_shown = printer_technology == ptFFF && USBPrintDialog::has_saved_printer();
+    const bool usb_print_shown = printer_technology == ptFFF && USBMonitorPanel::has_printer();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -7115,7 +7115,11 @@ void Plater::usb_print()
         select_view_3D("Preview");
         return;
     }
-    USBPrintDialog::print_file(wxGetApp().mainframe, path, into_u8(get_project_filename(".gcode")));
+    // The name of the project, else the name the G-code would be uploaded with (from the objects).
+    std::string name = into_u8(get_project_filename(".gcode"));
+    if (name.empty())
+        name = get_upload_filename();
+    USBMonitorPanel::print_file(path, name.empty() ? std::string("plate.gcode") : name);
 }
 
 std::string Plater::get_upload_filename()

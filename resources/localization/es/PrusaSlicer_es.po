@@ -33102,3 +33102,111 @@ msgstr "Thingiverse no envió un archivo de modelo. Prueba con el botón de desc
 
 msgid "The file could not be downloaded from Thingiverse: %1%"
 msgstr "No se pudo descargar el archivo desde Thingiverse: %1%"
+
+msgid "%1% (finished)"
+msgstr "%1% (terminada)"
+
+msgid "%1% (waiting for the printer)"
+msgstr "%1% (esperando a la impresora)"
+
+msgid "Active print"
+msgstr "Impresión activa"
+
+msgid "Automatic"
+msgstr "Automático"
+
+msgid "Connected: %1%, %2% baud"
+msgstr "Conectada: %1%, %2% baudios"
+
+msgid "Connection"
+msgstr "Conexión"
+
+msgid "Detect and connect the printer automatically"
+msgstr "Detectar y conectar la impresora automáticamente"
+
+msgid "Error: the printer stopped (see the terminal)"
+msgstr "Error: la impresora se detuvo (ver la terminal)"
+
+msgid "Fan"
+msgstr "Ventilador"
+
+msgid "Hide the settings (the slice button stays)"
+msgstr "Ocultar los ajustes (el botón de laminar queda)"
+
+msgid "Hide the temperature reports"
+msgstr "Ocultar los reportes de temperatura"
+
+msgid "Home all"
+msgstr "Home de todos los ejes"
+
+msgid "Jog distance"
+msgstr "Distancia de movimiento"
+
+msgid "Looking for the printer on the USB ports..."
+msgstr "Buscando la impresora en los puertos USB..."
+
+msgid "Looking for the printer..."
+msgstr "Buscando la impresora..."
+
+msgid "Motors off"
+msgstr "Apagar motores"
+
+msgid "No print"
+msgstr "Sin impresión"
+
+msgid "No printer answered on the USB ports. Check the cable and that the printer is on."
+msgstr "Ninguna impresora respondió en los puertos USB. Revisa el cable y que la impresora esté encendida."
+
+msgid "Other ways to output the sliced plate"
+msgstr "Otras formas de enviar la plataforma laminada"
+
+msgid "Plug the printer in with its USB cable: it is detected by itself. After slicing, \"Print via USB\" sends the plate here."
+msgstr "Conecta la impresora con su cable USB: se detecta sola. Después de laminar, «Imprimir por USB» envía la plataforma aquí."
+
+msgid "Pre-heat"
+msgstr "Precalentar"
+
+msgid "Print a file"
+msgstr "Imprimir un archivo"
+
+msgid "Print the sliced plate"
+msgstr "Imprimir la plataforma laminada"
+
+msgid "Printer control"
+msgstr "Control de la impresora"
+
+msgid "Printer found on %1% at %2% baud."
+msgstr "Impresora encontrada en %1% a %2% baudios."
+
+msgid "Printing time %1%"
+msgstr "Tiempo de impresión %1%"
+
+msgid "Remaining about %1%"
+msgstr "Faltan unos %1%"
+
+msgid "Show the settings"
+msgstr "Mostrar los ajustes"
+
+msgid "Slice the plate first: there is no sliced G-code to print."
+msgstr "Lamina la plataforma primero: no hay G-code laminado para imprimir."
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "The firmware refuses to extrude with a cold nozzle: pre-heat it first."
+msgstr "El firmware no extruye con la boquilla fría: precaliéntala primero."
+
+msgid "The print starts when the printer is connected."
+msgstr "La impresión empieza cuando la impresora esté conectada."
+
+msgid "The printer was disconnected."
+msgstr "La impresora se desconectó."
+
+msgid "Trying %1% at %2% baud..."
+msgstr "Probando %1% a %2% baudios..."
+
+msgid "USB printer (detected when connected)"
+msgstr "Impresora USB (se detecta al conectarla)"
+
+msgid "last 10 minutes, dashed: target"
+msgstr "últimos 10 minutos, punteado: objetivo"

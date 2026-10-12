@@ -100,6 +100,7 @@ void GCodeSender::connect(double now)
     m_in_flight     = 0;
     m_next_line_no  = 0;
     m_last_activity = now;
+    m_last_connect  = now;
     // M110 N0 resets the line number of the firmware; the next line is N1.
     this->send_numbered("M110 N0", now);
 }
@@ -313,6 +314,11 @@ void GCodeSender::tick(double now)
 {
     if (m_state == State::Disconnected || m_state == State::Error)
         return;
+    if (m_state == State::Connecting) {
+        if (now - m_last_connect > connect_retry)
+            this->connect(now);
+        return;
+    }
     if (m_in_flight > 0) {
         // Long commands (heating, homing ...) are kept alive by "busy:" or temperature reports.
         const std::string last = m_history.empty() ? std::string() : m_history.back().second;

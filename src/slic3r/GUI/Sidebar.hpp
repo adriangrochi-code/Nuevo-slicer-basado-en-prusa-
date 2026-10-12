@@ -17,6 +17,7 @@
 #ifndef slic3r_Sidebar_hpp_
 #define slic3r_Sidebar_hpp_
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -92,8 +93,26 @@ class Sidebar : public wxPanel
     ::Button*       m_btn_reslice               { nullptr };
     wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
-    ScalableButton* m_btn_usb_print             { nullptr };
+    ::Button*       m_btn_usb_print             { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
+    // Tisma: the output of the sliced plate as in Cura: the main button does the chosen action, the arrow next to it
+    // lists the other ones available (print via USB, send to the printer, export to the SD card ...). The buttons of
+    // those actions are kept hidden, they only say which actions are available.
+    enum class OutputAction { Export, USBPrint, Removable, Send, Connect };
+    ::Button*       m_btn_more_actions          { nullptr };
+    mutable std::map<OutputAction, bool> m_action_available;
+    mutable wxString m_export_label;
+    OutputAction    main_action() const;
+    void            update_main_action() const;
+    void            run_action(OutputAction action);
+    void            show_actions_menu();
+    static wxString action_label(OutputAction action, const wxString &export_label);
+    // Tisma: arrow that hides the settings of the sidebar and keeps the slice and output buttons.
+    ::Button*       m_btn_compact               { nullptr };
+    bool            m_compact                   { false };
+    void            set_compact(bool compact);
+    // Sets whether an output action is available; true if it changed.
+    bool            set_available(OutputAction action, bool available) const;
                                                              //
     wxButton* m_btn_export_all_gcode                { nullptr };
     wxButton* m_btn_connect_gcode_all               { nullptr };

@@ -104,7 +104,9 @@ std::pair<std::string, bool> SlicingProcessCompletedEvent::format_error_message(
 
 std::string BackgroundSlicingProcess::sliced_gcode_path() const
 {
-	if (m_print != m_fff_print || m_fff_print == nullptr || ! this->is_step_done(bspsGCodeFinalize) ||
+	// The temporary G-code is written by the G-code export step of the print. The finalize step of the background
+	// process is invalidated once the slicing is done without an export (reset_export()), so it is not checked.
+	if (m_print != m_fff_print || m_fff_print == nullptr || this->running() || ! m_fff_print->finished() ||
 		! boost::filesystem::exists(m_temp_output_path))
 		return {};
 	return m_temp_output_path;

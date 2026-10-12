@@ -239,6 +239,8 @@ public:
     void    on_account_logout();
     void    show_connect_tab(const wxString& url);
     void    show_printables_tab(const std::string& url);
+    // Tisma: the Device page with the USB printer.
+    void    show_usb_printer();
     void    on_printables_secret_token(const std::string& data);
 
     void    add_printables_webview_tab();
