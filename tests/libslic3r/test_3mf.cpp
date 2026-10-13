@@ -133,3 +133,50 @@ SCENARIO("2D convex hull of sinking object", "[3mf]") {
     }
 }
 
+
+// Tisma: the non-planar settings of a project (print settings and print head) come back from its 3MF as saved.
+TEST_CASE("Non-planar settings round trip through a project 3MF", "[3mf][NonPlanar]")
+{
+    Model model;
+    load_stl((std::string(TEST_DATA_DIR) + "/test_3mf/Prusa.stl").c_str(), &model);
+    model.add_default_instances();
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_deserialize_strict({
+        { "nonplanar_mode",                  "surface" },
+        { "nonplanar_head_free_angle_x",     23.5 },
+        { "nonplanar_head_free_angle_y",     17 },
+        { "nonplanar_head_clearance_height", 4.5 },
+        { "nonplanar_head_clearance_radius", 21 },
+        { "nonplanar_head_profile",          "2:45;5:30" },
+        { "nonplanar_fit_head",              0 },
+        { "nonplanar_amplitude",             0.7 },
+        { "nonplanar_wavelength",            22 },
+        { "nonplanar_flat_below",            0.8 },
+        { "zaa_enabled",                     1 },
+        { "overhang_arcs",                   1 },
+        { "overhang_arcs_speed",             3 },
+        { "overhang_arcs_max_distance",      12 },
+    });
+    const std::string path = (boost::filesystem::temp_directory_path() / "tisma_nonplanar_settings.3mf").string();
+    REQUIRE(store_3mf(path.c_str(), &model, &config, false));
+
+    Model loaded;
+    DynamicPrintConfig loaded_config;
+    ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
+    boost::optional<Semver> version;
+    REQUIRE(load_3mf(path.c_str(), loaded_config, ctxt, &loaded, false, version));
+    boost::filesystem::remove(path);
+    CHECK(ctxt.substitutions.empty());
+    // Every non-planar, Z anti-aliasing and arc overhang option.
+    size_t compared = 0;
+    for (const std::string &key : config.keys())
+        if (key.rfind("nonplanar_", 0) == 0 || key.rfind("zaa_", 0) == 0 || key.rfind("overhang_arcs", 0) == 0 ||
+            key.rfind("interlock_infill", 0) == 0) {
+            INFO(key);
+            REQUIRE(loaded_config.has(key));
+            CHECK(loaded_config.opt_serialize(key) == config.opt_serialize(key));
+            ++ compared;
+        }
+    CHECK(compared > 20);
+}
