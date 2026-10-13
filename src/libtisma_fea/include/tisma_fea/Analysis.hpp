@@ -66,6 +66,8 @@ struct InfillZone
     // Exponents of the infill of the zone, < 0 = the ones of the part.
     double               stiffness_exponent { -1. };
     double               strength_exponent { -1. };
+    // Material deposited per nominal density of the pattern of the zone (infill_deposit_factor()), < 0 = the part's.
+    double               deposit_factor { -1. };
     // The mesh is material at the density of the zone (a solid modifier, the struts of a lattice): every voxel
     // gets the fraction of its volume inside the mesh, instead of all or nothing by its center.
     bool                 volume_fraction { false };
@@ -87,9 +89,16 @@ struct InfillModel
     // Thickness of the solid shell [mm] on walls and on top / bottom surfaces.
     double                  wall_thickness { 0.9 };
     double                  top_bottom_thickness { 0.8 };
-    // Perimeters of the walls and the width of one of them [mm] (wall_thickness = perimeters * perimeter_width).
+    // Perimeters of the walls and the width of one of them [mm]. The walls are as thick as the material they hold:
+    // the spacing of the external perimeter plus that of the others (rounded beads, Flow::rounded_rectangle_
+    // extrusion_spacing()), see wall_thickness_of().
     int                     perimeters { 2 };
     double                  perimeter_width { 0.45 };
+    double                  perimeter_spacing { 0.45 };
+    double                  external_perimeter_spacing { 0.45 };
+    // Material deposited by the infill pattern per nominal density (infill_deposit_factor()): the infill of the
+    // analysis is min(1, deposit_factor * density) of the material, for the mass and the properties.
+    double                  deposit_factor { 1. };
     double                  stiffness_exponent { 1.5 };
     double                  strength_exponent { 1.5 };
     // Aligned infill of the whole part: direction of the lines [°] as InfillZone::aligned_angle_deg, < 0 = not.
@@ -102,6 +111,18 @@ struct InfillModel
 
 // Exponents of the homogenized infill for a pattern name of the print settings (rectilinear, grid, gyroid, ...).
 std::pair<double, double> infill_exponents(const std::string &pattern);
+
+// Fraction of material the slicer actually deposits in the sparse infill per nominal density of the pattern, measured
+// on Tisma's own slicing (test "Infill model matches the sliced toolpaths", docs/FEA.md): the lines overlap at their
+// crossings and anchors, honeycomb deposits a third more, 3D honeycomb less. Adaptive and support cubic and lightning
+// depend on the shape of the part (denser only under the top surfaces): 1, approximate.
+double infill_deposit_factor(const std::string &pattern);
+
+// Thickness of solid material of walls of n perimeters.
+inline double wall_thickness_of(const InfillModel &infill, int n)
+{
+    return n <= 0 ? 0. : infill.external_perimeter_spacing + double(n - 1) * infill.perimeter_spacing;
+}
 
 // Aligned infill: all the lines of every layer in one direction (L), stacked into walls along the layer normal (N),
 // with gaps between them across (T). Factors of the properties of the solid material:

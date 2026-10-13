@@ -787,7 +787,7 @@ TEST_CASE("Reinforcement and lattice applied to an object", "[FEA]")
     Fea::ModelAnalysisInput rin;
     REQUIRE(build_analysis_input(*object, 0, "PLA", rin, error, &config));
     REQUIRE(rin.setup.infill.zones.size() == 1);
-    CHECK(rin.setup.infill.zones.front().wall_thickness == Approx(4 * rin.setup.infill.perimeter_width));
+    CHECK(rin.setup.infill.zones.front().wall_thickness == Approx(wall_thickness_of(rin.setup.infill, 4)));
     CHECK(rin.setup.infill.density == Approx(0.15));
 
     // Lattice: replaces the reinforcement and the infill.
@@ -1733,5 +1733,68 @@ TEST_CASE("Agrees with CalculiX", "[FEA][CalculiX]")
              100. * (s / ref->stress - 1.) << " %), " << res.voxels.size() << " voxels");
         CHECK(d == Approx(ref->displacement).epsilon(0.03));
         CHECK(s == Approx(ref->stress).epsilon(0.03));
+    }
+}
+
+TEST_CASE("Infill model matches the sliced toolpaths", "[FEA][Infill]")
+{
+    // A 30 x 30 x 20 mm block sliced with the pattern, density and perimeters, and the same block as the analysis sees
+    // it: the walls as thick as the material of the perimeters, the infill the material the pattern deposits, the total
+    // the volume extruded.
+    struct Cfg { const char *pattern; int density; int perimeters; };
+    for (const Cfg &c : { Cfg{ "rectilinear", 20, 2 }, Cfg{ "gyroid", 30, 3 }, Cfg{ "honeycomb", 20, 2 },
+                          Cfg{ "3dhoneycomb", 20, 2 }, Cfg{ "cubic", 25, 4 } }) {
+        Model model;
+        ModelObject *object = model.add_object();
+        object->add_volume(TriangleMesh(its_make_cube(30., 30., 20.)));
+        object->add_instance();
+        object->instances.front()->set_offset(Vec3d(100., 100., 0.));
+        object->ensure_on_bed();
+        DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+        config.set_deserialize_strict({ { "fill_pattern", c.pattern }, { "fill_density", std::to_string(c.density) + "%" },
+                                        { "perimeters", c.perimeters }, { "skirts", 0 } });
+        Print print;
+        print.apply(model, config);
+        print.process();
+        double v_sparse = 0., a_sparse = 0., v_perim = 0., v_total = 0., height = 0.;
+        for (const Layer *layer : print.objects().front()->layers()) {
+            for (const LayerRegion *region : layer->regions()) {
+                for (const Surface &surface : region->fill_surfaces())
+                    if (surface.surface_type == stInternal)
+                        a_sparse += surface.expolygon.area() * SCALING_FACTOR * SCALING_FACTOR * layer->height;
+                const ExtrusionEntityCollection fills = region->fills().flatten();
+                for (const ExtrusionEntity *e : fills.entities) {
+                    v_total += e->total_volume();
+                    if (e->role() == ExtrusionRole::InternalInfill)
+                        v_sparse += e->total_volume();
+                }
+                v_perim += region->perimeters().total_volume();
+                v_total += region->perimeters().total_volume();
+            }
+            height += layer->height;
+        }
+        object->engineering.fixtures.push_back({ 0, side(object->volumes.front()->mesh().its, 0, false) });
+        EngineeringLoad load;
+        load.type  = EngineeringLoad::Type::Faces;
+        load.faces = { 0, side(object->volumes.front()->mesh().its, 0, true) };
+        load.force = Vec3d(0., 0., -10.);
+        object->engineering.loads.push_back(load);
+        Fea::ModelAnalysisInput input;
+        std::string error;
+        REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+        input.setup.voxel_size = 0.5;
+        const Result res = analyze(input.mesh, input.setup);
+        REQUIRE(res.ok);
+        // The perimeters fill a square ring of side 30 mm: area per unit of height 30^2 - (30 - 2 t)^2.
+        const double ring   = v_perim / height;
+        const double wall   = 0.5 * (30. - std::sqrt(30. * 30. - ring));
+        const double sparse = v_sparse / a_sparse;
+        const double v_model = res.mass / 1.24 * 1000.;
+        INFO(c.pattern << " " << c.density << " %, " << c.perimeters << " perimeters: wall " << wall << " mm (model " <<
+             input.setup.infill.wall_thickness << "), sparse infill " << sparse << " (model " <<
+             input.setup.infill.deposit_factor * c.density / 100. << "), extruded " << v_total << " mm3 (model " << v_model << ")");
+        CHECK(input.setup.infill.wall_thickness == Approx(wall).epsilon(0.02));
+        CHECK(input.setup.infill.deposit_factor * c.density / 100. == Approx(sparse).epsilon(0.08));
+        CHECK(v_model == Approx(v_total).epsilon(0.05));
     }
 }

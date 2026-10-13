@@ -27,7 +27,7 @@ static bool starts_with(const std::string &s, const char *prefix) { return s.rfi
 // Width of the perimeters [mm] of a print configuration (with the overrides of the object applied). As in
 // PrusaSlicer (Flow::extrusion_width), a width in percent is relative to the layer height, 0 = automatic
 // (1.125 x nozzle).
-static double perimeter_width(const DynamicPrintConfig &cfg)
+static double perimeter_width(const DynamicPrintConfig &cfg, const char *key = "perimeter_extrusion_width")
 {
     double nozzle = 0.4;
     if (const ConfigOptionFloats *n = cfg.option<ConfigOptionFloats>("nozzle_diameter"); n && ! n->values.empty())
@@ -41,7 +41,7 @@ static double perimeter_width(const DynamicPrintConfig &cfg)
             return 0.;
         return opt->percent ? opt->value * 0.01 * layer_height : opt->value;
     };
-    double w = width("perimeter_extrusion_width");
+    double w = width(key);
     if (w <= 0.)
         w = width("extrusion_width");
     if (w <= 0.)
@@ -67,17 +67,23 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
     };
     const double layer_height = number("layer_height", 0.2);
     const double w = perimeter_width(cfg);
+    // The material of a bead of width w and height h: w - h (1 - pi / 4) per unit of height (Flow::
+    // rounded_rectangle_extrusion_spacing()).
+    auto spacing = [layer_height](double width) { return std::max(0.1 * width, width - layer_height * (1. - 0.25 * M_PI)); };
     const ConfigOption *perimeters = cfg.option("perimeters");
     const ConfigOption *top        = cfg.option("top_solid_layers");
     const ConfigOption *bottom     = cfg.option("bottom_solid_layers");
     infill.enabled              = true;
     infill.perimeters           = perimeters ? perimeters->getInt() : 2;
     infill.perimeter_width      = w;
-    infill.wall_thickness       = infill.perimeters * w;
+    infill.perimeter_spacing    = spacing(w);
+    infill.external_perimeter_spacing = spacing(perimeter_width(cfg, "external_perimeter_extrusion_width"));
+    infill.wall_thickness       = wall_thickness_of(infill, infill.perimeters);
     infill.top_bottom_thickness = std::max(top ? top->getInt() : 3, bottom ? bottom->getInt() : 3) * layer_height;
     const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density");
     infill.density = density ? std::clamp(density->value * 0.01, 0., 1.) : 0.2;
     std::tie(infill.stiffness_exponent, infill.strength_exponent) = infill_exponents(cfg.opt_serialize("fill_pattern"));
+    infill.deposit_factor = infill_deposit_factor(cfg.opt_serialize("fill_pattern"));
     // Aligned rectilinear: the lines of every layer at fill_angle (measured on the bed, as the setup).
     if (cfg.opt_serialize("fill_pattern") == "alignedrectilinear")
         infill.aligned_angle_deg = std::fmod(number("fill_angle", 45.) + 360., 180.);
@@ -151,10 +157,11 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
             // which only changes the perimeters keeps the density of the part, as before).
             zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : p ? infill.density : -1.;
             if (p)
-                zone.wall_thickness = p->getInt() * infill.perimeter_width;
+                zone.wall_thickness = wall_thickness_of(infill, p->getInt());
             if (pattern) {
                 const std::string name = volume.config.get().opt_serialize("fill_pattern");
                 std::tie(zone.stiffness_exponent, zone.strength_exponent) = infill_exponents(name);
+                zone.deposit_factor = infill_deposit_factor(name);
                 if (name == "alignedrectilinear") {
                     DynamicPrintConfig cfg = *print_config;
                     cfg.apply(object.config.get(), true);

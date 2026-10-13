@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Análisis estructural: relleno y paredes como se laminan**: las paredes ahora tienen el espesor del material que
+  ponen los perímetros (eran un 17 % más gruesas) y el relleno el material que deposita cada patrón (el panal pone un
+  tercio más de lo pedido, el panal 3D un 11 % menos). La masa del análisis coincide con la laminada dentro de ±3 % en
+  los patrones regulares (`docs/FEA.md`).
 - **Análisis estructural comparado con CalculiX**: barra a tracción, voladizos a lo largo de X y de Z y una escuadra
   en L coinciden con CalculiX dentro del 1,3 % en desplazamientos y tensiones; queda como test automático
   (`docs/FEA.md`).

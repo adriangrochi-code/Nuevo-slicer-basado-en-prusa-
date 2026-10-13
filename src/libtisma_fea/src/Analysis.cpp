@@ -296,7 +296,9 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
 
     // Infill of every voxel: density, stiffness and strength factors and the wall thickness. The part, then the
     // zones in order, or the field.
-    const double base = std::clamp(infill.density, 0., 1.);
+    // Material actually deposited by the pattern for a nominal density.
+    auto deposited = [](double d, double k) { return std::clamp(d * (k > 0. ? k : 1.), 0., 1.); };
+    const double base = deposited(infill.density, infill.deposit_factor);
     auto stiff = [](double d, double n) { return std::pow(std::max(d, 0.02), n); };
     std::vector<double> rho(n_el, base), s_inf(n_el, stiff(base, infill.stiffness_exponent)),
                         t_inf(n_el, stiff(base, infill.strength_exponent)), wall(n_el, infill.wall_thickness),
@@ -307,7 +309,7 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
     };
     if (infill.density_field) {
         for (size_t e = 0; e < n_el; ++ e) {
-            rho[e]   = std::clamp(infill.density_field(voxel_center(e)), 0., 1.);
+            rho[e]   = deposited(infill.density_field(voxel_center(e)), infill.deposit_factor);
             s_inf[e] = stiff(rho[e], infill.stiffness_exponent);
             t_inf[e] = stiff(rho[e], infill.strength_exponent);
         }
@@ -316,7 +318,9 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
         // A zone may change only the density, only the direction of aligned infill, or both.
         const bool   keep_density = zone.density < 0.;
         const bool   keep_angle   = std::isnan(zone.aligned_angle_deg);
-        const double d  = std::clamp(zone.density, 0., 1.);
+        // Solid modifiers and struts are material, not lines of infill.
+        const double d  = zone.volume_fraction ? std::clamp(zone.density, 0., 1.) :
+                          deposited(zone.density, zone.deposit_factor > 0. ? zone.deposit_factor : infill.deposit_factor);
         const double nE = zone.stiffness_exponent > 0. ? zone.stiffness_exponent : infill.stiffness_exponent;
         const double nS = zone.strength_exponent  > 0. ? zone.strength_exponent  : infill.strength_exponent;
         if (zone.volume_fraction) {
@@ -441,6 +445,20 @@ AlignedInfillFactors aligned_infill_factors(double density, double iso_stiffness
     f.across          = std::min(r * r, iso_stiffness);
     f.strength_across = std::min(0.3 * std::pow(r, 1.5), iso_strength);
     return f;
+}
+
+double infill_deposit_factor(const std::string &pattern)
+{
+    // Mean of the ratios at 15 % and 30 % on a 30 x 30 x 20 mm block, 0.45 mm lines, 0.3 mm layers.
+    static const std::pair<const char*, double> factors[] = {
+        { "rectilinear", 1.10 }, { "alignedrectilinear", 1.10 }, { "monotonic", 1.10 }, { "monotoniclines", 1.00 },
+        { "grid", 1.07 }, { "triangles", 1.10 }, { "stars", 1.05 }, { "cubic", 1.06 }, { "line", 1.06 },
+        { "concentric", 1.11 }, { "honeycomb", 1.33 }, { "3dhoneycomb", 0.885 }, { "gyroid", 1.04 },
+        { "hilbertcurve", 1.13 }, { "archimedeanchords", 1.11 }, { "octagramspiral", 1.11 } };
+    for (const auto &[name, k] : factors)
+        if (pattern == name)
+            return k;
+    return 1.;
 }
 
 std::pair<double, double> infill_exponents(const std::string &pattern)

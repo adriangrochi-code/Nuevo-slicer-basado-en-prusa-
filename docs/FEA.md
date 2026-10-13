@@ -93,10 +93,15 @@ Con `InfillModel` activado la pieza deja de ser maciza:
 
 - **Capa maciza**: la parte de cada vóxel a menos del espesor de pared (perímetros) o de techo/suelo (capas
   sólidas) de la superficie es material macizo; la fracción se calcula con la distancia del centro del vóxel a la
-  superficie y la normal de la cara más cercana.
+  superficie y la normal de la cara más cercana. El espesor de pared es el material que ponen los perímetros: el
+  espaciado del perímetro externo más el de los demás, con espaciado = ancho − altura de capa·(1 − π/4) (el cordón
+  redondeado, `Flow::rounded_rectangle_extrusion_spacing` de PrusaSlicer), no perímetros × ancho (que daba un 17 % de
+  más).
 - **Relleno homogeneizado**: rigidez E·ρ^nE y resistencia σ·ρ^nS con exponentes por patrón (rectilíneo/rejilla 1,2;
   panal 1,4; cúbico 1,5/1,4; giroide 1,6/1,5; lightning 2,5, no estructural). Son aproximados: hay que calibrarlos
-  con probetas impresas.
+  con probetas impresas. ρ es el material que deposita el patrón, no la densidad nominal: ρ = mín(1, k·densidad), con
+  k medido en el laminado de Tisma (`infill_deposit_factor`, abajo). El optimizador sigue trabajando con la densidad
+  nominal, que es la que se aplica.
 - **Zonas**: mallas con su propia densidad (los modificadores de relleno), voxelizadas sobre la misma rejilla.
 - **Masa**: suma de la fracción de material de cada vóxel × densidad del material.
 
@@ -274,6 +279,41 @@ capas inclinadas ±25° pasa de un factor de seguridad de 4,7 a 5,2 (PLA).
 | Voladizo 90 × 20 × 20 mm, 200 N, FS 2 | uniforme 2,25 mm (25,4 g) → variable 1,0–2,5 mm (≈ 17 g, −30 %), más gruesas junto al empotramiento | lattice variable |
 
 Rendimiento medido: 62 370 vóxeles, 704 iteraciones, 2,5 s en 4 núcleos.
+
+### Relleno frente a las trayectorias laminadas
+
+Un bloque de 30 × 30 × 20 mm laminado (capas de 0,3 mm, líneas de 0,45 mm) y el mismo bloque como lo ve el análisis
+(test «Infill model matches the sliced toolpaths»). Del laminado se mide el volumen de los perímetros (el espesor de
+pared equivalente del anillo cuadrado), el del relleno disperso frente al volumen de las superficies de relleno
+disperso, y el volumen total extruido.
+
+Material del relleno disperso por densidad nominal, k (media de 15 % y 30 %):
+
+| Patrón | k | Patrón | k |
+|---|---|---|---|
+| rectilíneo, alineado, monotónico | 1,10 | líneas monotónicas | 1,00 |
+| rejilla | 1,07 | triángulos | 1,10 |
+| estrellas | 1,05 | cúbico | 1,06 |
+| línea | 1,06 | concéntrico | 1,11 |
+| panal | 1,33 | panal 3D | 0,885 |
+| giroide | 1,04 | Hilbert, cuerdas, espiral octagrama | 1,11–1,13 |
+
+Las líneas se solapan en los cruces y anclajes; el panal deposita un tercio más de lo pedido. Cúbico adaptativo,
+cúbico de soporte y lightning dependen de la forma (más denso solo bajo los techos): en el bloque depositan 0,75,
+0,6–0,78 y 0,2 de lo pedido; el análisis usa k = 1 y su masa sale alta (+9 a +90 %).
+
+Antes de la corrección el total coincidía por compensación (paredes 17 % de más, relleno de menos), salvo el panal
+(−11 %). Después:
+
+| Caso | Pared laminada / modelo | Relleno laminado / modelo | Volumen laminado / modelo |
+|---|---|---|---|
+| Rectilíneo 20 %, 2 perímetros | 0,778 / 0,771 mm | 0,221 / 0,220 | 6546 / 6490 mm³ |
+| Giroide 30 %, 3 perímetros | 1,166 / 1,157 mm | 0,303 / 0,312 | 8285 / 8387 mm³ |
+| Panal 20 %, 2 perímetros | 0,778 / 0,771 mm | 0,268 / 0,266 | 7235 / 7168 mm³ |
+| Panal 3D 20 %, 2 perímetros | 0,778 / 0,771 mm | 0,178 / 0,177 | 5915 / 5855 mm³ |
+| Cúbico 25 %, 4 perímetros | 1,555 / 1,542 mm | 0,266 / 0,265 | 8325 / 8270 mm³ |
+
+En los 19 patrones regulares a 15 y 30 % el volumen total queda dentro de ±3,2 %.
 
 ### Comparación con CalculiX
 
