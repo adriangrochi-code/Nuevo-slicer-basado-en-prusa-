@@ -297,6 +297,7 @@ set(SLIC3R_SOURCES
     MultiPoint.cpp
     NonPlanar.cpp
     NonPlanar.hpp
+    NonPlanarFit.cpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
     InterlockInfill.cpp

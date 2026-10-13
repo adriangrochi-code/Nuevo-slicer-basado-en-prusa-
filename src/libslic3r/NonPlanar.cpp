@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <unordered_map>
 
 #include <admesh/stl.h>
@@ -71,7 +72,8 @@ double Field::g(double x, double y, double z) const
         // The layers sink towards the overhangs.
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.;
     case Mode::Stress:
-        return m_params.stress ? m_params.stress_scale * m_params.stress->offset(x, y, z) : 0.;
+    case Mode::Surface:
+        return m_params.layers ? m_params.layers_scale * m_params.layers->offset(x, y, z) : 0.;
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         if (m_params.pattern == Pattern::Egg)
@@ -103,7 +105,8 @@ Vec2d Field::grad(double x, double y, double z) const
     case Mode::Overhangs:
         return m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero();
     case Mode::Stress:
-        return m_params.stress ? Vec2d(m_params.stress_scale * m_params.stress->grad(x, y, z)) : Vec2d::Zero();
+    case Mode::Surface:
+        return m_params.layers ? Vec2d(m_params.layers_scale * m_params.layers->grad(x, y, z)) : Vec2d::Zero();
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         const double a = m_params.amplitude * k;
@@ -121,8 +124,8 @@ double Field::dgdz(double x, double y, double z) const
 {
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.;
-    if (m_params.mode == Mode::Stress)
-        return m_params.stress ? m_params.stress_scale * m_params.stress->dz(x, y, z) : 0.;
+    if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
+        return m_params.layers ? m_params.layers_scale * m_params.layers->dz(x, y, z) : 0.;
     if (m_params.mode != Mode::Wave || m_params.pattern != Pattern::Twisted)
         return 0.;
     const double k  = TWO_PI / m_params.wavelength;
@@ -142,8 +145,8 @@ double Field::bound(double x, double y) const
         return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.;
-    if (m_params.mode == Mode::Stress)
-        return m_params.stress ? std::abs(m_params.stress_scale) * m_params.stress->bound(x, y) : 0.;
+    if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
+        return m_params.layers ? std::abs(m_params.layers_scale) * m_params.layers->bound(x, y) : 0.;
     return std::abs(this->g(x, y, 0.));
 }
 
@@ -482,7 +485,7 @@ double OverhangField::bound(double x, double y) const
     return out;
 }
 
-StressField::StressField(const EngineeringLayerField &field, const Vec3d &part_min) :
+LayerGrid::LayerGrid(const EngineeringLayerField &field, const Vec3d &part_min) :
     m_origin(part_min + field.origin), m_cell(std::max(1e-3, field.cell)), m_nx(field.nx), m_ny(field.ny), m_nz(field.nz),
     m_offset(field.offset)
 {
@@ -500,7 +503,7 @@ StressField::StressField(const EngineeringLayerField &field, const Vec3d &part_m
             }
 }
 
-bool StressField::locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const
+bool LayerGrid::locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const
 {
     if (m_offset.empty())
         return false;
@@ -516,7 +519,7 @@ bool StressField::locate(double x, double y, double z, int &i, int &j, int &k, d
     return true;
 }
 
-double StressField::offset(double x, double y, double z) const
+double LayerGrid::offset(double x, double y, double z) const
 {
     int i, j, k;
     double tx, ty, tz;
@@ -530,7 +533,7 @@ double StressField::offset(double x, double y, double z) const
     return v;
 }
 
-Vec2d StressField::grad(double x, double y, double z) const
+Vec2d LayerGrid::grad(double x, double y, double z) const
 {
     int i, j, k;
     double tx, ty, tz;
@@ -547,7 +550,7 @@ Vec2d StressField::grad(double x, double y, double z) const
     return g / m_cell;
 }
 
-double StressField::dz(double x, double y, double z) const
+double LayerGrid::dz(double x, double y, double z) const
 {
     int i, j, k;
     double tx, ty, tz;
@@ -561,7 +564,7 @@ double StressField::dz(double x, double y, double z) const
     return g / m_cell;
 }
 
-double StressField::bound(double x, double y) const
+double LayerGrid::bound(double x, double y) const
 {
     if (m_offset.empty())
         return 0.;
@@ -1338,6 +1341,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarMode::Conical:  p.mode = Mode::Conical;  break;
     case NonPlanarMode::Overhangs: p.mode = Mode::Overhangs; break;
     case NonPlanarMode::Stress:   p.mode = Mode::Stress;   break;
+    case NonPlanarMode::Surface:  p.mode = Mode::Surface;  break;
     }
     switch (config.nonplanar_pattern.value) {
     case NonPlanarPattern::Egg:     p.pattern = Pattern::Egg;     break;
@@ -1476,19 +1480,21 @@ bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3
     return d.cwiseAbs().maxCoeff() <= std::max(0.05, 0.005 * field.part_size.maxCoeff());
 }
 
-// Stresses mode: the layers of the structural analysis, reduced until the layer thickness and the slope are acceptable.
-static FieldParams stress_field(FieldParams field, const Ramp &ramp, const PrintConfig &config,
-                                const BoundingBoxf3 &object_bbox, const EngineeringLayerField *stress)
+// Stresses and surface modes: the layers given on a grid, reduced until the layer thickness and the slope are acceptable
+// and the print head clears the part (mesh: object coordinates, may be null).
+static FieldParams grid_field(FieldParams field, const Ramp &ramp, const PrintConfig &config,
+                              const BoundingBoxf3 &object_bbox, const EngineeringLayerField *stress,
+                              const indexed_triangle_set *mesh)
 {
     if (stress == nullptr || ! layer_field_matches(*stress, object_bbox)) {
         field.mode = Mode::Disabled;
         return field;
     }
-    field.stress = std::make_shared<StressField>(*stress, object_bbox.min);
+    field.layers = std::make_shared<LayerGrid>(*stress, object_bbox.min);
     const HeadLimits limits = head_limits(config);
     auto acceptable = [&](double s) {
         FieldParams f = field;
-        f.stress_scale = s;
+        f.layers_scale = s;
         const Deformation d(f, ramp);
         const Deformation::Check c = d.check(object_bbox);
         return c.j_min >= J_MIN && c.j_max <= J_MAX &&
@@ -1500,8 +1506,67 @@ static FieldParams stress_field(FieldParams field, const Ramp &ramp, const Print
             const double mid = 0.5 * (lo + hi);
             (acceptable(mid) ? lo : hi) = mid;
         }
-        field.stress_scale = lo;
+        field.layers_scale = lo;
     }
+    // The print head must not hit the part already printed (a slower check: only once the rest is acceptable).
+    const HeadClearance head = head_clearance(config);
+    if (mesh != nullptr && (head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
+        auto clear = [&](double s) {
+            FieldParams f = field;
+            f.layers_scale = s;
+            return ! check_head_collision(Deformation(f, ramp), *mesh, head).collides;
+        };
+        if (! clear(field.layers_scale)) {
+            double lo = 0., hi = field.layers_scale;
+            for (int i = 0; i < 12; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (clear(mid) ? lo : hi) = mid;
+            }
+            field.layers_scale = lo;
+        }
+    }
+    return field;
+}
+
+// Weights of the fit of the surface mode (tuned on sloped blocks of 9 and 24 mm: the higher the part, the closer the
+// layers get to its top).
+static constexpr double SURFACE_TARGET_WEIGHT = 100.;
+static constexpr double SURFACE_SMOOTH_WEIGHT = 3.;
+
+// Surface mode: the layer offset whose slopes fit the top surfaces of the mesh. The same mesh and settings come back
+// several times (validation, slicing, G-code, analysis): the last result is kept.
+static std::shared_ptr<const EngineeringLayerField> surface_layer_field(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
+                                                                         const indexed_triangle_set &mesh)
+{
+    const HeadLimits limits = head_limits(config);
+    LayerFitParams params;
+    params.z_flat        = config.nonplanar_flat_below.value;
+    // The top surfaces are few nodes of the grid: they must win against the smoothness of the rest.
+    params.target_weight = SURFACE_TARGET_WEIGHT;
+    params.smooth_weight = SURFACE_SMOOTH_WEIGHT;
+    // Key: the settings and the mesh.
+    size_t key = std::hash<double>()(limits.tan_x) ^ (std::hash<double>()(limits.tan_y) << 1) ^ (std::hash<double>()(params.z_flat) << 2);
+    auto mix = [&key](size_t h) { key ^= h + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2); };
+    mix(mesh.vertices.size());
+    mix(mesh.indices.size());
+    for (const stl_vertex &v : mesh.vertices)
+        for (int i = 0; i < 3; ++ i)
+            mix(std::hash<float>()(v[i]));
+    static std::mutex cache_mutex;
+    static size_t cache_key = 0;
+    static std::shared_ptr<const EngineeringLayerField> cache;
+    {
+        std::lock_guard<std::mutex> lock(cache_mutex);
+        if (cache && cache_key == key)
+            return cache;
+    }
+    auto field = std::make_shared<EngineeringLayerField>();
+    const std::vector<SlopeTarget> targets = surface_slope_targets(mesh, limits.tan_x, limits.tan_y, params.z_flat);
+    if (! fit_layer_field(targets, object_bbox, params, *field))
+        field.reset();
+    std::lock_guard<std::mutex> lock(cache_mutex);
+    cache_key = key;
+    cache     = field;
     return field;
 }
 
@@ -1531,7 +1596,18 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
             ramp.z_top = object_bbox.max.z();
         // Tisma: the layers computed by the structural analysis, within the limits of the print head.
         if (field.mode == Mode::Stress)
-            return Deformation(stress_field(field, ramp, config, object_bbox, stress), ramp);
+            return Deformation(grid_field(field, ramp, config, object_bbox, stress, mesh), ramp);
+        // Tisma: the upper layers follow the top surfaces (the whole height takes the transition).
+        if (field.mode == Mode::Surface) {
+            if (mesh == nullptr || ! object_bbox.defined)
+                return Deformation(FieldParams(), ramp);
+            const std::shared_ptr<const EngineeringLayerField> surface = surface_layer_field(config, object_bbox, *mesh);
+            // The fit brings the layers in from the flat first layers over the whole height by itself.
+            Ramp none;
+            none.z_flat = -1e6;
+            none.z_ramp = 1.;
+            return Deformation(grid_field(field, none, config, object_bbox, surface.get(), mesh), none);
+        }
         // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user.
         if (config.nonplanar_fit_head.value)
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));

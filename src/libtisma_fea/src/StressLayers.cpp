@@ -8,8 +8,6 @@
 #include <cmath>
 
 #include <Eigen/Eigenvalues>
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/Sparse>
 
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/NonPlanar.hpp>
@@ -20,11 +18,6 @@ namespace Fea {
 
 namespace {
 
-// Weights of the terms of the least squares, relative to the slopes asked by the stresses (normalized to one per node).
-constexpr double WEIGHT_THICKNESS = 1.;    // change of the offset along Z (layer thickness)
-constexpr double WEIGHT_SMOOTH    = 0.3;   // change of the slope from a cell to the next one
-constexpr double WEIGHT_SMALL     = 1e-3;  // small offsets where nothing else decides
-constexpr double WEIGHT_FLAT      = 100.;  // flat first layers
 // Pulls closer to the vertical than this (horizontal part of the unit direction) are left alone: the layers cannot
 // tilt enough to help.
 constexpr double MIN_HORIZONTAL = 0.05;
@@ -45,23 +38,6 @@ StressLayersResult stress_layers(const indexed_triangle_set &mesh, const Result 
         out.error = "Empty part";
         return out;
     }
-    const Vec3d size = bbox.size();
-
-    // Grid of the offset: the voxels of the analysis or larger, with one cell of margin.
-    double cell = std::max({ analysis.h, 1., std::cbrt(size.x() * size.y() * size.z() / double(std::max<size_t>(params.max_nodes, 8))) });
-    int nx, ny, nz;
-    for (;;) {
-        nx = int(std::ceil(size.x() / cell)) + 3;
-        ny = int(std::ceil(size.y() / cell)) + 3;
-        nz = int(std::ceil(size.z() / cell)) + 3;
-        if (size_t(nx) * size_t(ny) * size_t(nz) <= std::max<size_t>(params.max_nodes, 27))
-            break;
-        cell *= 1.1;
-    }
-    const Vec3d origin = bbox.min - Vec3d(cell, cell, cell);
-    const int   n      = nx * ny * nz;
-    auto node = [nx, ny](int i, int j, int k) { return (k * ny + j) * nx + i; };
-
     // 1) Slopes asked by the stresses.
     struct Target { Vec3d p; Vec2d dir; double slope; double weight; };
     std::vector<Target> targets;
@@ -107,89 +83,19 @@ StressLayersResult stress_layers(const indexed_triangle_set &mesh, const Result 
         return out;
     }
 
-    // 2) Least squares: rows of A x = b.
-    std::vector<Eigen::Triplet<double>> triplets;
-    std::vector<double> rhs;
-    int row = 0;
-    // Slopes along the direction of the pull, at the voxel centers (gradient of the trilinear interpolation).
-    double sum_w2 = 0.;
+    // 2) Least squares.
+    std::vector<NonPlanar::SlopeTarget> slopes;
+    slopes.reserve(targets.size());
     for (const Target &t : targets)
-        sum_w2 += t.weight * t.weight;
-    const double data_scale = std::sqrt(double(n) / sum_w2);
-    for (const Target &t : targets) {
-        const Vec3d f = (t.p - origin) / cell;
-        const int i = std::clamp(int(f.x()), 0, nx - 2), j = std::clamp(int(f.y()), 0, ny - 2), k = std::clamp(int(f.z()), 0, nz - 2);
-        const double tx = f.x() - i, ty = f.y() - j, tz = f.z() - k;
-        const double w = t.weight * data_scale;
-        for (int c = 0; c < 8; ++ c) {
-            const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
-            const double wz = d ? tz : 1. - tz;
-            const double gx = (a ? 1. : -1.) * (b ? ty : 1. - ty) * wz / cell;
-            const double gy = (a ? tx : 1. - tx) * (b ? 1. : -1.) * wz / cell;
-            const double v  = w * (gx * t.dir.x() + gy * t.dir.y());
-            if (v != 0.)
-                triplets.emplace_back(row, node(i + a, j + b, k + d), v);
-        }
-        rhs.push_back(w * t.slope);
-        ++ row;
-    }
-    const double w_thick = std::sqrt(WEIGHT_THICKNESS) / cell, w_smooth = std::sqrt(WEIGHT_SMOOTH) / cell,
-                 w_small = std::sqrt(WEIGHT_SMALL) / cell, w_flat = std::sqrt(WEIGHT_FLAT) / cell;
-    const double z_flat = bbox.min.z() + params.z_flat;
-    for (int k = 0; k < nz; ++ k)
-        for (int j = 0; j < ny; ++ j)
-            for (int i = 0; i < nx; ++ i) {
-                const int me = node(i, j, k);
-                if (k + 1 < nz) {
-                    triplets.emplace_back(row, node(i, j, k + 1), w_thick);
-                    triplets.emplace_back(row, me, - w_thick);
-                    rhs.push_back(0.);
-                    ++ row;
-                }
-                if (i > 0 && i + 1 < nx) {
-                    triplets.emplace_back(row, node(i - 1, j, k), w_smooth);
-                    triplets.emplace_back(row, me, -2. * w_smooth);
-                    triplets.emplace_back(row, node(i + 1, j, k), w_smooth);
-                    rhs.push_back(0.);
-                    ++ row;
-                }
-                if (j > 0 && j + 1 < ny) {
-                    triplets.emplace_back(row, node(i, j - 1, k), w_smooth);
-                    triplets.emplace_back(row, me, -2. * w_smooth);
-                    triplets.emplace_back(row, node(i, j + 1, k), w_smooth);
-                    rhs.push_back(0.);
-                    ++ row;
-                }
-                const bool flat = origin.z() + k * cell <= z_flat;
-                triplets.emplace_back(row, me, flat ? w_flat : w_small);
-                rhs.push_back(0.);
-                ++ row;
-            }
-    Eigen::SparseMatrix<double> a(row, n);
-    a.setFromTriplets(triplets.begin(), triplets.end());
-    const Eigen::VectorXd b = Eigen::Map<const Eigen::VectorXd>(rhs.data(), Eigen::Index(rhs.size()));
-    const Eigen::SparseMatrix<double> ata = a.transpose() * a;
-    const Eigen::VectorXd atb = a.transpose() * b;
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper> solver;
-    solver.setTolerance(1e-6);
-    solver.setMaxIterations(5000);
-    solver.compute(ata);
-    const Eigen::VectorXd x = solver.solve(atb);
-    if (solver.info() != Eigen::Success && solver.error() > 1e-3) {
+        slopes.push_back({ t.p, t.dir, t.slope, t.weight });
+    NonPlanar::LayerFitParams fit;
+    fit.z_flat    = params.z_flat;
+    fit.min_cell  = std::max(analysis.h, 1.);
+    fit.max_nodes = params.max_nodes;
+    if (! NonPlanar::fit_layer_field(slopes, bbox, fit, out.field)) {
         out.error = "The layer shape did not converge";
         return out;
     }
-
-    EngineeringLayerField &field = out.field;
-    field.origin    = origin - bbox.min;
-    field.cell      = cell;
-    field.nx        = nx;
-    field.ny        = ny;
-    field.nz        = nz;
-    field.part_size = size;
-    field.offset.resize(n);
-    for (int i = 0; i < n; ++ i)
-        field.offset[i] = float(x[i]);
     out.ok = true;
     return out;
 }
@@ -259,7 +165,7 @@ CurvedLayersResult curved_layers_for_strength(const ModelAnalysisInput &input, c
 
 std::function<Vec3d(const Vec3d &point)> layer_field_normals(const EngineeringLayerField &field, const Vec3d &part_min)
 {
-    auto sampler = std::make_shared<NonPlanar::StressField>(field, part_min);
+    auto sampler = std::make_shared<NonPlanar::LayerGrid>(field, part_min);
     return [sampler](const Vec3d &point) {
         const Vec2d  g  = sampler->grad(point.x(), point.y(), point.z());
         const double dz = sampler->dz(point.x(), point.y(), point.z());

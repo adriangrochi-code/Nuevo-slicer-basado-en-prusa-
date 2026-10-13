@@ -21,9 +21,13 @@ de huecos) y reduce su flujo al espesor que queda. La cara superior sigue al mod
   de laminado y contra la malla deformada (la que cortan esas capas planas). Después el filtro no planar lleva todo a
   las capas curvas, incluidas las bajadas. Así las caras superiores siguen al modelo también dentro de las capas
   curvas.
-- **Medido** en una cuña de 40 × 40 mm con la cara superior de 5 a 9 mm y capas de 0,2 mm: la dispersión de la cara
-  superior impresa respecto del modelo (percentiles 5–95, celdas de 1 mm) pasa de 0,50 a 0,06 mm en plano, y de 0,29 a
-  0,10 mm con capas no planares en ondas. Test: `Z anti-aliasing works within non-planar layers`.
+- **Medido** en una cuña de 40 × 40 mm con la cara superior de 5 a 9 mm y capas de 0,2 mm. Se mide la dispersión de la
+  cara superior impresa respecto del modelo: percentiles 5–95 de la extrusión más alta de cada celda de 1 mm, con las
+  extrusiones muestreadas cada 0,25 mm.
+  - En plano pasa de 0,125 a 0,088 mm.
+  - Con capas no planares en ondas pasa de 0,17 a 0,10 mm.
+  - Una primera medición que solo miraba los extremos de cada movimiento daba 0,50 → 0,06 mm, y no es válida.
+  - Test: `Z anti-aliasing works within non-planar layers`.
 
 ## Fuente
 

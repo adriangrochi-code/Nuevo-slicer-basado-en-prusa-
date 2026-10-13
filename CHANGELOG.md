@@ -13,8 +13,12 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 ## Sin publicar (0.10.0)
 
 - **Anti-aliasing en Z con capas no planares**: se pueden usar juntos (menos soporte con el modo voladizos y caras
-  superiores sin escalones). Dispersión de la cara superior: 0,29 → 0,10 mm en una cuña con capas en ondas
+  superiores con menos escalones). Dispersión de la cara superior: 0,17 → 0,10 mm en una cuña con capas en ondas
   (`docs/Z_ANTIALIASING.md`).
+- **No planar «Superficie» (acabado)**: las capas de arriba se ponen paralelas a las caras superiores de la pieza, tanto
+  como deja el cabezal, para que una cara inclinada o curva salga como una capa continua y no en escalones. En un bloque
+  de 24 mm con la cara inclinada 5,7° la dispersión de la cara pasa de 0,127 mm (plano) a 0,058 mm
+  (`docs/NONPLANAR_ANALYSIS.md`).
 - **Asistente de configuración**: con impresoras convertidas de Cura u OrcaSlicer ya se puede terminar. Antes volvía
   a pedir los filamentos por defecto sin fin y solo dejaba avanzar con una impresora personalizada. Los perfiles nombran
   los filamentos de la biblioteca como se cargan (« @Template»).

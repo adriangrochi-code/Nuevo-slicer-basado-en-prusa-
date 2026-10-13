@@ -35,13 +35,14 @@ namespace NonPlanar {
 
 // SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
 // Overhangs (Tisma): the layers are tilted only under the overhangs that would need supports (OverhangField).
-// Stress (Tisma): the layers follow the stresses of the structural analysis (StressField).
-enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress };
+// Stress (Tisma): the layers follow the stresses of the structural analysis (LayerGrid).
+// Surface (Tisma): the upper layers follow the top surfaces of the part, for the finish (LayerGrid).
+enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress, Surface };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 
 class OverhangField;
-class StressField;
+class LayerGrid;
 
 struct FieldParams
 {
@@ -66,10 +67,10 @@ struct FieldParams
     // overhang_scale (reduced until the layer thickness and the slope are acceptable).
     std::shared_ptr<const OverhangField> overhangs;
     double  overhang_scale   { 1. };
-    // Stress: the layer shape computed by the structural analysis, scaled by stress_scale (reduced until the layer
-    // thickness and the slope are acceptable).
-    std::shared_ptr<const StressField> stress;
-    double  stress_scale     { 1. };
+    // Stress and Surface: the layer shape given on a grid (computed by the structural analysis, or to follow the top
+    // surfaces), scaled by layers_scale (reduced until the layer thickness and the slope are acceptable).
+    std::shared_ptr<const LayerGrid> layers;
+    double  layers_scale     { 1. };
     // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
     std::pair<double, double> slope_test_tangent(double x) const;
 };
@@ -214,13 +215,13 @@ public:
     std::pair<double, Vec2d> sample(const Zone &zone, double x, double y) const;
 };
 
-// Tisma: layers that follow the stresses of the structural analysis (EngineeringLayerField, computed by libtisma_fea).
-// Trilinear between the nodes of the grid; zero outside of it.
-class StressField
+// Tisma: layer offsets given at the nodes of a grid (EngineeringLayerField): computed by the structural analysis
+// (stresses mode) or to follow the top surfaces (surface mode). Trilinear between the nodes; zero outside of the grid.
+class LayerGrid
 {
 public:
     // part_min: minimum corner of the part in the coordinates where the field is sampled.
-    StressField(const EngineeringLayerField &field, const Vec3d &part_min);
+    LayerGrid(const EngineeringLayerField &field, const Vec3d &part_min);
 
     double offset(double x, double y, double z) const;
     // Horizontal gradient and derivative along z of the offset.
@@ -241,6 +242,41 @@ private:
     // Largest |offset| of each column of nodes.
     std::vector<float> m_column_max;
 };
+
+// Tisma: the slope a layer should have at a point along a horizontal direction, with its weight in the least squares.
+struct SlopeTarget
+{
+    Vec3d  point { Vec3d::Zero() };
+    Vec2d  dir { Vec2d::UnitX() };   // unit
+    double slope { 0. };             // tangent along dir
+    double weight { 1. };
+};
+
+struct LayerFitParams
+{
+    // Layers flat up to this height above the bottom of the part [mm].
+    double z_flat { 0.6 };
+    // Smallest distance between the nodes [mm] and largest number of nodes (the cells grow for large parts).
+    double min_cell { 1. };
+    size_t max_nodes { 40000 };
+    // Weight of the targets against the smoothness and the layer thickness (the limits of the layer thickness and
+    // of the head are applied afterwards by scaling the offset down).
+    double target_weight { 1. };
+    // Weights of the change of the slope from a cell to the next one and of the change of the offset along Z.
+    double smooth_weight { 0.3 };
+    double thickness_weight { 1. };
+};
+
+// Tisma: the layer offset (relative to the minimum corner of bbox) whose slopes fit the targets best by least squares,
+// with smooth layers, little change of the offset along Z (layer thickness) and flat first layers, on a 3D grid solved
+// with conjugate gradients. Used by the stresses mode (libtisma_fea) and the surface mode. False if it did not converge.
+bool fit_layer_field(const std::vector<SlopeTarget> &targets, const BoundingBoxf3 &bbox, const LayerFitParams &params,
+                     EngineeringLayerField &out);
+
+// Tisma: the slopes asked by the top surfaces of a mesh: every face looking up wants the layer as steep as itself
+// (clamped to the free angles of the print head, tangents tan_x and tan_y), weighted by its area and by how
+// horizontal it is (the stairs of a layer show the most on flat slopes). Faces below z_flat are left alone.
+std::vector<SlopeTarget> surface_slope_targets(const indexed_triangle_set &mesh, double tan_x, double tan_y, double z_flat);
 
 struct OverhangParams
 {

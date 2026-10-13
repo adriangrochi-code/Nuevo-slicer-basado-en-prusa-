@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include <algorithm>
+#include <cmath>
 #include <map>
 #include <set>
 
@@ -350,4 +352,63 @@ TEST_CASE("Non-planar layers following the stresses of the analysis", "[NonPlana
         const auto &middle = curved.z_by_layer.lower_bound(12.)->second;
         CHECK(*middle.rbegin() - *middle.begin() > 0.5);
     }
+}
+
+// Block 40 x 40 mm whose top rises along X from z = 20 to z = 24 (5.7°).
+static TriangleMesh sloped_block()
+{
+    indexed_triangle_set its;
+    its.vertices = { { 0.f, 0.f, 0.f }, { 40.f, 0.f, 0.f }, { 40.f, 40.f, 0.f }, { 0.f, 40.f, 0.f },
+                     { 0.f, 0.f, 20.f }, { 40.f, 0.f, 24.f }, { 40.f, 40.f, 24.f }, { 0.f, 40.f, 20.f } };
+    its.indices = { { 0, 2, 1 }, { 0, 3, 2 }, { 4, 5, 6 }, { 4, 6, 7 }, { 0, 1, 5 }, { 0, 5, 4 },
+                    { 1, 2, 6 }, { 1, 6, 5 }, { 2, 3, 7 }, { 2, 7, 6 }, { 3, 0, 4 }, { 3, 4, 7 } };
+    return TriangleMesh(std::move(its));
+}
+
+// Spread (5 % to 95 %) of the highest extrusion of each 1 mm cell around the sloped top of sloped_block(), the
+// extrusions sampled every 0.25 mm.
+static double top_spread(const std::string &gcode)
+{
+    std::map<std::pair<int, int>, double> top;
+    double x_min = 1e9, x_max = -1e9, y_min = 1e9;
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0) {
+            const Vec3d a(self.x(), self.y(), self.z()), b(line.new_X(self), line.new_Y(self), line.new_Z(self));
+            x_min = std::min(x_min, b.x());
+            x_max = std::max(x_max, b.x());
+            y_min = std::min(y_min, b.y());
+            const int n = std::max(1, int((b - a).head<2>().norm() / 0.25));
+            for (int i = 0; i <= n; ++ i) {
+                const Vec3d p = a + (b - a) * (double(i) / n);
+                auto [it, added] = top.try_emplace({ int(std::floor(p.x())), int(std::floor(p.y())) }, p.z());
+                it->second = std::max(it->second, p.z());
+            }
+        }
+    });
+    std::vector<double> d;
+    for (const auto &[cell, z] : top)
+        if (cell.first > x_min + 3 && cell.first < x_max - 4 && cell.second > y_min + 3 && cell.second < y_min + 36)
+            d.push_back(z - (20. + 4. * (cell.first + 0.5 - x_min) / (x_max - x_min)));
+    std::sort(d.begin(), d.end());
+    REQUIRE(d.size() > 500);
+    return d[d.size() * 19 / 20] - d[d.size() / 20];
+}
+
+TEST_CASE("Non-planar layers following the top surfaces", "[NonPlanar][Surface]")
+{
+    auto config = [](const char *mode) {
+        DynamicPrintConfig c = nonplanar_config(mode);
+        c.set_deserialize_strict({ { "nonplanar_max_slope", "20" }, { "top_solid_layers", "4" }, { "fill_density", "15%" } });
+        return c;
+    };
+    const double flat    = top_spread(Test::slice({ sloped_block() }, config("disabled")));
+    Print print;
+    Model model;
+    Test::init_print({ sloped_block() }, print, model, config("surface"));
+    REQUIRE(print.validate().empty());
+    const double surface = top_spread(Test::gcode(print));
+    WARN("Spread of the top: flat " << flat << " mm, following the top " << surface << " mm");
+    // Flat layers leave stairs of a layer height every 2 mm along X; the upper layers parallel to the top leave few.
+    CHECK(surface < 0.6 * flat);
 }

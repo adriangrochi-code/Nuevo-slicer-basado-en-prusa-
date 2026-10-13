@@ -87,6 +87,36 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
+## Piel: capas que siguen las caras superiores (Tisma)
+
+Modo «Caras superiores (acabado)» (`nonplanar_mode = surface`). Busca que las caras superiores se vean como una pieza
+inyectada y no como escalones: las capas de arriba se ponen paralelas a la cara superior.
+
+- **Sin opciones propias**: usa solo los datos del cabezal, el ángulo libre en X e Y y su holgura (comprobación de
+  colisiones), y las capas planas de abajo.
+- **Cómo**:
+  - cada cara que mira hacia arriba pide, en una piel de 3 mm bajo ella, que la capa tenga su misma pendiente (limitada
+    al cabezal); se muestrea cada ~1 mm, pesada por el área y por cuán horizontal es (en las caras casi planas es donde
+    más se ven los escalones);
+  - el desplazamiento de las capas se ajusta por mínimos cuadrados en una grilla 3D, con el mismo método de las capas
+    por tensiones (`src/libslic3r/NonPlanarFit.cpp`, compartido con Ingeniería);
+  - la transición desde las primeras capas planas ocupa toda la altura de la pieza;
+  - el desplazamiento se reduce lo necesario para respetar el espesor de capa (60–140 %) y el ángulo del cabezal, y
+    después hasta que el cabezal no choca con lo ya impreso (holgura medida). Lo mismo vale para las capas por tensiones.
+- **Medido** (test `Non-planar layers following the top surfaces`): bloque de 40 × 40 mm con la cara superior de 20 a
+  24 mm (5,7°). La dispersión de la cara impresa respecto del modelo baja de 0,127 mm en plano a 0,058 mm.
+  - Con el anti-aliasing en Z solo (plano) queda en 0,088 mm.
+  - En una pieza baja (cara de 5 a 9 mm) mejora poco (0,17 mm): no hay altura para inclinar las capas sin pasarse del
+    espesor permitido.
+- **Límites**:
+  - las caras más empinadas que el cabezal se siguen solo hasta su ángulo;
+  - las paredes verticales muestran las líneas de capa curvas;
+  - hay una sola transición para toda la pieza: con caras superiores a alturas muy distintas y cercanas, la de menor
+    peso se sigue menos.
+- **Fuente de la idea**: CurviSlicer (Etienne et al., 2019), capas ligeramente curvas en 3 ejes para quitar los
+  escalones de las caras superiores. La formulación de Tisma, mínimos cuadrados sobre las pendientes de las caras, es
+  propia; no usa código de CurviSlicer.
+
 ## Capas curvas por tensiones (Tisma)
 
 Es el punto 1 de la conclusión. En Ingeniería, sección «Capas curvas para resistencia»: **Calcular capas curvas** y,

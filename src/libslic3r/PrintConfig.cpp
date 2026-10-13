@@ -279,7 +279,8 @@ static t_config_enum_values s_keys_map_NonPlanarMode {
     { "wave",     int(NonPlanarMode::Wave) },
     { "conical",  int(NonPlanarMode::Conical) },
     { "overhangs", int(NonPlanarMode::Overhangs) },
-    { "stress",    int(NonPlanarMode::Stress) }
+    { "stress",    int(NonPlanarMode::Stress) },
+    { "surface",   int(NonPlanarMode::Surface) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
 
@@ -3344,13 +3345,17 @@ void PrintConfigDef::init_fff_params()
                    "Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, "
                    "as much as the print head allows, so that fewer supports are needed. "
                    "Stresses: the layers tilt towards where the part is pulled, as computed in Engineering "
-                   "(Curved layers for strength), so that the pull runs more along the layers.");
+                   "(Curved layers for strength), so that the pull runs more along the layers. "
+                   "Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head "
+                   "allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with "
+                   "Z anti-aliasing).");
     def->set_enum<NonPlanarMode>({
         { "disabled", L("Disabled") },
         { "wave",     L("Wave") },
         { "conical",  L("Conical") },
         { "overhangs", L("Overhangs (fewer supports)") },
-        { "stress",   L("Stresses (stronger, from Engineering)") }
+        { "stress",   L("Stresses (stronger, from Engineering)") },
+        { "surface",  L("Top surfaces (finish)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Disabled));
