@@ -75,6 +75,9 @@ private:
     void start_analysis();
     void start_optimization();
     void apply_optimization(bool zones);
+    // Skin + core in one click: the automatic non-planar layers of the print settings (skin) and the lightest
+    // infill by zones with ribs, applied when found (core).
+    void start_skin_core();
     // Builds the input of an analysis of the printed part and remembers its material, temperature and object.
     bool prepare_input(Fea::ModelAnalysisInput &input, JobSize size = JobSize::Many);
     // Sets the size of the voxels of the analysis for the chosen quality (limited to a number of voxels).
@@ -178,6 +181,9 @@ private:
     // Infill lines along the stresses (ribs) in the search, and whether the last search tried them.
     bool                       m_opt_ribs { true };
     bool                       m_opt_ribs_tried { false };
+    // Skin + core: the infill found is applied as soon as the search ends.
+    bool                       m_skin_core_pending { false };
+    std::string                m_skin_core_note;
     bool                       m_open_infill_section { false };
     std::atomic<double>        m_current_infill_mass { 0. };
     // Local reinforcement.

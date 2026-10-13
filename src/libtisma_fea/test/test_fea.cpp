@@ -1557,3 +1557,72 @@ TEST_CASE("Ribs and aligned infill of an object reach the analysis", "[FEA][Ribs
     CHECK(res.aligned_voxels > 0);
 }
 
+
+TEST_CASE("Aligned infill on curved layers", "[FEA][Ribs][NonPlanar]")
+{
+    // The lines along X stay in the plane of each layer: with the layers tilted 20° about Y they rise with them.
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.25);
+    const double tilt = 20. * M_PI / 180.;
+    setup.layer_normal = [tilt](const Vec3d &) { return Vec3d(-std::sin(tilt), 0., std::cos(tilt)); };
+    const Result iso = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 0.;
+    const Result along = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 90.;
+    const Result across = analyze(its, setup);
+    REQUIRE(iso.ok);
+    REQUIRE(along.ok);
+    REQUIRE(across.ok);
+    CHECK(along.aligned_voxels > along.voxels.size() / 2);
+    CHECK(end_displacement(along, 0, 0) < end_displacement(iso, 0, 0));
+    CHECK(end_displacement(across, 0, 0) > end_displacement(iso, 0, 0));
+}
+
+TEST_CASE("Skin and core: automatic non-planar layers and the lightest infill with ribs", "[FEA][Ribs][NonPlanar]")
+{
+    // A bar with a sloped top (the skin follows it) held at one end and pulled at the other.
+    Model model;
+    ModelObject *object = model.add_object();
+    indexed_triangle_set its = its_make_cube(60., 12., 12.);
+    for (stl_vertex &v : its.vertices)
+        if (v.z() > 6.f)
+            v.z() = 6.f + 6.f * v.x() / 60.f;
+    ModelVolume *volume = object->add_volume(TriangleMesh(its));
+    object->add_instance();
+    object->instances.front()->set_offset(Vec3d(100., 100., 0.));
+    object->ensure_on_bed();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(volume->mesh().its, 0, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type   = EngineeringLoad::Type::Faces;
+    load.name   = "pull";
+    load.volume = 0;
+    load.faces.volume    = 0;
+    load.faces.triangles = side(volume->mesh().its, 0, true);
+    load.force  = Vec3d(300., 0., 0.);
+    object->engineering.loads.push_back(load);
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("nonplanar_mode", new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Automatic));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    // The skin: the analysis follows the curved layers under the sloped top.
+    REQUIRE(input.setup.layer_normal);
+    input.setup.voxel_size = 1.5;
+    const Result curved = analyze(input.mesh, input.setup);
+    REQUIRE(curved.ok);
+    CHECK(curved.layer_orientations > 1);
+    // The core: the lightest infill with ribs on those layers.
+    OptimizeOptions options;
+    options.ribs = true;
+    const OptimizeResult opt = optimize_infill(input.mesh, input.setup, options);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    WARN("Skin + core: uniform " << opt.uniform_density << " (without ribs " << opt.density_without_ribs << "), " <<
+         opt.ribs.size() << " rib zones, zones found " << opt.zones_found << ", " << opt.analyses << " analyses");
+    CHECK(opt.uniform_density <= opt.density_without_ribs);
+    CHECK(meets_requirements(opt.uniform));
+}

@@ -33472,6 +33472,33 @@ msgstr "Donde la pieza trabaja en una dirección (traccionada o a flexión a lo 
 msgid "With %1% zones of ribs along the stresses (%2% %% without them)."
 msgstr "Con %1% zonas de nervios según las tensiones (%2% %% sin ellos)."
 
+msgid "Skin + core"
+msgstr "Piel + núcleo"
+
+msgid "In one click, a part finished as injection molded and designed for its loads: the skin with automatic non-planar layers (top faces that follow the surface, fewer supports) and the core with the lightest infill by zones and ribs along the stresses, applied when found."
+msgstr "En un clic, una pieza terminada como inyectada y diseñada para sus cargas: la piel con capas no planares automáticas (caras superiores que siguen la superficie, menos soportes) y el núcleo con el relleno mínimo por zonas y nervios según las tensiones, aplicado al encontrarlo."
+
+msgid "automatic non-planar skin + lightest infill with ribs"
+msgstr "piel no planar automática + relleno mínimo con nervios"
+
+msgid "Skin: Print Settings > Non-planar is now Automatic (top faces that follow the surface, fewer supports)."
+msgstr "Piel: Configuración de impresión > No planar ahora es Automático (caras superiores que siguen la superficie, menos soportes)."
+
+msgid "Skin: Print Settings > Non-planar was already Automatic."
+msgstr "Piel: Configuración de impresión > No planar ya estaba en Automático."
+
+msgid "Core: add the fixed faces and the loads of the part to find the lightest infill with ribs."
+msgstr "Núcleo: agregá las caras fijas y las cargas de la pieza para buscar el relleno mínimo con nervios."
+
+msgid "Core: searching the lightest infill with ribs along the stresses..."
+msgstr "Núcleo: buscando el relleno mínimo con nervios según las tensiones..."
+
+msgid "Core:"
+msgstr "Núcleo:"
+
+msgid "Core: not even 100 % infill meets the requirements: add perimeters, choose another material or reinforce the shape."
+msgstr "Núcleo: ni con el 100 % de relleno se cumplen los requisitos: agregá perímetros, elegí otro material o reforzá la forma."
+
 msgid "Ribs along the stresses would not make the infill lighter: not used."
 msgstr "Los nervios según las tensiones no harían más liviano el relleno: no se usan."
 

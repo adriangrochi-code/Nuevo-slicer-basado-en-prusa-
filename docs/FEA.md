@@ -56,6 +56,14 @@ No hay conducción térmica: la temperatura solo cambia las propiedades del mate
    material, el relleno por zonas; muestra la masa frente al relleno actual y los aplica al objeto con un clic
    (densidad del objeto + modificadores «Tisma infill zone»). La vista «Relleno» oculta la capa maciza para ver el
    interior.
+9. **Piel + núcleo** (Optimizar, un clic): la pieza terminada como inyectada y diseñada para sus cargas.
+   - Piel: pone «No planar» de la configuración de impresión en Automático (caras superiores que siguen la superficie
+     y menos soportes, dentro de lo que permite el cabezal).
+   - Núcleo: si la pieza tiene caras fijas y cargas, busca el relleno mínimo por zonas con nervios según las
+     tensiones, ya con las capas curvas de la piel (el análisis lee la configuración de impresión), y lo aplica al
+     terminar. Sin cargas aplica solo la piel y avisa que faltan.
+   - Es un ajuste de la impresión (afecta a todos los objetos de la placa) más modificadores del objeto; se deshace
+     con Ctrl+Z.
 
 Todo se guarda en el proyecto (3MF) y se puede deshacer.
 

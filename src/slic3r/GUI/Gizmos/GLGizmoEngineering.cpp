@@ -594,6 +594,45 @@ void GLGizmoEngineering::apply_optimization(bool zones)
     m_opt_object = mo->id();
 }
 
+void GLGizmoEngineering::start_skin_core()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || m_running)
+        return;
+    // Skin: automatic non-planar layers (top faces that follow the surface, fewer supports). The analysis of the core
+    // reads the print settings, so it is done with these layers.
+    bool skin_changed = false;
+    if (Tab *tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+        DynamicPrintConfig new_conf = *tab->get_config();
+        if (new_conf.option<ConfigOptionEnum<NonPlanarMode>>("nonplanar_mode")->value != NonPlanarMode::Automatic) {
+            Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Skin + core"));
+            new_conf.set_key_value("nonplanar_mode", new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Automatic));
+            tab->load_config(new_conf);
+            skin_changed = true;
+        }
+    }
+    const std::string skin = skin_changed ?
+        _u8L("Skin: Print Settings > Non-planar is now Automatic (top faces that follow the surface, fewer supports).") :
+        _u8L("Skin: Print Settings > Non-planar was already Automatic.");
+    // Core: the lightest infill by zones with ribs along the stresses, which needs the supports and the loads.
+    if (mo->engineering.fixtures.empty() || mo->engineering.loads.empty()) {
+        m_applied_note   = skin + "\n" + _u8L("Core: add the fixed faces and the loads of the part to find the lightest infill with ribs.");
+        m_applied_object = mo->id();
+        notify(m_applied_note);
+        return;
+    }
+    m_opt_zones = true;
+    m_opt_ribs  = true;
+    m_skin_core_pending = true;
+    m_skin_core_note    = skin;
+    m_open_infill_section = true;
+    m_applied_note   = skin + "\n" + _u8L("Core: searching the lightest infill with ribs along the stresses...");
+    m_applied_object = mo->id();
+    start_optimization();
+    if (! m_running)
+        m_skin_core_pending = false;
+}
+
 bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input, JobSize size)
 {
     const ModelObject *mo = model_object();
@@ -846,6 +885,7 @@ void GLGizmoEngineering::cancel_analysis()
     if (m_thread.joinable())
         m_thread.join();
     m_running = false;
+    m_skin_core_pending = false;
     std::lock_guard<std::mutex> lock(m_mutex);
     m_pending.reset();
     m_pending_opt.reset();
@@ -946,6 +986,18 @@ void GLGizmoEngineering::fetch_result()
         m_result_stale = false;
         m_field = Field::Density;
         m_result_models_dirty = true;
+        if (m_skin_core_pending) {
+            // Skin + core: apply the core found (by zones when they are lighter).
+            m_skin_core_pending = false;
+            if (m_opt->feasible) {
+                apply_optimization(true);
+                m_applied_note = m_skin_core_note + "\n" + _u8L("Core:") + " " + m_applied_note;
+            } else {
+                m_applied_note = m_skin_core_note + "\n" +
+                    _u8L("Core: not even 100 % infill meets the requirements: add perimeters, choose another material or reinforce the shape.");
+                notify(m_applied_note);
+            }
+        }
         return;
     }
     if (! res)
@@ -1626,6 +1678,15 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
 
     // ---- Optimize: the lightest structure for these loads.
     ui::section(_u8L("Optimize"), width);
+    // Skin + core in one click.
+    if (ImGuiPureWrap::button(_u8L("Skin + core")) && ! m_running)
+        start_skin_core();
+    if (ImGui::IsItemHovered())
+        ImGuiPureWrap::tooltip(_u8L("In one click, a part finished as injection molded and designed for its loads: the skin with automatic "
+                                    "non-planar layers (top faces that follow the surface, fewer supports) and the core with the lightest "
+                                    "infill by zones and ribs along the stresses, applied when found."), ImGui::GetFontSize() * 25.f);
+    ImGui::SameLine();
+    ui::muted(_u8L("automatic non-planar skin + lightest infill with ribs"), width);
     if (m_open_infill_section) {
         ImGui::SetNextItemOpen(true);
         m_open_infill_section = false;

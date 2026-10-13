@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Piel + núcleo en un clic** (Ingeniería > Optimizar > «Skin + core»): la piel con capas no planares automáticas y
+  el núcleo con el relleno mínimo por zonas y nervios según las tensiones, calculado con esas capas y aplicado al
+  terminar. Sin caras fijas y cargas aplica solo la piel.
 - **Relleno nervado según las tensiones**: al aplicar el relleno mínimo de Ingeniería, donde la pieza trabaja en una
   dirección (traccionada o a flexión) el relleno se pone en líneas paralelas a esa dirección en todas las capas, como
   nervios, con modificadores «Infill ribs N°». El análisis los cuenta: el relleno alineado es más rígido y
