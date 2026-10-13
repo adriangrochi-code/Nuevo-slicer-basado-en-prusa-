@@ -1683,31 +1683,11 @@ void TabPrint::build()
         optgroup->append_single_option_line("max_volumetric_extrusion_rate_slope_negative", "pressure-equlizer_331504");
 
     page = add_options_page(L("Non-planar"), "layers");
+        // Tisma: only the kind of layers here. How curved they are comes from the two measurements of the print head
+        // (Printer Settings > General > Print head): its free angle and its clearance height. The other non-planar
+        // options are kept for the command line and the calibrations, with their defaults.
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
-        optgroup->append_single_option_line("nonplanar_fit_head");
-        optgroup->append_single_option_line("nonplanar_overhang_threshold");
-        optgroup->append_single_option_line("nonplanar_max_slope");
-
-        optgroup = page->new_optgroup(L("Wave"));
-        optgroup->append_single_option_line("nonplanar_pattern");
-        optgroup->append_single_option_line("nonplanar_amplitude");
-        optgroup->append_single_option_line("nonplanar_wavelength");
-        optgroup->append_single_option_line("nonplanar_angle");
-        optgroup->append_single_option_line("nonplanar_twist");
-
-        optgroup = page->new_optgroup(L("Conical"));
-        optgroup->append_single_option_line("nonplanar_cone_angle");
-
-        optgroup = page->new_optgroup(L("Transition"));
-        optgroup->append_single_option_line("nonplanar_flat_below");
-        optgroup->append_single_option_line("nonplanar_ramp_height");
-        optgroup->append_single_option_line("nonplanar_flat_top");
-
-        optgroup = page->new_optgroup(L("G-code"));
-        optgroup->append_single_option_line("nonplanar_flow_policy");
-        optgroup->append_single_option_line("nonplanar_uniform_flow");
-        optgroup->append_single_option_line("nonplanar_segment_length");
 
     page = add_options_page(L("Multiple Extruders"), "funnel");
         optgroup = page->new_optgroup(L("Extruders"));
@@ -2864,11 +2844,11 @@ void TabPrinter::build_fff()
 
         // Tisma: print head geometry for the collision check of non-planar layers.
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
-        optgroup->append_single_option_line("nonplanar_head_clearance_height");
-        optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+        // The two variables of the non-planar layers; the radius and the measured profile are set by the non-planar
+        // calibration assistant.
         optgroup->append_single_option_line("nonplanar_head_free_angle_x");
         optgroup->append_single_option_line("nonplanar_head_free_angle_y");
-        optgroup->append_single_option_line("nonplanar_head_profile");
+        optgroup->append_single_option_line("nonplanar_head_clearance_height");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {

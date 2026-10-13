@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **No planar con dos variables**: la página «No planar» de la configuración de impresión solo elige el tipo de capas.
+  Cuánto se curvan sale de las dos medidas del cabezal (ángulo libre y holgura boquilla-cabezal, en la impresora): las
+  ondas suben hasta la holgura con la pendiente del ángulo, y ondas y conos se suavizan solos si el cabezal fuera a
+  chocar con lo ya impreso. Los perfiles con amplitud o longitud de onda puestas a mano pasan a ajustarse al cabezal.
 - **Arc overhangs**: velocidad propia de los arcos (`overhang_arcs_speed`, 5 mm/s por defecto, la que usa el autor de
   Arc Overhang) y distancia máxima (`overhang_arcs_max_distance`, 0 = sin límite; más allá el voladizo se imprime como
   siempre). Dos calibraciones nuevas: «Arc overhang speed» y «Arc overhang maximum distance», con sus resultados en

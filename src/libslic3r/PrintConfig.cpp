@@ -2372,9 +2372,10 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Head clearance height");
     def->full_label = L("Print head clearance height (non-planar)");
     def->tooltip = L("Vertical distance from the nozzle tip to the lowest point of the print head around it (heater "
-                     "block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers "
-                     "are refused if the part already printed would rise higher than this within the head clearance "
-                     "radius. 0 disables the check.");
+                     "block with its sock, part cooling duct, probe). Measure it on your printer. With the free angle, it "
+                     "is all the non-planar layers need: the waves rise at most this height from trough to crest, and the "
+                     "layers are made gentler where the part already printed would rise higher than this next to the "
+                     "nozzle. 0 disables the check.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
@@ -2396,8 +2397,8 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Print head free angle along X (non-planar)");
     def->tooltip = L("Steepest slope of the layers rising along X that the print head allows without touching the part: "
                      "the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising "
-                     "along X. The non-planar layers use it for their slope instead of the maximum layer slope of the "
-                     "print settings. 0 = not measured, use the maximum layer slope.");
+                     "along X. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer "
+                     "slope of the print settings (20° by default).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;
@@ -2409,8 +2410,8 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Print head free angle along Y (non-planar)");
     def->tooltip = L("Steepest slope of the layers rising along Y that the print head allows without touching the part: "
                      "the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising "
-                     "along Y. The non-planar layers use it for their slope instead of the maximum layer slope of the "
-                     "print settings. 0 = not measured, use the maximum layer slope.");
+                     "along Y. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer "
+                     "slope of the print settings (20° by default).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;
@@ -3372,7 +3373,8 @@ void PrintConfigDef::init_fff_params()
                    "(Curved layers for strength), so that the pull runs more along the layers. "
                    "Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head "
                    "allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with "
-                   "Z anti-aliasing).");
+                   "Z anti-aliasing). How curved the layers are comes from the free angle and the clearance height of the "
+                   "print head (Printer Settings > General > Print head).");
     def->set_enum<NonPlanarMode>({
         { "disabled", L("Disabled") },
         { "wave",     L("Wave") },

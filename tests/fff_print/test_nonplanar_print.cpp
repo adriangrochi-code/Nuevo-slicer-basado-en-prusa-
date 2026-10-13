@@ -125,7 +125,8 @@ TEST_CASE("Non-planar layers fitted to the free angles of the print head", "[Non
         const std::string error = print.validate();
         REQUIRE(error.find("5° along Y") != std::string::npos);
     }
-    // Fitted, the same ridges are gentler and accepted; along X they get higher than the 0.5 mm set.
+    // Fitted, the same ridges are accepted (within 5° along Y). Their wavelength comes from the head, pi * clearance
+    // height / tan(smallest free angle), at most 100 mm, so that they rise up to the clearance height.
     config.set_deserialize_strict({ { "nonplanar_fit_head", 1 } });
     double height_y = 0.;
     for (double angle : { 90., 0. }) {
@@ -138,11 +139,10 @@ TEST_CASE("Non-planar layers fitted to the free angles of the print head", "[Non
         double height = 0.;
         for (const auto &[layer, zs] : e.z_by_layer)
             height = std::max(height, *zs.rbegin() - *zs.begin());
-        if (angle == 90.) {
+        if (angle == 90.)
             height_y = height;
-            REQUIRE(height < 2. * 0.5);
-        } else
-            REQUIRE(height > 2. * 0.5);
+        // Never higher than the clearance height from trough to crest.
+        REQUIRE(height < 3. + 0.05);
     }
     REQUIRE(height_y > 0.3);
 }
@@ -411,4 +411,25 @@ TEST_CASE("Non-planar layers following the top surfaces", "[NonPlanar][Surface]"
     WARN("Spread of the top: flat " << flat << " mm, following the top " << surface << " mm");
     // Flat layers leave stairs of a layer height every 2 mm along X; the upper layers parallel to the top leave few.
     CHECK(surface < 0.6 * flat);
+}
+
+TEST_CASE("Non-planar layers fitted to the print head clear the part already printed", "[NonPlanar]")
+{
+    // Only the two measurements of the head: 20° free angle, 1 mm of clearance height within 15 mm of the nozzle.
+    DynamicPrintConfig config = nonplanar_config("conical");
+    config.set_deserialize_strict({ { "nonplanar_fit_head", 1 }, { "nonplanar_head_free_angle_x", 20 },
+                                    { "nonplanar_head_free_angle_y", 20 }, { "nonplanar_head_clearance_height", 1 },
+                                    // a long transition, so that the layer thickness does not limit the cone first
+                                    { "nonplanar_ramp_height", 15 } });
+    Print print;
+    Model model;
+    Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+    // A cone as steep as the head rises more than 1 mm within 15 mm: the cone is made gentler instead of refused.
+    REQUIRE(print.validate().empty());
+    const Extrusions e = analyse(Test::gcode(print));
+    double height = 0.;
+    for (const auto &[layer, zs] : e.z_by_layer)
+        height = std::max(height, *zs.rbegin() - *zs.begin());
+    REQUIRE(height > 0.1);
+    REQUIRE(height < 1.05);
 }

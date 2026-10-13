@@ -1332,6 +1332,21 @@ double nonplanar_test_start_height(const PrintConfig &config)
     return config.nonplanar_flat_below.value + TEST_RAMP_HEIGHT;
 }
 
+// Waves fitted to the print head (Tisma): the two measurements of the head decide them. The steepest slope of a wave of
+// amplitude a and wavelength L is a * 2 pi / L, which must be the free angle of the head, and the wave rises 2 a from
+// trough to crest, which must be the clearance height: L = pi * height / tan(angle). Without a clearance height, or
+// with the waves set by hand, the wavelength of the print settings.
+static double wave_wavelength(const PrintConfig &config)
+{
+    if (config.nonplanar_fit_head.value) {
+        const HeadLimits head = head_limits(config);
+        const double tan_min = std::min(head.tan_x, head.tan_y);
+        if (head.height > 0. && tan_min > 0.)
+            return std::clamp(M_PI * head.height / tan_min, 4., 100.);
+    }
+    return std::max(1., config.nonplanar_wavelength.value);
+}
+
 static FieldParams field_params(const PrintConfig &config)
 {
     FieldParams p;
@@ -1349,7 +1364,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarPattern::Twisted: p.pattern = Pattern::Twisted; break;
     }
     p.amplitude        = config.nonplanar_amplitude.value;
-    p.wavelength       = std::max(1., config.nonplanar_wavelength.value);
+    p.wavelength       = wave_wavelength(config);
     p.angle_deg        = config.nonplanar_angle.value;
     p.twist_deg_per_mm = config.nonplanar_twist.value;
     p.cone_angle_deg   = config.nonplanar_cone_angle.value;
@@ -1470,6 +1485,34 @@ static FieldParams overhang_field(FieldParams field, const PrintConfig &config, 
         field.overhang_scale = lo;
     }
     return field;
+}
+
+// Waves and cones fitted to the print head: their amplitude / cone tangent reduced until the print head clears the part
+// already printed (Print::validate() would refuse them otherwise).
+static FieldParams clear_print_head(FieldParams field, const Ramp &ramp, const PrintConfig &config, const indexed_triangle_set &mesh)
+{
+    const HeadClearance head = head_clearance(config);
+    if ((head.height <= 0. && head.profile.empty()) || head.radius <= 0. ||
+        (field.mode != Mode::Wave && field.mode != Mode::Conical))
+        return field;
+    const double tangent = std::tan(field.cone_angle_deg * M_PI / 180.);
+    auto scaled = [&field, tangent](double s) {
+        FieldParams f = field;
+        if (f.mode == Mode::Wave)
+            f.amplitude *= s;
+        else
+            f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
+        return f;
+    };
+    auto clear = [&](double s) { return ! check_head_collision(Deformation(scaled(s), ramp), mesh, head).collides; };
+    if (clear(1.))
+        return field;
+    double lo = 0., hi = 1.;
+    for (int i = 0; i < 12; ++ i) {
+        const double mid = 0.5 * (lo + hi);
+        (clear(mid) ? lo : hi) = mid;
+    }
+    return scaled(lo);
 }
 
 bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox)
@@ -1608,9 +1651,13 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
             none.z_ramp = 1.;
             return Deformation(grid_field(field, none, config, object_bbox, surface.get(), mesh), none);
         }
-        // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user.
-        if (config.nonplanar_fit_head.value)
+        // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user, and smaller
+        // still where the print head would hit the part already printed.
+        if (config.nonplanar_fit_head.value) {
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));
+            if (mesh != nullptr)
+                field = clear_print_head(field, ramp, config, *mesh);
+        }
     }
     return Deformation(field, ramp);
 }
@@ -1622,7 +1669,7 @@ double mesh_max_edge(const PrintConfig &config)
     if (config.calib_mode.value == CalibMode::NonPlanarZSpeed)
         return Z_SPEED_TEST_WAVELENGTH / 10.;
     if (config.nonplanar_mode.value == NonPlanarMode::Wave)
-        return std::clamp(config.nonplanar_wavelength.value / 10., 0.3, 1.5);
+        return std::clamp(wave_wavelength(config) / 10., 0.3, 1.5);
     if (config.nonplanar_mode.value == NonPlanarMode::Overhangs)
         return 1.;
     return 2.;

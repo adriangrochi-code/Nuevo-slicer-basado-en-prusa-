@@ -38,9 +38,22 @@ Tisma hay que medirlas con probetas propias.
 
 ## Ajuste al cabezal (Tisma)
 
-Con «Ajustar al cabezal» (`nonplanar_fit_head`, activado por defecto) la amplitud de las ondas y el ángulo del cono no
-salen de los valores de la configuración de impresión sino de lo que mide el usuario en su cabezal (Configuración de
-impresora > General > Cabezal):
+En la interfaz, las capas no planares tienen **solo dos variables**, las dos medidas del cabezal (Configuración de
+impresora > General > Cabezal): el **ángulo libre** (en X y en Y) y la **holgura** entre la punta de la boquilla y el
+cabezal. En la configuración de impresión solo se elige el tipo de capas (`nonplanar_mode`). Todo lo demás sale de esas
+dos medidas:
+
+- pendiente de las capas ≤ ángulo libre;
+- ondas: suben como mucho la holgura de valle a cresta, y su longitud de onda es π · holgura / tan(ángulo libre menor)
+  (entre 4 y 100 mm), para que lleguen a la vez a los dos límites;
+- cono: el ángulo libre menor;
+- después se reduce lo necesario para el espesor de capa y para que el cabezal no choque con lo ya impreso.
+
+Las demás opciones (`nonplanar_fit_head`, amplitud, longitud de onda, transición, flujo...) siguen en los perfiles y en la
+línea de comandos con sus valores por defecto, para los tests y las calibraciones; `nonplanar_fit_head = 0` vuelve a
+los valores puestos a mano.
+
+Detalle de las dos medidas:
 
 - **Ángulo libre en X y en Y** (`nonplanar_head_free_angle_x` / `_y`), medidos con la galga estática de ranuras en
   V: se imprime plana, con ranuras de ángulo de apertura φ creciente y filas de profundidad H/3, 2H/3 y H (todas con la

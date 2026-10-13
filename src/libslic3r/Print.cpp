@@ -550,8 +550,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         const NonPlanar::Deformation::Check check = deformation.check(bbox);
         if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
-                               "nominal one (allowed %3% %% to %4% %%). Increase the transition height or reduce the "
-                               "wave amplitude / cone angle."),
+                               "nominal one (allowed %3% %% to %4% %%). Check the free angle and the clearance height of "
+                               "the print head (Printer Settings > General > Print head)."),
                           int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
                           int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
         // The calibration of the maximum slope prints steeper layers on purpose.
@@ -560,8 +560,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         if (m_config.calib_mode.value != CalibMode::NonPlanarSlope &&
             deformation.head_slope_ratio(bbox, limits.tan_x, limits.tan_y) > 1. + 1e-3)
             return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the print head allows "
-                               "(%2%° along X, %3%° along Y). Enable \"Fit to the print head\", use a longer wavelength "
-                               "or a smaller amplitude / cone angle."),
+                               "(%2%° along X, %3%° along Y). Check the free angle of the print head (Printer Settings > "
+                               "General > Print head)."),
                           int(std::round(check.max_slope_deg)),
                           int(std::round(std::atan(limits.tan_x) * 180. / M_PI)),
                           int(std::round(std::atan(limits.tan_y) * 180. / M_PI)));
@@ -572,8 +572,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (collision.collides)
                 return format(_u8L("Non-planar layers: the print head would hit the part. At %1% mm of height, the part "
                                    "already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the "
-                                   "%4% mm the print head allows there (Printer Settings > General > Print head). Reduce "
-                                   "the wave amplitude or the cone angle, or check the measurements of the print head."),
+                                   "%4% mm the print head allows there. Check the free angle and the clearance height of the "
+                                   "print head (Printer Settings > General > Print head)."),
                               float_to_string_decimal_point(collision.nozzle.z() - bbox.min.z(), 1),
                               float_to_string_decimal_point(collision.rise, 1),
                               float_to_string_decimal_point(collision.distance, 1),
