@@ -236,7 +236,42 @@ Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
 - Pendiente de decidir: precio y cuotas, cuentas y pago, almacenamiento y privacidad de los modelos, envío a la
   impresora (PrusaConnect, OctoPrint, Bambu…), plataforma de la app.
 
-## 9. Decisiones pendientes (para el usuario)
+## 9. Pendiente, numerado (13-10-2026)
+
+Se avanza en este orden, de a un paso. «Físico» = necesita imprimir y medir; «Decisión» = necesita la autorización o
+los datos del usuario.
+
+| # | Paso | Estado |
+|---|---|---|
+| 1 | Probetas no planares en el menú Calibración: hongo (soportes) y bloque inclinado (acabado), en modo Automático | En curso |
+| 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Pendiente |
+| 3 | Preset de un clic «Piel + núcleo» | Pendiente |
+| 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Pendiente |
+| 5 | Calibraciones no planares restantes | Pendiente |
+| 6 | Comparar el FEA con CalculiX | Pendiente |
+| 7 | Validar el relleno con las trayectorias laminadas reales | Pendiente |
+| 8 | Exponentes del relleno y del lattice con probetas | Físico |
+| 9 | Arc overhangs e impresoras de cinta en una impresora real | Físico |
+| 10 | Cierre al agregar varias impresoras de resina | Decisión (datos para reproducirlo) |
+| 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Pendiente |
+| 12 | Fase 8: optimizaciones del laminado y bugs heredados | En curso |
+| 13 | Bambu LAN: revocación TLS en Windows | Pendiente |
+| 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Pendiente |
+| 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
+| 16 | Render: oclusión ambiental y PBR | Decisión |
+| 17 | FEA: multigrid y GPU (Vulkan) | Decisión |
+| 18 | Fragmentación de piezas con encastres | Decisión |
+| 19 | Trackhead | Decisión (referencias) |
+| 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |
+| 21 | Fase 11: app de teléfono y FEA en la nube | Decisión |
+| 22 | Versión pública (con las obligaciones de la AGPL) | Pendiente |
+
+Hecho desde la última revisión de este documento: capas curvas guiadas por el FEA (9c) y relleno entrelazado (9d);
+capas que siguen las caras superiores; modo no planar Automático (acabado y menos soportes); no planar con solo dos
+medidas del cabezal; Z anti-aliasing con no planar; arc overhangs con velocidad, distancia máxima y calibraciones;
+orientación automática FFF y SLA; proyectos de Bambu Studio / OrcaSlicer.
+
+## 10. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|
