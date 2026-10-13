@@ -623,6 +623,11 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
     if (!cafile.empty())
         curl_easy_setopt(curl, CURLOPT_CAINFO, cafile.c_str());
     set_no_revoke(curl);
+    // The FTP server of the printers (vsftpd) requires the data connection to resume the TLS session of the control
+    // connection ("522 SSL connection failed: session reuse required"). With TLS 1.3 the session ticket arrives after
+    // the handshake and some TLS backends of libcurl do not resume it, so stay on TLS 1.2, where the session ID of the
+    // handshake is enough.
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, long(CURL_SSLVERSION_TLSv1_2 | CURL_SSLVERSION_MAX_TLSv1_2));
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);

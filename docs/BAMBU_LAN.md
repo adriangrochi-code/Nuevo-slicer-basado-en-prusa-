@@ -37,6 +37,16 @@ convertidos de OrcaSlicer ya lo traen).
   sube por FTPS implícito (puerto 990) a la raíz de la tarjeta y se inicia con el comando `project_file`.
 - El TLS lo hace libcurl (OpenSSL en Linux, Schannel en Windows): no hay librerías nuevas. Se verifica que el
   certificado lo haya emitido la CA de Bambu; no se comprueba el nombre porque es el número de serie, no la IP.
+- **Windows (Schannel)**: los certificados de las impresoras no indican lista de revocación ni OCSP, y Schannel
+  cortaba con «the revocation status is unknown»; las dos conexiones desactivan solo esa comprobación
+  (`CURLSSLOPT_NO_REVOKE`), la cadena se sigue verificando contra la CA de Bambu.
+- **FTPS y reutilización de sesión TLS**: el servidor FTP de las impresoras es vsftpd y exige que la conexión de
+  datos reanude la sesión TLS de la de control («SSL connection failed: session reuse required», informado en el
+  [foro de Bambu Lab](https://forum.bambulab.com/t/issues-with-ftp-connection/11518)). Con TLS 1.3 el ticket de
+  sesión llega después del saludo y libcurl con GnuTLS no la reanuda (comprobado contra la impresora simulada: 522);
+  por eso la subida usa TLS 1.2, donde basta el ID de sesión del saludo. MQTT no cambia.
+- La respuesta a `PASV` trae la dirección 0.0.0.0 ([foro](https://forum.bambulab.com/t/we-can-now-connect-to-ftp-on-the-p1-and-a1-series/6464?page=3));
+  libcurl usa la dirección de la conexión de control (`CURLOPT_FTP_SKIP_PASV_IP`, activo por defecto).
 - Código: `src/slic3r/Utils/BambuLanClient.*` (protocolo, sin GUI) y `BambuLan.*` (host de impresión).
 
 ## Pruebas
@@ -44,10 +54,15 @@ convertidos de OrcaSlicer ya lo traen).
 - `slic3rutils_tests "[BambuLan]"`: paquetes MQTT, lectura de reportes, archivo `.gcode.3mf` (MD5 contra `md5sum`),
   comando de inicio.
 - Impresora simulada `tools/bambu/fake_printer.py` (solo biblioteca estándar de Python y `openssl`): TLS con una CA
-  de prueba, MQTT y FTPS implícito. `TISMA_BAMBU_FAKE=<dir> slic3rutils_tests "[BambuLanFake]"` prueba estado,
-  código incorrecto, certificado ajeno, subida con progreso, inicio y cancelación.
+  de prueba (sin lista de revocación, como las de Bambu), MQTT y FTPS implícito que exige reanudar la sesión TLS y
+  responde `PASV` con 0.0.0.0. `TISMA_BAMBU_FAKE=<dir> slic3rutils_tests "[BambuLanFake]"` prueba estado, código
+  incorrecto, certificado ajeno, subida con progreso, inicio y cancelación.
+- **CI**: el test contra la impresora simulada corre en Linux (OpenSSL) y en Windows (Schannel, el TLS que usa el
+  programa allí). En Windows el registro muestra además el `curl.exe` del sistema con y sin comprobación de
+  revocación.
 - **Sin probar todavía con una impresora real.** Puntos a confirmar: que el firmware acepte el `.gcode.3mf` mínimo
-  (sin miniaturas ni `slice_info` completo) y la reutilización de sesión TLS del FTPS con Schannel en Windows.
+  (sin miniaturas ni `slice_info` completo) y que su FTPS acepte TLS 1.2 (vsftpd lo acepta salvo que se configure
+  solo TLS 1.3; no hay documentación de Bambu al respecto).
 
 ## Límites
 

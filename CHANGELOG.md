@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Bambu Lab por LAN**: la subida por FTPS reanuda la sesión TLS como exige el servidor de las impresoras (con
+  TLS 1.3 podía fallar con «session reuse required»); la impresora simulada ahora exige lo mismo y el test corre en el
+  CI de Linux y de Windows, donde prueba el TLS de Windows (Schannel) y la comprobación de revocación.
 - **Laminado más rápido**: la comprobación de perímetros extra ya no calcula dos offsets por isla cuando una cota
   muestra que la capa de arriba no puede necesitarlos; la etapa de perímetros del Benchy baja de 0,58 a 0,39 s con el
   mismo G-code byte a byte (`docs/PERFORMANCE.md`).

@@ -255,7 +255,7 @@ los datos del usuario.
 | 10 | Cierre al agregar varias impresoras de resina | Decisión (datos para reproducirlo) |
 | 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Hecho: 81 textos en inglés y sus traducciones en los 22 idiomas; quedan los créditos y las versiones de PrusaSlicer (`docs/DEPENDENCIES_AND_LICENSES.md`) |
 | 12 | Fase 8: optimizaciones del laminado y bugs heredados | Hecho: perímetros extra sin offsets innecesarios (etapa de perímetros −33 % en el Benchy, G-code idéntico); upstream sin correcciones nuevas desde el último port (`docs/PERFORMANCE.md`). Quedan LTO en Windows y Clipper2 (no autorizado) |
-| 13 | Bambu LAN: revocación TLS en Windows | Pendiente |
+| 13 | Bambu LAN: revocación TLS en Windows | Hecho: sin comprobación de revocación (Schannel) y subida FTPS con TLS 1.2 para reanudar la sesión como exige vsftpd; test contra la impresora simulada en el CI de Linux y de Windows (`docs/BAMBU_LAN.md`). Falta una impresora real |
 | 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Pendiente |
 | 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
 | 16 | Render: oclusión ambiental y PBR | Decisión |
