@@ -114,6 +114,30 @@ temperatura:
    las mallas de las celdas de cada nivel, tal como se aplicarán (modificadores), de modo que el último análisis es
    el de lo que se imprimirá. Solo se propone si es más ligero que el uniforme.
 
+### Nervios: el relleno en la dirección de las tensiones
+
+`rib_zones` (`Ribs.hpp`) busca dónde la pieza trabaja en una sola dirección dentro de las capas y `apply_ribs` pone ahí
+el relleno en líneas paralelas a esa dirección en todas las capas (relleno rectilíneo alineado al ángulo de la zona),
+como los nervios de una pieza diseñada para las cargas. Se aplica junto con el relleno mínimo si está marcada la
+casilla «Infill ribs along the stresses» (activada por defecto).
+
+- En cada vóxel del relleno, la tensión en el plano de la capa (σxx, σyy, τxy) da dos tensiones principales; la de
+  mayor valor absoluto da la dirección θ, y a = (|σ1| − |σ2|) / (|σ1| + |σ2|) cuánto es de una sola dirección.
+- Cada celda (como las zonas: 3 vóxeles, mínimo 3 mm) promedia a·(cos 2θ, sin 2θ) pesado por el índice de fallo.
+  El ángulo doble hace que tracción y compresión en la misma línea sumen (en flexión, arriba y abajo de la fibra
+  neutra), cosa que no pasaría sumando los tensores.
+- Se quedan las celdas con al menos el 20 % del índice de fallo máximo y una direccionalidad media de 0,5 o más; se
+  agrupan por ángulo en pasos de 15° (como mucho 7,5° de desvío). Cada grupo es un modificador «Infill ribs N°» con
+  `fill_pattern = alignedrectilinear` y `fill_angle = N`. La densidad sigue siendo la de la pieza y la de las zonas
+  (los modificadores de zonas se añaden después y solo cambian la densidad).
+- El ángulo del relleno se mide sobre la cama (las capas se laminan con la rotación de la instancia), igual que las
+  direcciones del análisis: no hace falta convertirlo si la pieza está girada.
+
+La idea de imprimir siguiendo las tensiones principales es la de Tam y Mueller, «Additive Manufacturing Along
+Principal Stress Lines» (3D Printing and Additive Manufacturing, 2017); aquí se reduce al ángulo del relleno por
+zonas. **Límite**: el modelo del relleno del análisis es igual en todas las direcciones, así que el análisis no cuenta
+lo que ganan los nervios a lo largo ni lo que pierden a lo ancho; hay que comprobarlo con probetas impresas.
+
 ## Refuerzos locales (Fase 6)
 
 `reinforcement_zone`: las celdas (2 mm) a menos de un radio (por defecto 2 × el radio de la carga, mínimo 5 mm) de

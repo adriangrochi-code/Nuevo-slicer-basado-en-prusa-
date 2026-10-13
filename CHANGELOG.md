@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Relleno nervado según las tensiones**: al aplicar el relleno mínimo de Ingeniería, donde la pieza trabaja en una
+  dirección (traccionada o a flexión) el relleno se pone en líneas paralelas a esa dirección en todas las capas, como
+  nervios, con modificadores «Infill ribs N°». El análisis todavía no cuenta la ganancia de resistencia
+  (`docs/FEA.md`).
 - **No planar «Automático» (acabado y menos soportes)**: un solo modo que inclina las capas bajo los voladizos y las
   pone paralelas a las caras superiores, dentro de lo que permite el cabezal. En las pruebas: un hongo con ala a 48°
   pasa de 683 mm de filamento de soporte a ninguno, y la cara superior inclinada de 0,127 a 0,058 mm de dispersión

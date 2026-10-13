@@ -14,6 +14,7 @@
 #include "tisma_fea/Structures.hpp"
 #include "tisma_fea/Orientation.hpp"
 #include "tisma_fea/StressLayers.hpp"
+#include "tisma_fea/Ribs.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
@@ -1223,4 +1224,170 @@ TEST_CASE("Curved layers of an object reach the slicing and the 3MF", "[FEA][Non
         max_diff = std::max(max_diff, double(std::abs(a.offset[i] - b.offset[i])));
     CHECK(max_diff < 1e-3);
     CHECK(b.safety_curved == Approx(a.safety_curved).epsilon(1e-4));
+}
+
+// Length-weighted direction [°, 0..180) of the infill lines of a layer (the doubled angles are averaged, so that a
+// line and its reverse count alike).
+static double infill_direction(const Layer &layer)
+{
+    Vec2d sum = Vec2d::Zero();
+    for (const LayerRegion *region : layer.regions()) {
+        const ExtrusionEntityCollection fills = region->fills().flatten();
+        for (const ExtrusionEntity *entity : fills.entities) {
+            const Polyline pl = entity->as_polyline();
+            for (size_t i = 1; i < pl.points.size(); ++ i) {
+                const Vec2d  d = (pl.points[i] - pl.points[i - 1]).cast<double>();
+                const double a = std::atan2(d.y(), d.x());
+                sum += d.norm() * Vec2d(std::cos(2. * a), std::sin(2. * a));
+            }
+        }
+    }
+    double angle = 0.5 * std::atan2(sum.y(), sum.x()) * 180. / M_PI;
+    return angle < 0. ? angle + 180. : angle;
+}
+
+static double angle_difference(double a, double b)
+{
+    const double d = std::fmod(std::abs(a - b), 180.);
+    return std::min(d, 180. - d);
+}
+
+TEST_CASE("Infill ribs follow the pull of a bar", "[FEA][Ribs]")
+{
+    // A bar of 60 x 10 x 6 mm turned 30° on the bed, clamped at one end and pulled along its length.
+    const indexed_triangle_set bar_mesh = its_make_cube(60., 10., 6.);
+    const std::vector<int> clamped = side(bar_mesh, 0, false), pulled = side(bar_mesh, 0, true);
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(bar_mesh));
+    ModelInstance *instance = object->add_instance();
+    instance->set_rotation(Vec3d(0., 0., 30. * M_PI / 180.));
+    instance->set_offset(Vec3d(100., 100., 0.));
+    object->ensure_on_bed();
+    // The part as on the bed (the volume is centered on its own origin).
+    indexed_triangle_set its = object->volumes.front()->mesh().its;
+    its_transform(its, instance->get_matrix() * object->volumes.front()->get_matrix());
+
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ clamped });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = pulled;
+    load.force     = 500. * Vec3d(std::cos(30. * M_PI / 180.), std::sin(30. * M_PI / 180.), 0.);
+    setup.loads.push_back(load);
+    setup.infill.enabled = true;
+    setup.infill.density = 0.2;
+    const Result res = analyze(its, setup);
+    REQUIRE(res.ok);
+
+    // The ribs of almost all the bar run along it.
+    const std::vector<RibZone> zones = rib_zones(res);
+    REQUIRE(! zones.empty());
+    int cells = 0;
+    const RibZone *main = nullptr;
+    for (const RibZone &z : zones) {
+        cells += z.cells;
+        if (! main || z.cells > main->cells)
+            main = &z;
+    }
+    INFO("main zone " << main->angle_deg << "°, " << main->cells << " of " << cells << " cells");
+    CHECK(main->angle_deg == Approx(30.));
+    CHECK(main->cells > 0.8 * cells);
+    CHECK(main->directionality > 0.8);
+
+    // Applied, the modifiers lay the infill lines of the bar along the pull (also with the instance turned).
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("fill_density", new ConfigOptionPercent(20));
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipGrid));
+    Print print;
+    CHECK(apply_ribs(*object, 0, zones) == zones.size());
+    CHECK(apply_ribs(*object, 0, zones) == zones.size());
+    size_t ribs = 0;
+    for (const ModelVolume *v : object->volumes)
+        if (v->is_modifier() && v->name.rfind(RIB_ZONE_NAME, 0) == 0)
+            ++ ribs;
+    CHECK(ribs == zones.size());
+    print.apply(model, config);
+    print.process();
+    const Layer &layer = *print.objects().front()->layers()[8];
+    const double after = infill_direction(layer);
+    // The layers are sliced turned as on the bed (the infill angle is measured on the bed).
+    const BoundingBox slices_bbox = get_extents(layer.lslices);
+    CHECK(unscale<double>(slices_bbox.size().x()) == Approx(60. * std::cos(M_PI / 6.) + 10. * std::sin(M_PI / 6.)).epsilon(0.02));
+    CHECK(unscale<double>(slices_bbox.size().y()) == Approx(60. * std::sin(M_PI / 6.) + 10. * std::cos(M_PI / 6.)).epsilon(0.02));
+    INFO("infill direction with ribs " << after << "°");
+    CHECK(angle_difference(after, 30.) < 5.);
+    // All the lines of the layer are parallel (aligned rectilinear, no crossing lines).
+    Vec2d sum = Vec2d::Zero();
+    double length = 0.;
+    for (const LayerRegion *region : layer.regions()) {
+        const ExtrusionEntityCollection fills = region->fills().flatten();
+        for (const ExtrusionEntity *entity : fills.entities) {
+            const Polyline pl = entity->as_polyline();
+            for (size_t i = 1; i < pl.points.size(); ++ i) {
+                const Vec2d  d = (pl.points[i] - pl.points[i - 1]).cast<double>();
+                const double a = std::atan2(d.y(), d.x());
+                sum += d.norm() * Vec2d(std::cos(2. * a), std::sin(2. * a));
+                length += d.norm();
+            }
+        }
+    }
+    REQUIRE(length > 0.);
+    CHECK(sum.norm() / length > 0.8);
+
+    // With the infill zones of the lightest infill on top: the zones change the density, the ribs keep the direction.
+    InfillZone zone;
+    zone.mesh = its;
+    // The half of the bar next to the clamped end (in print coordinates).
+    for (stl_vertex &v : zone.mesh.vertices) {
+        const Vec3d local = (instance->get_matrix() * object->volumes.front()->get_matrix()).inverse() * v.cast<double>();
+        if (local.x() > 30.)
+            v = (instance->get_matrix() * object->volumes.front()->get_matrix() * Vec3d(30., local.y(), local.z())).cast<float>();
+    }
+    zone.density = 0.4;
+    CHECK(apply_infill(*object, 0, 0.2, { zone }) == 1);
+    print.apply(model, config);
+    print.process();
+    const Layer &zoned = *print.objects().front()->layers()[8];
+    double max_density = 0.;
+    for (const LayerRegion *region : zoned.regions())
+        if (! region->fills().entities.empty())
+            max_density = std::max(max_density, region->region().config().fill_density.value);
+    CHECK(max_density == Approx(40.));
+    INFO("infill direction with ribs and zones " << infill_direction(zoned) << "°");
+    CHECK(angle_difference(infill_direction(zoned), 30.) < 5.);
+}
+
+TEST_CASE("Infill ribs of a bent bar run along it", "[FEA][Ribs]")
+{
+    // Bent down: tension on top and compression below, both along the bar, so the ribs run along X on both sides.
+    // The ribs are laid in the infill: the analysis is that of a part with walls and infill.
+    const indexed_triangle_set its = its_make_cube(60., 10., 10.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -50.);
+    setup.loads.push_back(load);
+    setup.infill.enabled = true;
+    setup.infill.density = 0.2;
+    const Result res = analyze(its, setup);
+    REQUIRE(res.ok);
+    const std::vector<RibZone> zones = rib_zones(res);
+    REQUIRE(! zones.empty());
+    int cells = 0, along = 0;
+    for (const RibZone &z : zones) {
+        cells += z.cells;
+        if (angle_difference(z.angle_deg, 0.) < 1.)
+            along += z.cells;
+    }
+    INFO(along << " of " << cells << " cells along the bar");
+    CHECK(along > 0.8 * cells);
 }

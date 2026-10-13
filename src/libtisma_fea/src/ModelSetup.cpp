@@ -13,6 +13,7 @@
 #include <libslic3r/NonPlanar.hpp>
 
 #include "tisma_fea/Structures.hpp"
+#include "tisma_fea/Ribs.hpp"
 
 namespace Slic3r {
 namespace Fea {
@@ -337,6 +338,33 @@ void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_trian
     if (ModelVolume *v = add_modifier(object, instance_idx, struts, name))
         v->config.set_key_value("fill_density", new ConfigOptionPercent(100));
     object.invalidate_bounding_box();
+}
+
+size_t apply_ribs(ModelObject &object, size_t instance_idx, const std::vector<RibZone> &zones)
+{
+    remove_modifiers(object, { RIB_ZONE_NAME });
+    if (object.instances.empty())
+        return 0;
+    const Transform3d to_object = object.instances[std::min(instance_idx, object.instances.size() - 1)]->get_matrix().inverse();
+    size_t added = 0;
+    for (const RibZone &zone : zones) {
+        indexed_triangle_set its = zone.mesh;
+        its_transform(its, to_object);
+        if (to_object.matrix().block<3, 3>(0, 0).determinant() < 0.)
+            its_flip_triangles(its);
+        if (its.indices.empty())
+            continue;
+        // The infill angle is measured on the bed (the layers are sliced with the rotation of the instance), as the
+        // directions of the analysis: no conversion.
+        const double angle = std::fmod(zone.angle_deg + 360., 180.);
+        ModelVolume *volume = object.add_volume(TriangleMesh(std::move(its)), ModelVolumeType::PARAMETER_MODIFIER);
+        volume->name = std::string(RIB_ZONE_NAME) + " " + std::to_string(int(std::round(angle))) + "°";
+        volume->config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipAlignedRectilinear));
+        volume->config.set_key_value("fill_angle", new ConfigOptionFloat(std::round(angle * 10.) / 10.));
+        ++ added;
+    }
+    object.invalidate_bounding_box();
+    return added;
 }
 
 size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones)

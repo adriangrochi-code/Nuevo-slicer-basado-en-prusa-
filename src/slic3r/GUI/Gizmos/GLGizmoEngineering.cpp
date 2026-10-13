@@ -18,6 +18,7 @@
 #include <tisma_fea/Materials.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Optimize.hpp>
+#include <tisma_fea/Ribs.hpp>
 
 #include "slic3r/GUI/Camera.hpp"
 #include "slic3r/GUI/GLCanvas3D.hpp"
@@ -572,6 +573,9 @@ void GLGizmoEngineering::apply_optimization(bool zones)
     Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lightest infill"));
     const bool   by_zones = zones && opt.zones_found;
     const double density  = by_zones ? opt.base_density : opt.uniform_density;
+    // The ribs first: the infill zones are added after them and keep their density, the ribs only set the direction.
+    const size_t ribs     = Fea::apply_ribs(*mo, size_t(instance_idx()),
+                                            m_opt_ribs ? Fea::rib_zones(by_zones ? opt.zoned : opt.uniform) : std::vector<Fea::RibZone>());
     const size_t added    = Fea::apply_infill(*mo, size_t(instance_idx()), density, by_zones ? opt.zones : std::vector<Fea::InfillZone>());
     changed_object(*mo);
     // The infill is a setting of the object and modifiers: it is seen in the object list and after slicing again.
@@ -580,6 +584,8 @@ void GLGizmoEngineering::apply_optimization(bool zones)
                     int(std::round(density * 100.)), mo->name, added, Fea::INFILL_ZONE_NAME) :
         GUI::format(_u8L("Applied: infill %1% %% in \"%2%\". Slice again to see it in the preview."),
                     int(std::round(density * 100.)), mo->name);
+    if (ribs > 0)
+        m_applied_note += "\n" + GUI::format(_u8L("%1% modifiers \"%2%\" lay the infill lines along the stresses."), ribs, Fea::RIB_ZONE_NAME);
     m_applied_object = mo->id();
     notify(m_applied_note);
     m_regions_dirty = true;
@@ -1626,6 +1632,11 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::text_wrapped(_u8L("Searches the lowest infill which meets the safety factor and the deformation limits of the loads, "
                                          "with the walls and the infill pattern of the profile."), width);
         ImGuiPureWrap::checkbox(_u8L("Also by zones (more infill where the stresses are high)"), m_opt_zones);
+        ImGuiPureWrap::checkbox(_u8L("Infill ribs along the stresses"), m_opt_ribs);
+        if (ImGui::IsItemHovered())
+            ImGuiPureWrap::tooltip(_u8L("When applying, where the part works in one direction (pulled or bent along it) its infill lines are "
+                                        "laid along that direction in every layer, as the ribs of a part designed for the loads. "
+                                        "The analysis still takes the infill as equally strong in every direction: check it with a printed test part."), ImGui::GetFontSize() * 25.f);
         const bool can_run = ! m_running && ! eng.fixtures.empty() && ! eng.loads.empty();
         if (ImGuiPureWrap::button(_u8L("Find lightest infill")) && can_run)
             start_optimization();
