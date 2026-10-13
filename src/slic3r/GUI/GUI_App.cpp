@@ -851,7 +851,11 @@ void GUI_App::post_init()
         CallAfter([this] {
             // preset_updater->sync downloads profile updates and than via event checks updates and incompatible presets. We need to run it on startup.
             // start before cw so it is canceled by cw if needed?
-            this->get_preset_updater_wrapper()->sync_preset_updater(this, preset_bundle);
+            // Tisma Slicer: the printer profiles come with Tisma (its own bundles, and those converted from Cura and
+            // OrcaSlicer). The repositories of Prusa are only used with tisma_online_profiles = 1: their newer bundles
+            // do not match Tisma's.
+            if (this->app_config->get("tisma_online_profiles") == "1")
+                this->get_preset_updater_wrapper()->sync_preset_updater(this, preset_bundle);
             bool cw_showed = this->config_wizard_startup();
             this->ensure_url_handler();
             if (! cw_showed) {
@@ -3381,7 +3385,9 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     // First part is to download neccessary data.
     // That is done on worker thread while nice modal progress is shown.
     // TRN: Progress dialog title
-    get_preset_updater_wrapper()->wizard_sync(preset_bundle, app_config->orig_version(), mainframe, reason == ConfigWizard::RunReason::RR_USER, _L("Opening Configuration Wizard"));
+    // Tisma Slicer: only with the repositories of Prusa (see on_init_inner()).
+    if (app_config->get("tisma_online_profiles") == "1")
+        get_preset_updater_wrapper()->wizard_sync(preset_bundle, app_config->orig_version(), mainframe, reason == ConfigWizard::RunReason::RR_USER, _L("Opening Configuration Wizard"));
     // Then the wizard itself will start and that also takes time.
     // But for now no ui is shown until then. (Showing modal progress dialog while showing another would be a headacke)
     m_config_wizard = new ConfigWizard(mainframe);

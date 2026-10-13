@@ -4138,7 +4138,9 @@ bool Tab::select_preset(std::string preset_name, bool delete_current /*=false*/,
         if (printer_tab)
             static_cast<TabPrinter*>(this)->update_pages();
 
-        if (! is_selected && printer_tab)
+        // Tisma Slicer: also when another printer than the one asked for got selected (a name which is not found
+        // selects the first visible printer, maybe of the other technology).
+        if ((! is_selected || m_presets->get_edited_preset().name != preset_name) && printer_tab)
         {
             /* There is a case, when :
              * after Config Wizard applying we try to select previously selected preset, but

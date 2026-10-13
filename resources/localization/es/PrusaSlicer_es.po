@@ -33593,3 +33593,14 @@ msgstr "La temperatura máxima de servicio debe ser mayor que 23 °C"
 
 msgid "The print temperature range is reversed"
 msgstr "El rango de temperatura de impresión está invertido"
+
+msgid "Check your printers: choose the brand, or search them by name. You can choose printers of several brands, filament and resin ones."
+msgstr "Marcá tus impresoras: elegí la marca o buscalas por nombre. Podés elegir impresoras de varias marcas, de filamento y de resina."
+
+msgid "My printer is not in the list: define a custom printer"
+msgstr "Mi impresora no está en la lista: definir una impresora personalizada"
+
+msgid "%1% printer selected. Finish installs it with its settings and filaments."
+msgid_plural "%1% printers selected. Finish installs them with their settings and filaments."
+msgstr[0] "%1% impresora elegida. Finalizar la instala con su configuración y sus filamentos."
+msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración y sus filamentos."

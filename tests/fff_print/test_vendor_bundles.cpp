@@ -121,3 +121,36 @@ TEST_CASE("Default filaments of the converted printers exist as loaded", "[Vendo
     boost::system::error_code ec;
     fs::remove_all(data, ec);
 }
+
+// The printers have no alias: the plater shows and selects them by name. The printers converted from OrcaSlicer are
+// named "<name> @Orca <vendor>"; with an alias "<name>" derived from the '@', selecting one in the plater selected
+// another printer (of another technology too) and the program crashed.
+TEST_CASE("Printers converted from OrcaSlicer are selected by their name", "[VendorBundles]")
+{
+    const fs::path profiles = fs::path(TEST_DATA_DIR) / ".." / ".." / "resources" / "profiles";
+    const fs::path data = fs::temp_directory_path() / fs::unique_path("tisma-bundles-%%%%-%%%%");
+    fs::create_directories(data);
+    set_data_dir(data.string());
+
+    PresetBundle bundle;
+    bundle.load_configbundle((profiles / "Orca_Prusa.ini").string(), PresetBundle::LoadConfigBundleAttribute::LoadSystem,
+                             ForwardCompatibilitySubstitutionRule::Disable);
+    size_t with_at = 0;
+    for (const Preset &printer : bundle.printers) {
+        if (printer.is_default)
+            continue;
+        INFO(printer.name);
+        CHECK(printer.alias == printer.name);
+        if (printer.name.find('@') != std::string::npos) {
+            ++ with_at;
+            CHECK(bundle.get_preset_name_by_alias(Preset::TYPE_PRINTER, printer.alias) == printer.name);
+        }
+    }
+    CHECK(with_at > 0);
+    // The prints and filaments keep their aliases.
+    const Preset *print = bundle.prints.find_preset("0.05mm DETAIL @CORE One 0.25");
+    REQUIRE(print != nullptr);
+    CHECK(print->alias == "0.05mm DETAIL");
+    boost::system::error_code ec;
+    fs::remove_all(data, ec);
+}

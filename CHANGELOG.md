@@ -12,6 +12,13 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Asistente de configuración en una sola página**: se abre directo en la lista de impresoras, con todas las marcas
+  juntas (resina y filamento de una misma marca, todos los paquetes de Prusa bajo «Prusa») y el buscador; los
+  filamentos y resinas se instalan solos y no se descargan perfiles de Prusa (los de Tisma ya vienen incluidos).
+  «Mi impresora no está en la lista» abre las páginas de la impresora personalizada.
+- **Corrección: cierre al cambiar de impresora**. Elegir en la ventana principal una impresora convertida de
+  OrcaSlicer con «@» en el nombre (por ejemplo la Prusa CORE One de Orca) seleccionaba otra y, si era de resina, el
+  programa se cerraba; también hacía que las impresoras agregadas «no se abrieran».
 - **Ingeniería: tabla de materiales editable** (Material > «Editar la tabla de materiales…»): valores propios para
   los materiales de Tisma (los de tu filamento o tus probetas) y materiales nuevos, guardados en la carpeta de datos
   y marcados con `*`. Las flechas de las cargas que tiran de una cara ya no quedan escondidas dentro de la pieza.

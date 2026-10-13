@@ -1509,6 +1509,15 @@ PageCustom::PageCustom(ConfigWizard *parent)
     append(profile_name_sizer);
 }
 
+void PageCustom::set_custom_wanted(bool wanted)
+{
+    if (cb_custom->GetValue() == wanted)
+        return;
+    cb_custom->SetValue(wanted);
+    profile_name_editor->Enable(wanted);
+    wizard_p()->on_custom_setup(wanted);
+}
+
 PageUpdate::PageUpdate(ConfigWizard *parent)
     : ConfigWizardPage(parent, _L("Automatic updates"), _L("Updates"))
     , version_check(true)
@@ -1999,6 +2008,16 @@ PageBrands::PageBrands(ConfigWizard *parent)
                     converted = true;
                     break;
                 }
+            // One brand for the resin and the filament printers of a maker ("Anycubic SLA" under "Anycubic"), and
+            // for all the bundles of Prusa (Prusa Research, its SLA printers, Pro AFS, Pro HT).
+            if (boost::algorithm::ends_with(name, " SLA")) {
+                name.erase(name.size() - 4);
+                converted = true;
+            }
+            if (boost::algorithm::starts_with(name, "Prusa ")) {
+                name = "Prusa";
+                converted = true;
+            }
             const auto [it, added] = brand_by_name.emplace(lower(from_u8(name)), m_brands.size());
             if (added)
                 m_brands.push_back({ from_u8(name), {} });
@@ -2033,8 +2052,8 @@ PageBrands::PageBrands(ConfigWizard *parent)
         });
     }
 
-    append_text(_L("Choose the brand of your printer and check your printers, or search them by name. "
-                   "You can choose printers of several brands."));
+    append_text(_L("Check your printers: choose the brand, or search them by name. "
+                   "You can choose printers of several brands, filament and resin ones."));
 
     m_search = new wxSearchCtrl(this, wxID_ANY);
     m_search->ShowCancelButton(true);
@@ -2075,6 +2094,15 @@ PageBrands::PageBrands(ConfigWizard *parent)
 
     m_summary = append_text(wxEmptyString);
 
+    // A printer which is not in the list: the pages of the custom printer.
+    m_custom = new wxCheckBox(this, wxID_ANY, _L("My printer is not in the list: define a custom printer"));
+    wxGetApp().UpdateDarkUI(m_custom);
+    append(m_custom);
+    m_custom->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
+        if (wizard_p()->page_custom)
+            wizard_p()->page_custom->set_custom_wanted(m_custom->GetValue());
+    });
+
     m_search->Bind(wxEVT_TEXT, [this](wxCommandEvent &) { update_brands(); });
     m_search->Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, [this](wxCommandEvent &) { m_search->Clear(); });
     m_brands_list->Bind(wxEVT_LISTBOX, [this](wxCommandEvent &) { update_printers(); });
@@ -2088,6 +2116,8 @@ void PageBrands::on_activate()
 {
     // The printers may have been changed in the pages of the vendors.
     update_brands();
+    if (m_custom && wizard_p()->page_custom)
+        m_custom->SetValue(wizard_p()->page_custom->custom_wanted());
 }
 
 bool PageBrands::is_selected(const Entry &entry) const
@@ -2225,8 +2255,8 @@ void PageBrands::update_summary()
     for (const Brand &brand : m_brands)
         selected += selected_count(brand);
     m_summary->SetLabel(selected == 0 ? _L("No printer selected.") :
-        format_wxstr(_L_PLURAL("%1% printer selected. Next: their settings and filaments.",
-                               "%1% printers selected. Next: their settings and filaments.", selected), selected));
+        format_wxstr(_L_PLURAL("%1% printer selected. Finish installs it with its settings and filaments.",
+                               "%1% printers selected. Finish installs them with their settings and filaments.", selected), selected));
 }
 
 void PageBrands::on_check(int row)
@@ -2854,6 +2884,26 @@ void ConfigWizard::priv::load_pages()
     const ConfigWizardPage* former_active = index->active_page();
 
     index->clear();
+
+    // Tisma Slicer: a short wizard, the list of all the printers and nothing else. The profiles come with Tisma
+    // (no configuration sources to choose and download), the filaments and resins are the defaults of the printers
+    // (installed on Finish), and the other settings keep their defaults (Preferences).
+    if (page_brands != nullptr) {
+        index->add_page(page_brands);
+        if (page_custom && page_custom->custom_wanted()) {
+            index->add_page(page_custom);
+            index->add_page(page_firmware);
+            index->add_page(page_bed);
+            index->add_page(page_bvolume);
+            index->add_page(page_diams);
+            index->add_page(page_temps);
+        }
+        index->go_to(former_active);
+        if (index->active_page() == nullptr)
+            index->go_to(page_brands);
+        q->Layout();
+        return;
+    }
 
     index->add_page(page_welcome);
     index->add_page(page_login);
@@ -3596,6 +3646,11 @@ bool ConfigWizard::priv::check_and_install_missing_materials(Technology technolo
 
     const auto ask_and_select_default_materials = [this](const wxString &message, const std::set<const VendorProfile::PrinterModel*> &printer_models, Technology technology)
     {
+        // Tisma Slicer: there are no pages of filaments and resins, the defaults of the printers are installed.
+        if (page_brands != nullptr) {
+            select_default_materials_for_printer_models(technology, printer_models);
+            return;
+        }
         MessageDialog msg(q, message, _L("Notice"), wxYES_NO);
         if (msg.ShowModal() == wxID_YES)
             select_default_materials_for_printer_models(technology, printer_models);
@@ -4346,6 +4401,8 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     p->btn_sel_all = new wxButton(this, wxID_ANY, _L("Select all standard printers"));
     p->btnsizer->Add(p->btn_sel_all);
+    // Tisma Slicer: the printers are chosen in the list of all the printers.
+    p->btn_sel_all->Hide();
 
     p->btn_prev = new wxButton(this, wxID_ANY, _L("< &Back"));
     p->btn_next = new wxButton(this, wxID_ANY, _L("&Next >"));
@@ -4501,8 +4558,10 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
 
     p->set_run_reason(reason);
     p->set_start_page(start_page);
-    p->is_config_from_archive = reason == RR_USER;
-    p->set_config_updated_from_archive(p->is_config_from_archive, false);
+    // Tisma Slicer: the printers of the bundles that come with Tisma right away, also on the first start (no page to
+    // choose the configuration sources to download).
+    p->is_config_from_archive = true;
+    p->set_config_updated_from_archive(true, false);
 
     if (ShowModal() == wxID_OK) {
         bool apply_keeped_changes = false;

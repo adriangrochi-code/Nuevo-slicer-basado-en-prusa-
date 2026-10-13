@@ -252,7 +252,7 @@ los datos del usuario.
 | 7 | Validar el relleno con las trayectorias laminadas reales | Hecho: paredes con el espaciado real de los perímetros y material depositado por patrón; volumen dentro de ±3,2 % en los patrones regulares (`docs/FEA.md`) |
 | 8 | Exponentes del relleno y del lattice con probetas | Físico |
 | 9 | Arc overhangs e impresoras de cinta en una impresora real | Físico |
-| 10 | Cierre al agregar varias impresoras de resina | Decisión (datos para reproducirlo) |
+| 10 | Cierre al agregar varias impresoras de resina | Hecho: reproducido (cambiar de una impresora de resina a una convertida de Orca con «@» en el nombre seleccionaba otra y se cerraba); corregido, y el asistente queda en una sola lista de impresoras con los perfiles de Tisma, sin descargas (`docs/PRINTER_PROFILES.md`). Falta confirmarlo en Windows |
 | 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Hecho: 81 textos en inglés y sus traducciones en los 22 idiomas; quedan los créditos y las versiones de PrusaSlicer (`docs/DEPENDENCIES_AND_LICENSES.md`) |
 | 12 | Fase 8: optimizaciones del laminado y bugs heredados | Hecho: perímetros extra sin offsets innecesarios (etapa de perímetros −33 % en el Benchy, G-code idéntico); upstream sin correcciones nuevas desde el último port (`docs/PERFORMANCE.md`). Quedan LTO en Windows y Clipper2 (no autorizado) |
 | 13 | Bambu LAN: revocación TLS en Windows | Hecho: sin comprobación de revocación (Schannel) y subida FTPS con TLS 1.2 para reanudar la sesión como exige vsftpd; test contra la impresora simulada en el CI de Linux y de Windows (`docs/BAMBU_LAN.md`). Falta una impresora real |

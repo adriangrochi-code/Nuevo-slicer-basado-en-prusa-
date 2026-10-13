@@ -1,23 +1,44 @@
 # Perfiles de impresoras: máxima compatibilidad
 
-Tisma trae los perfiles de PrusaSlicer (35 fabricantes en `resources/profiles` más los del repositorio en línea de
-Prusa) y, además, los de **OrcaSlicer** convertidos al formato de Tisma.
+Tisma trae los perfiles de PrusaSlicer (35 fabricantes en `resources/profiles`) y, además, los de **OrcaSlicer** y
+**UltiMaker Cura** convertidos al formato de Tisma. No descarga los del repositorio en línea de Prusa (ver abajo).
 
 ## Selección de impresoras en el asistente
 
-La página «Impresoras» del asistente de configuración (antes de las páginas de cada fabricante) reemplaza la lista
-de casillas de fabricantes:
+El asistente de configuración es una sola página, «Impresoras», que se abre directo (también la primera vez):
 
-- **Marcas**: todas las marcas de los perfiles que tiene Tisma, en orden alfabético. Los paquetes convertidos de
-  otros laminadores se muestran bajo la marca (por ejemplo, «Creality» junta los perfiles de Prusa y los de
-  OrcaSlicer). Entre paréntesis, cuántas impresoras de la marca están marcadas.
+- **Marcas**: todas las marcas de los perfiles que trae Tisma, en orden alfabético y en una sola lista. Los paquetes
+  de una misma marca van juntos: los convertidos de otros laminadores («Creality» junta los de Prusa, Cura y
+  OrcaSlicer), las impresoras de resina con las de filamento («Anycubic SLA» dentro de «Anycubic») y todos los
+  paquetes de Prusa (Prusa Research, sus SLA, Pro AFS y Pro HT) bajo «Prusa». Entre paréntesis, cuántas impresoras
+  de la marca están marcadas.
 - **Impresoras**: los modelos de la marca elegida, uno por boquilla, con casillas; al elegir uno se ve su foto.
 - **Buscador**: filtra por nombre en todas las marcas (todas las palabras deben coincidir, sin distinguir
   mayúsculas). Con una búsqueda, la primera entrada de «Marcas» es «Todos los resultados».
+- **Impresora personalizada**: la casilla «Mi impresora no está en la lista» agrega las páginas para definirla
+  (firmware, cama, volumen, diámetros, temperaturas).
 
-Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`ConfigWizard::priv::pick_printer`): la
-página del fabricante aparece en el índice para elegir más boquillas o ver las fotos, y desaparece al desmarcar todas
-sus impresoras. El resto del asistente (filamentos, perfiles instalados) no cambia.
+No hay páginas de bienvenida, inicio de sesión, fuentes de configuración, filamentos ni actualizaciones:
+
+- Los perfiles son los que trae Tisma (`resources/profiles`). El asistente y el inicio del programa no descargan
+  los repositorios de perfiles de Prusa: sus paquetes son más nuevos que la base 2.9.6 de Tisma (heredan presets que
+  no existen en ella) y no conocen los paquetes propios de Tisma (pedía las imágenes de Elegoo SLA a Prusa y daba
+  404). Con `tisma_online_profiles = 1` en `PrusaSlicer.ini` (carpeta de datos) vuelve el comportamiento de PrusaSlicer.
+- Los filamentos y resinas son los predeterminados de cada impresora (`default_materials`), instalados sin preguntar.
+- El resto (modo, actualizaciones, descargas) queda con sus valores por defecto y se cambia en Preferencias.
+
+Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`ConfigWizard::priv::pick_printer`).
+
+### Cierre al cambiar de impresora (corregido)
+
+Las impresoras convertidas de OrcaSlicer que ya existen en un paquete de Prusa llevan el sufijo « @Orca Prusa» en el
+nombre. PrusaSlicer deriva de la «@» un alias para todos los presets, y la lista de impresoras de la ventana
+principal mostraba ese alias («Prusa CORE One 0.25 nozzle»). Al elegirla, el nombre no existía y se seleccionaba la
+primera impresora visible, a veces de resina, mientras las pestañas ya se preparaban para filamento: el perfil de
+impresión quedaba sin selección y el programa se cerraba (y las impresoras «no se abrían»). Ahora las impresoras no
+tienen alias (como ya suponía el resto del programa) y, si se selecciona otra impresora que la pedida, las pestañas
+siguen a la tecnología de la que quedó. Pruebas: «Printers converted from OrcaSlicer are selected by their name»
+(`fff_print_tests`) y «Resin printer profiles have compatible prints and materials» (`sla_print_tests`).
 
 ## Impresoras de UltiMaker Cura
 

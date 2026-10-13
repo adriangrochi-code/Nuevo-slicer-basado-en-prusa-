@@ -345,3 +345,41 @@ TEST_CASE("GOO exposure tower calibration", "[sla_archives][goo]") {
         CHECK(exposure_at[239] == 2.5f);       // z 12.0: fifth band
     }
 }
+
+// Every resin printer of the bundles has a compatible print and material profile, so that selecting it never leaves
+// the "-- default --" profiles. (Some printers of the PrusaSlicer bundles name defaults which do not exist; a
+// compatible profile is then selected instead.)
+TEST_CASE("Resin printer profiles have compatible prints and materials", "[sla_archives][profiles]") {
+    namespace fs = boost::filesystem;
+    const fs::path profiles = fs::path(TEST_DATA_DIR) / ".." / ".." / "resources" / "profiles";
+    const fs::path data = fs::temp_directory_path() / fs::unique_path("tisma-sla-%%%%-%%%%");
+    fs::create_directories(data);
+    set_data_dir(data.string());
+
+    size_t checked = 0;
+    for (const char *file : { "PrusaResearchSLA.ini", "AnycubicSLA.ini", "ElegooSLA.ini" }) {
+        PresetBundle bundle;
+        REQUIRE_NOTHROW(bundle.load_configbundle((profiles / file).string(), PresetBundle::LoadConfigBundleAttribute::LoadSystem,
+                                                 ForwardCompatibilitySubstitutionRule::Disable));
+        std::vector<std::string> printers;
+        for (const Preset &preset : bundle.printers)
+            if (preset.is_system && preset.printer_technology() == ptSLA)
+                printers.push_back(preset.name);
+        for (const std::string &name : printers) {
+            INFO(file << ": " << name);
+            REQUIRE(bundle.printers.select_preset_by_name(name, true));
+            const Preset &printer = bundle.printers.get_selected_preset();
+            const std::string print    = printer.config.opt_string("default_sla_print_profile");
+            const std::string material = printer.config.opt_string("default_sla_material_profile");
+            bundle.sla_prints.select_preset_by_name(print, true);
+            bundle.sla_materials.select_preset_by_name(material, true);
+            bundle.update_compatible(PresetSelectCompatibleType::Always);
+            CHECK(! bundle.sla_prints.get_selected_preset().is_default);
+            CHECK(! bundle.sla_materials.get_selected_preset().is_default);
+            ++ checked;
+        }
+    }
+    CHECK(checked > 10);
+    boost::system::error_code ec;
+    fs::remove_all(data, ec);
+}

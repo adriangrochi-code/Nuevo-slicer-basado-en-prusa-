@@ -423,6 +423,8 @@ struct PageCustom: ConfigWizardPage
     }
 
     bool        custom_wanted()         const { return cb_custom->GetValue(); }
+    // Tisma Slicer: set from the printers page.
+    void        set_custom_wanted(bool wanted);
     bool        is_valid_profile_name() const { return profile_name_editor->is_valid();}
     std::string profile_name()          const { return profile_name_editor->preset_name(); }
 
@@ -525,6 +527,7 @@ private:
     wxStaticBitmap     *m_preview;
     wxStaticText       *m_preview_name;
     wxStaticText       *m_summary;
+    wxCheckBox         *m_custom { nullptr };
     std::vector<Entry>  m_entries;
     std::vector<Brand>  m_brands;
     std::vector<int>    m_shown_brands;   // row of the brands list -> brand, -1: the results of the search
