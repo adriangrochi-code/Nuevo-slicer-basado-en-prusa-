@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Análisis estructural comparado con CalculiX**: barra a tracción, voladizos a lo largo de X y de Z y una escuadra
+  en L coinciden con CalculiX dentro del 1,3 % en desplazamientos y tensiones; queda como test automático
+  (`docs/FEA.md`).
 - **Probetas de resistencia entre capas** (Calibración > «Non-planar: layer strength test pieces»): tres barras
   macizas con capas en onda para romper colgando peso y comparar con las mismas impresas planas; el panel explica cómo
   calcular la tensión de rotura.

@@ -275,7 +275,27 @@ capas inclinadas ±25° pasa de un factor de seguridad de 4,7 a 5,2 (PLA).
 
 Rendimiento medido: 62 370 vóxeles, 704 iteraciones, 2,5 s en 4 núcleos.
 
-Pendiente: comparación con CalculiX en una pieza real (prevista en la hoja de ruta).
+### Comparación con CalculiX
+
+Las mismas piezas, apoyos, cargas y material (PLA de la tabla, transversalmente isótropo: E_xy 3000, E_z 2600 MPa,
+ν 0,35, con ν13 = ν·√(E_xy/E_z) como en `constitutive()`) analizadas con CalculiX 2.21 (`ccx`), con hexaedros
+cuadráticos de 20 nodos (C3D20R) sobre los mismos cubos de 1 mm, la cara fija empotrada y la fuerza como tracción
+uniforme (cargas nodales consistentes). Se comparan los valores en los centros de los vóxeles de 1 mm (media de los 8
+nodos de cada cubo, como los da el análisis de Tisma). Test «Agrees with CalculiX» (tolerancia 3 %); los números de
+CalculiX los escribe `src/libtisma_fea/test/calculix/run_calculix.py` en `calculix_reference.hpp`, así el test corre
+sin CalculiX instalado.
+
+| Caso | Tisma | CalculiX | Diferencia |
+|---|---|---|---|
+| Barra 60 × 10 × 10 mm, 1000 N de tracción: desplazamiento a 59,5 mm; σxx a mitad | 0,1966 mm; 10,00 MPa | 0,1969 mm; 10,00 MPa | −0,15 %; 0,0 % |
+| Voladizo horizontal 60 × 10 × 10 mm, 100 N en el extremo: flecha; σxx en la fibra superior a mitad | −2,849 mm; 15,83 MPa | −2,871 mm; 15,93 MPa | −0,8 %; −0,6 % |
+| Voladizo vertical 10 × 10 × 60 mm (a lo largo de Z, E_z), 50 N: flecha; σzz en la fibra a mitad | 1,639 mm; 7,91 MPa | 1,652 mm; 7,96 MPa | −0,8 %; −0,7 % |
+| Escuadra en L (base 40 × 10 × 10, montante 10 × 10 × 30), 50 N arriba: desplazamiento; σxx en la base | 1,089 mm; 9,88 MPa | 1,102 mm; 9,94 MPa | −1,2 %; −0,6 % |
+
+CalculiX coincide con la teoría de vigas (σ = 10 MPa = F/A; flecha F L³/(3 E I) = 2,88 mm; σ = M c / I = 15,93 MPa),
+y el análisis de Tisma queda 1 % más rígido, lo esperable del hexaedro lineal frente al cuadrático. No se comparan
+tensiones pico en esquinas entrantes (singulares en los dos modelos) ni el relleno homogeneizado (CalculiX ve la
+pieza maciza).
 
 ## Límites que hay que conocer
 

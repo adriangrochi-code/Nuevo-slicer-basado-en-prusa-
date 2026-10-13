@@ -1627,3 +1627,111 @@ TEST_CASE("Skin and core: automatic non-planar layers and the lightest infill wi
     CHECK(opt.uniform_density <= opt.density_without_ribs);
     CHECK(meets_requirements(opt.uniform));
 }
+
+// Triangles of the mesh lying on the plane coordinate[axis] = value.
+static std::vector<int> faces_on(const indexed_triangle_set &its, int axis, double value)
+{
+    std::vector<int> out;
+    for (size_t i = 0; i < its.indices.size(); ++ i) {
+        bool on = true;
+        for (int k = 0; k < 3; ++ k)
+            on &= std::abs(its.vertices[its.indices[i][k]][axis] - value) < 1e-5;
+        if (on)
+            out.push_back(int(i));
+    }
+    return out;
+}
+
+// Prism of the polygon (x, z) between y = 0 and y = depth, facing out; the caps are a fan from the vertex fan, which
+// must see all the others.
+static indexed_triangle_set extrude_xz(const std::vector<Vec2d> &polygon, double depth, int fan)
+{
+    indexed_triangle_set its;
+    const int n = int(polygon.size());
+    for (double y : { 0., depth })
+        for (const Vec2d &v : polygon)
+            its.vertices.emplace_back(float(v.x()), float(y), float(v.y()));
+    for (int i = 1; i + 1 < n; ++ i) {
+        const int a = fan, b = (fan + i) % n, c = (fan + i + 1) % n;
+        its.indices.emplace_back(a, c, b);
+        its.indices.emplace_back(n + a, n + b, n + c);
+    }
+    for (int i = 0; i < n; ++ i) {
+        const int j = (i + 1) % n;
+        its.indices.emplace_back(i, j, n + j);
+        its.indices.emplace_back(i, n + j, n + i);
+    }
+    if (its_volume(its) < 0.)
+        its_flip_triangles(its);
+    return its;
+}
+
+#include "calculix_reference.hpp"
+
+TEST_CASE("Agrees with CalculiX", "[FEA][CalculiX]")
+{
+    // The same parts, supports, loads and material as calculix/run_calculix.py, 1 mm voxels; the values at the voxel
+    // centers of the same places.
+    struct Case {
+        const char *name;
+        indexed_triangle_set mesh;
+        int fixed_axis; double fixed_value;
+        int load_axis; double load_value; Vec3d force;
+        int disp_comp, disp_axis; double disp_value;
+        int stress_comp; std::vector<std::pair<int, double>> stress_at;
+    };
+    const std::vector<Case> cases {
+        { "bar_tension", its_make_cube(60., 10., 10.), 0, 0., 0, 60., Vec3d(1000., 0., 0.), 0, 0, 59.5, 0, { { 0, 30.5 } } },
+        { "cantilever_x", its_make_cube(60., 10., 10.), 0, 0., 0, 60., Vec3d(0., 0., -100.), 2, 0, 59.5, 0, { { 0, 30.5 }, { 2, 9.5 } } },
+        { "cantilever_z", its_make_cube(10., 10., 60.), 2, 0., 2, 60., Vec3d(50., 0., 0.), 0, 2, 59.5, 2, { { 2, 30.5 }, { 0, 0.5 } } },
+        { "l_bracket", extrude_xz({ { 0., 0. }, { 40., 0. }, { 40., 40. }, { 30., 40. }, { 30., 10. }, { 0., 10. } }, 10., 4),
+          0, 0., 2, 40., Vec3d(50., 0., 0.), 0, 2, 39.5, 0, { { 0, 15.5 }, { 2, 9.5 } } },
+    };
+    for (const Case &c : cases) {
+        REQUIRE(its_num_open_edges(c.mesh) == 0);
+        const CalculixReference *ref = nullptr;
+        for (const CalculixReference &r : CALCULIX_REFERENCE)
+            if (std::string(r.name) == c.name)
+                ref = &r;
+        REQUIRE(ref);
+        Setup setup;
+        setup.material   = "PLA";
+        setup.voxel_size = 1.;
+        setup.tolerance  = 1e-9;
+        setup.fixtures.push_back({ faces_on(c.mesh, c.fixed_axis, c.fixed_value) });
+        Load load;
+        load.type      = Load::Type::Faces;
+        load.triangles = faces_on(c.mesh, c.load_axis, c.load_value);
+        load.force     = c.force;
+        setup.loads.push_back(load);
+        const Result res = analyze(c.mesh, setup);
+        REQUIRE(res.ok);
+        double d = 0., s = 0.;
+        int nd = 0, ns = 0;
+        for (size_t e = 0; e < res.voxels.size(); ++ e) {
+            const int idx = res.voxels[e];
+            const Vec3d center = res.origin + res.h * (Vec3d(idx % res.size.x(), (idx / res.size.x()) % res.size.y(),
+                                                             idx / (res.size.x() * res.size.y())) + Vec3d(0.5, 0.5, 0.5));
+            if (std::abs(center[c.disp_axis] - c.disp_value) < 1e-6) {
+                d += res.displacement[e][c.disp_comp];
+                ++ nd;
+            }
+            bool at = true;
+            for (const auto &[axis, value] : c.stress_at)
+                at &= std::abs(center[axis] - value) < 1e-6;
+            if (at) {
+                s += res.stress[e][c.stress_comp];
+                ++ ns;
+            }
+        }
+        REQUIRE(nd > 0);
+        REQUIRE(ns > 0);
+        d /= nd;
+        s /= ns;
+        WARN(c.name << ": displacement " << d << " mm (CalculiX " << ref->displacement << ", " <<
+             100. * (d / ref->displacement - 1.) << " %), stress " << s << " MPa (CalculiX " << ref->stress << ", " <<
+             100. * (s / ref->stress - 1.) << " %), " << res.voxels.size() << " voxels");
+        CHECK(d == Approx(ref->displacement).epsilon(0.03));
+        CHECK(s == Approx(ref->stress).epsilon(0.03));
+    }
+}

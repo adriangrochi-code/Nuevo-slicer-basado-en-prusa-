@@ -248,7 +248,7 @@ los datos del usuario.
 | 3 | Preset de un clic «Piel + núcleo» | Hecho (Ingeniería > Optimizar > «Skin + core»: no planar Automático + relleno mínimo por zonas con nervios) |
 | 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Hecho: modo Cónico con la pendiente de cada radio sacada de los voladizos de la pieza (`docs/NONPLANAR_ANALYSIS.md`) |
 | 5 | Calibraciones no planares restantes | Hecho: probetas de resistencia entre capas (Calibración > «Non-planar: layer strength test pieces»); falta imprimirlas |
-| 6 | Comparar el FEA con CalculiX | Pendiente |
+| 6 | Comparar el FEA con CalculiX | Hecho: 4 casos (tracción, voladizos en X y en Z, escuadra en L) dentro del 1,3 %; test «Agrees with CalculiX» (`docs/FEA.md`) |
 | 7 | Validar el relleno con las trayectorias laminadas reales | Pendiente |
 | 8 | Exponentes del relleno y del lattice con probetas | Físico |
 | 9 | Arc overhangs e impresoras de cinta en una impresora real | Físico |
