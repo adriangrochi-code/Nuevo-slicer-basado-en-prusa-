@@ -46,6 +46,25 @@ enum class FlowPolicy { Preserve, Uniform, Off };
 class OverhangField;
 class LayerGrid;
 
+// Conical layers whose slope changes with the radius, taken from the part (Tisma). The idea of a cone whose angle
+// depends on the radius is that of Joshua Bird's radial non-planar slicer (github.com/jyjblrd/radial_non_planar_slicer,
+// where the angle is a formula set by hand for each model); no code of it is used. Here the slope at each radius is the
+// one the overhangs of the part at that radius need, within the free angle of the print head (build_radial_profile()).
+struct RadialProfile
+{
+    // Slope of the layers dz/dr (+ = rising outwards) at the radii i * step from the center of the field, and its
+    // integral from the center (the height of the layer). Linear between the radii, constant beyond the last one.
+    double              step { 1. };
+    std::vector<double> slope;
+    std::vector<double> height;
+    // Height of the lowest overhang that needs the cone: the layers reach their full slope below it.
+    double              z_first { 0. };
+
+    double slope_at(double r) const;
+    double height_at(double r) const;
+    bool   empty() const;
+};
+
 struct FieldParams
 {
     Mode    mode             { Mode::Disabled };
@@ -56,6 +75,9 @@ struct FieldParams
     double  twist_deg_per_mm { 3. };    // twisted: rotation of the ridges per mm of height
     double  cone_angle_deg   { 15. };   // conical: positive = cone rises outwards
     double  cone_tip_radius  { 2. };    // conical: smoothing of the cone tip
+    // Conical with a slope that changes with the radius (from the part), scaled by radial_scale; replaces the cone angle.
+    std::shared_ptr<const RadialProfile> radial;
+    double  radial_scale     { 1. };
     // Center of the field (object coordinates).
     Vec2d   center           { Vec2d::Zero() };
     // SlopeTest: the slope of the ridges (wavelength above, along Y) is slope_start_deg + i * slope_step_deg in
@@ -296,6 +318,15 @@ struct OverhangParams
 
 // Overhang field of a mesh (object coordinates, real space), empty if no overhang needs it.
 std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle_set &mesh, const OverhangParams &params);
+
+// Radial profile of the conical layers for a mesh (object coordinates, real space) around center: at the radius of each
+// overhang the layers slope as much as it needs to print 5° below the threshold once the part is sheared for the
+// slicing (descending outwards under the overhangs that face outwards, rising under those that face inwards), within the
+// free angle of the head (2° below the threshold is accepted where the head does not allow more); between them and
+// towards the center the slope changes gradually (over a quarter of the radius of the part, at least 5 mm) and it is
+// flat at the center. Empty if no overhang needs it.
+std::shared_ptr<const RadialProfile> build_radial_profile(const indexed_triangle_set &mesh, const Vec2d &center,
+                                                          const OverhangParams &params);
 // The model parts of an object transformed to object coordinates (the mesh the non-planar layers are built from).
 indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo);
 

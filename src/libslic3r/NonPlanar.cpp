@@ -52,6 +52,147 @@ std::pair<double, double> FieldParams::slope_test_tangent(double x) const
     return { a + (b - a) * w, (b - a) * dw };
 }
 
+// ---------------------------------------------------------- RadialProfile
+
+static inline double smoothstep_unit(double t)
+{
+    t = std::clamp(t, 0., 1.);
+    return t * t * (3. - 2. * t);
+}
+
+bool RadialProfile::empty() const
+{
+    return std::all_of(slope.begin(), slope.end(), [](double q) { return q == 0.; });
+}
+
+double RadialProfile::slope_at(double r) const
+{
+    if (slope.empty())
+        return 0.;
+    const double t = std::max(0., r) / step;
+    const size_t i = size_t(t);
+    if (i + 1 >= slope.size())
+        return slope.back();
+    const double f = t - double(i);
+    return slope[i] + (slope[i + 1] - slope[i]) * f;
+}
+
+double RadialProfile::height_at(double r) const
+{
+    if (slope.empty())
+        return 0.;
+    const double t = std::max(0., r) / step;
+    const size_t i = size_t(t);
+    if (i + 1 >= slope.size())
+        return height.back() + slope.back() * (std::max(0., r) - step * double(slope.size() - 1));
+    // Exact integral of the linear slope.
+    const double d = (t - double(i)) * step;
+    return height[i] + slope[i] * d + 0.5 * (slope[i + 1] - slope[i]) / step * d * d;
+}
+
+std::shared_ptr<const RadialProfile> build_radial_profile(const indexed_triangle_set &mesh, const Vec2d &center,
+                                                          const OverhangParams &params)
+{
+    const double tan_max = std::min(params.tan_x, params.tan_y);
+    if (tan_max <= 0. || mesh.indices.empty())
+        return nullptr;
+    double r_max = 0.;
+    for (const stl_vertex &v : mesh.vertices)
+        r_max = std::max(r_max, (v.head<2>().cast<double>() - center).norm());
+    if (r_max <= 0.)
+        return nullptr;
+    auto profile = std::make_shared<RadialProfile>();
+    profile->step = std::clamp(r_max / 200., 0.25, 1.);
+    const size_t n = size_t(std::ceil(r_max / profile->step)) + 2;
+    // Slope needed at each radius, rising outwards (under overhangs facing inwards) and descending outwards (under
+    // those facing outwards).
+    std::vector<double> rise(n, 0.), descend(n, 0.);
+    // As the overhangs mode: printable beyond the threshold, aiming 5° below it (the supports are found layer by layer,
+    // with the extrusion width), or 2° below it where the head does not allow more.
+    auto sin_deg = [](double deg) { return std::sin(std::max(0., deg) * M_PI / 180.); };
+    const double limit   = sin_deg(params.threshold_deg);
+    const double aim     = sin_deg(params.threshold_deg - 5.);
+    const double accept  = sin_deg(params.threshold_deg - 2.);
+    const double ceiling = std::sin(params.ceiling_deg * M_PI / 180.);
+    double z_first = std::numeric_limits<double>::max();
+    for (size_t t = 0; t < mesh.indices.size(); ++ t) {
+        const Vec3f nf = its_face_normal(mesh, int(t));
+        const Vec3d nrm = nf.cast<double>();
+        // Printable on flat layers, or a ceiling left to the bridges and the supports.
+        if (! (nrm.z() < - limit) || nrm.z() < - ceiling)
+            continue;
+        const stl_triangle_vertex_indices &f = mesh.indices[t];
+        const Vec3d c = (mesh.vertices[f[0]] + mesh.vertices[f[1]] + mesh.vertices[f[2]]).cast<double>() / 3.;
+        if (c.z() < params.z_flat)
+            continue;
+        const Vec2d d = c.head<2>() - center;
+        const double r = d.norm();
+        if (r < 1e-6)
+            continue;
+        // Only the radial part of the overhang can be helped by a cone.
+        const double n_r = nrm.head<2>().dot(d / r);
+        const double a   = std::abs(n_r);
+        if (a < 0.1)
+            continue;
+        // The part is sliced sheared, z' = z - g(r): layers of slope u radially (descending under the face) turn its
+        // normal into (a + u |n_z|, n_t, n_z), less steep as u grows. (A rotation would need less, but the slicing shears.)
+        const double n_t2 = std::max(0., nrm.head<2>().squaredNorm() - n_r * n_r);
+        auto below = [&](double u, double sin_limit) {
+            const double h = a + u * std::abs(nrm.z());
+            return nrm.z() / std::sqrt(h * h + n_t2 + nrm.z() * nrm.z()) >= - sin_limit;
+        };
+        double hi = tan_max;
+        if (below(tan_max, aim)) {
+            double lo = 0.;
+            for (int i = 0; i < 30; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (below(mid, aim) ? hi : lo) = mid;
+            }
+        } else if (! below(tan_max, accept))
+            // Not printable within the free angle of the head: left to the supports, as the overhangs mode does.
+            continue;
+        // Over the radii the triangle covers.
+        double r_lo = r, r_hi = r;
+        for (int k = 0; k < 3; ++ k) {
+            const double rv = (mesh.vertices[f[k]].head<2>().cast<double>() - center).norm();
+            r_lo = std::min(r_lo, rv);
+            r_hi = std::max(r_hi, rv);
+        }
+        std::vector<double> &need = n_r > 0. ? descend : rise;
+        const size_t b_lo = std::min(n - 1, size_t(std::floor(r_lo / profile->step)));
+        const size_t b_hi = std::min(n - 1, size_t(std::ceil(r_hi / profile->step)));
+        for (size_t b = b_lo; b <= b_hi; ++ b)
+            need[b] = std::max(need[b], hi);
+        for (int k = 0; k < 3; ++ k)
+            z_first = std::min(z_first, double(mesh.vertices[f[k]].z()));
+    }
+    if (z_first == std::numeric_limits<double>::max())
+        return nullptr;
+    // Envelopes: the slope changes gradually around each overhang, over a quarter of the radius of the part (at least
+    // 5 mm) from flat to the steepest the head allows.
+    const double rate = tan_max / std::max(5., 0.25 * r_max) * profile->step;
+    auto envelope = [n, rate](const std::vector<double> &need) {
+        std::vector<double> out(need);
+        for (size_t i = 1; i < n; ++ i)
+            out[i] = std::max(out[i], out[i - 1] - rate);
+        for (size_t i = n - 1; i-- > 0;)
+            out[i] = std::max(out[i], out[i + 1] - rate);
+        return out;
+    };
+    const std::vector<double> up = envelope(rise), down = envelope(descend);
+    profile->slope.assign(n, 0.);
+    profile->height.assign(n, 0.);
+    for (size_t i = 0; i < n; ++ i) {
+        // Flat at the center (no tip), within the head.
+        const double r = double(i) * profile->step;
+        profile->slope[i] = std::clamp(up[i] - down[i], - tan_max, tan_max) * smoothstep_unit(r / std::max(2., 2. * profile->step));
+        if (i > 0)
+            profile->height[i] = profile->height[i - 1] + 0.5 * (profile->slope[i - 1] + profile->slope[i]) * profile->step;
+    }
+    profile->z_first = z_first;
+    return profile;
+}
+
 double Field::g(double x, double y, double z) const
 {
     const double dx = x - m_params.center.x();
@@ -60,6 +201,8 @@ double Field::g(double x, double y, double z) const
     case Mode::Disabled:
         return 0.;
     case Mode::Conical: {
+        if (m_params.radial)
+            return m_params.radial_scale * m_params.radial->height_at(std::hypot(dx, dy));
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         return std::tan(m_params.cone_angle_deg * M_PI / 180.) * (r - m_params.cone_tip_radius);
     }
@@ -96,6 +239,13 @@ Vec2d Field::grad(double x, double y, double z) const
     case Mode::Disabled:
         return Vec2d::Zero();
     case Mode::Conical: {
+        if (m_params.radial) {
+            const double r = std::hypot(dx, dy);
+            if (r < 1e-9)
+                return Vec2d::Zero();
+            const double q = m_params.radial_scale * m_params.radial->slope_at(r);
+            return { q * dx / r, q * dy / r };
+        }
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         const double t = std::tan(m_params.cone_angle_deg * M_PI / 180.);
         return { t * dx / r, t * dy / r };
@@ -1424,6 +1574,8 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
         // The wave rises 2 * amplitude from its troughs to its crests, which must pass below the print head.
         if (head.height > 0.)
             field.amplitude = std::min(field.amplitude, 0.5 * head.height);
+    } else if (field.mode == Mode::Conical && field.radial) {
+        // From the part: already within the free angle of the head.
     } else if (field.mode == Mode::Conical) {
         // The cone slopes the same in every direction: the smaller free angle. The sign (rising outwards or inwards)
         // is the one set by the user.
@@ -1438,6 +1590,8 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
             FieldParams f = field;
             if (f.mode == Mode::Wave)
                 f.amplitude *= s;
+            else if (f.radial)
+                f.radial_scale *= s;
             else
                 f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
             return f;
@@ -1513,6 +1667,8 @@ static FieldParams clear_print_head(FieldParams field, const Ramp &ramp, const P
         FieldParams f = field;
         if (f.mode == Mode::Wave)
             f.amplitude *= s;
+        else if (f.radial)
+            f.radial_scale *= s;
         else
             f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
         return f;
@@ -1689,6 +1845,21 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user, and smaller
         // still where the print head would hit the part already printed.
         if (config.nonplanar_fit_head.value) {
+            // Tisma: the cone from the part, its slope at each radius the one its overhangs need. The layers reach it
+            // gradually from the flat first layers up to the lowest of those overhangs.
+            if (field.mode == Mode::Conical && mesh != nullptr && object_bbox.defined) {
+                const HeadLimits limits = head_limits(config);
+                OverhangParams params;
+                params.threshold_deg = config.nonplanar_overhang_threshold.value;
+                params.tan_x         = limits.tan_x;
+                params.tan_y         = limits.tan_y;
+                params.z_flat        = config.nonplanar_flat_below.value;
+                field.radial = build_radial_profile(*mesh, field.center, params);
+                if (! field.radial)
+                    // No overhang a cone can help: flat layers.
+                    return Deformation(FieldParams(), ramp);
+                ramp.z_ramp = std::max(ramp.z_ramp, field.radial->z_first - ramp.z_flat);
+            }
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));
             if (mesh != nullptr)
                 field = clear_print_head(field, ramp, config, *mesh);

@@ -3368,7 +3368,9 @@ void PrintConfigDef::init_fff_params()
                    "the G-code is transformed back, so all perimeters, infill and supports follow the "
                    "curved layers. Automatic (recommended): the layers tilt under the overhangs that would need supports "
                    "and follow the top surfaces, both as far as the print head allows. Wave: interlocking layers for a more homogeneous strength between layers. "
-                   "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). "
+                   "Conical: cone shaped layers around the center of the part whose slope at each radius is the one the "
+                   "overhangs of the part at that radius need (round parts that flare outwards or inwards), flat where "
+                   "nothing needs it. "
                    "Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, "
                    "as much as the print head allows, so that fewer supports are needed. "
                    "Stresses: the layers tilt towards where the part is pulled, as computed in Engineering "
@@ -3440,8 +3442,9 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_cone_angle", coFloat);
     def->label = L("Cone angle");
     def->category = L("Non-planar");
-    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", "
-                   "only its sign is used: the slope is the free angle of the print head.");
+    def->tooltip = L("Conical layers without \"Fit to the print head\": slope of the cone, positive values rise outwards. "
+                   "With it (the default) the slope at each radius comes from the overhangs of the part and this value is "
+                   "not used.");
     def->sidetext = L("°");
     def->min = -60;
     def->max = 60;
@@ -3480,8 +3483,8 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Make the layers as curved as the print head allows, instead of using the wave amplitude and the "
                    "cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer "
                    "Settings > General > Print head), the waves rise at most the head clearance height from trough to "
-                   "crest, and the layer thickness stays within the allowed range. Conical layers keep the direction "
-                   "of the cone angle set here (rising outwards or inwards).");
+                   "crest, and the layer thickness stays within the allowed range. Conical layers take their slope at "
+                   "each radius from the overhangs of the part.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
 

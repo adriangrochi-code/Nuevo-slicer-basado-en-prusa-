@@ -8,6 +8,7 @@
 
 #include "test_data.hpp"
 #include "libslic3r/GCodeReader.hpp"
+#include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
@@ -423,8 +424,9 @@ TEST_CASE("Non-planar layers fitted to the print head clear the part already pri
                                     { "nonplanar_ramp_height", 15 } });
     Print print;
     Model model;
-    Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
-    // A cone as steep as the head rises more than 1 mm within 15 mm: the cone is made gentler instead of refused.
+    // The cone comes from the part: the 52° flare of the mushroom needs it (within the 20° of the head).
+    Test::init_print({ mushroom(52.) }, print, model, config);
+    // A cone as steep as the flare needs rises more than 1 mm within 15 mm: the cone is made gentler instead of refused.
     REQUIRE(print.validate().empty());
     const Extrusions e = analyse(Test::gcode(print));
     double height = 0.;
@@ -466,3 +468,103 @@ TEST_CASE("Automatic non-planar layers: finish of the top and fewer supports", "
     WARN("Spread of the top: flat " << flat << " mm, automatic " << automatic << " mm");
     CHECK(automatic < 0.6 * flat);
 }
+
+// Tisma: conical layers whose slope at each radius comes from the overhangs of the part.
+// A ring whose lip overhangs inwards (as the rim of a bowl turned over): from radius 15 at z = 10 to radius r_top at
+// z = 15, facing down and in.
+static indexed_triangle_set inward_lip(double r_top)
+{
+    const std::vector<Vec2d> profile { { 15., 10. }, { r_top, 15. } };
+    constexpr int segments = 72;
+    indexed_triangle_set its;
+    for (int s = 0; s < segments; ++ s) {
+        const double a = 2. * M_PI * s / segments;
+        for (const Vec2d &p : profile)
+            its.vertices.emplace_back(float(p.x() * std::cos(a)), float(p.x() * std::sin(a)), float(p.y()));
+    }
+    for (int s = 0; s < segments; ++ s) {
+        const int a = s * 2, b = ((s + 1) % segments) * 2;
+        its.indices.emplace_back(a, b, b + 1);
+        its.indices.emplace_back(a, b + 1, a + 1);
+    }
+    // Facing down.
+    if (its_face_normal(its, 0).z() > 0.f)
+        its_flip_triangles(its);
+    return its;
+}
+
+TEST_CASE("Conical layers take their slope at each radius from the part", "[NonPlanar][Conical]")
+{
+    NonPlanar::OverhangParams params;
+    params.threshold_deg = 45.;
+    params.tan_x = params.tan_y = std::tan(25. * M_PI / 180.);
+    params.z_flat = 0.6;
+    // The flare of the mushroom faces outwards: the layers descend outwards there, flat at the center and under the
+    // stem. The part is sliced sheared (z' = z - g): a face at b from the vertical comes to cot(b') = cot(b) + slope,
+    // so 52° needs cot(40°) - cot(52°) (5° below the threshold, as the overhangs mode).
+    const indexed_triangle_set flare = mushroom(52.).its;
+    const auto out = NonPlanar::build_radial_profile(flare, Vec2d::Zero(), params);
+    REQUIRE(out);
+    const double r_flare = 5. + 2.5 * std::tan(52. * M_PI / 180.);
+    INFO("slope at the flare " << out->slope_at(r_flare) << ", at the center " << out->slope_at(0.));
+    auto cot = [](double deg) { return 1. / std::tan(deg * M_PI / 180.); };
+    CHECK(out->slope_at(r_flare) == Approx(- (cot(40.) - cot(52.))).margin(0.02));
+    CHECK(out->slope_at(0.) == Approx(0.));
+    CHECK(out->height_at(r_flare) < 0.);
+    // The flare starts at z = 10.
+    CHECK(out->z_first == Approx(10.).margin(1e-4));
+    // Gradual: never more than the steepest slope of the head.
+    for (double r = 0.; r < 20.; r += 0.5)
+        CHECK(std::abs(out->slope_at(r)) <= params.tan_x + 1e-9);
+
+    // A lip facing inwards: the layers rise outwards under it.
+    // A lip from radius 15 to 8 over 5 mm (cot = 5 / 7 from the vertical): 5° below the threshold would need more than
+    // the head allows, 2° below fits: as steep as the head allows.
+    const auto in = NonPlanar::build_radial_profile(inward_lip(8.), Vec2d::Zero(), params);
+    REQUIRE(in);
+    CHECK(in->slope_at(11.5) == Approx(params.tan_x).margin(1e-6));
+
+    // Printable already (a 40° flare), or beyond the head (a 75° flare with 25° of free angle): no cone.
+    CHECK(! NonPlanar::build_radial_profile(mushroom(40.).its, Vec2d::Zero(), params));
+    CHECK(! NonPlanar::build_radial_profile(mushroom(75.).its, Vec2d::Zero(), params));
+}
+
+TEST_CASE("Conical layers from the part need fewer supports", "[NonPlanar][Conical]")
+{
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 45 },
+                                    { "nonplanar_overhang_threshold", 45 }, { "nonplanar_fit_head", 1 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 },
+                                    { "nonplanar_head_clearance_height", 10 }, { "nonplanar_head_clearance_radius", 10 } });
+    const double planar = support_filament(Test::slice({ mushroom(52.) }, config));
+    REQUIRE(planar > 0.);
+    config.set_deserialize_strict({ { "nonplanar_mode", "conical" } });
+    Print print;
+    Model model;
+    Test::init_print({ mushroom(52.) }, print, model, config);
+    REQUIRE(print.validate().empty());
+    const std::string gcode = Test::gcode(print);
+    const double conical = support_filament(gcode);
+    WARN("Support filament of the mushroom: flat " << planar << " mm, conical from the part " << conical << " mm");
+    CHECK(conical < 0.05 * planar);
+    // The first layers flat; the layers of the flare descend outwards.
+    const Extrusions e = analyse(gcode);
+    bool curved = false;
+    for (const auto &[layer, zs] : e.z_by_layer) {
+        if (layer < 0.65)
+            CHECK(zs.size() == 1);
+        if (layer > 11. && *zs.rbegin() - *zs.begin() > 0.3)
+            curved = true;
+    }
+    CHECK(curved);
+
+    // A block without overhangs: flat layers (nothing for the cone to do).
+    Print flat_print;
+    Model flat_model;
+    Test::init_print({ Test::TestMesh::cube_20x20x20 }, flat_print, flat_model, config);
+    REQUIRE(flat_print.validate().empty());
+    const Extrusions flat = analyse(Test::gcode(flat_print));
+    for (const auto &[layer, zs] : flat.z_by_layer)
+        CHECK(*zs.rbegin() - *zs.begin() < 0.01);
+}
+

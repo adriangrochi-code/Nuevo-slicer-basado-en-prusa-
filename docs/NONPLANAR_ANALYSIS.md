@@ -46,7 +46,8 @@ dos medidas:
 - pendiente de las capas ≤ ángulo libre;
 - ondas: suben como mucho la holgura de valle a cresta, y su longitud de onda es π · holgura / tan(ángulo libre menor)
   (entre 4 y 100 mm), para que lleguen a la vez a los dos límites;
-- cono: el ángulo libre menor;
+- cono: la pendiente que piden los voladizos de la pieza en cada radio, como mucho el ángulo libre menor (ver «Cono
+  según la pieza»);
 - después se reduce lo necesario para el espesor de capa y para que el cabezal no choque con lo ya impreso.
 
 Las demás opciones (`nonplanar_fit_head`, amplitud, longitud de onda, transición, flujo...) siguen en los perfiles y en la
@@ -71,6 +72,32 @@ Detalle de las dos medidas:
 
 La comprobación de colisiones con el perfil medido sigue igual. El modelo de cono elíptico es una aproximación propia
 de Tisma a partir de las dos medidas; no sale de una fuente externa.
+
+## Cono según la pieza (Tisma)
+
+Modo «Cónico» con «Ajustar al cabezal» (lo predeterminado): las capas tienen forma de cono alrededor del centro de la
+pieza, pero la pendiente de cada radio sale de la geometría, no de un ángulo fijo. La idea de un cono cuyo ángulo cambia
+con el radio es la del laminador radial de Joshua Bird (https://github.com/jyjblrd/radial_non_planar_slicer), donde el
+ángulo es una fórmula puesta a mano para cada modelo (por ejemplo 15° + 30° · r / R). Su licencia (GPL v3 con una
+cláusula que prohíbe vender) no es compatible con la AGPL, así que no se usa nada de su código; Tisma lo calcula de la
+pieza (`build_radial_profile`):
+
+1. Cada triángulo que mira hacia abajo más allá del umbral de voladizo (`nonplanar_overhang_threshold`) y menos que un
+   techo (80°), por encima de las capas planas del principio, pide una pendiente radial. La pieza se lamina cizallada
+   (z' = z − g(r)), así que una cara a β de la vertical queda en cot β' = cot β + pendiente: se pide la que la lleva
+   5° por debajo del umbral, o 2° si el cabezal no permite más (lo mismo que el modo Voladizos); si ni así entra en el
+   ángulo libre, se deja a los soportes. Solo cuenta la parte radial del voladizo.
+2. Hacia abajo en los voladizos que miran hacia afuera (un hongo, una hélice, un árbol), hacia arriba en los que miran
+   hacia adentro (el borde de un cuenco dado vuelta). Cada triángulo pide en todos los radios que cubre.
+3. El perfil cambia de a poco: la pendiente pasa de plana a la máxima del cabezal en un cuarto del radio de la pieza
+   (al menos 5 mm), es plana en el centro (sin punta) y nunca supera el ángulo libre menor.
+4. Las capas llegan a esa pendiente gradualmente desde las primeras capas planas hasta el voladizo más bajo que la pide;
+   luego se reduce lo necesario para el espesor de capa (60–140 %) y para que el cabezal no choque.
+5. Una pieza sin voladizos que el cono pueda ayudar se lamina plana.
+
+Medido en los tests (hongo con ala a 52°, cabezal de 25°): soportes de 705 mm de filamento con capas planas a 0 con el
+cono según la pieza; el ala pide cot 40° − cot 52° = 0,41 de pendiente, el centro queda plano. Sin «Ajustar al cabezal»
+el cono sigue siendo el de antes, con el ángulo puesto a mano.
 
 ## Voladizos: no planar solo donde hace falta soporte (Tisma)
 
@@ -218,4 +245,5 @@ punto 2 de la conclusión: en lugar de curvar las capas enteras, solo el relleno
 - Open5x: https://github.com/FreddieHong19/Open5x
 - Slicer4RTN: https://xyzdims.com/3d-printing/slicer4rtn/
 - Z anti-aliasing: https://cnckitchen.com/blog/anti-aliasing-for-fdm-3d-printing-is-finally-here-micro-non-planar-printing
+- Laminador radial (solo la idea del ángulo según el radio): https://github.com/jyjblrd/radial_non_planar_slicer
 - Interfaces onduladas: https://researchers.westernsydney.edu.au/en/publications/interlayer-shear-strength-and-bonding-strength-of-sinuous-3d-prin/

@@ -12,6 +12,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Cono según la pieza**: el modo no planar Cónico ya no usa un ángulo fijo; en cada radio las capas se inclinan lo
+  que piden los voladizos de la pieza (hacia abajo bajo los que miran hacia afuera, hacia arriba bajo los que miran
+  hacia adentro), planas en el centro y donde nada lo pide, dentro del ángulo libre del cabezal. En los tests, un hongo
+  con ala a 52° pasa de 705 mm de filamento de soporte a ninguno. Idea del laminador radial de Joshua Bird,
+  reimplementada sin su código (`docs/NONPLANAR_ANALYSIS.md`).
 - **Piel + núcleo en un clic** (Ingeniería > Optimizar > «Skin + core»): la piel con capas no planares automáticas y
   el núcleo con el relleno mínimo por zonas y nervios según las tensiones, calculado con esas capas y aplicado al
   terminar. Sin caras fijas y cargas aplica solo la piel.
