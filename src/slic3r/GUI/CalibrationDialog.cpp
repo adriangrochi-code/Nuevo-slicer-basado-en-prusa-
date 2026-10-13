@@ -63,6 +63,8 @@ struct Machine
     double layer    { 0.2 };
     // Non-planar tests: height where the curved layers are complete (NonPlanar::nonplanar_test_start_height()).
     double nonplanar_start { 8.6 };
+    // Height where the curved layers of the print settings (not of a test) are complete: flat below + transition.
+    double nonplanar_curved { 5.6 };
     double first_layer     { 0.2 };
 };
 
@@ -104,6 +106,25 @@ void add_cylinder(ModelObject& obj, double cx, double cy, double z, double r, do
 {
     indexed_triangle_set its = its_make_cylinder(r, h);
     its_translate(its, Vec3f(float(cx), float(cy), float(z)));
+    obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Prism along Y (from y to y + depth) whose cross-section in XZ is a trapezoid centered at cx: bottom_width at z,
+// top_width at z + height.
+void add_trapezoid_prism(ModelObject& obj, double cx, double y, double z, double bottom_width, double top_width, double height, double depth)
+{
+    indexed_triangle_set its;
+    const double xs[4] = { cx - 0.5 * bottom_width, cx + 0.5 * bottom_width, cx + 0.5 * top_width, cx - 0.5 * top_width };
+    const double zs[4] = { z, z, z + height, z + height };
+    for (double yy : { y, y + depth })
+        for (int i = 0; i < 4; ++i)
+            its.vertices.emplace_back(float(xs[i]), float(yy), float(zs[i]));
+    // Front (y), back (y + depth) and the four sides, facing out.
+    const int f[12][3] = { { 0, 2, 1 }, { 0, 3, 2 }, { 4, 5, 6 }, { 4, 6, 7 },
+                           { 0, 1, 5 }, { 0, 5, 4 }, { 1, 2, 6 }, { 1, 6, 5 },
+                           { 2, 3, 7 }, { 2, 7, 6 }, { 3, 0, 4 }, { 3, 4, 7 } };
+    for (const auto& t : f)
+        its.indices.emplace_back(t[0], t[1], t[2]);
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
@@ -597,6 +618,41 @@ std::vector<Test> make_tests()
     tests.back().print_settings = { { "nonplanar_mode", "automatic" }, { "support_material", "1" },
                                     { "support_material_auto", "1" } };
 
+    // Tisma: strength across the layers with curved (wave) layers against flat ones. A comparative test, not a standard
+    // one: the same bars printed both ways and broken the same way.
+    tests.push_back({ _L("Non-planar: layer strength test pieces"),
+        _L("Prints three solid bars standing up, 5 mm thick, on pedestals tall enough for the bars to start where the "
+           "curved layers are complete; a wedge at the top holds the string. It uses the non-planar wave layers "
+           "(interlocking layers, set in the print settings, shown as modified) and 100 % infill. Print it again with "
+           "Non-planar layers set to Disabled to compare."),
+        _L("Clamp each pedestal in a vise with the bar horizontal and the 5 mm side vertical, hang a bucket by a string "
+           "just below the wedge and add water until the bar breaks; weigh the bucket. The bar breaks across the layers "
+           "at the pedestal. Compare the average of the three bars printed with curved layers with that of the three "
+           "printed flat: their ratio is the gain in strength between layers. The stress at the break is "
+           "6 x F x L / (W x T²), with F the weight in N (kg x 9.81), L the distance from the pedestal to the string, W "
+           "the width of the bar and T = 5 mm."),
+        "mm", CalibMode::Disabled, { 20., 20., 1., 40. }, 0, 1., 40.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            const double width = std::clamp(p.start, 10., 40.), length = std::clamp(p.band, 20., 80.), thickness = 5.;
+            // Pedestal: 2 mm above where the curved layers are complete (the bars break at its top), at least 6 mm to clamp.
+            const double pedestal = std::max(6., m.nonplanar_curved + 2.);
+            const double pitch = width + 20.;
+            for (int i = 0; i < 3; ++i) {
+                const double x0 = i * pitch;
+                add_box(obj, x0, 0., 0., width + 10., 20., pedestal);
+                add_box(obj, x0 + 5., 7.5, pedestal, width, thickness, length);
+                // Wedge widening at 45° (no supports), then a cap: the string stays below it.
+                add_trapezoid_prism(obj, x0 + 5. + 0.5 * width, 7.5, pedestal + length, width, width + 6., 3., thickness);
+                add_box(obj, x0 + 2., 7.5, pedestal + length + 3., width + 6., thickness, 2.);
+            }
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "100%");
+        }, _L("Length of the bars") });
+    tests.back().key = "nonplanar_strength";
+    tests.back().single_label = _L("Width of the bars");
+    tests.back().print_settings = { { "nonplanar_mode", "wave" } };
+
     return tests;
 }
 
@@ -725,6 +781,7 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
         PrintConfig print_config;
         print_config.apply(wxGetApp().preset_bundle->full_config(), true);
         machine.nonplanar_start = NonPlanar::nonplanar_test_start_height(print_config);
+        machine.nonplanar_curved = print_config.nonplanar_flat_below.value + print_config.nonplanar_ramp_height.value;
     }
 
     Model model;

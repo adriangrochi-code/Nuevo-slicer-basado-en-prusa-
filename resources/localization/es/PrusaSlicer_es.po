@@ -33504,3 +33504,18 @@ msgstr "Los nervios según las tensiones no harían más liviano el relleno: no 
 
 msgid "%1% modifiers \"%2%\" lay the infill lines along the stresses."
 msgstr "%1% modificadores «%2%» ponen las líneas del relleno según las tensiones."
+
+msgid "Non-planar: layer strength test pieces"
+msgstr "No planar: probetas de resistencia entre capas"
+
+msgid "Prints three solid bars standing up, 5 mm thick, on pedestals tall enough for the bars to start where the curved layers are complete; a wedge at the top holds the string. It uses the non-planar wave layers (interlocking layers, set in the print settings, shown as modified) and 100 % infill. Print it again with Non-planar layers set to Disabled to compare."
+msgstr "Imprime tres barras macizas de pie, de 5 mm de espesor, sobre pedestales lo bastante altos para que las barras empiecen donde las capas curvas ya están completas; una cuña arriba sujeta el hilo. Usa las capas no planares en onda (capas entrelazadas, puestas en la configuración de impresión, que se ve modificada) y relleno al 100 %. Imprimilas de nuevo con Capas no planares en Desactivado para comparar."
+
+msgid "Clamp each pedestal in a vise with the bar horizontal and the 5 mm side vertical, hang a bucket by a string just below the wedge and add water until the bar breaks; weigh the bucket. The bar breaks across the layers at the pedestal. Compare the average of the three bars printed with curved layers with that of the three printed flat: their ratio is the gain in strength between layers. The stress at the break is 6 x F x L / (W x T²), with F the weight in N (kg x 9.81), L the distance from the pedestal to the string, W the width of the bar and T = 5 mm."
+msgstr "Sujetá cada pedestal en una morsa con la barra horizontal y el lado de 5 mm vertical, colgá un balde con un hilo justo debajo de la cuña y agregá agua hasta que la barra se rompa; pesá el balde. La barra se rompe entre capas, junto al pedestal. Compará el promedio de las tres barras impresas con capas curvas con el de las tres impresas planas: el cociente es la ganancia de resistencia entre capas. La tensión de rotura es 6 x F x L / (W x T²), con F el peso en N (kg x 9,81), L la distancia del pedestal al hilo, W el ancho de la barra y T = 5 mm."
+
+msgid "Length of the bars"
+msgstr "Largo de las barras"
+
+msgid "Width of the bars"
+msgstr "Ancho de las barras"

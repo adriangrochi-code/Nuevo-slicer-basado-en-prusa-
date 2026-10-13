@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Probetas de resistencia entre capas** (Calibración > «Non-planar: layer strength test pieces»): tres barras
+  macizas con capas en onda para romper colgando peso y comparar con las mismas impresas planas; el panel explica cómo
+  calcular la tensión de rotura.
 - **Cono según la pieza**: el modo no planar Cónico ya no usa un ángulo fijo; en cada radio las capas se inclinan lo
   que piden los voladizos de la pieza (hacia abajo bajo los que miran hacia afuera, hacia arriba bajo los que miran
   hacia adentro), planas en el centro y donde nada lo pide, dentro del ángulo libre del cabezal. En los tests, un hongo

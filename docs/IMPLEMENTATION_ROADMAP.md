@@ -247,7 +247,7 @@ los datos del usuario.
 | 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Hecho (Ingeniería > Relleno mínimo > «Infill ribs along the stresses»), y 2b: el FEA modela el relleno alineado (ortótropo) y el relleno mínimo cuenta los nervios; falta calibrar los factores con probetas |
 | 3 | Preset de un clic «Piel + núcleo» | Hecho (Ingeniería > Optimizar > «Skin + core»: no planar Automático + relleno mínimo por zonas con nervios) |
 | 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Hecho: modo Cónico con la pendiente de cada radio sacada de los voladizos de la pieza (`docs/NONPLANAR_ANALYSIS.md`) |
-| 5 | Calibraciones no planares restantes | Pendiente |
+| 5 | Calibraciones no planares restantes | Hecho: probetas de resistencia entre capas (Calibración > «Non-planar: layer strength test pieces»); falta imprimirlas |
 | 6 | Comparar el FEA con CalculiX | Pendiente |
 | 7 | Validar el relleno con las trayectorias laminadas reales | Pendiente |
 | 8 | Exponentes del relleno y del lattice con probetas | Físico |

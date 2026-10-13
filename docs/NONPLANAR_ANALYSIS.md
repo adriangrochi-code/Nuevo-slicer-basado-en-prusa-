@@ -232,6 +232,26 @@ punto 2 de la conclusión: en lugar de curvar las capas enteras, solo el relleno
   (Penn State, 2017) y la de las interfaces sinuosas entre capas (Western Sydney University), con otras máquinas y
   ensayos; en Tisma hay que medirla con probetas propias.
 
+## Calibraciones no planares (Tisma)
+
+En el menú Calibración:
+
+| Prueba | Qué mide |
+|---|---|
+| Asistente de calibración no planar | La pendiente máxima en dos pasos: la galga estática con la impresora fría y luego la prueba impresa |
+| Galga estática del ángulo libre | Ranuras en V por alturas: ángulo libre del cabezal en X y en Y (`nonplanar_head_free_angle_x/_y`, `nonplanar_head_profile`) |
+| Pendiente máxima de capa | Crestas de pendiente creciente por franjas: la primera donde la boquilla raspa o arrastra marca el límite |
+| Velocidad del eje Z | Cilindro con capas en onda y velocidad Z creciente por franjas: la primera con capas aplastadas o corridas, pared áspera o ruido del motor marca el límite |
+| Galga de altura libre del cabezal | Escalera impresa plana: el escalón más alto que entra bajo el punto más bajo del cabezal, con la impresora fría |
+| Probetas del modo automático | Hongo (soportes) y bloque inclinado (acabado) |
+| Probetas de resistencia entre capas | Tres barras macizas de pie (5 mm de espesor) con capas en onda, para romper y comparar con las mismas impresas planas |
+
+Las probetas de resistencia son una prueba comparativa propia, no una norma: el pedestal llega 2 mm por encima de donde
+las capas curvas están completas (`nonplanar_flat_below` + `nonplanar_ramp_height`), así la barra se rompe por
+capas en onda; una cuña a 45° arriba sujeta el hilo sin soportes. Con la barra horizontal en una morsa y un balde
+colgado, la tensión de rotura es la de una viga en voladizo, σ = 6·F·L / (W·T²) (flexión elemental). El cociente entre
+el promedio con capas en onda y el promedio plano es la ganancia de resistencia entre capas que da el modo Onda.
+
 ## Fuentes
 
 - S³-Slicer: https://github.com/zhangty019/S3_DeformFDM, https://history.siggraph.org/?p=215754
