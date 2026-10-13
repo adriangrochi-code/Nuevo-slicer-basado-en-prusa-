@@ -5088,7 +5088,7 @@ LoadProjectsDialog::LoadProjectsDialog(const std::vector<fs::path>& paths)
     id++;
     // all new window
     if (instances_allowed) {
-        btn = new wxRadioButton(this, wxID_ANY, _L("Start a new instance of PrusaSlicer"), wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
+        btn = new wxRadioButton(this, wxID_ANY, _L("Open in a new window"), wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
         btn->SetValue(id == m_action);
         btn->Bind(wxEVT_RADIOBUTTON, [this, id, contains_projects](wxCommandEvent&) {
             m_action = id;
@@ -5357,13 +5357,20 @@ ProjectDropDialog::ProjectDropDialog(const std::string& filename)
 
     bool single_instance_only = wxGetApp().app_config->get_bool("single_instance");
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+    // Tisma: each action with a line saying what it does.
     wxArrayString choices;
+    std::vector<wxString> descriptions;
     choices.reserve(4);
     choices.Add(_L("Open as project"));
+    descriptions.push_back(_L("Models, plates and their print, filament and printer settings, instead of the current project."));
     choices.Add(_L("Import 3D models only"));
+    descriptions.push_back(_L("Adds the models to the current project, printed with the current settings."));
     choices.Add(_L("Import config only"));
-    if (!single_instance_only)
-        choices.Add(_L("Start new PrusaSlicer instance"));
+    descriptions.push_back(_L("Loads only the print, filament and printer settings of the file."));
+    if (!single_instance_only) {
+        choices.Add(_L("Open in a new window"));
+        descriptions.push_back(_L("Opens the file as a project in another window, keeping this one as it is."));
+    }
 
     main_sizer->Add(new wxStaticText(this, wxID_ANY,
         get_wraped_wxString(_L("Select an action to apply to the file") + ": " + from_u8(filename))), 0, wxEXPAND | wxALL, 10);
@@ -5382,6 +5389,10 @@ ProjectDropDialog::ProjectDropDialog(const std::string& filename)
         btn->SetValue(id == m_action);
         btn->Bind(wxEVT_RADIOBUTTON, [this, id](wxCommandEvent&) { m_action = id; });
         stb_sizer->Add(btn, 0, wxEXPAND | wxTOP, 5);
+        wxStaticText* description = new wxStaticText(this, wxID_ANY, descriptions[size_t(id)]);
+        description->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+        description->Wrap(55 * wxGetApp().em_unit());
+        stb_sizer->Add(description, 0, wxEXPAND | wxLEFT, 3 * wxGetApp().em_unit());
         id++;
     }
     main_sizer->Add(stb_sizer, 1, wxEXPAND | wxRIGHT | wxLEFT, 10);

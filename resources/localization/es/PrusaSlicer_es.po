@@ -33417,3 +33417,27 @@ msgstr "Capas no planares: las capas tendrían hasta %1%° de pendiente, más de
 
 msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the %4% mm the print head allows there. Check the free angle and the clearance height of the print head (Printer Settings > General > Print head)."
 msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que los %4% mm que admite el cabezal ahí. Revisa el ángulo libre y la holgura del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Models, plates and their print, filament and printer settings, instead of the current project."
+msgstr "Modelos, placas y sus ajustes de impresión, filamento e impresora, en lugar del proyecto actual."
+
+msgid "Adds the models to the current project, printed with the current settings."
+msgstr "Agrega los modelos al proyecto actual, impresos con los ajustes actuales."
+
+msgid "Loads only the print, filament and printer settings of the file."
+msgstr "Carga solo los ajustes de impresión, filamento e impresora del archivo."
+
+msgid "Open in a new window"
+msgstr "Abrir en una ventana nueva"
+
+msgid "Opens the file as a project in another window, keeping this one as it is."
+msgstr "Abre el archivo como proyecto en otra ventana y deja esta como está."
+
+msgid "Open a new window"
+msgstr "Abrir una ventana nueva"
+
+msgid "Open %1%"
+msgstr "Abrir %1%"
+
+msgid "Open &%1%"
+msgstr "Abrir &%1%"
