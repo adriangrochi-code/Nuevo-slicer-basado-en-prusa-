@@ -50,7 +50,11 @@ sus impresoras. El resto del asistente (filamentos, perfiles instalados) no camb
   lugar.
 - Archivos: `resources/profiles/Orca_<fabricante>.ini` (+ `.idx` y la carpeta de imágenes). La biblioteca de
   filamentos genéricos de Orca es `Orca_OrcaFilamentLibrary.ini` (paquete de plantillas: compatible con todas las
-  impresoras, como «Templates»).
+  impresoras, como «Templates»). PrusaSlicer carga los filamentos de un paquete de plantillas con el sufijo
+  « @Template» (`PresetBundle::load_configbundle`), así que los perfiles de impresora los nombran así en
+  `default_materials` y `default_filament_profile` («Generic PLA @Orca @Template»). Sin el sufijo el asistente no
+  encuentra los filamentos por defecto y no deja terminar (versión 1.0.1 de los paquetes; test
+  `Default filaments of the converted printers exist as loaded`).
 - En el asistente de configuración aparecen en «Other FFF» con el nombre del fabricante, o «Fabricante (OrcaSlicer)»
   cuando Tisma ya tiene un paquete de ese fabricante.
 

@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Asistente de configuración**: con impresoras convertidas de Cura u OrcaSlicer ya se puede terminar. Antes volvía
+  a pedir los filamentos por defecto sin fin y solo dejaba avanzar con una impresora personalizada. Los perfiles nombran
+  los filamentos de la biblioteca como se cargan (« @Template»).
 - **Capas curvas por tensiones**: Ingeniería calcula capas no planares que se inclinan hacia donde tiran de la pieza,
   tanto como deja el cabezal, y las compara con capas planas (factor de seguridad). Con «Usar las capas curvas», el
   modo no planar «Tensiones» las lamina (`docs/NONPLANAR_ANALYSIS.md`).
