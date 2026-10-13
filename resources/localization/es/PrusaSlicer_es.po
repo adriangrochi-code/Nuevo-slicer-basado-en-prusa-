@@ -33250,17 +33250,14 @@ msgstr "Modo voladizos: el voladizo más inclinado, medido desde la vertical, qu
 msgid "Z anti-aliasing"
 msgstr "Anti-aliasing en Z"
 
-msgid "Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness left, so that the top follows the model. Needs absolute XYZ and no arc fitting; not with non-planar layers, spiral vase or belt printers."
-msgstr "Suaviza los escalones de las superficies superiores inclinadas: donde la superficie del modelo cruza una capa, el relleno superior, el planchado, los perímetros y el relleno de huecos bajan hasta la superficie y extruyen solo el espesor que queda, así la cara superior sigue al modelo. Requiere XYZ absolutos y sin ajuste de arcos; no con capas no planares, modo jarrón ni impresoras de cinta."
+msgid "Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness left, so that the top follows the model. With non-planar layers it follows the top within the curved layers. Needs absolute XYZ and no arc fitting; not with spiral vase or belt printers."
+msgstr "Suaviza los escalones de las superficies superiores inclinadas: donde la superficie del modelo cruza una capa, el relleno superior, el planchado, los perímetros y el relleno de huecos bajan hasta la superficie y extruyen solo el espesor que queda, así la cara superior sigue al modelo. Con capas no planares sigue la cara superior dentro de las capas curvas. Requiere XYZ absolutos y sin ajuste de arcos; no con modo jarrón ni impresoras de cinta."
 
 msgid "Z anti-aliasing: thinnest extrusion"
 msgstr "Anti-aliasing en Z: extrusión más fina"
 
 msgid "The extrusions are lowered at most down to this thickness, in percent of the layer height."
 msgstr "Las extrusiones bajan como mucho hasta este espesor, en porcentaje de la altura de capa."
-
-msgid "Z anti-aliasing cannot be combined with non-planar layers."
-msgstr "El anti-aliasing en Z no se puede combinar con capas no planares."
 
 msgid "Z anti-aliasing cannot be combined with the Spiral Vase mode."
 msgstr "El anti-aliasing en Z no se puede combinar con el modo jarrón."

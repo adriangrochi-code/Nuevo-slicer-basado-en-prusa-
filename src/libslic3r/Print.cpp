@@ -582,8 +582,6 @@ std::string Print::validate(std::vector<std::string>* warnings) const
     }
 
     if (m_config.zaa_enabled) {
-        if (NonPlanar::enabled(m_config))
-            return _u8L("Z anti-aliasing cannot be combined with non-planar layers.");
         if (m_config.spiral_vase)
             return _u8L("Z anti-aliasing cannot be combined with the Spiral Vase mode.");
         if (m_config.belt_printer)

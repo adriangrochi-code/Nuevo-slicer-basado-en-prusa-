@@ -1075,6 +1075,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
 
     m_nonplanar.reset();
     m_nonplanar_deformation.reset();
+    // Z anti-aliasing of non-planar layers: the surface in slice space (deformed), in G-code coordinates.
+    std::optional<indexed_triangle_set> zaa_slice_space_mesh;
     if (NonPlanar::enabled(print.config()) && ! print.objects().empty() && ! print.objects().front()->instances().empty()) {
         // Print::validate() allows a single object instance only.
         const PrintObject &object = *print.objects().front();
@@ -1092,13 +1094,25 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         params.top_slice_z = bbox.max.z() + margin + object.slicing_parameters().layer_height + EPSILON;
         params.top_lift    = margin;
         m_nonplanar = make_unique<NonPlanar::GCodeFilter>(*m_nonplanar_deformation, params);
+        if (print.config().zaa_enabled.value) {
+            // The anti-aliasing works on the planar G-code of the slice space, before the non-planar filter brings it
+            // back to the curved layers: against the deformed mesh, which the planar layers slice.
+            indexed_triangle_set deformed = mesh;
+            float z_min = std::numeric_limits<float>::max();
+            for (const stl_vertex &v : deformed.vertices)
+                z_min = std::min(z_min, v.z());
+            NonPlanar::deform_mesh(deformed, *m_nonplanar_deformation, NonPlanar::mesh_max_edge(print.config()));
+            for (stl_vertex &v : deformed.vertices)
+                v = stl_vertex(float(v.x() + params.origin.x()), float(v.y() + params.origin.y()), float(v.z() - z_min + params.z_base));
+            zaa_slice_space_mesh = std::move(deformed);
+        }
     }
 
     // Z anti-aliasing (Print::validate() rejects it with the other filters that change the Z of the moves).
     m_zaa.reset();
     m_zaa_surface.reset();
-    if (print.config().zaa_enabled.value && ! m_nonplanar) {
-        m_zaa_surface = make_unique<ZAA::Surface>(ZAA::print_mesh(print));
+    if (print.config().zaa_enabled.value) {
+        m_zaa_surface = make_unique<ZAA::Surface>(zaa_slice_space_mesh ? std::move(*zaa_slice_space_mesh) : ZAA::print_mesh(print));
         ZAA::FilterParams params;
         params.min_thickness = std::clamp(print.config().zaa_min_thickness.value / 100., 0.05, 1.);
         params.relative_e    = print.config().use_relative_e_distances.value;
@@ -1735,10 +1749,11 @@ void GCodeGenerator::process_layers(
         });
 
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
-    if (m_nonplanar)
-        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Z anti-aliasing before the non-planar layers: it lowers the moves within the planar layers of the slice space.
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
     // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
     if (m_interlock)
         pipeline_to_string = pipeline_to_string & interlock;
@@ -1857,10 +1872,11 @@ void GCodeGenerator::process_layers(
         });
 
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
-    if (m_nonplanar)
-        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Z anti-aliasing before the non-planar layers: it lowers the moves within the planar layers of the slice space.
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
     // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
     if (m_interlock)
         pipeline_to_string = pipeline_to_string & interlock;

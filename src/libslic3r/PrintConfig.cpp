@@ -3456,8 +3456,8 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top "
                    "infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness "
-                   "left, so that the top follows the model. Needs absolute XYZ and no arc fitting; not with non-planar "
-                   "layers, spiral vase or belt printers.");
+                   "left, so that the top follows the model. With non-planar layers it follows the top within the curved "
+                   "layers. Needs absolute XYZ and no arc fitting; not with spiral vase or belt printers.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 

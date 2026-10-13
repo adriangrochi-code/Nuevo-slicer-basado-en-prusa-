@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Anti-aliasing en Z con capas no planares**: se pueden usar juntos (menos soporte con el modo voladizos y caras
+  superiores sin escalones). Dispersión de la cara superior: 0,29 → 0,10 mm en una cuña con capas en ondas
+  (`docs/Z_ANTIALIASING.md`).
 - **Asistente de configuración**: con impresoras convertidas de Cura u OrcaSlicer ya se puede terminar. Antes volvía
   a pedir los filamentos por defecto sin fin y solo dejaba avanzar con una impresora personalizada. Los perfiles nombran
   los filamentos de la biblioteca como se cargan (« @Template»).
