@@ -1391,3 +1391,169 @@ TEST_CASE("Infill ribs of a bent bar run along it", "[FEA][Ribs]")
     INFO(along << " of " << cells << " cells along the bar");
     CHECK(along > 0.8 * cells);
 }
+
+TEST_CASE("Aligned infill factors", "[FEA][Ribs]")
+{
+    // 25 % of lines: the rule of mixtures along them, a bending dominated structure across them.
+    const AlignedInfillFactors f = aligned_infill_factors(0.25, std::pow(0.25, 1.2), std::pow(0.25, 1.2));
+    CHECK(f.along == Approx(0.25));
+    CHECK(f.strength_along == Approx(0.25));
+    CHECK(f.across == Approx(0.0625));
+    CHECK(f.strength_across == Approx(0.3 * 0.125));
+    // Never stronger across than the isotropic infill of the same density.
+    const AlignedInfillFactors g = aligned_infill_factors(0.25, 0.01, 0.01);
+    CHECK(g.across == Approx(0.01));
+    CHECK(g.strength_across == Approx(0.01));
+}
+
+// Bar of 60 x 12 x 12 mm with thin walls, clamped at x = 0 and pulled along X; the infill carries a good part of
+// the load. As a tensile specimen, its ends (10 mm) are solid grips, so that the stresses of the clamp and of the
+// load (singular at the corners of the model) do not decide.
+static std::vector<InfillZone> grips()
+{
+    std::vector<InfillZone> out;
+    for (double x : { 0., 50. }) {
+        InfillZone grip;
+        grip.mesh = its_make_cube(10., 12., 12.);
+        its_translate(grip.mesh, Vec3f(float(x), 0.f, 0.f));
+        grip.density         = 1.;
+        grip.volume_fraction = true;
+        out.emplace_back(std::move(grip));
+    }
+    return out;
+}
+
+// Highest failure index of the infill in the middle of the bar (between the grips).
+static double gauge_failure_index(const Result &res)
+{
+    double fi = 0.;
+    for (size_t e = 0; e < res.voxels.size(); ++ e) {
+        const double x = res.origin.x() + res.h * (res.voxels[e] % res.size.x() + 0.5);
+        if (res.interior[e] && x > 15. && x < 45.)
+            fi = std::max(fi, double(res.failure_index[e]));
+    }
+    return fi;
+}
+
+static Setup pulled_bar(indexed_triangle_set &its, double density)
+{
+    its = its_make_cube(60., 12., 12.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(400., 0., 0.);
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.density              = density;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.8;
+    std::tie(setup.infill.stiffness_exponent, setup.infill.strength_exponent) = infill_exponents("alignedrectilinear");
+    setup.infill.zones = grips();
+    return setup;
+}
+
+TEST_CASE("Aligned infill is stiffer and stronger along its lines", "[FEA][Ribs]")
+{
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.25);
+    const Result iso = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 0.;
+    const Result along = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 90.;
+    const Result across = analyze(its, setup);
+    REQUIRE(iso.ok);
+    REQUIRE(along.ok);
+    REQUIRE(across.ok);
+    CHECK(iso.aligned_voxels == 0);
+    CHECK(along.aligned_voxels > along.voxels.size() / 2);
+    const double d_iso = end_displacement(iso, 0, 0), d_along = end_displacement(along, 0, 0), d_across = end_displacement(across, 0, 0);
+    const double fi_iso = gauge_failure_index(iso), fi_along = gauge_failure_index(along), fi_across = gauge_failure_index(across);
+    WARN("End displacement: isotropic " << d_iso << ", lines along " << d_along << ", across " << d_across <<
+         "; failure index of the infill " << fi_iso << ", " << fi_along << ", " << fi_across <<
+         "; safety factor " << iso.safety_factor << ", " << along.safety_factor << ", " << across.safety_factor);
+    CHECK(d_along < d_iso);
+    CHECK(d_across > d_iso);
+    // Along the lines the infill works less loaded for its strength; across them it breaks first.
+    CHECK(fi_along < 0.9 * fi_iso);
+    CHECK(fi_across > 1.5 * fi_iso);
+    CHECK(along.safety_factor >= iso.safety_factor * 0.999);
+    // The same mass: only the direction of the lines changes.
+    CHECK(along.mass == Approx(iso.mass));
+
+    // A zone may turn the lines (only the direction, the density of the part stays).
+    InfillZone turn;
+    turn.mesh              = its;
+    turn.density           = -1.;
+    turn.aligned_angle_deg = 0.;
+    setup.infill.zones = grips();
+    setup.infill.zones.insert(setup.infill.zones.begin(), turn);
+    const Result turned = analyze(its, setup);
+    REQUIRE(turned.ok);
+    CHECK(end_displacement(turned, 0, 0) == Approx(d_along).epsilon(1e-6));
+    CHECK(turned.mass == Approx(iso.mass));
+}
+
+TEST_CASE("The lightest infill counts the ribs", "[FEA][Ribs]")
+{
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.2);
+    setup.voxel_size = 1.5;
+    setup.required_safety_factor = 2.;
+    // A load the bar holds with some infill: the safety factor with 30 % isotropic infill.
+    setup.infill.density = 0.3;
+    const Result at30 = analyze(its, setup);
+    REQUIRE(at30.ok);
+    setup.loads.front().force *= at30.safety_factor / setup.required_safety_factor;
+    OptimizeOptions options;
+    options.zones       = false;
+    options.ribs        = true;
+    options.fixed_zones = grips();
+    setup.infill.zones.clear();
+    const OptimizeResult opt = optimize_infill(its, setup, options);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    WARN("Lightest uniform infill without ribs " << opt.density_without_ribs << ", with ribs " << opt.uniform_density <<
+         " (" << opt.ribs.size() << " rib zones, " << opt.analyses << " analyses)");
+    CHECK(opt.density_without_ribs == Approx(0.3).margin(0.02));
+    REQUIRE(! opt.ribs.empty());
+    CHECK(opt.uniform_density < opt.density_without_ribs - 0.03);
+    CHECK(opt.uniform.aligned_voxels > 0);
+    CHECK(meets_requirements(opt.uniform));
+}
+
+TEST_CASE("Ribs and aligned infill of an object reach the analysis", "[FEA][Ribs]")
+{
+    Model model = bar_model();
+    ModelObject &object = *model.objects.front();
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipAlignedRectilinear));
+    config.set_key_value("fill_angle", new ConfigOptionFloat(30.));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.aligned_angle_deg == Approx(30.));
+    CHECK(input.setup.infill.zones.empty());
+
+    // A rib modifier: only the direction of the lines, in print coordinates.
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipGrid));
+    RibZone rib;
+    rib.mesh      = its_make_cube(20., 10., 10.);
+    rib.angle_deg = 60.;
+    rib.cells     = 1;
+    CHECK(apply_ribs(object, 0, { rib }) == 1);
+    REQUIRE(build_analysis_input(object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.aligned_angle_deg < 0.);
+    REQUIRE(input.setup.infill.zones.size() == 1);
+    CHECK(input.setup.infill.zones.front().density < 0.);
+    CHECK(input.setup.infill.zones.front().aligned_angle_deg == Approx(60.));
+    input.setup.voxel_size = 2.;
+    const Result res = analyze(input.mesh, input.setup);
+    REQUIRE(res.ok);
+    CHECK(res.aligned_voxels > 0);
+}
+

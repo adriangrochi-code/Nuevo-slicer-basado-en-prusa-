@@ -539,6 +539,8 @@ void GLGizmoEngineering::start_optimization()
     m_progress = 0;
     Fea::OptimizeOptions options;
     options.zones = m_opt_zones;
+    options.ribs  = m_opt_ribs;
+    m_opt_ribs_tried = m_opt_ribs;
     m_thread = std::thread([this, input = std::move(input), options]() {
         Fea::OptimizeResult res;
         // The current infill first: the reference of the comparison.
@@ -573,9 +575,9 @@ void GLGizmoEngineering::apply_optimization(bool zones)
     Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply lightest infill"));
     const bool   by_zones = zones && opt.zones_found;
     const double density  = by_zones ? opt.base_density : opt.uniform_density;
-    // The ribs first: the infill zones are added after them and keep their density, the ribs only set the direction.
-    const size_t ribs     = Fea::apply_ribs(*mo, size_t(instance_idx()),
-                                            m_opt_ribs ? Fea::rib_zones(by_zones ? opt.zoned : opt.uniform) : std::vector<Fea::RibZone>());
+    // The ribs the search used (the densities count on them) first: the infill zones are added after them and keep
+    // their density, the ribs only set the direction.
+    const size_t ribs     = Fea::apply_ribs(*mo, size_t(instance_idx()), opt.ribs);
     const size_t added    = Fea::apply_infill(*mo, size_t(instance_idx()), density, by_zones ? opt.zones : std::vector<Fea::InfillZone>());
     changed_object(*mo);
     // The infill is a setting of the object and modifiers: it is seen in the object list and after slicing again.
@@ -1634,9 +1636,10 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ImGuiPureWrap::checkbox(_u8L("Also by zones (more infill where the stresses are high)"), m_opt_zones);
         ImGuiPureWrap::checkbox(_u8L("Infill ribs along the stresses"), m_opt_ribs);
         if (ImGui::IsItemHovered())
-            ImGuiPureWrap::tooltip(_u8L("When applying, where the part works in one direction (pulled or bent along it) its infill lines are "
-                                        "laid along that direction in every layer, as the ribs of a part designed for the loads. "
-                                        "The analysis still takes the infill as equally strong in every direction: check it with a printed test part."), ImGui::GetFontSize() * 25.f);
+            ImGuiPureWrap::tooltip(_u8L("Where the part works in one direction (pulled or bent along it) its infill lines are laid along that "
+                                        "direction in every layer, as the ribs of a part designed for the loads. The analysis counts them "
+                                        "(stiffer and stronger along the lines, much weaker across) and keeps them only if the infill is lighter."),
+                                   ImGui::GetFontSize() * 25.f);
         const bool can_run = ! m_running && ! eng.fixtures.empty() && ! eng.loads.empty();
         if (ImGuiPureWrap::button(_u8L("Find lightest infill")) && can_run)
             start_optimization();
@@ -1652,6 +1655,11 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
                     ImGuiPureWrap::text(GUI::format(_u8L("Current infill: %1$.1f g"), m_current_infill_mass.load()));
                 ImGuiPureWrap::text(GUI::format(_u8L("Uniform: %1% %% -> %2$.1f g, safety factor %3$.2f"),
                     int(std::round(o.uniform_density * 100.)), o.uniform.mass, o.uniform.safety_factor));
+                if (! o.ribs.empty())
+                    ImGuiPureWrap::text_wrapped(GUI::format(_u8L("With %1% zones of ribs along the stresses (%2% %% without them)."),
+                        o.ribs.size(), int(std::round(o.density_without_ribs * 100.))), width);
+                else if (m_opt_ribs_tried)
+                    ImGuiPureWrap::text_wrapped(_u8L("Ribs along the stresses would not make the infill lighter: not used."), width);
                 if (ImGuiPureWrap::button(_u8L("Apply uniform")))
                     apply_optimization(false);
                 if (o.zones_found) {

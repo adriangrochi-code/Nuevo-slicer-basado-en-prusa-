@@ -175,8 +175,9 @@ private:
     std::optional<Fea::OptimizeResult> m_opt;
     ObjectID                   m_opt_object;
     bool                       m_opt_zones { true };
-    // Infill lines along the stresses (ribs) when applying.
+    // Infill lines along the stresses (ribs) in the search, and whether the last search tried them.
     bool                       m_opt_ribs { true };
+    bool                       m_opt_ribs_tried { false };
     bool                       m_open_infill_section { false };
     std::atomic<double>        m_current_infill_mass { 0. };
     // Local reinforcement.

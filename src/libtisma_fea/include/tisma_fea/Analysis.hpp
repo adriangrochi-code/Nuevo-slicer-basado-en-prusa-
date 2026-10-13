@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -55,7 +56,11 @@ struct DisplacementLimit
 struct InfillZone
 {
     indexed_triangle_set mesh;
+    // < 0: the density of what is below (the part or the previous zones), as a modifier without fill_density.
     double               density { 0.2 };
+    // Aligned infill (aligned rectilinear: the lines of every layer in one direction): direction of the lines from
+    // the X axis of the setup in the plane of the layers [°]; < 0 = not aligned; NaN = the one of what is below.
+    double               aligned_angle_deg { std::numeric_limits<double>::quiet_NaN() };
     // Thickness of the walls inside the zone (more perimeters: local reinforcement), < 0 = the one of the part.
     double               wall_thickness { -1. };
     // Exponents of the infill of the zone, < 0 = the ones of the part.
@@ -73,6 +78,7 @@ struct InfillZone
 // properties are homogenized: E_infill = E * density^stiffness_exponent, strength * density^strength_exponent.
 // The exponents depend on the infill pattern (see infill_exponents()); they are approximate and should be
 // calibrated with printed specimens.
+// Aligned infill (aligned_angle_deg >= 0, the ribs) is orthotropic instead (see aligned_infill_factors()).
 struct InfillModel
 {
     bool                    enabled { false };
@@ -86,6 +92,8 @@ struct InfillModel
     double                  perimeter_width { 0.45 };
     double                  stiffness_exponent { 1.5 };
     double                  strength_exponent { 1.5 };
+    // Aligned infill of the whole part: direction of the lines [°] as InfillZone::aligned_angle_deg, < 0 = not.
+    double                  aligned_angle_deg { -1. };
     // Zones with other densities, applied in order (the later ones win).
     std::vector<InfillZone> zones;
     // When set, the density of the infill at a point (overrides density and zones). Used by the optimizer.
@@ -94,6 +102,24 @@ struct InfillModel
 
 // Exponents of the homogenized infill for a pattern name of the print settings (rectilinear, grid, gyroid, ...).
 std::pair<double, double> infill_exponents(const std::string &pattern);
+
+// Aligned infill: all the lines of every layer in one direction (L), stacked into walls along the layer normal (N),
+// with gaps between them across (T). Factors of the properties of the solid material:
+// - along the lines and along the walls (E_L, E_N, G_LN and their strengths): the lines are continuous, so the rule
+//   of mixtures (Voigt bound) gives density;
+// - across the lines (E_T, G_LT, G_TN and their strengths): the walls are only joined by the perimeters and the
+//   connections of the lines, so they work in bending; the scaling of bending dominated cellular solids is used,
+//   E ~ density^2 and strength ~ 0.3 * density^1.5 (Gibson & Ashby, "Cellular Solids", 2nd ed., 1997, ch. 5), and
+//   never more than the isotropic infill of the same density (iso_stiffness, iso_strength).
+// Approximate values, to be calibrated with printed specimens as the exponents.
+struct AlignedInfillFactors
+{
+    double along { 1. };
+    double across { 1. };
+    double strength_along { 1. };
+    double strength_across { 1. };
+};
+AlignedInfillFactors aligned_infill_factors(double density, double iso_stiffness, double iso_strength);
 
 // Angular step of the groups of layer normals (Setup::layer_normal) [°].
 constexpr double LAYER_NORMAL_STEP_DEG = 2.;
@@ -187,6 +213,8 @@ struct Result
     int                 iterations { 0 };
     // Number of material orientations used (1 with flat layers).
     size_t              layer_orientations { 1 };
+    // Voxels with aligned infill (ribs).
+    size_t              aligned_voxels { 0 };
     double              residual { 0. };
 };
 

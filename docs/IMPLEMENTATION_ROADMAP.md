@@ -244,7 +244,7 @@ los datos del usuario.
 | # | Paso | Estado |
 |---|---|---|
 | 1 | Probetas no planares en el menú Calibración: hongo (soportes) y bloque inclinado (acabado), en modo Automático | Hecho (Calibración > «Non-planar: automatic mode test pieces»); falta imprimirlas |
-| 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Hecho (Ingeniería > Relleno mínimo > «Infill ribs along the stresses»); falta que el FEA cuente la ganancia de resistencia (relleno anisótropo) e imprimir probetas |
+| 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Hecho (Ingeniería > Relleno mínimo > «Infill ribs along the stresses»), y 2b: el FEA modela el relleno alineado (ortótropo) y el relleno mínimo cuenta los nervios; falta calibrar los factores con probetas |
 | 3 | Preset de un clic «Piel + núcleo» | Pendiente |
 | 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Pendiente |
 | 5 | Calibraciones no planares restantes | Pendiente |

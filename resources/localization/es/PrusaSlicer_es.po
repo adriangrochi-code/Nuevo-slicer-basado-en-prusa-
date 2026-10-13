@@ -33466,8 +33466,14 @@ msgstr "Pendiente de la cara superior del bloque"
 msgid "Infill ribs along the stresses"
 msgstr "Nervios del relleno según las tensiones"
 
-msgid "When applying, where the part works in one direction (pulled or bent along it) its infill lines are laid along that direction in every layer, as the ribs of a part designed for the loads. The analysis still takes the infill as equally strong in every direction: check it with a printed test part."
-msgstr "Al aplicar, donde la pieza trabaja en una dirección (traccionada o a flexión a lo largo de ella) las líneas del relleno se ponen en esa dirección en todas las capas, como los nervios de una pieza diseñada para las cargas. El análisis todavía considera el relleno igual de resistente en todas las direcciones: comprobalo con una probeta impresa."
+msgid "Where the part works in one direction (pulled or bent along it) its infill lines are laid along that direction in every layer, as the ribs of a part designed for the loads. The analysis counts them (stiffer and stronger along the lines, much weaker across) and keeps them only if the infill is lighter."
+msgstr "Donde la pieza trabaja en una dirección (traccionada o a flexión a lo largo de ella) las líneas del relleno se ponen en esa dirección en todas las capas, como los nervios de una pieza diseñada para las cargas. El análisis los tiene en cuenta (más rígido y resistente a lo largo de las líneas, mucho más débil a lo ancho) y solo los usa si el relleno queda más liviano."
+
+msgid "With %1% zones of ribs along the stresses (%2% %% without them)."
+msgstr "Con %1% zonas de nervios según las tensiones (%2% %% sin ellos)."
+
+msgid "Ribs along the stresses would not make the infill lighter: not used."
+msgstr "Los nervios según las tensiones no harían más liviano el relleno: no se usan."
 
 msgid "%1% modifiers \"%2%\" lay the infill lines along the stresses."
 msgstr "%1% modificadores «%2%» ponen las líneas del relleno según las tensiones."

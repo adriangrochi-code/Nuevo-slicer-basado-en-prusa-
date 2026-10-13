@@ -6,6 +6,7 @@
 #define tisma_fea_Optimize_hpp_
 
 #include "Analysis.hpp"
+#include "Ribs.hpp"
 
 namespace Slic3r {
 namespace Fea {
@@ -24,6 +25,9 @@ struct OptimizeOptions
     double zone_cell { 0. };
     // Zones always applied over the searched infill (local reinforcements).
     std::vector<InfillZone> fixed_zones;
+    // Infill ribs along the stresses of the uniform infill (aligned infill, see Ribs.hpp), kept when they let the
+    // infill be lighter.
+    bool   ribs { false };
 };
 
 struct OptimizeResult
@@ -36,6 +40,11 @@ struct OptimizeResult
     // 1) Uniform infill: the lowest density which meets the requirements, and its analysis.
     double      uniform_density { 0. };
     Result      uniform;
+
+    // Ribs used in the uniform infill and in the zones (empty when they did not make the infill lighter), and the
+    // lowest uniform density without them.
+    std::vector<RibZone> ribs;
+    double      density_without_ribs { 0. };
 
     // 2) Infill by zones: density of the part and zones with more infill where the stresses are higher.
     bool        zones_found { false };

@@ -78,6 +78,9 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
     const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density");
     infill.density = density ? std::clamp(density->value * 0.01, 0., 1.) : 0.2;
     std::tie(infill.stiffness_exponent, infill.strength_exponent) = infill_exponents(cfg.opt_serialize("fill_pattern"));
+    // Aligned rectilinear: the lines of every layer at fill_angle (measured on the bed, as the setup).
+    if (cfg.opt_serialize("fill_pattern") == "alignedrectilinear")
+        infill.aligned_angle_deg = std::fmod(number("fill_angle", 45.) + 360., 180.);
 }
 
 bool build_analysis_input(const ModelObject &object, size_t instance_idx, const std::string &filament_type,
@@ -135,16 +138,33 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
                 continue;
             const ConfigOptionPercent *d = volume.config.get().option<ConfigOptionPercent>("fill_density");
             const ConfigOption        *p = volume.config.get().option("perimeters");
-            if (d == nullptr && p == nullptr)
+            const ConfigOption        *pattern = volume.config.get().option("fill_pattern");
+            const ConfigOption        *angle   = volume.config.get().option("fill_angle");
+            if (d == nullptr && p == nullptr && pattern == nullptr && angle == nullptr)
                 continue;
             InfillZone zone;
             zone.mesh = volume.mesh().its;
             its_transform(zone.mesh, instance_trafo * volume.get_matrix());
             if (zone.mesh.indices.empty())
                 continue;
-            zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : infill.density;
+            // Without fill_density the density stays the one below, as the slicing does with the modifier (a zone
+            // which only changes the perimeters keeps the density of the part, as before).
+            zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : p ? infill.density : -1.;
             if (p)
                 zone.wall_thickness = p->getInt() * infill.perimeter_width;
+            if (pattern) {
+                const std::string name = volume.config.get().opt_serialize("fill_pattern");
+                std::tie(zone.stiffness_exponent, zone.strength_exponent) = infill_exponents(name);
+                if (name == "alignedrectilinear") {
+                    DynamicPrintConfig cfg = *print_config;
+                    cfg.apply(object.config.get(), true);
+                    const double a = angle ? angle->getFloat() : cfg.has("fill_angle") ? cfg.option("fill_angle")->getFloat() : 45.;
+                    zone.aligned_angle_deg = std::fmod(a + 360., 180.);
+                } else
+                    zone.aligned_angle_deg = -1.;
+            } else if (angle && infill.aligned_angle_deg >= 0.)
+                // Only the angle: the aligned infill of the part in another direction.
+                zone.aligned_angle_deg = std::fmod(angle->getFloat() + 360., 180.);
             if (starts_with(volume.name, LATTICE_NAME)) {
                 // Struts of a lattice: homogenized over its cells (edge in the name, "Tisma lattice 8 mm").
                 double cell = 8.;

@@ -8,8 +8,9 @@
 // - Every voxel is a trilinear hexahedron (8 nodes, 2x2x2 Gauss points) with a transversely isotropic material whose
 //   axis is Z (the build direction): the layers are weaker and softer across than along.
 // - The system K u = f is solved with a conjugate gradient with Jacobi preconditioner, without assembling K: the
-//   product K p is done element by element (the element matrix is the same for all the voxels), in parallel over 8
-//   groups of voxels which do not share nodes.
+//   product K p is done element by element (the element matrix is the same for all the voxels, scaled by their
+//   fraction of material; one per layer orientation with curved layers, plus the one of the aligned infill of the
+//   voxel), in parallel over 8 groups of voxels which do not share nodes.
 // - Stresses are evaluated at the center of each voxel.
 #include "tisma_fea/Analysis.hpp"
 
@@ -58,6 +59,27 @@ Matrix6d constitutive(const Material &m, double factor)
     s(0, 2) = s(2, 0) = s(1, 2) = s(2, 1) = s13;
     s(3, 3) = s(4, 4) = 1. / gz;
     s(5, 5) = 1. / gxy;
+    return s.inverse();
+}
+
+// Constitutive matrix of aligned infill in the frame of its lines (x = L along the lines, y = T across them in the
+// layer, z = N the layer normal), scaled by factor (temperature); see aligned_infill_factors().
+Matrix6d aligned_constitutive(const Material &m, double factor, const AlignedInfillFactors &f)
+{
+    const double nu = m.poisson;
+    const double e_l = m.E_xy * factor * f.along, e_t = m.E_xy * factor * f.across, e_n = m.E_z * factor * f.along;
+    const double g_xy = m.E_xy * factor / (2. * (1. + nu)), g_z = m.E_z * factor / (2. * (1. + nu));
+    // Poisson terms with the mean moduli, as constitutive(): symmetric and positive definite for nu < 0.5.
+    Matrix6d s = Matrix6d::Zero();
+    s(0, 0) = 1. / e_l;
+    s(1, 1) = 1. / e_t;
+    s(2, 2) = 1. / e_n;
+    s(0, 1) = s(1, 0) = - nu / std::sqrt(e_l * e_t);
+    s(0, 2) = s(2, 0) = - nu / std::sqrt(e_l * e_n);
+    s(1, 2) = s(2, 1) = - nu / std::sqrt(e_t * e_n);
+    s(3, 3) = 1. / (g_z * f.across);   // T-N: across the walls
+    s(4, 4) = 1. / (g_z * f.along);    // L-N: in the plane of the walls
+    s(5, 5) = 1. / (g_xy * f.across);  // L-T: in the layer, across the lines
     return s.inverse();
 }
 
@@ -241,6 +263,14 @@ struct VoxelMaterial
     std::vector<float> stiffness;   // factor of the stiffness of the solid material
     std::vector<float> strength;    // factor of the strength
     std::vector<char>  interior;
+    // Aligned infill: direction of the lines [°] (< 0 = isotropic infill), and for those voxels the fraction of the
+    // shell, the density of the infill and the factors of the isotropic infill of that density. The stiffness and
+    // strength above are then those of the shell part only.
+    std::vector<float> aligned_angle;
+    std::vector<float> shell;
+    std::vector<float> infill_density;
+    std::vector<float> iso_stiffness;
+    std::vector<float> iso_strength;
 };
 
 bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill, const Grid &grid, VoxelMaterial &out,
@@ -251,6 +281,11 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
     out.stiffness.assign(n_el, 1.f);
     out.strength.assign(n_el, 1.f);
     out.interior.assign(n_el, 0);
+    out.aligned_angle.assign(n_el, -1.f);
+    out.shell.assign(n_el, 1.f);
+    out.infill_density.assign(n_el, 1.f);
+    out.iso_stiffness.assign(n_el, 1.f);
+    out.iso_strength.assign(n_el, 1.f);
     if (! infill.enabled)
         return true;
     const double h = grid.h;
@@ -264,7 +299,8 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
     const double base = std::clamp(infill.density, 0., 1.);
     auto stiff = [](double d, double n) { return std::pow(std::max(d, 0.02), n); };
     std::vector<double> rho(n_el, base), s_inf(n_el, stiff(base, infill.stiffness_exponent)),
-                        t_inf(n_el, stiff(base, infill.strength_exponent)), wall(n_el, infill.wall_thickness);
+                        t_inf(n_el, stiff(base, infill.strength_exponent)), wall(n_el, infill.wall_thickness),
+                        angle(n_el, infill.aligned_angle_deg);
     auto index_of = [&](int v) -> long long {
         const auto it = std::lower_bound(grid.voxels.begin(), grid.voxels.end(), v);
         return it != grid.voxels.end() && *it == v ? (long long)(it - grid.voxels.begin()) : -1;
@@ -277,6 +313,9 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
         }
     }
     for (const InfillZone &zone : infill.zones) {
+        // A zone may change only the density, only the direction of aligned infill, or both.
+        const bool   keep_density = zone.density < 0.;
+        const bool   keep_angle   = std::isnan(zone.aligned_angle_deg);
         const double d  = std::clamp(zone.density, 0., 1.);
         const double nE = zone.stiffness_exponent > 0. ? zone.stiffness_exponent : infill.stiffness_exponent;
         const double nS = zone.strength_exponent  > 0. ? zone.strength_exponent  : infill.strength_exponent;
@@ -323,9 +362,16 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
             for (size_t e = 0; e < n_el; ++ e)
                 if (fraction[e] > 0.) {
                     const double f = fraction[e];
-                    rho[e]   = f * d + (1. - f) * rho[e];
-                    s_inf[e] = f * stiff(d, nE) + (1. - f) * s_inf[e];
-                    t_inf[e] = f * stiff(d, nS) + (1. - f) * t_inf[e];
+                    if (! keep_density) {
+                        rho[e]   = f * d + (1. - f) * rho[e];
+                        s_inf[e] = f * stiff(d, nE) + (1. - f) * s_inf[e];
+                        t_inf[e] = f * stiff(d, nS) + (1. - f) * t_inf[e];
+                    }
+                    // Mostly material of the zone (a solid modifier, struts): not the lines of the infill.
+                    if (! keep_angle)
+                        angle[e] = zone.aligned_angle_deg;
+                    else if (f >= 0.5)
+                        angle[e] = -1.;
                 }
         } else {
             std::vector<int> inside;
@@ -333,9 +379,17 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
                 return false;
             for (int v : inside)
                 if (const long long e = index_of(v); e >= 0) {
-                    rho[e]   = d;
-                    s_inf[e] = stiff(d, nE);
-                    t_inf[e] = stiff(d, nS);
+                    if (! keep_density) {
+                        rho[e]   = d;
+                        s_inf[e] = stiff(d, nE);
+                        t_inf[e] = stiff(d, nS);
+                    } else if (zone.stiffness_exponent > 0. || zone.strength_exponent > 0.) {
+                        // Another pattern with the same density.
+                        s_inf[e] = stiff(rho[e], nE);
+                        t_inf[e] = stiff(rho[e], nS);
+                    }
+                    if (! keep_angle)
+                        angle[e] = zone.aligned_angle_deg;
                     if (zone.wall_thickness >= 0.)
                         wall[e] = zone.wall_thickness;
                 }
@@ -359,13 +413,35 @@ bool voxel_materials(const indexed_triangle_set &mesh, const InfillModel &infill
         const double shell = std::clamp((t - (d - 0.5 * h)) / h, 0., 1.);
         out.interior[e]  = shell < 1.;
         out.density[e]   = float(shell + (1. - shell) * rho[e]);
-        out.stiffness[e] = float(shell + (1. - shell) * s_inf[e]);
-        out.strength[e]  = float(shell + (1. - shell) * t_inf[e]);
+        if (angle[e] >= 0. && shell < 1.) {
+            // Aligned infill: the shell part here, the infill part with its own (orthotropic) matrix.
+            out.aligned_angle[e]  = float(angle[e]);
+            out.shell[e]          = float(shell);
+            out.infill_density[e] = float(rho[e]);
+            out.iso_stiffness[e]  = float(s_inf[e]);
+            out.iso_strength[e]   = float(t_inf[e]);
+            out.stiffness[e]      = float(shell);
+            out.strength[e]       = 1.f;
+        } else {
+            out.stiffness[e] = float(shell + (1. - shell) * s_inf[e]);
+            out.strength[e]  = float(shell + (1. - shell) * t_inf[e]);
+        }
     }
     return true;
 }
 
 } // namespace
+
+AlignedInfillFactors aligned_infill_factors(double density, double iso_stiffness, double iso_strength)
+{
+    const double r = std::clamp(density, 0.02, 1.);
+    AlignedInfillFactors f;
+    f.along           = std::max(r, iso_stiffness);
+    f.strength_along  = std::max(r, iso_strength);
+    f.across          = std::min(r * r, iso_stiffness);
+    f.strength_across = std::min(0.3 * std::pow(r, 1.5), iso_strength);
+    return f;
+}
 
 std::pair<double, double> infill_exponents(const std::string &pattern)
 {
@@ -519,6 +595,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     // Transversely isotropic material with its axis along the build direction, or along the normal of the curved
     // layer at each voxel (grouped in directions, each with its own element matrix).
     struct Orientation {
+        Vec3d     normal;     // layer normal
         Matrix6d  c;          // constitutive matrix in the frame of the setup
         Matrix6d  to_layers;  // stress in the frame of the layers
         Matrix24d ke;
@@ -530,6 +607,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         const Eigen::Matrix3d to_setup   = material_rotation(normal);
         const Matrix6d        to_setup_m = bond_matrix(to_setup);
         Orientation o;
+        o.normal    = to_setup.col(2);
         o.c         = to_setup_m * c_material * to_setup_m.transpose();
         o.to_layers = bond_matrix(to_setup.transpose());
         o.ke        = element_stiffness(o.c, h);
@@ -569,6 +647,62 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     }
     res.layer_orientations = orientations.size();
 
+    // Aligned infill: its own matrix for every group of layer orientation, direction of the lines, density and
+    // isotropic factors, added to the matrix of the shell part of the voxel.
+    struct InfillGroup {
+        AlignedInfillFactors f;
+        Matrix6d  c;          // constitutive matrix of the infill part in the frame of the setup
+        Matrix6d  to_lines;   // stress in the frame of the lines (L, T, N)
+        Matrix24d ke;
+    };
+    std::vector<InfillGroup> infill_groups;
+    std::vector<int>         infill_group_of(grid.voxels.size(), -1);
+    {
+        std::map<std::array<long, 5>, int> group_of;
+        for (size_t e = 0; e < grid.voxels.size(); ++ e) {
+            const double angle = vm_mat.aligned_angle[e];
+            if (angle < 0.)
+                continue;
+            const Orientation &o = orientations[orientation_of[e]];
+            const std::array<long, 5> key { long(orientation_of[e]), std::lround(std::fmod(angle, 180.) * 10.),
+                                            std::lround(vm_mat.infill_density[e] * 1000.), std::lround(vm_mat.iso_stiffness[e] * 1000.),
+                                            std::lround(vm_mat.iso_strength[e] * 1000.) };
+            auto [found, added] = group_of.try_emplace(key, int(infill_groups.size()));
+            if (added) {
+                // Direction of the lines projected on the layer.
+                const double a = angle * M_PI / 180.;
+                const Vec3d  d(std::cos(a), std::sin(a), 0.);
+                Vec3d        l = d - d.dot(o.normal) * o.normal;
+                if (l.norm() < 0.2) {
+                    // The layers are nearly vertical to the direction: no meaningful direction of the lines.
+                    found->second = -1;
+                } else {
+                    l.normalize();
+                    Eigen::Matrix3d r;
+                    r.col(0) = l;
+                    r.col(1) = o.normal.cross(l);
+                    r.col(2) = o.normal;
+                    const Matrix6d to_setup_m = bond_matrix(r);
+                    InfillGroup g;
+                    g.f        = aligned_infill_factors(vm_mat.infill_density[e], vm_mat.iso_stiffness[e], vm_mat.iso_strength[e]);
+                    g.c        = to_setup_m * aligned_constitutive(*material, res.temperature_factor, g.f) * to_setup_m.transpose();
+                    g.to_lines = bond_matrix(r.transpose());
+                    g.ke       = element_stiffness(g.c, h);
+                    infill_groups.emplace_back(std::move(g));
+                }
+            }
+            infill_group_of[e] = found->second;
+            if (found->second < 0) {
+                // Back to the isotropic infill.
+                const double shell = vm_mat.shell[e];
+                vm_mat.stiffness[e]     = float(shell + (1. - shell) * vm_mat.iso_stiffness[e]);
+                vm_mat.strength[e]      = float(shell + (1. - shell) * vm_mat.iso_strength[e]);
+                vm_mat.aligned_angle[e] = -1.f;
+            } else
+                ++ res.aligned_voxels;
+        }
+    }
+
     // Groups of voxels without shared nodes, for the parallel product.
     std::array<std::vector<int>, 8> colors;
     for (size_t e = 0; e < grid.voxels.size(); ++ e) {
@@ -585,7 +719,10 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             xe[3 * a + k] = x[3 * nodes[a] + k];
-                    ye.noalias() = (double(vm_mat.stiffness[color[ci]]) * orientations[orientation_of[color[ci]]].ke) * xe;
+                    const int e = color[ci];
+                    ye.noalias() = (double(vm_mat.stiffness[e]) * orientations[orientation_of[e]].ke) * xe;
+                    if (const int g = infill_group_of[e]; g >= 0)
+                        ye.noalias() += ((1. - double(vm_mat.shell[e])) * infill_groups[g].ke) * xe;
                     for (int a = 0; a < 8; ++ a)
                         for (int k = 0; k < 3; ++ k)
                             y[3 * nodes[a] + k] += ye[3 * a + k];
@@ -598,8 +735,11 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     std::vector<double> diag(n_dofs, 0.);
     for (size_t e = 0; e < elements.size(); ++ e)
         for (int a = 0; a < 8; ++ a)
-            for (int k = 0; k < 3; ++ k)
+            for (int k = 0; k < 3; ++ k) {
                 diag[3 * elements[e][a] + k] += double(vm_mat.stiffness[e]) * orientations[orientation_of[e]].ke(3 * a + k, 3 * a + k);
+                if (const int g = infill_group_of[e]; g >= 0)
+                    diag[3 * elements[e][a] + k] += (1. - double(vm_mat.shell[e])) * infill_groups[g].ke(3 * a + k, 3 * a + k);
+            }
     report(15);
 
     // 5) Preconditioned conjugate gradient.
@@ -686,19 +826,46 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         // Homogenized stress of the voxel; the strength of the voxel is scaled the same way as the material.
         // Stress in the frame of the layers: z across the layers, yz and xz the shear between the layers.
         const Orientation &o = orientations[orientation_of[e]];
-        const Eigen::Matrix<double, 6, 1> s_setup = double(vm_mat.stiffness[e]) * (o.c * (b0 * ue));
+        const Eigen::Matrix<double, 6, 1> strain = b0 * ue;
+        const int g = infill_group_of[e];
+        Eigen::Matrix<double, 6, 1> s_setup = double(vm_mat.stiffness[e]) * (o.c * strain);
+        if (g >= 0)
+            s_setup += (1. - double(vm_mat.shell[e])) * (infill_groups[g].c * strain);
         const Eigen::Matrix<double, 6, 1> s = o.to_layers * s_setup;
         for (int k = 0; k < 6; ++ k)
             res.stress[e][k] = float(s_setup[k]);
-        const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
-        const double vm = std::sqrt(0.5 * ((s[0] - s[1]) * (s[0] - s[1]) + (s[1] - s[2]) * (s[1] - s[2]) + (s[2] - s[0]) * (s[2] - s[0]))
-                                    + 3. * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));
-        sz_tension[e] = std::max(0., s[2]) / sf_e;
-        tau_z[e]      = std::sqrt(s[3] * s[3] + s[4] * s[4]) / sf_e;
+        auto von_mises_of = [](const Eigen::Matrix<double, 6, 1> &t) {
+            return std::sqrt(0.5 * ((t[0] - t[1]) * (t[0] - t[1]) + (t[1] - t[2]) * (t[1] - t[2]) + (t[2] - t[0]) * (t[2] - t[0]))
+                             + 3. * (t[3] * t[3] + t[4] * t[4] + t[5] * t[5]));
+        };
+        const double vm = von_mises_of(s);
+        if (g < 0) {
+            const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
+            sz_tension[e] = std::max(0., s[2]) / sf_e;
+            tau_z[e]      = std::sqrt(s[3] * s[3] + s[4] * s[4]) / sf_e;
+            vm_eff[e]     = vm / sf_e;
+        } else {
+            // The shell part (solid material) and the infill part, each with its own stress and strength.
+            sz_tension[e] = tau_z[e] = vm_eff[e] = 0.;
+            if (vm_mat.shell[e] > 0.f) {
+                const Eigen::Matrix<double, 6, 1> t = o.to_layers * (o.c * strain);
+                sz_tension[e] = std::max(0., t[2]);
+                tau_z[e]      = std::sqrt(t[3] * t[3] + t[4] * t[4]);
+                vm_eff[e]     = von_mises_of(t);
+            }
+            // Infill: largest stress over strength along the lines (L), across them (T), across the layers (N) and in
+            // shear, the shear across the lines with the von Mises relation tau = sigma / sqrt(3).
+            const InfillGroup &ig = infill_groups[g];
+            const Eigen::Matrix<double, 6, 1> t = ig.to_lines * (ig.c * strain);
+            const double sa = std::max(ig.f.strength_along, 1e-6), st = std::max(ig.f.strength_across, 1e-6);
+            vm_eff[e]     = std::max({ vm_eff[e], std::abs(t[0]) / sa, std::abs(t[1]) / st, std::sqrt(3.) * std::abs(t[5]) / st });
+            sz_tension[e] = std::max(sz_tension[e], std::max(0., t[2]) / sa);
+            tau_z[e]      = std::max({ tau_z[e], std::abs(t[4]) / sa, std::abs(t[3]) / st });
+        }
         // Simplified criterion: von Mises against the strength along the layers, tension and shear across the layers
-        // against the layer adhesion (shear strength between layers taken as 0.6 of the tensile one).
-        const double fi = std::max({ vm / sf_e / s_xy, sz_tension[e] / s_z, tau_z[e] / (0.6 * s_z) });
-        vm_eff[e] = vm / sf_e;
+        // against the layer adhesion (shear strength between layers taken as 0.6 of the tensile one). Aligned infill:
+        // maximum stress criterion in the frame of its lines.
+        const double fi = std::max({ vm_eff[e] / s_xy, sz_tension[e] / s_z, tau_z[e] / (0.6 * s_z) });
         res.von_mises[e]     = float(vm);
         res.failure_index[e] = float(fi);
         res.displacement[e]  = disp.cast<float>();

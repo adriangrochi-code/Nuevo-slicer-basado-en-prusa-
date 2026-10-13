@@ -5,6 +5,8 @@
 // Method (see docs/FEA.md):
 // 1) Uniform infill: the requirements are monotonic with the density (more infill, stiffer and stronger), so the
 //    lowest density is found by bisection.
+//    With ribs: the directions of the ribs come from the stresses of the lightest uniform infill; the search is done
+//    again with them (the analysis models the aligned infill), and they are kept only if the infill is lighter.
 // 2) Infill by zones: from the analysis of the uniform infill, every point of the interior gets the density which
 //    would bring its stress to the allowed one (the strength of the infill scales with density^strength_exponent).
 //    The interior is divided in cells; the cells are grouped in a few density levels, and the levels are scaled
@@ -48,11 +50,15 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         ++ out.analyses;
         return r;
     };
-    // The fixed zones never have less infill than the part around them.
+    // The ribs (only the direction of the infill), then the fixed zones, which never have less infill than the part
+    // around them.
+    std::vector<InfillZone> rib_zones_in;
     auto fixed_zones = [&](double base) {
-        std::vector<InfillZone> zones = options.fixed_zones;
-        for (InfillZone &z : zones)
+        std::vector<InfillZone> zones = rib_zones_in;
+        for (InfillZone z : options.fixed_zones) {
             z.density = std::max(z.density, base);
+            zones.emplace_back(std::move(z));
+        }
         return zones;
     };
     auto uniform = [&](double density) {
@@ -75,47 +81,81 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         return out;
     }
     out.feasible = true;
-    double hi_density = hi_limit;
-    Result lo = uniform(lo_limit);
-    if (! lo.ok) {
-        out.error = lo.error;
+    // Lowest uniform density between lo_limit and hi_density (which meets the requirements, with its analysis hi).
+    auto search = [&](double hi_density, Result &hi) -> bool {
+        Result lo = uniform(lo_limit);
+        if (! lo.ok) {
+            out.error = lo.error;
+            return false;
+        }
+        if (meets_requirements(lo)) {
+            hi_density = lo_limit;
+            hi = std::move(lo);
+        } else {
+            double lo_density = lo_limit;
+            while (hi_density - lo_density > step) {
+                const double mid = 0.5 * (lo_density + hi_density);
+                Result r = uniform(mid);
+                if (! r.ok) {
+                    out.error = r.error;
+                    return false;
+                }
+                if (meets_requirements(r)) {
+                    hi_density = mid;
+                    hi = std::move(r);
+                } else
+                    lo_density = mid;
+            }
+            // Whole percents, as the print settings: the percent below if it still meets the requirements, else the one above.
+            const double below = std::floor(hi_density * 100. + 1e-9) / 100.;
+            bool done = false;
+            if (below > lo_density + 1e-9 && below < hi_density - 1e-9) {
+                Result r = uniform(below);
+                if (r.ok && meets_requirements(r)) {
+                    hi_density = below;
+                    hi = std::move(r);
+                    done = true;
+                }
+            }
+            const double above = std::min(hi_limit, round_up(hi_density, 0.01));
+            if (! done && above != hi_density) {
+                Result r = uniform(above);
+                if (r.ok && meets_requirements(r)) {
+                    hi_density = above;
+                    hi = std::move(r);
+                }
+            }
+        }
+        out.uniform_density = hi_density;
+        return true;
+    };
+    if (! search(hi_limit, hi))
         return out;
-    }
-    if (meets_requirements(lo)) {
-        hi_density = lo_limit;
-        hi = std::move(lo);
-    } else {
-        double lo_density = lo_limit;
-        while (hi_density - lo_density > step) {
-            const double mid = 0.5 * (lo_density + hi_density);
-            Result r = uniform(mid);
-            if (! r.ok) {
-                out.error = r.error;
-                return out;
-            }
-            if (meets_requirements(r)) {
-                hi_density = mid;
-                hi = std::move(r);
-            } else
-                lo_density = mid;
+    double hi_density = out.uniform_density;
+    out.density_without_ribs = hi_density;
+
+    // Ribs along the stresses of the lightest uniform infill, kept if they make it lighter.
+    if (options.ribs && hi_density > lo_limit + 1e-9 && ! (cancel && cancel())) {
+        std::vector<RibZone> ribs = rib_zones(hi);
+        for (const RibZone &rib : ribs) {
+            InfillZone z;
+            z.mesh              = rib.mesh;
+            z.density           = -1.;
+            z.aligned_angle_deg = rib.angle_deg;
+            rib_zones_in.emplace_back(std::move(z));
         }
-        // Whole percents, as the print settings: the percent below if it still meets the requirements, else the one above.
-        const double below = std::floor(hi_density * 100. + 1e-9) / 100.;
-        bool done = false;
-        if (below > lo_density + 1e-9 && below < hi_density - 1e-9) {
-            Result r = uniform(below);
-            if (r.ok && meets_requirements(r)) {
-                hi_density = below;
-                hi = std::move(r);
-                done = true;
-            }
-        }
-        const double above = std::min(hi_limit, round_up(hi_density, 0.01));
-        if (! done && above != hi_density) {
-            Result r = uniform(above);
-            if (r.ok && meets_requirements(r)) {
-                hi_density = above;
-                hi = std::move(r);
+        if (! rib_zones_in.empty()) {
+            Result with_ribs = uniform(hi_density);
+            if (with_ribs.ok && meets_requirements(with_ribs) && search(hi_density, with_ribs) &&
+                out.uniform_density < hi_density - 1e-9) {
+                hi_density = out.uniform_density;
+                hi         = std::move(with_ribs);
+                out.ribs   = std::move(ribs);
+            } else {
+                if (! out.error.empty())
+                    return out;
+                rib_zones_in.clear();
+                out.uniform_density = hi_density;
             }
         }
     }

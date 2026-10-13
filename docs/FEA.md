@@ -135,8 +135,45 @@ casilla «Infill ribs along the stresses» (activada por defecto).
 
 La idea de imprimir siguiendo las tensiones principales es la de Tam y Mueller, «Additive Manufacturing Along
 Principal Stress Lines» (3D Printing and Additive Manufacturing, 2017); aquí se reduce al ángulo del relleno por
-zonas. **Límite**: el modelo del relleno del análisis es igual en todas las direcciones, así que el análisis no cuenta
-lo que ganan los nervios a lo largo ni lo que pierden a lo ancho; hay que comprobarlo con probetas impresas.
+zonas.
+
+### Relleno alineado en el análisis (ortótropo)
+
+El relleno rectilíneo alineado (los nervios, o el patrón `alignedrectilinear` del perfil o de un modificador) no es
+igual en todas las direcciones: sus líneas son continuas a lo largo (L) y se apilan en paredes a lo largo de la normal
+de la capa (N), pero a lo ancho (T) solo las unen los perímetros y las conexiones de las líneas. El análisis le da su
+propia matriz, en el marco (L, T, N) de cada vóxel, con factores de las propiedades del material macizo
+(`aligned_infill_factors`):
+
+| Propiedad | Factor | Fuente |
+|---|---|---|
+| E_L, E_N, G_LN y sus resistencias | ρ | regla de las mezclas (cota de Voigt): líneas y paredes continuas |
+| E_T, G_LT, G_TN | ρ² | sólidos celulares dominados por flexión (Gibson y Ashby, *Cellular Solids*, 2.ª ed., 1997, cap. 5) |
+| Resistencias a lo ancho | 0,3·ρ^1,5 | ídem |
+
+A lo ancho nunca más que el relleno isótropo de la misma densidad. La fórmula de Gibson y Ashby es para densidades
+bajas (hasta un 30 % aproximadamente); por encima subestima la resistencia a lo ancho (lado seguro). La rotura del
+relleno alineado es por tensión máxima en su marco: |σL|, |σT|, σN de tracción, los cortes τLN y τTN (contra
+0,6 de la adherencia entre capas) y τLT (con la relación de von Mises). La parte de cáscara del vóxel sigue con el
+material macizo y su criterio. Las matrices se agrupan por orientación de capa, ángulo, densidad y factores.
+
+Consecuencias:
+
+- A lo largo de las líneas el relleno es más rígido (ρ en vez de ρ^1,2), así que toma más carga y la pieza se
+  deforma menos. En un elemento las líneas rompen a la misma deformación que el material, de modo que la ganancia de
+  resistencia viene por esa rigidez. A lo ancho es mucho más débil.
+- El relleno mínimo, con «Infill ribs along the stresses», busca primero el uniforme sin nervios, saca los nervios de
+  ese análisis y busca de nuevo con ellos; solo los usa si el relleno queda más liviano, y las zonas se calculan con
+  ellos. En una probeta de tracción con mordazas macizas (test «The lightest infill counts the ribs») el relleno
+  mínimo baja del 31 % al 27 %, y con las líneas a lo largo la barra es un 10 % más rígida y el relleno trabaja un
+  10 % menos cargado; con las líneas a lo ancho, 1,96 veces más cargado.
+- `build_analysis_input` lee el patrón y el ángulo del perfil y de los modificadores: un modificador sin
+  `fill_density` deja la densidad de lo que tiene debajo, como en el laminado.
+
+**Límites**: los factores son aproximados y hay que calibrarlos con probetas impresas (a lo largo, a lo ancho y a
+45°). El modelo isótropo de los demás patrones (ρ^1,2 para una rejilla) es más generoso que el reparto real de las
+líneas en dos direcciones, así que la ganancia de los nervios frente a la rejilla que muestra el análisis es menor que
+la que se espera en la pieza. No hay pandeo de las líneas a compresión.
 
 ## Refuerzos locales (Fase 6)
 
