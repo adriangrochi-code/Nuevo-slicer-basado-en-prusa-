@@ -137,6 +137,8 @@ set(SLIC3R_SOURCES
     format.hpp
     Format/3mf.cpp
     Format/3mf.hpp
+    Format/BambuProject.cpp
+    Format/BambuProject.hpp
     Format/AMF.cpp
     Format/AMF.hpp
     Format/OBJ.cpp

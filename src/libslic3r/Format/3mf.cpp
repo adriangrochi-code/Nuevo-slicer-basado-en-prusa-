@@ -17,6 +17,7 @@
 #include "libslic3r/I18N.hpp"
 
 #include "3mf.hpp"
+#include "BambuProject.hpp"
 
 #include <limits>
 #include <stdexcept>
@@ -4485,6 +4486,9 @@ std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filenam
             std::replace(name.begin(), name.end(), '\\', '/');
             if (boost::algorithm::iequals(name, PRINT_CONFIG_FILE))
                 out.first = true;
+            // Tisma: the settings of a Bambu Studio / OrcaSlicer project.
+            if (boost::algorithm::iequals(name, "Metadata/project_settings.config"))
+                out.first = true;
             if (boost::algorithm::iequals(name, MODEL_FILE)) {
                 if (auto* iter = mz_zip_reader_extract_iter_new(&archive, i, 0)) {
                     ScopeGuard g([&iter]() { mz_zip_reader_extract_iter_free(iter); });
@@ -4520,6 +4524,21 @@ bool load_3mf(
 {
     if (path == nullptr || model == nullptr)
         return false;
+
+    // Tisma: projects of Bambu Studio and OrcaSlicer have their own layout (parts, plates, settings).
+    if (is_bambu_project_3mf(path)) {
+        BambuProjectInfo info;
+        std::string      error;
+        if (load_bambu_project_3mf(path, *model, config, info, error)) {
+            if (! info.skipped_settings.empty())
+                BOOST_LOG_TRIVIAL(info) << "Bambu project " << path << ": " << info.skipped_settings.size()
+                                        << " settings without equivalent were not loaded";
+            return true;
+        }
+        BOOST_LOG_TRIVIAL(error) << "Bambu project " << path << ": " << error << "; loaded as a plain 3MF";
+        model->clear_objects();
+        config.clear();
+    }
 
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;

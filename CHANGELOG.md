@@ -12,6 +12,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Proyectos de Bambu Studio y OrcaSlicer**: se abren como proyecto, con cada objeto y sus partes (antes cada parte
+  salía como objeto suelto), nombres, extrusores, modificadores con sus ajustes, pintura de colores, placas en las camas
+  de Tisma y los ajustes de impresión y filamento traducidos; la impresora sigue siendo la elegida en Tisma
+  (`docs/BAMBU_PROJECTS.md`).
+- **Abrir un 3MF**: el diálogo explica cada opción y ya no dice «PrusaSlicer».
 - **No planar con dos variables**: la página «No planar» de la configuración de impresión solo elige el tipo de capas.
   Cuánto se curvan sale de las dos medidas del cabezal (ángulo libre y holgura boquilla-cabezal, en la impresora): las
   ondas suben hasta la holgura con la pendiente del ángulo, y ondas y conos se suavizan solos si el cabezal fuera a

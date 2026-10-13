@@ -68,6 +68,7 @@
 #include "libslic3r/Format/STL.hpp"
 #include "libslic3r/Format/AMF.hpp"
 #include "libslic3r/Format/3mf.hpp"
+#include "libslic3r/Format/BambuProject.hpp"
 #include "libslic3r/Format/OBJ.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Model.hpp"
@@ -1522,7 +1523,19 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
         if (load_config) {
 
-            if (!config_loaded.empty()) {
+            if (!config_loaded.empty() && is_bambu_project_3mf(path.string())) {
+                // Tisma: a project of Bambu Studio / OrcaSlicer brings only print and filament settings, printed on
+                // the printer selected here: they go over the current settings, one value per extruder of it.
+                loaded_printer_technology = ptFFF;
+                config = wxGetApp().preset_bundle->full_config();
+                for (const std::string &key : config_loaded.keys()) {
+                    auto *loaded  = dynamic_cast<ConfigOptionVectorBase*>(config_loaded.option(key));
+                    auto *current = dynamic_cast<const ConfigOptionVectorBase*>(config.option(key));
+                    if (loaded != nullptr && current != nullptr && !loaded->empty() && loaded->size() != current->size())
+                        loaded->resize(current->size());
+                }
+                config += std::move(config_loaded);
+            } else if (!config_loaded.empty()) {
                 // Based on the printer technology field found in the loaded config, select the base for the config,
                 loaded_printer_technology = Preset::printer_technology(config_loaded);
 
