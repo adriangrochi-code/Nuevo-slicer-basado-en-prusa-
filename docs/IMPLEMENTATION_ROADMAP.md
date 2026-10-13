@@ -243,7 +243,7 @@ los datos del usuario.
 
 | # | Paso | Estado |
 |---|---|---|
-| 1 | Probetas no planares en el menú Calibración: hongo (soportes) y bloque inclinado (acabado), en modo Automático | En curso |
+| 1 | Probetas no planares en el menú Calibración: hongo (soportes) y bloque inclinado (acabado), en modo Automático | Hecho (Calibración > «Non-planar: automatic mode test pieces»); falta imprimirlas |
 | 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Pendiente |
 | 3 | Preset de un clic «Piel + núcleo» | Pendiente |
 | 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Pendiente |

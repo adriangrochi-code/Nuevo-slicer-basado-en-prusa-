@@ -911,6 +911,9 @@ void Tab::load_config(const DynamicPrintConfig& config)
         //# Initialize UI components with the config values.
         reload_config();
         update();
+        // Tisma: the supports, infill and brim of the sidebar and the quick settings follow the loaded values.
+        if (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_SLA_PRINT)
+            update_frequently_changed_parameters();
     }
 }
 

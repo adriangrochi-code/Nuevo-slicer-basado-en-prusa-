@@ -33447,3 +33447,18 @@ msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina
 
 msgid "Automatic (finish and fewer supports)"
 msgstr "Automático (acabado y menos soportes)"
+
+msgid "Prints, in one go, a mushroom whose underside flares out at the overhang angle (stem of 10 mm, flare up to 15 mm, cap up to 18 mm) and a 30 mm block whose top slopes at the top angle. It uses the non-planar mode Automatic and supports where needed (both set in the print settings, shown as modified). Print it again with Non-planar layers set to Disabled to compare."
+msgstr "Imprime de una vez un hongo cuya parte de abajo se abre con el ángulo de voladizo (tallo de 10 mm, ala hasta 15 mm, sombrero hasta 18 mm) y un bloque de 30 mm cuya cara superior se inclina con el ángulo de la cara. Usa el modo no planar Automático y soportes donde hagan falta (los dos se ponen en la configuración de impresión, que queda como modificada). Imprimila otra vez con Capas no planares en Desactivado para comparar."
+
+msgid "Supports: with flat layers the flare of the mushroom needs supports; with the automatic mode it should print without them, or with far fewer (look at the preview before printing). Finish: compare the top of the block with that of the flat print, the stairs of the layers should be much smaller. The flare is printable only if the free angle of the print head is at least the overhang angle minus 45°."
+msgstr "Soportes: con capas planas el ala del hongo necesita soportes; con el modo automático debería imprimirse sin ellos o con muchos menos (miralo en la vista previa antes de imprimir). Acabado: compará la cara superior del bloque con la de la impresión plana; los escalones de las capas deberían ser mucho más chicos. El ala se puede imprimir solo si el ángulo libre del cabezal es al menos el ángulo del voladizo menos 45°."
+
+msgid "Non-planar: automatic mode test pieces"
+msgstr "No planar: probetas del modo automático"
+
+msgid "Overhang angle of the mushroom"
+msgstr "Ángulo del voladizo del hongo"
+
+msgid "Slope of the top of the block"
+msgstr "Pendiente de la cara superior del bloque"

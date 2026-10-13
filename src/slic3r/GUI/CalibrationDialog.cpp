@@ -84,6 +84,11 @@ struct Test
     wxString      band_label { wxString() };
     // Stable identifier (the titles are translated).
     std::string   key;
+    // Test pieces with a single value instead of steps: the label of the value (the band, labelled by band_label, is
+    // then in the unit of the test too).
+    wxString      single_label { wxString() };
+    // Print settings the test needs (applied to the print settings, which show them as modified).
+    std::vector<std::pair<std::string, std::string>> print_settings;
 };
 
 // --- Geometry helpers ----------------------------------------------------------------------------------------
@@ -539,6 +544,59 @@ std::vector<Test> make_tests()
 
     tests.back().key = "nonplanar_head_gauge";
 
+    // Tisma: the automatic non-planar mode on two shapes of the tests (tests/fff_print/test_nonplanar_print.cpp).
+    tests.push_back({ _L("Non-planar: automatic mode test pieces"),
+        _L("Prints, in one go, a mushroom whose underside flares out at the overhang angle (stem of 10 mm, flare up to "
+           "15 mm, cap up to 18 mm) and a 30 mm block whose top slopes at the top angle. It uses the non-planar mode "
+           "Automatic and supports where needed (both set in the print settings, shown as modified). Print it again "
+           "with Non-planar layers set to Disabled to compare."),
+        _L("Supports: with flat layers the flare of the mushroom needs supports; with the automatic mode it should print "
+           "without them, or with far fewer (look at the preview before printing). Finish: compare the top of the block "
+           "with that of the flat print, the stairs of the layers should be much smaller. The flare is printable only "
+           "if the free angle of the print head is at least the overhang angle minus 45°."),
+        "°", CalibMode::Disabled, { 48., 48., 1., 6. }, 0, 1., 75.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            // Mushroom: profile (radius, z) turned around the Z axis, centered at (12, 15).
+            const double angle = std::clamp(p.start, 0., 70.);
+            const double r_cap = 5. + 5. * std::tan(angle * M_PI / 180.);
+            const std::vector<Vec2d> profile { { 5., 0. }, { 5., 10. }, { r_cap, 15. }, { r_cap, 18. } };
+            constexpr int segments = 72;
+            const Vec2d center(std::max(12., r_cap + 1.), 15.);
+            indexed_triangle_set its;
+            const int n = int(profile.size());
+            for (int s = 0; s < segments; ++ s) {
+                const double a = 2. * M_PI * s / segments;
+                for (const Vec2d &q : profile)
+                    its.vertices.emplace_back(float(center.x() + q.x() * std::cos(a)), float(center.y() + q.x() * std::sin(a)), float(q.y()));
+            }
+            const int bottom = int(its.vertices.size());
+            its.vertices.emplace_back(float(center.x()), float(center.y()), 0.f);
+            const int top = int(its.vertices.size());
+            its.vertices.emplace_back(float(center.x()), float(center.y()), float(profile.back().y()));
+            for (int s = 0; s < segments; ++ s) {
+                const int a = s * n, b = ((s + 1) % segments) * n;
+                for (int i = 0; i + 1 < n; ++ i) {
+                    its.indices.emplace_back(a + i, b + i, b + i + 1);
+                    its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
+                }
+                its.indices.emplace_back(bottom, b, a);
+                its.indices.emplace_back(top, a + n - 1, b + n - 1);
+            }
+            obj.add_volume(TriangleMesh(std::move(its)));
+            // Block with its top sloping along X, next to the mushroom.
+            const double slope = std::tan(std::clamp(p.band, 0., 30.) * M_PI / 180.);
+            add_heightfield_block(obj, 30., 30., 1., [slope](double x, double) { return 18. + slope * x; });
+            obj.volumes.back()->translate(Vec3d(2. * center.x() + 5., 0., 0.));
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "15%");
+            set(obj, "top_solid_layers", "4");
+        }, _L("Slope of the top of the block") });
+    tests.back().key = "nonplanar_automatic";
+    tests.back().single_label = _L("Overhang angle of the mushroom");
+    tests.back().print_settings = { { "nonplanar_mode", "automatic" }, { "support_material", "1" },
+                                    { "support_material_auto", "1" } };
+
     return tests;
 }
 
@@ -572,11 +630,18 @@ public:
         };
         // Offsets may be negative.
         const double min_value = test.mode == CalibMode::FirstLayerOffset ? - test.max_value : 0.;
-        m_start = add_field(_L("Start value"),         defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
-        m_end   = add_field(_L("End value"),           defaults.end,   min_value, test.max_value, test.increment, test.digits, test.unit);
-        m_step  = add_field(_L("Step"),                defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
-        m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
-                            defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
+        // Test pieces with one value of each (no steps): the value and the band in the unit of the test.
+        m_single = ! test.single_label.empty();
+        if (m_single) {
+            m_start = add_field(test.single_label, defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_band  = add_field(test.band_label, defaults.band, 0., test.max_value, test.increment, test.digits, test.unit);
+        } else {
+            m_start = add_field(_L("Start value"),         defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_end   = add_field(_L("End value"),           defaults.end,   min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_step  = add_field(_L("Step"),                defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
+            m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
+                                defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
+        }
         main->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
 
         m_along_x = ! test.band_label.empty();
@@ -595,19 +660,30 @@ public:
             main->Add(btns, 0, wxEXPAND | wxALL, em);
 
         for (wxSpinCtrlDouble* ctrl : { m_start, m_end, m_step, m_band })
-            ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_summary(); });
+            if (ctrl != nullptr)
+                ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_summary(); });
         update_summary();
 
         SetSizerAndFit(main);
         CenterOnParent();
     }
 
-    Params params() const { return { m_start->GetValue(), m_end->GetValue(), m_step->GetValue(), m_band->GetValue() }; }
+    Params params() const
+    {
+        if (m_single)
+            return { m_start->GetValue(), m_start->GetValue(), 1., m_band->GetValue() };
+        return { m_start->GetValue(), m_end->GetValue(), m_step->GetValue(), m_band->GetValue() };
+    }
 
 private:
     void update_summary()
     {
         const Params p = params();
+        if (m_single) {
+            m_summary->SetLabel(wxString());
+            Layout();
+            return;
+        }
         m_summary->SetLabel(m_count_only ? format_wxstr(_L("%1% grooves in each row, rows %2%, %3% and %4% mm deep."), p.steps(),
                                                         wxString::Format("%.1f", p.band / 3.), wxString::Format("%.1f", 2. * p.band / 3.),
                                                         wxString::Format("%.1f", p.band)) : m_along_x ?
@@ -624,6 +700,7 @@ private:
     bool              m_along_x { false };
     bool              m_base_band { false }; // a base below the steps (resin exposure tower)
     bool              m_count_only { false };
+    bool              m_single { false };
 };
 
 void run_test(wxWindow* parent, const Test& test, const Params* initial = nullptr)
@@ -663,6 +740,16 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
     calib.set_key_value("calib_band_height", new ConfigOptionFloat(p.band));
 
     wxGetApp().plater()->load_calibration(model, calib);
+
+    // Print settings of the test.
+    if (! test.print_settings.empty())
+        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+            DynamicPrintConfig conf = *tab->get_config();
+            ConfigSubstitutionContext ctxt { ForwardCompatibilitySubstitutionRule::Disable };
+            for (const auto& [key, value] : test.print_settings)
+                conf.set_deserialize(key, value, ctxt);
+            tab->load_config(conf);
+        }
 }
 
 const std::vector<Test>& tests()
