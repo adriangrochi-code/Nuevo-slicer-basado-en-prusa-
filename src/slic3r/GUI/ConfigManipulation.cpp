@@ -294,8 +294,11 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
         const bool overhangs = mode == NonPlanarMode::Overhangs;
         for (auto el : { "nonplanar_max_slope", "nonplanar_flat_below", "nonplanar_flow_policy", "nonplanar_segment_length" })
             toggle_field(el, nonplanar);
-        for (auto el : { "nonplanar_fit_head", "nonplanar_ramp_height", "nonplanar_flat_top" })
+        // Stresses: the layers of the structural analysis, always within the print head.
+        const bool stress    = mode == NonPlanarMode::Stress;
+        for (auto el : { "nonplanar_ramp_height", "nonplanar_flat_top" })
             toggle_field(el, nonplanar && ! overhangs);
+        toggle_field("nonplanar_fit_head", nonplanar && ! overhangs && ! stress);
         toggle_field("nonplanar_overhang_threshold", overhangs);
         toggle_field("zaa_min_thickness", config->opt_bool("zaa_enabled"));
         toggle_field("interlock_infill", ! nonplanar);

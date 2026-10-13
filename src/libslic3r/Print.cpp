@@ -541,7 +541,12 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
         const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
-        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh);
+        if (m_config.nonplanar_mode.value == NonPlanarMode::Stress &&
+            ! NonPlanar::layer_field_matches(object.model_object()->engineering.layer_field, bbox))
+            return object.model_object()->engineering.layer_field.empty() ?
+                _u8L("Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength).") :
+                _u8L("Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again.");
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field);
         const NonPlanar::Deformation::Check check = deformation.check(bbox);
         if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "

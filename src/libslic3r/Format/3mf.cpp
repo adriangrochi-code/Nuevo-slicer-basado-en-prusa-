@@ -1422,6 +1422,25 @@ namespace Slic3r {
                         load.max_displacement_percent = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement_percent", "0"));
                         load.faces  = read_region(l);
                         setup.loads.emplace_back(std::move(load));
+                    } else if (child.first == "layer_field") {
+                        // Curved layers computed from the stresses (non-planar mode "stress").
+                        const pt::ptree& l = child.second;
+                        EngineeringLayerField &field = setup.layer_field;
+                        field.origin        = tisma_vec_from_string(l.get<std::string>("<xmlattr>.origin", "0 0 0"));
+                        field.cell          = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.cell", "1"));
+                        const Vec3d counts  = tisma_vec_from_string(l.get<std::string>("<xmlattr>.nodes", "0 0 0"));
+                        field.nx            = int(counts.x());
+                        field.ny            = int(counts.y());
+                        field.nz            = int(counts.z());
+                        field.part_size     = tisma_vec_from_string(l.get<std::string>("<xmlattr>.part_size", "0 0 0"));
+                        field.safety_flat   = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.safety_flat", "0"));
+                        field.safety_curved = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.safety_curved", "0"));
+                        std::istringstream values(l.get_value<std::string>());
+                        values.imbue(std::locale::classic());
+                        for (float v; values >> v;)
+                            field.offset.push_back(v);
+                        if (field.offset.size() != size_t(field.nx) * size_t(field.ny) * size_t(field.nz) || field.cell <= 0.)
+                            setup.layer_field = EngineeringLayerField();
                     } else if (child.first == "limit") {
                         const pt::ptree& l = child.second;
                         EngineeringLimit limit;
@@ -3800,6 +3819,20 @@ namespace Slic3r {
                 l.put("<xmlattr>.max_displacement", float_to_string_decimal_point(limit.max_displacement));
                 l.put("<xmlattr>.max_displacement_percent", float_to_string_decimal_point(limit.max_displacement_percent));
                 put_region(l, limit.faces);
+            }
+            if (const EngineeringLayerField& field = setup.layer_field; ! field.empty()) {
+                std::ostringstream values;
+                values.imbue(std::locale::classic());
+                values.precision(5);
+                for (size_t i = 0; i < field.offset.size(); ++ i)
+                    values << (i ? " " : "") << field.offset[i];
+                pt::ptree& l = o.add("layer_field", values.str());
+                l.put("<xmlattr>.origin", tisma_vec_to_string(field.origin));
+                l.put("<xmlattr>.cell", float_to_string_decimal_point(field.cell));
+                l.put("<xmlattr>.nodes", tisma_vec_to_string(Vec3d(field.nx, field.ny, field.nz)));
+                l.put("<xmlattr>.part_size", tisma_vec_to_string(field.part_size));
+                l.put("<xmlattr>.safety_flat", float_to_string_decimal_point(field.safety_flat));
+                l.put("<xmlattr>.safety_curved", float_to_string_decimal_point(field.safety_curved));
             }
         }
         if (! any)

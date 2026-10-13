@@ -9,6 +9,7 @@ add_library(libtisma_fea STATIC
     include/tisma_fea/Structures.hpp
     include/tisma_fea/Orientation.hpp
     include/tisma_fea/Aero.hpp
+    include/tisma_fea/StressLayers.hpp
     src/CellsMesh.hpp
     src/Materials.cpp
     src/Analysis.cpp
@@ -17,6 +18,7 @@ add_library(libtisma_fea STATIC
     src/Structures.cpp
     src/Orientation.cpp
     src/Aero.cpp
+    src/StressLayers.cpp
 )
 target_include_directories(libtisma_fea PUBLIC include)
 target_link_libraries(libtisma_fea PUBLIC libslic3r)

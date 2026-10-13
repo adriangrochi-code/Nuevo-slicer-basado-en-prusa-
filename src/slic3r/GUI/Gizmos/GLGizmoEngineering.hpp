@@ -21,6 +21,7 @@
 #include <tisma_fea/Structures.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Orientation.hpp>
+#include <tisma_fea/StressLayers.hpp>
 
 namespace Slic3r {
 
@@ -83,6 +84,10 @@ private:
     void start_orientation();
     // Rotates the instance so that the recommended axis is printed vertically (the loads rotate with the part).
     void rotate_to_recommended();
+    // Curved layers that follow the stresses: computes them and applies them to the object (non-planar mode "stress").
+    void start_curved_layers();
+    void apply_curved_layers();
+    void remove_curved_layers();
     // Runs a job in the background; its result is stored in *pending under the mutex.
     template<class T> void launch(std::function<T()> job, std::optional<T> *pending);
     void start_reinforcement();
@@ -136,6 +141,7 @@ private:
     std::optional<Fea::ReinforcementResult> m_pending_reinf;
     std::optional<Fea::LatticeResult>       m_pending_lattice;
     std::optional<Fea::OrientationResult>   m_pending_orient;
+    std::optional<Fea::CurvedLayersResult>  m_pending_layers;
     bool              m_job_optimize { false };
 
     std::optional<Fea::Result> m_result;
@@ -159,6 +165,9 @@ private:
     // Recommended orientation.
     std::optional<Fea::OrientationResult> m_orient;
     ObjectID                   m_orient_object;
+    // Curved layers for strength.
+    std::optional<Fea::CurvedLayersResult> m_layers;
+    ObjectID                   m_layers_object;
     // Applied infill, shown until the object changes.
     std::string                m_applied_note;
     ObjectID                   m_applied_object;

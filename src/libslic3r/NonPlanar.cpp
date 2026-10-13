@@ -10,6 +10,7 @@
 
 #include <admesh/stl.h>
 
+#include "libslic3r/Engineering.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Model.hpp"
@@ -69,6 +70,8 @@ double Field::g(double x, double y, double z) const
     case Mode::Overhangs:
         // The layers sink towards the overhangs.
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.;
+    case Mode::Stress:
+        return m_params.stress ? m_params.stress_scale * m_params.stress->offset(x, y, z) : 0.;
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         if (m_params.pattern == Pattern::Egg)
@@ -99,6 +102,8 @@ Vec2d Field::grad(double x, double y, double z) const
     }
     case Mode::Overhangs:
         return m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero();
+    case Mode::Stress:
+        return m_params.stress ? Vec2d(m_params.stress_scale * m_params.stress->grad(x, y, z)) : Vec2d::Zero();
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         const double a = m_params.amplitude * k;
@@ -116,6 +121,8 @@ double Field::dgdz(double x, double y, double z) const
 {
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.;
+    if (m_params.mode == Mode::Stress)
+        return m_params.stress ? m_params.stress_scale * m_params.stress->dz(x, y, z) : 0.;
     if (m_params.mode != Mode::Wave || m_params.pattern != Pattern::Twisted)
         return 0.;
     const double k  = TWO_PI / m_params.wavelength;
@@ -135,6 +142,8 @@ double Field::bound(double x, double y) const
         return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.;
+    if (m_params.mode == Mode::Stress)
+        return m_params.stress ? std::abs(m_params.stress_scale) * m_params.stress->bound(x, y) : 0.;
     return std::abs(this->g(x, y, 0.));
 }
 
@@ -471,6 +480,98 @@ double OverhangField::bound(double x, double y) const
     for (const Zone &zone : zones)
         out += this->sample(zone, x, y).first;
     return out;
+}
+
+StressField::StressField(const EngineeringLayerField &field, const Vec3d &part_min) :
+    m_origin(part_min + field.origin), m_cell(std::max(1e-3, field.cell)), m_nx(field.nx), m_ny(field.ny), m_nz(field.nz),
+    m_offset(field.offset)
+{
+    if (m_offset.size() != size_t(m_nx) * size_t(m_ny) * size_t(m_nz) || m_nx < 2 || m_ny < 2 || m_nz < 2) {
+        m_offset.clear();
+        m_nx = m_ny = m_nz = 0;
+        return;
+    }
+    m_column_max.assign(size_t(m_nx) * m_ny, 0.f);
+    for (int k = 0; k < m_nz; ++ k)
+        for (int j = 0; j < m_ny; ++ j)
+            for (int i = 0; i < m_nx; ++ i) {
+                float &m = m_column_max[size_t(j) * m_nx + i];
+                m = std::max(m, std::abs(float(this->node(i, j, k))));
+            }
+}
+
+bool StressField::locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const
+{
+    if (m_offset.empty())
+        return false;
+    const double fx = (x - m_origin.x()) / m_cell, fy = (y - m_origin.y()) / m_cell, fz = (z - m_origin.z()) / m_cell;
+    if (fx < 0. || fy < 0. || fz < 0. || fx > m_nx - 1 || fy > m_ny - 1 || fz > m_nz - 1)
+        return false;
+    i  = std::min(int(fx), m_nx - 2);
+    j  = std::min(int(fy), m_ny - 2);
+    k  = std::min(int(fz), m_nz - 2);
+    tx = fx - i;
+    ty = fy - j;
+    tz = fz - k;
+    return true;
+}
+
+double StressField::offset(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return 0.;
+    double v = 0.;
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        v += (a ? tx : 1. - tx) * (b ? ty : 1. - ty) * (d ? tz : 1. - tz) * this->node(i + a, j + b, k + d);
+    }
+    return v;
+}
+
+Vec2d StressField::grad(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return Vec2d::Zero();
+    Vec2d g = Vec2d::Zero();
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        const double v  = this->node(i + a, j + b, k + d);
+        const double wz = d ? tz : 1. - tz;
+        g.x() += (a ? 1. : -1.) * (b ? ty : 1. - ty) * wz * v;
+        g.y() += (a ? tx : 1. - tx) * (b ? 1. : -1.) * wz * v;
+    }
+    return g / m_cell;
+}
+
+double StressField::dz(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return 0.;
+    double g = 0.;
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        g += (a ? tx : 1. - tx) * (b ? ty : 1. - ty) * (d ? 1. : -1.) * this->node(i + a, j + b, k + d);
+    }
+    return g / m_cell;
+}
+
+double StressField::bound(double x, double y) const
+{
+    if (m_offset.empty())
+        return 0.;
+    const int i = int(std::floor((x - m_origin.x()) / m_cell)), j = int(std::floor((y - m_origin.y()) / m_cell));
+    double m = 0.;
+    for (int jj = j; jj <= j + 1; ++ jj)
+        for (int ii = i; ii <= i + 1; ++ ii)
+            if (ii >= 0 && jj >= 0 && ii < m_nx && jj < m_ny)
+                m = std::max(m, double(m_column_max[size_t(jj) * m_nx + ii]));
+    return m;
 }
 
 namespace {
@@ -1236,6 +1337,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarMode::Wave:     p.mode = Mode::Wave;     break;
     case NonPlanarMode::Conical:  p.mode = Mode::Conical;  break;
     case NonPlanarMode::Overhangs: p.mode = Mode::Overhangs; break;
+    case NonPlanarMode::Stress:   p.mode = Mode::Stress;   break;
     }
     switch (config.nonplanar_pattern.value) {
     case NonPlanarPattern::Egg:     p.pattern = Pattern::Egg;     break;
@@ -1366,7 +1468,45 @@ static FieldParams overhang_field(FieldParams field, const PrintConfig &config, 
     return field;
 }
 
-Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh)
+bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox)
+{
+    if (field.empty() || ! object_bbox.defined)
+        return false;
+    const Vec3d d = object_bbox.size() - field.part_size;
+    return d.cwiseAbs().maxCoeff() <= std::max(0.05, 0.005 * field.part_size.maxCoeff());
+}
+
+// Stresses mode: the layers of the structural analysis, reduced until the layer thickness and the slope are acceptable.
+static FieldParams stress_field(FieldParams field, const Ramp &ramp, const PrintConfig &config,
+                                const BoundingBoxf3 &object_bbox, const EngineeringLayerField *stress)
+{
+    if (stress == nullptr || ! layer_field_matches(*stress, object_bbox)) {
+        field.mode = Mode::Disabled;
+        return field;
+    }
+    field.stress = std::make_shared<StressField>(*stress, object_bbox.min);
+    const HeadLimits limits = head_limits(config);
+    auto acceptable = [&](double s) {
+        FieldParams f = field;
+        f.stress_scale = s;
+        const Deformation d(f, ramp);
+        const Deformation::Check c = d.check(object_bbox);
+        return c.j_min >= J_MIN && c.j_max <= J_MAX &&
+               (limits.tan_x <= 0. || limits.tan_y <= 0. || d.head_slope_ratio(object_bbox, limits.tan_x, limits.tan_y) <= 1.);
+    };
+    if (! acceptable(1.)) {
+        double lo = 0., hi = 1.;
+        for (int i = 0; i < 20; ++ i) {
+            const double mid = 0.5 * (lo + hi);
+            (acceptable(mid) ? lo : hi) = mid;
+        }
+        field.stress_scale = lo;
+    }
+    return field;
+}
+
+Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh,
+                             const EngineeringLayerField *stress)
 {
     FieldParams field = field_params(config);
     if (object_bbox.defined) {
@@ -1389,6 +1529,9 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
     } else {
         if (config.nonplanar_flat_top.value && object_bbox.defined)
             ramp.z_top = object_bbox.max.z();
+        // Tisma: the layers computed by the structural analysis, within the limits of the print head.
+        if (field.mode == Mode::Stress)
+            return Deformation(stress_field(field, ramp, config, object_bbox, stress), ramp);
         // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user.
         if (config.nonplanar_fit_head.value)
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));

@@ -181,7 +181,7 @@ enum class LabelObjectsStyle {
 };
 
 // Non-planar layers (see NonPlanar.hpp).
-enum class NonPlanarMode { Disabled, Wave, Conical, Overhangs };
+enum class NonPlanarMode { Disabled, Wave, Conical, Overhangs, Stress };
 
 // Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
 enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,

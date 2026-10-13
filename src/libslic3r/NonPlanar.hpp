@@ -29,16 +29,19 @@ namespace Slic3r {
 
 class ModelVolume;
 class PrintConfig;
+struct EngineeringLayerField;
 
 namespace NonPlanar {
 
 // SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
 // Overhangs (Tisma): the layers are tilted only under the overhangs that would need supports (OverhangField).
-enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs };
+// Stress (Tisma): the layers follow the stresses of the structural analysis (StressField).
+enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 
 class OverhangField;
+class StressField;
 
 struct FieldParams
 {
@@ -63,6 +66,10 @@ struct FieldParams
     // overhang_scale (reduced until the layer thickness and the slope are acceptable).
     std::shared_ptr<const OverhangField> overhangs;
     double  overhang_scale   { 1. };
+    // Stress: the layer shape computed by the structural analysis, scaled by stress_scale (reduced until the layer
+    // thickness and the slope are acceptable).
+    std::shared_ptr<const StressField> stress;
+    double  stress_scale     { 1. };
     // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
     std::pair<double, double> slope_test_tangent(double x) const;
 };
@@ -207,6 +214,34 @@ public:
     std::pair<double, Vec2d> sample(const Zone &zone, double x, double y) const;
 };
 
+// Tisma: layers that follow the stresses of the structural analysis (EngineeringLayerField, computed by libtisma_fea).
+// Trilinear between the nodes of the grid; zero outside of it.
+class StressField
+{
+public:
+    // part_min: minimum corner of the part in the coordinates where the field is sampled.
+    StressField(const EngineeringLayerField &field, const Vec3d &part_min);
+
+    double offset(double x, double y, double z) const;
+    // Horizontal gradient and derivative along z of the offset.
+    Vec2d  grad(double x, double y, double z) const;
+    double dz(double x, double y, double z) const;
+    // Upper bound of |offset(x, y, z)| for any z.
+    double bound(double x, double y) const;
+
+private:
+    // Node coordinates (fractional) of a point, false outside of the grid.
+    bool   locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const;
+    double node(int i, int j, int k) const { return m_offset[(size_t(k) * m_ny + j) * m_nx + i]; }
+
+    Vec3d              m_origin;   // node (0, 0, 0) in the coordinates of the samples
+    double             m_cell { 1. };
+    int                m_nx { 0 }, m_ny { 0 }, m_nz { 0 };
+    std::vector<float> m_offset;
+    // Largest |offset| of each column of nodes.
+    std::vector<float> m_column_max;
+};
+
 struct OverhangParams
 {
     // Steepest overhang that prints well on flat layers, degrees from the vertical.
@@ -337,9 +372,13 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
 
 // Deformation for a print object, from the print configuration (fitted to the print head if nonplanar_fit_head).
 // object_bbox: bounding box of the object in object (centered) coordinates. mesh: the object in the same coordinates,
-// needed by the overhangs mode (without it the layers stay flat).
+// needed by the overhangs mode (without it the layers stay flat). stress: the layers computed by the structural
+// analysis for the object, needed by the stresses mode (without it, or if the part changed since, the layers stay
+// flat).
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
-                             const indexed_triangle_set *mesh = nullptr);
+                             const indexed_triangle_set *mesh = nullptr, const EngineeringLayerField *stress = nullptr);
+// Whether the layers computed by the structural analysis still fit the part (same size of its bounding box).
+bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox);
 // Mesh subdivision length suited to the configured field.
 double mesh_max_edge(const PrintConfig &config);
 GCodeFilterParams make_filter_params(const PrintConfig &config);

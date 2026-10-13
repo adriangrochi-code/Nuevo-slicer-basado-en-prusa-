@@ -5,6 +5,7 @@
 #ifndef tisma_fea_Analysis_hpp_
 #define tisma_fea_Analysis_hpp_
 
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -153,6 +154,8 @@ struct Result
     std::vector<float>  von_mises;          // [MPa]
     std::vector<float>  failure_index;      // stress / strength at the temperature, > 1 = breaks
     std::vector<Vec3f>  displacement;       // at the center of the voxel [mm]
+    // Homogenized stress at the center of the voxel in the coordinates of the setup [MPa]: xx, yy, zz, yz, xz, xy.
+    std::vector<std::array<float, 6>> stress;
     // Fraction of material in the voxel (1 = solid, shell; the infill density inside).
     std::vector<float>  density;
     // Interior voxels (not in the shell): their density is the one of the infill.

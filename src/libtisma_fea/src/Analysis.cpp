@@ -668,6 +668,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     res.von_mises.resize(n_el);
     res.failure_index.resize(n_el);
     res.displacement.resize(n_el);
+    res.stress.resize(n_el);
     res.density  = vm_mat.density;
     res.interior = vm_mat.interior;
     // Stress measures for the safety factors of the other materials.
@@ -685,7 +686,10 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         // Homogenized stress of the voxel; the strength of the voxel is scaled the same way as the material.
         // Stress in the frame of the layers: z across the layers, yz and xz the shear between the layers.
         const Orientation &o = orientations[orientation_of[e]];
-        const Eigen::Matrix<double, 6, 1> s = o.to_layers * (double(vm_mat.stiffness[e]) * (o.c * (b0 * ue)));
+        const Eigen::Matrix<double, 6, 1> s_setup = double(vm_mat.stiffness[e]) * (o.c * (b0 * ue));
+        const Eigen::Matrix<double, 6, 1> s = o.to_layers * s_setup;
+        for (int k = 0; k < 6; ++ k)
+            res.stress[e][k] = float(s_setup[k]);
         const double sf_e = std::max(double(vm_mat.strength[e]), 1e-6);
         const double vm = std::sqrt(0.5 * ((s[0] - s[1]) * (s[0] - s[1]) + (s[1] - s[2]) * (s[1] - s[2]) + (s[2] - s[0]) * (s[2] - s[0]))
                                     + 3. * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5]));

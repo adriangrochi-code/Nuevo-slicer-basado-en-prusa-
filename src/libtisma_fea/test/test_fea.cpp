@@ -13,6 +13,7 @@
 #include "tisma_fea/Optimize.hpp"
 #include "tisma_fea/Structures.hpp"
 #include "tisma_fea/Orientation.hpp"
+#include "tisma_fea/StressLayers.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
@@ -1080,4 +1081,146 @@ TEST_CASE("Non-planar print settings reach the analysis", "[FEA][NonPlanar]")
     // Ridges of amplitude 1 mm and wavelength 20 mm: slope up to atan(2π / 20) ≈ 17°.
     CHECK(max_tilt * 180. / M_PI > 10.);
     CHECK(max_tilt * 180. / M_PI < 20.);
+}
+
+TEST_CASE("Curved layers follow the pull of an inclined bar", "[FEA][NonPlanar][StressLayers]")
+{
+    // A bar of 8 x 8 x 40 mm leaning 45° along X, held at its lower end and pulled along its axis: with flat layers
+    // the pull crosses the layers at 45°.
+    indexed_triangle_set its = its_make_cube(8., 8., 40.);
+    const std::vector<int> bottom = side(its, 2, false), top = side(its, 2, true);
+    const double angle = M_PI / 4.;
+    its_transform(its, Transform3d(Eigen::AngleAxisd(angle, Vec3d::UnitY())));
+    BoundingBoxf3 bbox;
+    for (const stl_vertex &v : its.vertices)
+        bbox.merge(v.cast<double>());
+    its_translate(its, (- bbox.min).cast<float>());
+    bbox = BoundingBoxf3();
+    for (const stl_vertex &v : its.vertices)
+        bbox.merge(v.cast<double>());
+    const Vec3d axis(std::sin(angle), 0., std::cos(angle));
+
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.5;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ bottom });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = top;
+    load.force     = 300. * axis;
+    setup.loads.push_back(load);
+    const Result flat = analyze(its, setup);
+    REQUIRE(flat.ok);
+    REQUIRE(flat.stress.size() == flat.voxels.size());
+
+    StressLayersParams params;
+    params.tan_x = params.tan_y = std::tan(25. * M_PI / 180.);
+    const StressLayersResult layers = stress_layers(its, flat, params);
+    REQUIRE(layers.ok);
+    CHECK(layers.tension_voxels > flat.voxels.size() / 2);
+    CHECK(layers.field.part_size.isApprox(bbox.size(), 1e-6));
+
+    // In the middle of the bar the layers rise along the pull (+X), about as steep as the head allows.
+    const auto normals = layer_field_normals(layers.field, bbox.min);
+    const Vec3d middle = 0.5 * (bbox.min + bbox.max);
+    const Vec3d n = normals(middle);
+    const double slope = - n.x() / n.z();
+    CHECK(slope > 0.6 * params.tan_x);
+    CHECK(slope < 1.2 * params.tan_x);
+    CHECK(std::abs(n.y()) < 0.05);
+
+    // The same pull crosses the curved layers less: the part holds more.
+    Setup curved_setup = setup;
+    curved_setup.layer_normal = normals;
+    const Result curved = analyze(its, curved_setup);
+    REQUIRE(curved.ok);
+    CHECK(curved.layer_orientations > 1);
+    WARN("Safety factor flat " << flat.safety_factor << ", curved " << curved.safety_factor);
+    CHECK(curved.safety_factor > 1.15 * flat.safety_factor);
+}
+
+TEST_CASE("Curved layers stay flat where the pull is along the layers", "[FEA][NonPlanar][StressLayers]")
+{
+    // A horizontal bar pulled along X: the pull already runs along flat layers.
+    const Result flat = bar(40., 8., 8., Vec3d(300., 0., 0.), "PLA", 23., 2.);
+    REQUIRE(flat.ok);
+    const indexed_triangle_set its = its_make_cube(40., 8., 8.);
+    const StressLayersResult layers = stress_layers(its, flat, StressLayersParams());
+    REQUIRE(layers.ok);
+    const auto normals = layer_field_normals(layers.field, Vec3d::Zero());
+    for (const Vec3d &p : { Vec3d(10., 4., 4.), Vec3d(20., 4., 4.), Vec3d(30., 4., 4.) })
+        CHECK(normals(p).z() > 0.995);
+}
+
+TEST_CASE("Curved layers of an object reach the slicing and the 3MF", "[FEA][NonPlanar][StressLayers]")
+{
+    // The inclined bar of the test above as an object of the model: a bar standing on Z, rotated 45° about Y.
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "strut";
+    ModelVolume *volume = object->add_volume(TriangleMesh(its_make_cube(8., 8., 40.)));
+    object->add_instance();
+    const double angle = M_PI / 4.;
+    object->instances.front()->set_rotation(Vec3d(0., angle, 0.));
+    object->ensure_on_bed();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(volume->mesh().its, 2, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type        = EngineeringLoad::Type::Faces;
+    load.name        = "pull";
+    load.faces.volume    = 0;
+    load.faces.triangles = side(volume->mesh().its, 2, true);
+    load.force       = 300. * Vec3d(std::sin(angle), 0., std::cos(angle));
+    object->engineering.loads.push_back(load);
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "nonplanar_max_slope",      25. },
+        { "use_relative_e_distances", true },
+        { "arc_fitting",              "disabled" },
+        { "skirts",                   0 },
+        { "fill_density",             "100%" },
+    });
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    input.setup.voxel_size = 1.5;
+    const CurvedLayersResult layers = curved_layers_for_strength(input, config);
+    INFO(layers.error);
+    REQUIRE(layers.ok);
+    WARN("Safety factor flat " << layers.flat.safety_factor << ", curved as sliced " << layers.curved.safety_factor);
+    CHECK(layers.curved.safety_factor > 1.05 * layers.flat.safety_factor);
+    CHECK(layers.field.safety_flat == Approx(layers.flat.safety_factor));
+    CHECK(layers.field.safety_curved == Approx(layers.curved.safety_factor));
+
+    // Sliced with the stresses mode: the layers fit the part (same bounding box in the object coordinates).
+    object->engineering.layer_field = layers.field;
+    config.set_deserialize_strict({ { "nonplanar_mode", "stress" } });
+    Print print;
+    print.apply(model, config);
+    CHECK(print.validate().empty());
+
+    // Kept in the 3MF.
+    const std::string path = (boost::filesystem::temp_directory_path() / "tisma_layer_field_test.3mf").string();
+    REQUIRE(store_3mf(path.c_str(), &model, nullptr, false));
+    Model                     loaded;
+    DynamicPrintConfig        loaded_config;
+    ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
+    boost::optional<Semver>   version;
+    REQUIRE(load_3mf(path.c_str(), loaded_config, ctxt, &loaded, false, version));
+    boost::filesystem::remove(path);
+    REQUIRE(loaded.objects.size() == 1);
+    const EngineeringLayerField &a = object->engineering.layer_field, &b = loaded.objects.front()->engineering.layer_field;
+    REQUIRE(b.offset.size() == a.offset.size());
+    CHECK(b.nx == a.nx);
+    CHECK(b.nz == a.nz);
+    CHECK((b.origin - a.origin).norm() < 1e-4);
+    CHECK((b.part_size - a.part_size).norm() < 1e-4);
+    double max_diff = 0.;
+    for (size_t i = 0; i < a.offset.size(); ++ i)
+        max_diff = std::max(max_diff, double(std::abs(a.offset[i] - b.offset[i])));
+    CHECK(max_diff < 1e-3);
+    CHECK(b.safety_curved == Approx(a.safety_curved).epsilon(1e-4));
 }

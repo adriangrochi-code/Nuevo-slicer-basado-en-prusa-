@@ -30,6 +30,7 @@
 #include "slic3r/GUI/MeshUtils.hpp"
 #include "slic3r/GUI/NotificationManager.hpp"
 #include "slic3r/GUI/Plater.hpp"
+#include "slic3r/GUI/Tab.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/Gizmos/GLGizmosCommon.hpp"
 
@@ -781,6 +782,56 @@ void GLGizmoEngineering::rotate_to_recommended()
     notify(_u8L("Part rotated to print the loads along the layers: analyze again and check the supports of the print."));
 }
 
+void GLGizmoEngineering::start_curved_layers()
+{
+    Fea::ModelAnalysisInput input;
+    if (! prepare_input(input))
+        return;
+    if (! m_as_printed)
+        input.setup.infill = Fea::InfillModel();
+    const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
+    launch<Fea::CurvedLayersResult>([this, input = std::move(input), config]() {
+        return Fea::curved_layers_for_strength(input, config, [this]() { return m_cancel.load(); },
+                                               [this](int p) { m_progress = p; });
+    }, &m_pending_layers);
+}
+
+void GLGizmoEngineering::apply_curved_layers()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_layers || ! m_layers->ok || mo->id() != m_layers_object)
+        return;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Curved layers for strength"));
+    mo->engineering.layer_field = m_layers->field;
+    // The non-planar layers of the print settings follow the stresses.
+    if (Tab *tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+        DynamicPrintConfig new_conf = *tab->get_config();
+        if (new_conf.option<ConfigOptionEnum<NonPlanarMode>>("nonplanar_mode")->value != NonPlanarMode::Stress) {
+            new_conf.set_key_value("nonplanar_mode", new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Stress));
+            tab->load_config(new_conf);
+        }
+    }
+    changed_object(*mo);
+    notify(_u8L("Curved layers applied: Print Settings > Non-planar follows the stresses. Slice to see the layers."));
+}
+
+void GLGizmoEngineering::remove_curved_layers()
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || mo->engineering.layer_field.empty())
+        return;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Remove the curved layers"));
+    mo->engineering.layer_field = EngineeringLayerField();
+    if (Tab *tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+        DynamicPrintConfig new_conf = *tab->get_config();
+        if (new_conf.option<ConfigOptionEnum<NonPlanarMode>>("nonplanar_mode")->value == NonPlanarMode::Stress) {
+            new_conf.set_key_value("nonplanar_mode", new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Disabled));
+            tab->load_config(new_conf);
+        }
+    }
+    changed_object(*mo);
+}
+
 void GLGizmoEngineering::cancel_analysis()
 {
     m_cancel = true;
@@ -793,6 +844,7 @@ void GLGizmoEngineering::cancel_analysis()
     m_pending_reinf.reset();
     m_pending_lattice.reset();
     m_pending_orient.reset();
+    m_pending_layers.reset();
     m_pending_aero.reset();
 }
 
@@ -803,13 +855,31 @@ void GLGizmoEngineering::fetch_result()
     std::optional<Fea::ReinforcementResult> reinf;
     std::optional<Fea::LatticeResult> lattice;
     std::optional<Fea::OrientationResult> orient;
+    std::optional<Fea::CurvedLayersResult> layers;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         orient.swap(m_pending_orient);
+        layers.swap(m_pending_layers);
         res.swap(m_pending);
         opt.swap(m_pending_opt);
         reinf.swap(m_pending_reinf);
         lattice.swap(m_pending_lattice);
+    }
+    if (layers) {
+        if (m_thread.joinable())
+            m_thread.join();
+        if (! layers->ok) {
+            m_error = layers->error == "Cancelled" ? std::string() : layers->error;
+            return;
+        }
+        m_layers        = std::move(*layers);
+        m_layers_object = m_result_object;
+        // Show the analysis with the curved layers.
+        m_result = m_layers->curved;
+        m_result_is_lattice = false;
+        m_result_stale = false;
+        m_result_models_dirty = true;
+        return;
     }
     if (orient) {
         if (m_thread.joinable())
@@ -1694,6 +1764,38 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             ImGuiPureWrap::text_wrapped(_u8L("The overhangs and the supports of the new orientation are not checked."), width);
         }
       }
+    }
+
+    // Curved layers that follow the stresses (non-planar).
+    if (ImGui::CollapsingHeader(_u8L("Curved layers for strength").c_str())) {
+        ImGuiPureWrap::text_wrapped(_u8L("Tilts the layers towards where the part is pulled, as far as the print head allows, so that "
+                                         "the pull runs more along the layers (non-planar layers, 3 axes)."), width);
+        if (ImGuiPureWrap::button(_u8L("Compute curved layers")) && can_run)
+            start_curved_layers();
+        if (m_layers && m_layers->ok && m_layers_object == mo->id()) {
+            const double flat = m_layers->flat.safety_factor, curved = m_layers->curved.safety_factor;
+            ImGuiPureWrap::text(GUI::format(_u8L("Flat layers: safety factor %1$.2f"), flat));
+            const std::string text = GUI::format(_u8L("Curved layers: safety factor %1$.2f (x %2$.2f)"), curved, curved / std::max(flat, 1e-9));
+            if (curved > 1.02 * flat)
+                ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::Holds)), text);
+            else
+                ImGuiPureWrap::text(text);
+            if (curved > 1.02 * flat) {
+                if (ImGuiPureWrap::button(_u8L("Use the curved layers")))
+                    apply_curved_layers();
+            } else
+                ImGuiPureWrap::text_wrapped(_u8L("The curved layers do not help these loads: keep the flat layers."), width);
+        }
+        if (! mo->engineering.layer_field.empty()) {
+            const EngineeringLayerField &f = mo->engineering.layer_field;
+            ImGuiPureWrap::text_wrapped(f.safety_flat > 0. ?
+                GUI::format(_u8L("The object has curved layers (safety factor %1$.2f -> %2$.2f)."), f.safety_flat, f.safety_curved) :
+                _u8L("The object has curved layers."), width);
+            if (ImGuiPureWrap::button(_u8L("Remove the curved layers")))
+                remove_curved_layers();
+        }
+        ImGuiPureWrap::text_wrapped(_u8L("Experimental: check the strength with your own test pieces. The layer thickness, the print "
+                                         "head and the first flat layers limit the tilt."), width);
     }
 
     ImGui::PopItemWidth();

@@ -87,6 +87,38 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
+## Capas curvas por tensiones (Tisma)
+
+Es el punto 1 de la conclusión. En Ingeniería, sección «Capas curvas para resistencia»: **Calcular capas curvas** y,
+si ayudan, **Usar las capas curvas**. Eso guarda las capas en el objeto (se guardan en el 3MF y se pueden deshacer) y
+pone Configuración de impresión > No planar en «Tensiones».
+
+- **Objetivo**: las piezas impresas son más débiles entre capas. Donde la pieza está traccionada, la capa debería
+  contener la dirección del tirón para que vaya a lo largo de las extrusiones.
+- **Cálculo** (`src/libtisma_fea/src/StressLayers.cpp`):
+  1. análisis con capas planas; el FEA ahora guarda el tensor de tensiones de cada vóxel;
+  2. por vóxel, la tensión principal mayor (si es tracción) y su dirección; la capa debe subir a lo largo de la
+     dirección horizontal del tirón con pendiente tirón_z / tirón_horizontal, limitada por el cabezal (cono elíptico
+     de los ángulos libres en X e Y). Los tirones casi verticales se dejan: inclinar 20–30° casi no ayuda;
+  3. el desplazamiento de las capas se ajusta por mínimos cuadrados en una grilla 3D: pendientes pedidas pesadas por la
+     tracción y por cuán horizontal es el tirón, capas suaves, poco cambio a lo largo de Z (espesor de capa) y planas
+     en las primeras capas. Se resuelve con gradiente conjugado (Eigen);
+  4. análisis de nuevo con las capas tal como se laminarán (transición desde las primeras capas planas, espesor dentro
+     de 60–140 %, pendiente dentro del cabezal): se muestran los dos factores de seguridad.
+- **Laminado**: modo `nonplanar_mode = stress`. Usa las capas guardadas en el objeto, relativas a la esquina mínima de
+  la caja de la pieza, así que se puede mover en la cama. Si la pieza cambió de tamaño o de orientación, el laminado
+  pide calcularlas de nuevo. Las capas se reducen hasta respetar el espesor y el cabezal, igual que el modo voladizos.
+- **Test** (`Curved layers follow the pull of an inclined bar`): barra de 8 × 8 × 40 mm inclinada 45°, sujeta abajo y
+  traccionada a lo largo de su eje, con un cabezal de 25°: el factor de seguridad pasa de 5,97 a 7,83 (+31 %). Una
+  barra horizontal traccionada a lo largo queda con capas planas.
+- **Límites**: en 3 ejes las capas solo se inclinan lo que deja el cabezal, y la transición desde las primeras capas
+  planas reduce la inclinación cerca de la cama. Es un modelo lineal con material homogeneizado. La ganancia real hay
+  que medirla con probetas.
+- **Fuentes**: la idea de capas que siguen las tensiones principales es la de S³-Slicer (Zhang et al., SIGGRAPH Asia
+  2022). Las capas ligeramente curvas con límites de pendiente y espesor para 3 ejes son las de CurviSlicer (Etienne
+  et al., ACM Transactions on Graphics 38(4), SIGGRAPH 2019). La formulación de Tisma (mínimos cuadrados sobre las
+  pendientes pedidas por el tirón) es propia y mucho más simple; no usa código de esos proyectos.
+
 ## Relleno entrelazado (Tisma)
 
 Opción «Relleno entrelazado (no planar)» (`interlock_infill`, Configuración de impresión > Relleno > Avanzado). Es el

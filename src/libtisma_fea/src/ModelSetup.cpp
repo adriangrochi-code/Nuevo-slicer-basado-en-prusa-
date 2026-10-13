@@ -201,7 +201,7 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
                 for (stl_vertex &v : part_mesh.vertices)
                     v.z() -= float(z0);
                 auto deformation = std::make_shared<NonPlanar::Deformation>(
-                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh));
+                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh, &object.engineering.layer_field));
                 setup.layer_normal = [deformation, z0](const Vec3d &p) {
                     return deformation->layer_normal(p.x(), p.y(), p.z() - z0);
                 };

@@ -33235,8 +33235,8 @@ msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de 
 msgid "Step 1: narrowest free groove φ in that row, walls along Y (second block)"
 msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de Y (segundo bloque)"
 
-msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed."
-msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes."
+msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed. Stresses: the layers tilt towards where the part is pulled, as computed in Engineering (Curved layers for strength), so that the pull runs more along the layers."
+msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes. Tensiones: las capas se inclinan hacia donde tiran de la pieza, según lo calculado en Ingeniería (Capas curvas para resistencia), para que el tirón vaya más a lo largo de las capas."
 
 msgid "Overhangs (fewer supports)"
 msgstr "Voladizos (menos soportes)"
@@ -33318,3 +33318,48 @@ msgstr "El relleno entrelazado no se puede usar con impresoras de cinta."
 
 msgid "Interlocking infill requires Arc fitting to be disabled."
 msgstr "El relleno entrelazado requiere el ajuste de arcos desactivado."
+
+msgid "Stresses (stronger, from Engineering)"
+msgstr "Tensiones (más resistente, desde Ingeniería)"
+
+msgid "Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength)."
+msgstr "Capas no planares según las tensiones: primero calculalas en Ingeniería (Capas curvas para resistencia)."
+
+msgid "Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again."
+msgstr "Capas no planares según las tensiones: la pieza cambió desde que se calcularon en Ingeniería, calculalas de nuevo."
+
+msgid "Curved layers for strength"
+msgstr "Capas curvas para resistencia"
+
+msgid "Remove the curved layers"
+msgstr "Quitar las capas curvas"
+
+msgid "Tilts the layers towards where the part is pulled, as far as the print head allows, so that the pull runs more along the layers (non-planar layers, 3 axes)."
+msgstr "Inclina las capas hacia donde tiran de la pieza, tanto como permite el cabezal, para que el tirón vaya más a lo largo de las capas (capas no planares, 3 ejes)."
+
+msgid "Compute curved layers"
+msgstr "Calcular capas curvas"
+
+msgid "Flat layers: safety factor %1$.2f"
+msgstr "Capas planas: factor de seguridad %1$.2f"
+
+msgid "Curved layers: safety factor %1$.2f (x %2$.2f)"
+msgstr "Capas curvas: factor de seguridad %1$.2f (x %2$.2f)"
+
+msgid "Use the curved layers"
+msgstr "Usar las capas curvas"
+
+msgid "The curved layers do not help these loads: keep the flat layers."
+msgstr "Las capas curvas no ayudan con estas cargas: dejá las capas planas."
+
+msgid "The object has curved layers (safety factor %1$.2f -> %2$.2f)."
+msgstr "El objeto tiene capas curvas (factor de seguridad %1$.2f -> %2$.2f)."
+
+msgid "The object has curved layers."
+msgstr "El objeto tiene capas curvas."
+
+msgid "Experimental: check the strength with your own test pieces. The layer thickness, the print head and the first flat layers limit the tilt."
+msgstr "Experimental: comprobá la resistencia con tus propias probetas. El espesor de capa, el cabezal y las primeras capas planas limitan la inclinación."
+
+msgid "Curved layers applied: Print Settings > Non-planar follows the stresses. Slice to see the layers."
+msgstr "Capas curvas aplicadas: Configuración de impresión > No planar sigue las tensiones. Laminá para ver las capas."

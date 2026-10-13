@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Capas curvas por tensiones**: Ingeniería calcula capas no planares que se inclinan hacia donde tiran de la pieza,
+  tanto como deja el cabezal, y las compara con capas planas (factor de seguridad). Con «Usar las capas curvas», el
+  modo no planar «Tensiones» las lamina (`docs/NONPLANAR_ANALYSIS.md`).
 - **Relleno entrelazado (no planar)**: el relleno disperso ondula en Z con la misma huevera en cada capa, para que las
   capas encastren en lugar de apoyarse en planos; paredes y superficies quedan planas (`docs/NONPLANAR_ANALYSIS.md`).
 - **Orientación automática para FDM y resina**: en el gizmo de rotación, «Menos material de soporte» (FDM: apoya la

@@ -302,3 +302,52 @@ TEST_CASE("Non-planar layers tilted under the overhangs stay within the print he
     // Not enough for a 55° flare: left flat, the supports are not made taller.
     REQUIRE(supports(55., "overhangs") == Approx(supports(55., "disabled")).epsilon(0.01));
 }
+
+// Layers rising 0.3 mm per mm along X over a part of 20 x 20 x 20 mm, as the structural analysis would store them.
+static EngineeringLayerField tilted_layers(double slope)
+{
+    EngineeringLayerField field;
+    field.origin    = Vec3d(-2., -2., -2.);
+    field.cell      = 2.;
+    field.nx = field.ny = field.nz = 14;
+    field.part_size = Vec3d(20., 20., 20.);
+    for (int k = 0; k < field.nz; ++ k)
+        for (int j = 0; j < field.ny; ++ j)
+            for (int i = 0; i < field.nx; ++ i)
+                field.offset.push_back(float(slope * (field.origin.x() + i * field.cell - 10.)));
+    return field;
+}
+
+TEST_CASE("Non-planar layers following the stresses of the analysis", "[NonPlanar][StressLayers]")
+{
+    DynamicPrintConfig config = nonplanar_config("stress");
+    config.set_deserialize_strict({ { "nonplanar_max_slope", "30" } });
+    Print print;
+    Model model;
+    Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
+
+    SECTION("not computed yet") {
+        REQUIRE(print.validate().find("compute them first") != std::string::npos);
+    }
+    SECTION("computed for another part") {
+        EngineeringLayerField field = tilted_layers(0.3);
+        field.part_size = Vec3d(30., 20., 20.);
+        model.objects.front()->engineering.layer_field = field;
+        print.apply(model, config);
+        REQUIRE(print.validate().find("the part changed") != std::string::npos);
+    }
+    SECTION("the layers rise along X") {
+        const Extrusions flat = analyse(Test::gcode(print));
+        model.objects.front()->engineering.layer_field = tilted_layers(0.3);
+        print.apply(model, config);
+        REQUIRE(print.validate().empty());
+        const Extrusions curved = analyse(Test::gcode(print));
+        // Flat without the field (the stresses mode without layers keeps the layers flat).
+        for (const auto &[layer, zs] : flat.z_by_layer)
+            REQUIRE(zs.size() == 1);
+        // In the middle of the part the layers are tilted (the transitions above the first layers reduce the slope
+        // to keep the layer thickness).
+        const auto &middle = curved.z_by_layer.lower_bound(12.)->second;
+        CHECK(*middle.rbegin() - *middle.begin() > 0.5);
+    }
+}
