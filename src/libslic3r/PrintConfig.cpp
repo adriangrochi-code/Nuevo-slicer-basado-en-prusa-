@@ -1125,7 +1125,7 @@ void PrintConfigDef::init_fff_params()
     def = this->add("end_gcode", coString);
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file. "
-                   "Note that you can use placeholder variables for all PrusaSlicer settings.");
+                   "Note that you can use placeholder variables for all Tisma Slicer settings.");
     def->multiline = true;
     def->full_width = true;
     def->height = 12;
@@ -1136,7 +1136,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file, before the printer end gcode (and "
                    "before any toolchange from this filament in case of multimaterial printers). "
-                   "Note that you can use placeholder variables for all PrusaSlicer settings. "
+                   "Note that you can use placeholder variables for all Tisma Slicer settings. "
                    "If you have multiple extruders, the gcode is processed in extruder order.");
     def->multiline = true;
     def->full_width = true;
@@ -1959,7 +1959,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("G-code flavor");
     def->tooltip = L("Some G/M-code commands, including temperature control and others, are not universal. "
                    "Set this option to your printer's firmware to get a compatible output. "
-                   "The \"No extrusion\" flavor prevents PrusaSlicer from exporting any extrusion value at all.");
+                   "The \"No extrusion\" flavor prevents Tisma Slicer from exporting any extrusion value at all.");
     def->set_enum<GCodeFlavor>({
         { "reprap",         "RepRap/Sprinter" },
         { "reprapfirmware", "RepRapFirmware" },
@@ -2076,7 +2076,7 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Advanced");
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
-                     "PrusaSlicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
+                     "Tisma Slicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
                      "shorter than infill_anchor_max is found, the infill line is connected to a perimeter segment at just one side "
                      "and the length of the perimeter segment taken is limited to this parameter, but no longer than anchor_length_max. "
                      "Set this parameter to zero to disable anchoring perimeters connected to a single infill line.");
@@ -2099,7 +2099,7 @@ void PrintConfigDef::init_fff_params()
     def->category    = def_infill_anchor_min->category;
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
-                     "PrusaSlicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
+                     "Tisma Slicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
                      "shorter than this parameter is found, the infill line is connected to a perimeter segment at just one side "
                      "and the length of the perimeter segment taken is limited to infill_anchor, but no longer than this parameter. "
                      "Set this parameter to zero to disable anchoring.");
@@ -2517,7 +2517,7 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Maximum junction deviation");
     def->category = L("Machine limits");
     def->tooltip = L("Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\n"
-                     "When enabled, PrusaSlicer uses it for time estimates and G-code Viewer speeds instead of Jerk.");
+                     "When enabled, Tisma Slicer uses it for time estimates and G-code Viewer speeds instead of Jerk.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
@@ -3036,7 +3036,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("travel_lift_before_obstacle", coBools);
     def->label = L("Steeper ramp before obstacles");
-    def->tooltip = L("If enabled, PrusaSlicer detects obstacles along the travel path and makes the slope steeper "
+    def->tooltip = L("If enabled, Tisma Slicer detects obstacles along the travel path and makes the slope steeper "
                      "in case an obstacle might be hit during the initial phase of the travel.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools{false});
@@ -3576,7 +3576,7 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_flow_policy", coEnum);
     def->label = L("Flow");
     def->category = L("Non-planar");
-    def->tooltip = L("Preserve: keep the volumetric flow PrusaSlicer planned, adjusting the speed to the curved "
+    def->tooltip = L("Preserve: keep the volumetric flow Tisma Slicer planned, adjusting the speed to the curved "
                    "path and layer thickness. Uniform: print everything except external perimeters, overhangs, "
                    "bridges and gap fill at the same volumetric flow, for an even bonding between lines. "
                    "Off: keep the speeds unchanged.");
@@ -3611,16 +3611,16 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("autoemit_temperature_commands", coBool);
     def->label = L("Emit temperature commands automatically");
-    def->tooltip = L("When enabled, PrusaSlicer will check whether your custom Start G-Code contains G-codes to set "
+    def->tooltip = L("When enabled, Tisma Slicer will check whether your custom Start G-Code contains G-codes to set "
                      "extruder, bed or chamber temperature (M104, M109, M140, M190, M141 and M191). "
                      "If so, the temperatures will not be emitted automatically so you're free to customize "
                      "the order of heating commands and other custom actions. Note that you can use "
-                     "placeholder variables for all PrusaSlicer settings, so you can put "
+                     "placeholder variables for all Tisma Slicer settings, so you can put "
                      "a \"M109 S[first_layer_temperature]\" command wherever you want.\n"
                      "If your custom Start G-Code does NOT contain these G-codes, "
-                     "PrusaSlicer will execute the Start G-Code after heated chamber was set to its temperature, "
+                     "Tisma Slicer will execute the Start G-Code after heated chamber was set to its temperature, "
                      "bed reached its target temperature and extruder just started heating.\n\n"
-                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed or chamber, "
+                     "When disabled, Tisma Slicer will NOT emit commands to heat up extruder, bed or chamber, "
                      "leaving all to Custom Start G-Code.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
@@ -3657,11 +3657,11 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Start G-code");
     def->tooltip = L("This start procedure is inserted at the beginning, after any printer start gcode (and "
                    "after any toolchange to this filament in case of multi-material printers). "
-                   "This is used to override settings for a specific filament. If PrusaSlicer detects "
+                   "This is used to override settings for a specific filament. If Tisma Slicer detects "
                    "M104, M109, M140 or M190 in your custom codes, such commands will "
                    "not be prepended automatically so you're free to customize the order "
                    "of heating commands and other custom actions. Note that you can use placeholder variables "
-                   "for all PrusaSlicer settings, so you can put a \"M109 S[first_layer_temperature]\" command "
+                   "for all Tisma Slicer settings, so you can put a \"M109 S[first_layer_temperature]\" command "
                    "wherever you want. If you have multiple extruders, the gcode is processed "
                    "in extruder order.");
     def->multiline = true;
@@ -4147,9 +4147,9 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("toolchange_gcode", coString);
     def->label = L("Tool change G-code");
-    def->tooltip = L("This custom code is inserted before every toolchange. Placeholder variables for all PrusaSlicer settings "
+    def->tooltip = L("This custom code is inserted before every toolchange. Placeholder variables for all Tisma Slicer settings "
                      "as well as {toolchange_z}, {previous_extruder} and {next_extruder} can be used. When a tool-changing command "
-                     "which changes to the correct extruder is included (such as T{next_extruder}), PrusaSlicer will emit no other such command. "
+                     "which changes to the correct extruder is included (such as T{next_extruder}), Tisma Slicer will emit no other such command. "
                      "It is therefore possible to script custom behaviour both before and after the toolchange.");
     def->multiline = true;
     def->full_width = true;
@@ -6677,8 +6677,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 
     def = this->add("config_compatibility", coEnum);
     def->label = L("Forward-compatibility rule when loading configurations from config files and project files (3MF, AMF).");
-    def->tooltip = L("This version of PrusaSlicer may not understand configurations produced by the newest PrusaSlicer versions. "
-        "For example, newer PrusaSlicer may extend the list of supported firmware flavors. One may decide to "
+    def->tooltip = L("This version of Tisma Slicer may not understand configurations produced by the newest PrusaSlicer versions. "
+        "For example, newer versions may extend the list of supported firmware flavors. One may decide to "
         "bail out or to substitute an unknown value with a default silently or verbosely.");
     def->set_enum<ForwardCompatibilitySubstitutionRule>({
         { "disable",        L("Bail out on unknown configuration values") },
@@ -6736,8 +6736,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 
     def = this->add("single_instance", coBool);
     def->label = L("Single instance mode");
-    def->tooltip = L("If enabled, the command line arguments are sent to an existing instance of GUI PrusaSlicer, "
-                     "or an existing PrusaSlicer window is activated. "
+    def->tooltip = L("If enabled, the command line arguments are sent to an existing instance of GUI Tisma Slicer, "
+                     "or an existing Tisma Slicer window is activated. "
                      "Overrides the \"single_instance\" configuration value from application preferences.");
 
     def = this->add("delete-after-load", coString);
@@ -6786,12 +6786,12 @@ ReadWriteSlicingStatesConfigDef::ReadWriteSlicingStatesConfigDef()
     def = this->add("position", coFloats);
     def->label = L("Position");
     def->tooltip = L("Position of the extruder at the beginning of the custom G-code block. If the custom G-code travels somewhere else, "
-                     "it should write to this variable so PrusaSlicer knows where it travels from when it gets control back.");
+                     "it should write to this variable so Tisma Slicer knows where it travels from when it gets control back.");
 
     def = this->add("e_retracted", coFloats);
     def->label = L("Retraction");
     def->tooltip = L("Retraction state at the beginning of the custom G-code block. If the custom G-code moves the extruder axis, "
-                     "it should write to this variable so PrusaSlicer deretracts correctly when it gets control back.");
+                     "it should write to this variable so Tisma Slicer deretracts correctly when it gets control back.");
 
     def = this->add("e_restart_extra", coFloats);
     def->label = L("Extra deretraction");

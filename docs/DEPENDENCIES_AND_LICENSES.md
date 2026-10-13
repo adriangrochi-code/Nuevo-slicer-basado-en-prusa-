@@ -17,7 +17,11 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
   de PrusaSlicer y Slic3r (ya están en la pantalla de inicio y en "Acerca de").
 - **Marcas**: "Prusa" y "PrusaSlicer" son marcas de Prusa Research. El fork ya usa nombre, logo y carpeta de datos
   propios. Siguen apareciendo como identificadores internos (`SLIC3R_APP_KEY`, metadatos del 3MF) por
-  compatibilidad, y en los perfiles del fabricante Prusa, que es lo habitual en otros forks.
+  compatibilidad, y en los perfiles del fabricante Prusa, que es lo habitual en otros forks. En la interfaz el
+  programa se llama «Tisma Slicer»; «PrusaSlicer» solo queda donde nombra al original: los créditos («basado en
+  PrusaSlicer»), las versiones de PrusaSlicer de las instantáneas de configuración y los avisos de archivos o ajustes
+  de versiones más nuevas («Tisma Slicer o PrusaSlicer»). Los catálogos de traducción siguen llamándose
+  `PrusaSlicer*.po` / `PrusaSlicer.mo` porque los busca por `SLIC3R_APP_KEY`.
 - Código de **OrcaSlicer** (AGPL-3.0): se puede portar con atribución. El suite de calibraciones actual está
   inspirado en Orca, pero el código y los modelos son propios; no se copió código de Orca.
 

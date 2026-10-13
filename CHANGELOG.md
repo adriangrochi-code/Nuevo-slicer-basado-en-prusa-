@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Marca**: los textos de la interfaz que todavía decían «PrusaSlicer» (preferencias, errores, «no volver a
+  preguntar», actualizaciones, ayudas de los ajustes) dicen «Tisma Slicer» en inglés y en los 22 idiomas; también las
+  traducciones que ponían «PrusaSlicer» donde el inglés decía Slic3r. Se regeneraron los catálogos `.mo`, así que las
+  traducciones al español agregadas en esta versión ya se ven en el programa.
 - **Análisis estructural: relleno y paredes como se laminan**: las paredes ahora tienen el espesor del material que
   ponen los perímetros (eran un 17 % más gruesas) y el relleno el material que deposita cada patrón (el panal pone un
   tercio más de lo pedido, el panal 3D un 11 % menos). La masa del análisis coincide con la laminada dentro de ±3 % en

@@ -253,7 +253,7 @@ los datos del usuario.
 | 8 | Exponentes del relleno y del lattice con probetas | Físico |
 | 9 | Arc overhangs e impresoras de cinta en una impresora real | Físico |
 | 10 | Cierre al agregar varias impresoras de resina | Decisión (datos para reproducirlo) |
-| 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Pendiente |
+| 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Hecho: 81 textos en inglés y sus traducciones en los 22 idiomas; quedan los créditos y las versiones de PrusaSlicer (`docs/DEPENDENCIES_AND_LICENSES.md`) |
 | 12 | Fase 8: optimizaciones del laminado y bugs heredados | En curso |
 | 13 | Bambu LAN: revocación TLS en Windows | Pendiente |
 | 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Pendiente |

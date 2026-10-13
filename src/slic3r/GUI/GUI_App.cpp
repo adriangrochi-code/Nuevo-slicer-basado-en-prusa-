@@ -751,8 +751,8 @@ static void generic_exception_handle()
         BOOST_LOG_TRIVIAL(error) << boost::format("std::bad_alloc exception: %1%") % ex.what();
         std::terminate();
     } catch (const boost::io::bad_format_string& ex) {
-        wxString errmsg = _L("PrusaSlicer has encountered a localization error. "
-                             "Please report to PrusaSlicer team, what language was active and in which scenario "
+        wxString errmsg = _L("Tisma Slicer has encountered a localization error. "
+                             "Please report to Tisma Slicer team, what language was active and in which scenario "
                              "this issue happened. Thank you.\n\nThe application will now terminate.");
         wxMessageBox(errmsg + "\n\n" + wxString(ex.what()), _L("Critical error"), wxOK | wxICON_ERROR);
         BOOST_LOG_TRIVIAL(error) << boost::format("Uncaught exception: %1%") % ex.what();
@@ -1353,9 +1353,9 @@ bool GUI_App::on_init_inner()
     // Win32 32bit build.
     if (wxPlatformInfo::Get().GetArchName().substr(0, 2) == "64") {
         RichMessageDialog dlg(nullptr,
-            _L("You are running a 32 bit build of PrusaSlicer on 64-bit Windows."
-                "\n32 bit build of PrusaSlicer will likely not be able to utilize all the RAM available in the system."
-                "\nPlease download and install a 64 bit build of PrusaSlicer from https://www.prusa3d.cz/prusaslicer/."
+            _L("You are running a 32 bit build of Tisma Slicer on 64-bit Windows."
+                "\n32 bit build of Tisma Slicer will likely not be able to utilize all the RAM available in the system."
+                "\nPlease download and install a 64 bit build of Tisma Slicer from https://www.prusa3d.cz/prusaslicer/."
                 "\nDo you wish to continue?"),
             "PrusaSlicer", wxICON_QUESTION | wxYES_NO);
         if (dlg.ShowModal() != wxID_YES)
@@ -1687,8 +1687,8 @@ bool GUI_App::on_init_inner()
     {
         wxString preferences_item = _L("Restore window position on start");
         InfoDialog dialog(nullptr,
-            _L("PrusaSlicer started after a crash"),
-            format_wxstr(_L("PrusaSlicer crashed last time when attempting to set window position.\n"
+            _L("Tisma Slicer started after a crash"),
+            format_wxstr(_L("Tisma Slicer crashed last time when attempting to set window position.\n"
                 "We are sorry for the inconvenience, it unfortunately happens with certain multiple-monitor setups.\n"
                 "More precise reason for the crash: \"%1%\".\n"
                 "For more information see our GitHub issue tracker: \"%2%\" and \"%3%\"\n\n"
@@ -2123,7 +2123,7 @@ void GUI_App::check_printer_presets()
     for (const std::string& preset_name : preset_names)
         msg_text += "\n    \"" + from_u8(preset_name) + "\",";
     msg_text.RemoveLast();
-    msg_text += "\n\n" + _L("But since this version of PrusaSlicer we don't show this information in Printer Settings anymore.\n"
+    msg_text += "\n\n" + _L("But since this version of Tisma Slicer we don't show this information in Printer Settings anymore.\n"
                             "Settings will be available in physical printers settings.") + "\n\n" +
                          _L("By default new Printer devices will be named as \"Printer N\" during its creation.\n"
                             "Note: This name can be changed later from the physical printers settings");
@@ -3658,18 +3658,18 @@ bool GUI_App::check_updates(const bool invoked_by_user)
 namespace {
 bool open_dialog_hyperlink_checkbox(wxWindow* parent, AppConfig* app_config)
 {
-    RichMessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
+    RichMessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("Tisma Slicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
     dialog.ShowCheckBox(_L("Remember my choice"));
     auto answer = dialog.ShowModal();
     bool launch = answer == wxID_YES;
     if (dialog.IsCheckBoxChecked()) {
         wxString preferences_item = _L("Suppress to open hyperlink in browser");
         wxString msg =
-            _L("PrusaSlicer will remember your choice.") + "\n\n" +
+            _L("Tisma Slicer will remember your choice.") + "\n\n" +
             _L("You will not be asked about it again on hyperlinks hovering.") + "\n\n" +
             format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
 
-        MessageDialog msg_dlg(parent, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
+        MessageDialog msg_dlg(parent, msg, _L("Tisma Slicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
         if (msg_dlg.ShowModal() == wxID_CANCEL)
             return false;
         app_config->set("suppress_hyperlinks", answer == wxID_NO ? "1" : "0");
@@ -3678,7 +3678,7 @@ bool open_dialog_hyperlink_checkbox(wxWindow* parent, AppConfig* app_config)
 }
 bool open_dialog_hyperlink(wxWindow* parent)
 {
-    MessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
+    MessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("Tisma Slicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
     return dialog.ShowModal() == wxID_YES;
 }
 }
@@ -3720,7 +3720,7 @@ bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* pare
 {
     bool auth_login_dialog_confirmed = app_config->get_bool("auth_login_dialog_confirmed");
     if (!auth_login_dialog_confirmed) {
-        RichMessageDialog dialog(parent, _L("Open default browser with Prusa Account Log in page?\n(If you select 'Yes', you will not be asked again.)"), _L("PrusaSlicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
+        RichMessageDialog dialog(parent, _L("Open default browser with Prusa Account Log in page?\n(If you select 'Yes', you will not be asked again.)"), _L("Tisma Slicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
          if (dialog.ShowModal() != wxID_YES)
              return false;
          app_config->set("auth_login_dialog_confirmed", "1");

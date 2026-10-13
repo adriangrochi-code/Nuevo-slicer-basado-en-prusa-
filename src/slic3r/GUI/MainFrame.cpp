@@ -255,14 +255,14 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         }
 
         if (m_plater != nullptr) {
-            int saved_project = m_plater->save_project_if_dirty(_L("Closing PrusaSlicer. Current project is modified."));
+            int saved_project = m_plater->save_project_if_dirty(_L("Closing Tisma Slicer. Current project is modified."));
             if (saved_project == wxID_CANCEL) {
                 event.Veto();
                 return;
             }
             // check unsaved changes only if project wasn't saved
             else if (plater()->is_project_dirty() && saved_project == wxID_NO && event.CanVeto() &&
-                     (plater()->is_presets_dirty() && !wxGetApp().check_and_save_current_preset_changes(_L("PrusaSlicer is closing"), _L("Closing PrusaSlicer while some presets are modified.")))) {
+                     (plater()->is_presets_dirty() && !wxGetApp().check_and_save_current_preset_changes(_L("Tisma Slicer is closing"), _L("Closing Tisma Slicer while some presets are modified.")))) {
                 event.Veto();
                 return;
             }
@@ -668,10 +668,10 @@ void MainFrame::set_callbacks_for_topbar_menus()
         [this]() -> void {
             wxString preferences_item = _L("Show Log in button in application top bar");
             wxString msg =
-                _L("PrusaSlicer will remember your choice.") + "\n\n" +
+                _L("Tisma Slicer will remember your choice.") + "\n\n" +
                 format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
 
-            MessageDialog msg_dlg(this, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
+            MessageDialog msg_dlg(this, msg, _L("Tisma Slicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
             if (msg_dlg.ShowModal() == wxID_OK) {
                 wxGetApp().app_config->set("show_login_button", "0");
 

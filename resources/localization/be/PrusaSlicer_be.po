@@ -180,32 +180,32 @@ msgstr ""
 #: src/libslic3r/Format/3mf.cpp:2283
 msgid ""
 "The selected 3MF contains FDM supports painted object using a newer version "
-"of PrusaSlicer and is not compatible."
+"of Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "Абраны файл 3MF утрымлівае аб'ект з намаляванымі апорамі, які створаны з "
-"ўжываннем больш новай версіі PrusaSlicer, і таму несумяшчальны."
+"ўжываннем больш новай версіі Tisma Slicer, і таму несумяшчальны."
 
 #: src/libslic3r/Format/3mf.cpp:2287
 msgid ""
-"The selected 3MF contains seam painted object using a newer version of "
-"PrusaSlicer and is not compatible."
+"The selected 3MF contains seam painted object using a newer version of Tisma "
+"Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "Абраны файл 3MF утрымлівае аб'ект з намаляванымі шво, які створаны з "
-"ўжываннем больш новай версіі PrusaSlicer, і таму несумяшчальны."
+"ўжываннем больш новай версіі Tisma Slicer, і таму несумяшчальны."
 
 #: src/libslic3r/Format/3mf.cpp:2291
 msgid ""
 "The selected 3MF contains fuzzy skin painted object using a newer version of "
-"PrusaSlicer and is not compatible."
+"Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 
 #: src/libslic3r/Format/3mf.cpp:2295
 msgid ""
 "The selected 3MF contains multi-material painted object using a newer "
-"version of PrusaSlicer and is not compatible."
+"version of Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "Абраны файл 3MF утрымлівае аб'ект з шматматэрыяльнай афарбоўкай, які "
-"створаны з ўжываннем больш новай версіі PrusaSlicer, і таму несумяшчальная."
+"створаны з ўжываннем больш новай версіі Tisma Slicer, і таму несумяшчальная."
 
 #: src/libslic3r/Format/AMF.cpp:1005
 #, boost-format
@@ -1047,7 +1047,7 @@ msgid ""
 "name and password into the URL in the following format: https://username:"
 "password@your-octopi-address/"
 msgstr ""
-"PrusaSlicer можа загружаць файлы G-code на вузел друкаркі.\n"
+"Tisma Slicer можа загружаць файлы G-code на вузел друкаркі.\n"
 "Поле павінна ўтрымліваць імя вузла, IP-адрас ці URL-адрас асобніка вузла "
 "друкаркі.\n"
 "Доступ да вузла друку за HAProxy з уключанай базавай аўтарызацыі магчыма "
@@ -1063,7 +1063,7 @@ msgid ""
 "Slic3r can upload G-code files to a printer host. This field should contain "
 "the API Key or the password required for authentication."
 msgstr ""
-"PrusaSlicer можа загружаць файлы G-code на вузел друкаркі.\n"
+"Tisma Slicer можа загружаць файлы G-code на вузел друкаркі.\n"
 "Поле павінна ўтрымліваць API ключ ці пароль, якія неабходныя для аўтарызацыі."
 
 #: src/libslic3r/PrintConfig.cpp:481 src/slic3r/GUI/GCodeViewer.cpp:2843
@@ -1360,7 +1360,7 @@ msgid ""
 msgstr ""
 "Гэты карыстальніцкі G-code дадаецца да кожнай змены пласта, непасрэдна перад "
 "зрушэннем восі Z. Звярніце ўвагу, што вы можаце ўжыць шаблонныя пераменныя "
-"для ўсіх наладаў PrusaSlicer, у тым ліку [layer_num] і [layer_z]."
+"для ўсіх наладаў Tisma Slicer, у тым ліку [layer_num] і [layer_z]."
 
 #: src/libslic3r/PrintConfig.cpp:688
 msgid "Between objects G-code"
@@ -1378,9 +1378,9 @@ msgstr ""
 "G-code, які дадаецца паміж аб'ектамі пры ўключэнні паслядоўнага друку.\n"
 "Першапачаткова экструдар і тэмпература стала скідаецца з дапамогай каманды "
 "без чакання; аднак, калі ў гэтым карыстальніцкім G-code выяўленыя каманды "
-"M104, M109, M140 ці M190, то PrusaSlicer не дадае каманды тэмпературы.\n"
+"M104, M109, M140 ці M190, то Tisma Slicer не дадае каманды тэмпературы.\n"
 "Звярніце ўвагу, што магчыма ўжываць зменныя-запаўняльнікі для ўсіх наладаў "
-"PrusaSlicer, таму магчыма дадаць каманду \"M109 S[first_layer_temperature]\" "
+"Tisma Slicer, таму магчыма дадаць каманду \"M109 S[first_layer_temperature]\" "
 "дзе заўгодна."
 
 #. TRN Print Settings: "Bottom solid layers"
@@ -1765,7 +1765,7 @@ msgstr ""
 "кожнага аб'екту, перш чым перайсці да наступнай (і пачаць яго з ніжняга "
 "пласта).\n"
 "Карысна, каб пазбегнуць рызыкі сапсаваных адбіткаў.\n"
-"PrusaSlicer павінна папярэджваць і прадухіляць сутыкненні экструдара, але "
+"Tisma Slicer павінна папярэджваць і прадухіляць сутыкненні экструдара, але "
 "будзьце асцярожныя."
 
 #: src/libslic3r/PrintConfig.cpp:980
@@ -1919,25 +1919,25 @@ msgstr "Адлегласць паміж аб'ектамі, пры аўтамат
 #: src/libslic3r/PrintConfig.cpp:1073
 msgid ""
 "This end procedure is inserted at the end of the output file. Note that you "
-"can use placeholder variables for all PrusaSlicer settings."
+"can use placeholder variables for all Tisma Slicer settings."
 msgstr ""
 "Каманды ў G-code, якія будуць дадавацца ў канцы выходнага файлу.\n"
 "Звярніце ўвагу, што магчыма ўжываць зменныя-запаўняльнікі для ўсіх наладаў "
-"PrusaSlicer."
+"Tisma Slicer."
 
 #: src/libslic3r/PrintConfig.cpp:1083
 msgid ""
 "This end procedure is inserted at the end of the output file, before the "
 "printer end gcode (and before any toolchange from this filament in case of "
 "multimaterial printers). Note that you can use placeholder variables for all "
-"PrusaSlicer settings. If you have multiple extruders, the gcode is processed "
-"in extruder order."
+"Tisma Slicer settings. If you have multiple extruders, the gcode is "
+"processed in extruder order."
 msgstr ""
 "Каманды ў G-code, якія будуць дадавацца ў канцы выходнага файлу перад "
 "канцавым G-code друкаркі (і перад любой зменай інструмента з бягучым "
 "філаментам у друкарках з некалькімі матэрыяламі).\n"
 "Звярніце ўвагу, што вы можаце ўжываць зменныя-запаўняльнікі для ўсіх наладаў "
-"PrusaSlicer.\n"
+"Tisma Slicer.\n"
 "Калі ў вас некалькі экструдараў, G-code апрацоўваецца ў адпаведнасці з "
 "парадкавым нумарам экструдара."
 
@@ -2083,7 +2083,7 @@ msgid ""
 msgstr ""
 "Дадае пры неабходнасці дадатковыя перыметры, каб пазбегнуць прагалаў ў "
 "нахіленых сценах.\n"
-"PrusaSlicer працягне дадаваць перыметры, пакуль у наступным пласту не будзе "
+"Tisma Slicer працягне дадаваць перыметры, пакуль у наступным пласту не будзе "
 "падтрымлівацца болей 70% перыметра."
 
 #: src/libslic3r/PrintConfig.cpp:1178
@@ -2165,7 +2165,7 @@ msgstr "Колер экструдара"
 #: src/libslic3r/PrintConfig.cpp:1218 src/libslic3r/PrintConfig.cpp:1281
 #: src/libslic3r/PrintConfig.cpp:4525
 msgid "This is only used in the Slic3r interface as a visual help."
-msgstr "Ужываецца толькі ў інтэрфейсе PrusaSlicer у якасці візуальнай даведкі."
+msgstr "Ужываецца толькі ў інтэрфейсе Tisma Slicer у якасці візуальнай даведкі."
 
 #: src/libslic3r/PrintConfig.cpp:1224
 msgid "Extruder offset"
@@ -2438,7 +2438,7 @@ msgstr ""
 "ўнутры фарсункі можа быць невядомым, і ціск філамента, хутчэй за ўсё, яшчэ "
 "не стабільны.\n"
 "Перад прадзьмухам галоўкі друку ў запаўняльнік, альбо ў \"расходны\" "
-"аб'екта, PrusaSlicer заўсёды будзе выдушваць дадзеную колькасць матэрыяла на "
+"аб'екта, Tisma Slicer заўсёды будзе выдушваць дадзеную колькасць матэрыяла на "
 "вежу выцірання, каб надзейна забяспечыць паспяховы друк запаўнення ці "
 "\"расходным\" аб'екце."
 
@@ -2702,7 +2702,7 @@ msgstr ""
 "Першапачатковы вугал для арыентацыі шаблону запаўнення.\n"
 "Будзе ўжытая перакрыжаваная штрыхоўка.\n"
 "Для перакрыццяў будзе ўжыты найлепшы напрамак запаўнення, які выявіць "
-"PrusaSlicer, таму дадзеныя налады на іх не ўплываюць."
+"Tisma Slicer, таму дадзеныя налады на іх не ўплываюць."
 
 #: src/libslic3r/PrintConfig.cpp:1618
 msgid "Fill density"
@@ -3017,13 +3017,13 @@ msgstr "Тып G-code"
 msgid ""
 "Some G/M-code commands, including temperature control and others, are not "
 "universal. Set this option to your printer's firmware to get a compatible "
-"output. The \"No extrusion\" flavor prevents PrusaSlicer from exporting any "
+"output. The \"No extrusion\" flavor prevents Tisma Slicer from exporting any "
 "extrusion value at all."
 msgstr ""
 "Некаторыя каманды G/M-кода, а таксама з кантролем тэмпературы і іншыя, не "
 "з'яўляцца ўніверсальнымі.\n"
 "Ужыць гэтую наладу ў прышыўцы вашай друкаркі, каб атрымаць сумяшчальнасць.\n"
-"\"Без выдушвання\" не дазваляе PrusaSlicer экспартаваць наогул якія-небудзь "
+"\"Без выдушвання\" не дазваляе Tisma Slicer экспартаваць наогул якія-небудзь "
 "значэнні выдушвання."
 
 #: src/libslic3r/PrintConfig.cpp:1849
@@ -3164,7 +3164,7 @@ msgstr "Даўжыня запаўнення прывязак"
 msgid ""
 "Connect an infill line to an internal perimeter with a short segment of an "
 "additional perimeter. If expressed as percentage (example: 15%) it is "
-"calculated over infill extrusion width. PrusaSlicer tries to connect two "
+"calculated over infill extrusion width. Tisma Slicer tries to connect two "
 "close infill lines to a short perimeter segment. If no such perimeter "
 "segment shorter than infill_anchor_max is found, the infill line is "
 "connected to a perimeter segment at just one side and the length of the "
@@ -3176,7 +3176,7 @@ msgstr ""
 "адрэзка дадатковага перыметра.\n"
 "Калі ў адсотках (напрыклад 15%), яна вылічаецца па шырыні выдушвання "
 "запаўнення.\n"
-"PrusaSlicer спрабуе злучыць дзве блізкія лініі запаўнення з кароткім "
+"Tisma Slicer спрабуе злучыць дзве блізкія лініі запаўнення з кароткім "
 "адрэзкам перыметра.\n"
 "Калі такі адрэзак перыметра карацей, чым 'anchor_length_max', не знойдзены, "
 "тады лінія запаўнення злучаецца задрэзкам перыметра толькі з аднаго боку, а "
@@ -3217,7 +3217,7 @@ msgstr "Найбольшая даўжыня запаўнення прывяза�
 msgid ""
 "Connect an infill line to an internal perimeter with a short segment of an "
 "additional perimeter. If expressed as percentage (example: 15%) it is "
-"calculated over infill extrusion width. PrusaSlicer tries to connect two "
+"calculated over infill extrusion width. Tisma Slicer tries to connect two "
 "close infill lines to a short perimeter segment. If no such perimeter "
 "segment shorter than this parameter is found, the infill line is connected "
 "to a perimeter segment at just one side and the length of the perimeter "
@@ -3228,7 +3228,7 @@ msgstr ""
 "дадатковага перыметра.\n"
 "Калі ў адсотках (напрыклад 15%), вылічаецца па шырыні выдушвання "
 "запаўнення.\n"
-"PrusaSlicer спрабуе злучыць дзве блізкія лініі запаўнення з кароткім "
+"Tisma Slicer спрабуе злучыць дзве блізкія лініі запаўнення з кароткім "
 "адрэзкам перыметра.\n"
 "Калі такі адрэзак перыметра карацей дадзенай налады не знойдзены, лінія "
 "запаўнення злучаецца з адрэзкам перыметра толькі з аднаго боку, і даўжыня "
@@ -3455,7 +3455,7 @@ msgstr ""
 "Гэты карыстальніцкі G-code дадаецца да кожнай змены пласта, непасрэдна перад "
 "зрушэннем восі Z і да таго, як экструдар зрушыўся ў кропку першага пласта.\n"
 "Звярніце ўвагу, што магчыма ўжываць шаблонныя пераменныя для ўсіх наладаў "
-"PrusaSlicer, у тым ліку [layer_num] і [layer_z]."
+"Tisma Slicer, у тым ліку [layer_num] і [layer_z]."
 
 #: src/libslic3r/PrintConfig.cpp:2203
 msgid "Supports remaining times"
@@ -3632,9 +3632,9 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:2311
 msgid ""
-"Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\n"
-"When enabled, PrusaSlicer uses it for time estimates and G-code Viewer "
-"speeds instead of Jerk."
+"Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\nWhen "
+"enabled, Tisma Slicer uses it for time estimates and G-code Viewer speeds "
+"instead of Jerk."
 msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:2320
@@ -3710,7 +3710,7 @@ msgid ""
 "speed in order to keep constant extruder pressure. This experimental setting "
 "is used to set the highest print speed you want to allow."
 msgstr ""
-"Калі іншыя налады хуткасці 0, PrusaSlicer аўтаматычна разлічыць аптымальную "
+"Калі іншыя налады хуткасці 0, Tisma Slicer аўтаматычна разлічыць аптымальную "
 "хуткасць для падтрымкі пастаяннага ціску ў экструдары.\n"
 "Эксперыментальная налада, ужываецца для задання найбольшай хуткасці друку, "
 "якую вы жадаеце дазволіць."
@@ -3789,7 +3789,7 @@ msgstr "Найменшая хуткасць друку"
 
 #: src/libslic3r/PrintConfig.cpp:2453
 msgid "Slic3r will not scale speed down below this speed."
-msgstr "PrusaSlicer не будзе памяншаць хуткасць ніжэй дадзенай хуткасці."
+msgstr "Tisma Slicer не будзе памяншаць хуткасць ніжэй дадзенай хуткасці."
 
 #: src/libslic3r/PrintConfig.cpp:2460
 msgid "Minimal filament extrusion length"
@@ -3852,7 +3852,7 @@ msgid ""
 "Slic3r can upload G-code files to a printer host. This field must contain "
 "the kind of the host."
 msgstr ""
-"PrusaSlicer можа загружаць файлы G-code на вузел друкаркі.\n"
+"Tisma Slicer можа загружаць файлы G-code на вузел друкаркі.\n"
 "Павінна ўтрымліваць тып вузла."
 
 #: src/libslic3r/PrintConfig.cpp:2521
@@ -4011,7 +4011,7 @@ msgid ""
 "Perimeters option is enabled."
 msgstr ""
 "Колькасць перыметраў, якія неабходна стварыць для кожнага пласта.\n"
-"Звярніце ўвагу, што PrusaSlicer можа аўтаматычна павяліцыць дадзенае "
+"Звярніце ўвагу, што Tisma Slicer можа аўтаматычна павяліцыць дадзенае "
 "значэнне, калі будзе выяўленыя нахіленыя паверхні, якія палешацца ад большай "
 "колькасці перыметраў, калі ўключана налада \"Дадатковыя перыметры пры "
 "неабходнасці\"."
@@ -4036,7 +4036,7 @@ msgstr ""
 "сцэнараў, проста пералічыце тут абсалютныя шляхі.\n"
 "Падзяліце сцэнары кропкай з коскай.\n"
 "Сцэнарам будзе перададзены абсалютны шлях да файлу G-code ў якасці першага "
-"аргумента, і яны змогуць атрымаць доступ да наладаў профіля PrusaSlicer, "
+"аргумента, і яны змогуць атрымаць доступ да наладаў профіля Tisma Slicer, "
 "прачытаўшы пераменныя асяроддзя."
 
 #: src/libslic3r/PrintConfig.cpp:2654
@@ -4277,11 +4277,11 @@ msgstr "Больш круты пахіл перад перашкодамі"
 
 #: src/libslic3r/PrintConfig.cpp:2830
 msgid ""
-"If enabled, PrusaSlicer detects obstacles along the travel path and makes "
+"If enabled, Tisma Slicer detects obstacles along the travel path and makes "
 "the slope steeper in case an obstacle might be hit during the initial phase "
 "of the travel."
 msgstr ""
-"Калі ўключана, PrusaSlicer выяўляе перашкоды на шляху руху і робіць ўздым "
+"Калі ўключана, Tisma Slicer выяўляе перашкоды на шляху руху і робіць ўздым "
 "больш крутым на выпадак, калі на пачатковым этапе руху можа ўзнікнуць "
 "перашкода."
 
@@ -4664,7 +4664,7 @@ msgid ""
 msgstr ""
 "Дазваляе наносіць суцэльны пласт праз кожныя зададзеныя колькасць пластоў.\n"
 "Калі 0, адключае.\n"
-"Магчыма задаць любое значэнне (напрыклад 9999), PrusaSlicer аўтаматычна "
+"Магчыма задаць любое значэнне (напрыклад 9999), Tisma Slicer аўтаматычна "
 "абярэ найбольшую магчымую колькасць пластоў, у залежнасці ад дыяметра "
 "фарсункі і вышыні пласта."
 
@@ -4746,19 +4746,18 @@ msgstr "Аўтаматычна дадае тэмпературныя каман�
 
 #: src/libslic3r/PrintConfig.cpp:3169
 msgid ""
-"When enabled, PrusaSlicer will check whether your custom Start G-Code "
+"When enabled, Tisma Slicer will check whether your custom Start G-Code "
 "contains G-codes to set extruder, bed or chamber temperature (M104, M109, "
 "M140, M190, M141 and M191). If so, the temperatures will not be emitted "
 "automatically so you're free to customize the order of heating commands and "
 "other custom actions. Note that you can use placeholder variables for all "
-"PrusaSlicer settings, so you can put a \"M109 S[first_layer_temperature]\" "
-"command wherever you want.\n"
-"If your custom Start G-Code does NOT contain these G-codes, PrusaSlicer will "
-"execute the Start G-Code after heated chamber was set to its temperature, "
-"bed reached its target temperature and extruder just started heating.\n"
-"\n"
-"When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed "
-"or chamber, leaving all to Custom Start G-Code."
+"Tisma Slicer settings, so you can put a \"M109 S[first_layer_temperature]\" "
+"command wherever you want.\nIf your custom Start G-Code does NOT contain "
+"these G-codes, Tisma Slicer will execute the Start G-Code after heated "
+"chamber was set to its temperature, bed reached its target temperature and "
+"extruder just started heating.\n\nWhen disabled, Tisma Slicer will NOT emit "
+"commands to heat up extruder, bed or chamber, leaving all to Custom Start "
+"G-Code."
 msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:3184
@@ -4784,10 +4783,10 @@ msgid ""
 "This start procedure is inserted at the beginning, after any printer start "
 "gcode (and after any toolchange to this filament in case of multi-material "
 "printers). This is used to override settings for a specific filament. If "
-"PrusaSlicer detects M104, M109, M140 or M190 in your custom codes, such "
+"Tisma Slicer detects M104, M109, M140 or M190 in your custom codes, such "
 "commands will not be prepended automatically so you're free to customize the "
 "order of heating commands and other custom actions. Note that you can use "
-"placeholder variables for all PrusaSlicer settings, so you can put a \"M109 "
+"placeholder variables for all Tisma Slicer settings, so you can put a \"M109 "
 "S[first_layer_temperature]\" command wherever you want. If you have multiple "
 "extruders, the gcode is processed in extruder order."
 msgstr ""
@@ -4795,11 +4794,11 @@ msgstr ""
 "code (і пасля кожнага пераключэння інструмента на патрэбны філамент у "
 "выпадку друкаркі з некалькімі матэрыяламі).\n"
 "Ужываецца для перавызначэння наладаў для канкрэтнага філаменту.\n"
-"Калі PrusaSlicer выявіць каманды M104, M109, M140 ці M190 у вашых "
+"Калі Tisma Slicer выявіць каманды M104, M109, M140 ці M190 у вашых "
 "карыстальніцкіх G-code, такія каманды не будуцю дадавацца аўтаматычна, таму "
 "магчыма наладзіць парадак каманд нагрэву і іншыя дзеянні.\n"
 "Звярніце ўвагу, што магчыма ўжываць шаблонныя пераменныя для ўсіх налад "
-"PrusaSlicer, таму магчыма ўставіць каманду \"M109 "
+"Tisma Slicer, таму магчыма ўставіць каманду \"M109 "
 "S[first_layer_temperature]\" дзе заўгодна.\n"
 "Калі ў вас некалькі экструдараў, G-code апрацоўваецца ў парадку з нумарам "
 "экструдара."
@@ -4970,7 +4969,7 @@ msgid ""
 "first object layer."
 msgstr ""
 "Вертыкальная адлегласць паміж аб'ектам і пластом апоры.\n"
-"Калі 0, прадухіляе PrusaSlicer ўжываць выдатак пры друку перакрыццяў і "
+"Калі 0, прадухіляе Tisma Slicer ўжываць выдатак пры друку перакрыццяў і "
 "хуткасць друку першага пласта аб'екту."
 
 #: src/libslic3r/PrintConfig.cpp:3350
@@ -5419,17 +5418,17 @@ msgstr ""
 #: src/libslic3r/PrintConfig.cpp:3705
 msgid ""
 "This custom code is inserted before every toolchange. Placeholder variables "
-"for all PrusaSlicer settings as well as {toolchange_z}, {previous_extruder} "
+"for all Tisma Slicer settings as well as {toolchange_z}, {previous_extruder} "
 "and {next_extruder} can be used. When a tool-changing command which changes "
-"to the correct extruder is included (such as T{next_extruder}), PrusaSlicer "
+"to the correct extruder is included (such as T{next_extruder}), Tisma Slicer "
 "will emit no other such command. It is therefore possible to script custom "
 "behaviour both before and after the toolchange."
 msgstr ""
 "Гэты карыстальніцкі G-code устаўляецца перад кожнай зменай інструмента.\n"
-"Магчыма ўжываць зменныя-запаўняльнікі для ўсіх наладаў PrusaSlicer, а "
+"Магчыма ўжываць зменныя-запаўняльнікі для ўсіх наладаў Tisma Slicer, а "
 "таксама {toolchange_z}, {previous_extruder} і {next_extruder}.\n"
 "Калі ўключана каманда змены інструмента, якая меняя патрэбны экструдар "
-"(напрыклад, T{next_extruder}), PrusaSlicer не будзе выдаваць аніякай іншай "
+"(напрыклад, T{next_extruder}), Tisma Slicer не будзе выдаваць аніякай іншай "
 "такой каманды.\n"
 "Такім чынам, можна ствараць сцэнар карыстальніцкіх паводзінаў як да, так і "
 "пасля змены інструмента."
@@ -5576,7 +5575,7 @@ msgstr ""
 "Калі ў прашыўцы не зададзены дыяметр філамента, магчыма прапісаць у свой "
 "пачатковы G-code каманды, напрыклад такую как \"M200 D [filament_diameter_0] "
 "T0\", каб уключыць рэжым аб'ёмнага выдатку і ўжываць дыяметр філамента, які "
-"пазначаны ў PrusaSlicer.\n"
+"пазначаны ў Tisma Slicer.\n"
 "Падтрымліваецца толькі ў апошніх версіях Marlin."
 
 #: src/libslic3r/PrintConfig.cpp:3821
@@ -7194,14 +7193,14 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:6192
 msgid ""
-"This version of PrusaSlicer may not understand configurations produced by "
-"the newest PrusaSlicer versions. For example, newer PrusaSlicer may extend "
-"the list of supported firmware flavors. One may decide to bail out or to "
+"This version of Tisma Slicer may not understand configurations produced by "
+"the newest PrusaSlicer versions. For example, newer versions may extend the "
+"list of supported firmware flavors. One may decide to bail out or to "
 "substitute an unknown value with a default silently or verbosely."
 msgstr ""
-"Дадзеная версія PrusaSlicer можа не разумець наладкі, якія створаныя больш "
-"новымі версіямі PrusaSlicer.\n"
-"Напрыклад, больш новая версія праграмы PrusaSlicer можа пашырыць спіс "
+"Дадзеная версія Tisma Slicer можа не разумець наладкі, якія створаныя больш "
+"новымі версіямі Tisma Slicer.\n"
+"Напрыклад, больш новая версія праграмы Tisma Slicer можа пашырыць спіс "
 "падтрыманых версіяў прашыўкі.\n"
 "Можна адмяніць ці замяніць невядомае значэнне першапачатковым значэннем "
 "аўтаматычна альбо шляхам іх поўнай замены."
@@ -7318,11 +7317,11 @@ msgstr "Адзінкавы асобнік прграмы"
 #: src/libslic3r/PrintConfig.cpp:6251
 msgid ""
 "If enabled, the command line arguments are sent to an existing instance of "
-"GUI PrusaSlicer, or an existing PrusaSlicer window is activated. Overrides "
+"GUI Tisma Slicer, or an existing Tisma Slicer window is activated. Overrides "
 "the \"single_instance\" configuration value from application preferences."
 msgstr ""
 "Калі ўключана, аргументы каманднага радка адпраўляюцца ў існуючы асобнік GUI "
-"PrusaSlicer, альбо актывіруецца існуючае акно PrusaSlicer.\n"
+"Tisma Slicer, альбо актывіруецца існуючае акно Tisma Slicer.\n"
 "Перавызначае значэнне наладкі 'single_instance' з перавагаў праграмы."
 
 #: src/libslic3r/PrintConfig.cpp:6256
@@ -7366,11 +7365,11 @@ msgstr "Становішча"
 msgid ""
 "Position of the extruder at the beginning of the custom G-code block. If the "
 "custom G-code travels somewhere else, it should write to this variable so "
-"PrusaSlicer knows where it travels from when it gets control back."
+"Tisma Slicer knows where it travels from when it gets control back."
 msgstr ""
 "Становішча экструдара ў пачатку карыстальніцкага блока G-code.\n"
 "Калі карыстальніцкі G-code перамяшчае экструдак куды-небудзь яшчэ, ён "
-"павінен запісаць яго ў дадзеную пераменную, каб PrusaSlicer ведаў, адкуль ён "
+"павінен запісаць яго ў дадзеную пераменную, каб Tisma Slicer ведаў, адкуль ён "
 "перамяшчаецца, калі верне кіраванне."
 
 #: src/libslic3r/PrintConfig.cpp:6304 src/slic3r/GUI/Tab.cpp:3430
@@ -7380,12 +7379,12 @@ msgstr "Адвод"
 #: src/libslic3r/PrintConfig.cpp:6305
 msgid ""
 "Retraction state at the beginning of the custom G-code block. If the custom "
-"G-code moves the extruder axis, it should write to this variable so "
-"PrusaSlicer deretracts correctly when it gets control back."
+"G-code moves the extruder axis, it should write to this variable so Tisma "
+"Slicer deretracts correctly when it gets control back."
 msgstr ""
 "Стан адводу ў пачатку карыстальніцкага блока G-code.\n"
 "Калі карыстальніцкі G-code перамяшчае вось экструдара, ён павінен запісаць у "
-"дадзеную пераменную, каб PrusaSlicer правільна зрабіў падачу, калі верне "
+"дадзеную пераменную, каб Tisma Slicer правільна зрабіў падачу, калі верне "
 "кіраванне."
 
 #: src/libslic3r/PrintConfig.cpp:6309
@@ -8152,13 +8151,13 @@ msgstr "Не атрымалася зрабіць рэзервовую копію
 
 #: src/slic3r/Config/Snapshot.cpp:602
 msgid ""
-"PrusaSlicer has encountered an error while taking a configuration snapshot."
+"Tisma Slicer has encountered an error while taking a configuration snapshot."
 msgstr ""
-"PrusaSlicer сутыкнуўся з памылкай пры стварэнні рэзервовай копіі наладкі."
+"Tisma Slicer сутыкнуўся з памылкай пры стварэнні рэзервовай копіі наладкі."
 
 #: src/slic3r/Config/Snapshot.cpp:603
-msgid "PrusaSlicer error"
-msgstr "Памылка PrusaSlicer"
+msgid "Tisma Slicer error"
+msgstr "Памылка Tisma Slicer"
 
 #: src/slic3r/Config/Snapshot.cpp:605
 msgid "Continue"
@@ -8320,15 +8319,15 @@ msgstr ""
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:91
 #, boost-format
-msgid "PrusaSlicer has encountered a fatal error: \"%1%\""
-msgstr "PrusaSlicer сутыкнуўся з фатальнай памылкай: \"%1%\""
+msgid "Tisma Slicer has encountered a fatal error: \"%1%\""
+msgstr "Tisma Slicer сутыкнуўся з фатальнай памылкай: \"%1%\""
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:92
 msgid ""
-"Please save your project and restart PrusaSlicer. We would be glad if you "
+"Please save your project and restart Tisma Slicer. We would be glad if you "
 "reported the issue."
 msgstr ""
-"Калі ласка, захавайце праект і перазапусціце PrusaSlicer.\n"
+"Калі ласка, захавайце праект і перазапусціце Tisma Slicer.\n"
 "Мы будзем удзячныя, калі вы паведаміце аб вашай праблеме."
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:183
@@ -9206,12 +9205,12 @@ msgid "Files association"
 msgstr "Асацыяцыі файлаў"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1819 src/slic3r/GUI/Preferences.cpp:330
-msgid "Associate .3mf files to PrusaSlicer"
-msgstr "Асацыяваць файлы .3mf з PrusaSlicer"
+msgid "Associate .3mf files to Tisma Slicer"
+msgstr "Асацыяваць файлы .3mf з Tisma Slicer"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1820 src/slic3r/GUI/Preferences.cpp:335
-msgid "Associate .stl files to PrusaSlicer"
-msgstr "Асацыяваць файлы .stl з PrusaSlicer"
+msgid "Associate .stl files to Tisma Slicer"
+msgstr "Асацыяваць файлы .stl з Tisma Slicer"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1830
 msgid "View mode"
@@ -9219,13 +9218,13 @@ msgstr "Рэжым прагляду"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1832
 msgid ""
-"PrusaSlicer's user interfaces comes in three variants:\n"
-"Simple, Advanced, and Expert.\n"
-"The Simple mode shows only the most frequently used settings relevant for "
-"regular 3D printing. The other two offer progressively more sophisticated "
-"fine-tuning, they are suitable for advanced and expert users, respectively."
+"Tisma Slicer's user interfaces comes in three variants:\nSimple, Advanced, "
+"and Expert.\nThe Simple mode shows only the most frequently used settings "
+"relevant for regular 3D printing. The other two offer progressively more "
+"sophisticated fine-tuning, they are suitable for advanced and expert users, "
+"respectively."
 msgstr ""
-"Карыстальніцкі вонкавы выгляд PrusaSlicer прадстаўлены трымя варыянтамі:\n"
+"Карыстальніцкі вонкавы выгляд Tisma Slicer прадстаўлены трымя варыянтамі:\n"
 "Просты, Пашыраны, Прасунуты.\n"
 "У простым рэжыме адлюстроўваюцца толькі найбольш ужываемыя налады "
 "трохмернага друку.\n"
@@ -9592,8 +9591,8 @@ msgstr ""
 #: src/slic3r/GUI/ConfigWizardWebViewPage.cpp:44
 #: src/slic3r/GUI/ConfigWizardWebViewPage.cpp:71
 msgid ""
-"Log in to control your printers remotely through the built-in Connect in "
-"PrusaSlicer."
+"Log in to control your printers remotely through Prusa Connect, built into "
+"Tisma Slicer."
 msgstr ""
 
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:256
@@ -9621,11 +9620,11 @@ msgstr ""
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:447
 msgid ""
 "Performing desktop integration failed - could not create Gcodeviewer desktop "
-"file. PrusaSlicer desktop file was probably created successfully."
+"file. Tisma Slicer desktop file was probably created successfully."
 msgstr ""
 "Немагчыма выканаць інтэграцыю з працоўным сталом - не атрымалася ўсталяваць "
 "спасылак на Gcodeviewer на працоўным стале.\n"
-"Спасылак на PrusaSlicer, магчыма, быў паспяхова створаны на працоўным стале."
+"Спасылак на Tisma Slicer, магчыма, быў паспяхова створаны на працоўным стале."
 
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:497
 msgid ""
@@ -13544,11 +13543,11 @@ msgstr "%1% быў заменены на %2%"
 
 #: src/slic3r/GUI/GUI.cpp:203
 msgid ""
-"Most likely the configuration was produced by a newer version of PrusaSlicer "
-"or by some PrusaSlicer fork."
+"Most likely the configuration was produced by a newer version of Tisma "
+"Slicer or PrusaSlicer, or by another fork."
 msgstr ""
-"Хутчэй за ўсё, наладкі былі створаныя больш новай версіяй PrusaSlicer ці "
-"якім-небудзь форкам PrusaSlicer."
+"Хутчэй за ўсё, наладкі былі створаныя больш новай версіяй Tisma Slicer ці "
+"якім-небудзь форкам Tisma Slicer."
 
 #: src/slic3r/GUI/GUI.cpp:204
 msgid "The following values were substituted:"
@@ -13680,14 +13679,12 @@ msgstr "Фатальная памылка"
 
 #: src/slic3r/GUI/GUI_App.cpp:752
 msgid ""
-"PrusaSlicer has encountered a localization error. Please report to "
-"PrusaSlicer team, what language was active and in which scenario this issue "
-"happened. Thank you.\n"
-"\n"
-"The application will now terminate."
+"Tisma Slicer has encountered a localization error. Please report to Tisma "
+"Slicer team, what language was active and in which scenario this issue "
+"happened. Thank you.\n\nThe application will now terminate."
 msgstr ""
-"PrusaSlicer сутыкнуўся з памылкай перакладаў.\n"
-"Калі ласка, паведаміце камандзе PrusaSlicer, якая мова была актыўнай і пры "
+"Tisma Slicer сутыкнуўся з памылкай перакладаў.\n"
+"Калі ласка, паведаміце камандзе Tisma Slicer, якая мова была актыўнай і пры "
 "якім выпадку адбылася гэтая памылка.\n"
 "Дзякуем.\n"
 "\n"
@@ -13753,17 +13750,16 @@ msgstr "Ці працягнуць і імпартаваць больш нову�
 
 #: src/slic3r/GUI/GUI_App.cpp:1353
 msgid ""
-"You are running a 32 bit build of PrusaSlicer on 64-bit Windows.\n"
-"32 bit build of PrusaSlicer will likely not be able to utilize all the RAM "
-"available in the system.\n"
-"Please download and install a 64 bit build of PrusaSlicer from https://www."
-"prusa3d.cz/prusaslicer/.\n"
-"Do you wish to continue?"
+"You are running a 32 bit build of Tisma Slicer on 64-bit Windows.\n32 bit "
+"build of Tisma Slicer will likely not be able to utilize all the RAM "
+"available in the system.\nPlease download and install a 64 bit build of "
+"Tisma Slicer from https://www.prusa3d.cz/prusaslicer/.\nDo you wish to "
+"continue?"
 msgstr ""
-"Вы ўжываеце 32-разрадную зборку PrusaSlicer на 64-разраднай Windows.\n"
-"32-разрадная зборка PrusaSlicer, хутчэй за ўсё, не зможа выкарыстаць усю "
+"Вы ўжываеце 32-разрадную зборку Tisma Slicer на 64-разраднай Windows.\n"
+"32-разрадная зборка Tisma Slicer, хутчэй за ўсё, не зможа выкарыстаць усю "
 "даступную ў сістэме аператыўную памяць.\n"
-"Калі ласка, спампуйце і ўсталюйце 64-разрадную зборку PrusaSlicer з сайта "
+"Калі ласка, спампуйце і ўсталюйце 64-разрадную зборку Tisma Slicer з сайта "
 "https://www.prusa3d.cz/prusaslicer/.\n"
 "Ці жадаеце вы працягнуць?"
 
@@ -13816,22 +13812,20 @@ msgid "Restore window position on start"
 msgstr "Аднавіць становішча акна пры запуску"
 
 #: src/slic3r/GUI/GUI_App.cpp:1687
-msgid "PrusaSlicer started after a crash"
-msgstr "PrusaSlicer запусціўся пасля аварыйнага спынення"
+msgid "Tisma Slicer started after a crash"
+msgstr "Tisma Slicer запусціўся пасля аварыйнага спынення"
 
 #: src/slic3r/GUI/GUI_App.cpp:1688
 #, boost-format
 msgid ""
-"PrusaSlicer crashed last time when attempting to set window position.\n"
-"We are sorry for the inconvenience, it unfortunately happens with certain "
-"multiple-monitor setups.\n"
-"More precise reason for the crash: \"%1%\".\n"
-"For more information see our GitHub issue tracker: \"%2%\" and \"%3%\"\n"
-"\n"
-"To avoid this problem, consider disabling \"%4%\" in \"Preferences\". "
+"Tisma Slicer crashed last time when attempting to set window position.\nWe "
+"are sorry for the inconvenience, it unfortunately happens with certain "
+"multiple-monitor setups.\nMore precise reason for the crash: \"%1%\".\nFor "
+"more information see our GitHub issue tracker: \"%2%\" and \"%3%\"\n\nTo "
+"avoid this problem, consider disabling \"%4%\" in \"Preferences\". "
 "Otherwise, the application will most likely crash again next time."
 msgstr ""
-"У мінулы раз PrusaSlicer пацярпеў крах пры спробе ўсталяваць становішча "
+"У мінулы раз Tisma Slicer пацярпеў крах пры спробе ўсталяваць становішча "
 "акна.\n"
 "Прабачце за нязручнасці, нажаль гэта здараецца пры пэўных наладах з "
 "некалькімі маніторамі.\n"
@@ -13840,7 +13834,7 @@ msgstr ""
 "\"%2%\" і \"%3%\"\n"
 "\n"
 "Каб пазбегнуць гэтай праблемы, адключыце \"%4%\" ў \"Перавагах\".\n"
-"У адваротным выпадку PrusaSlicer, хутчэй за ўсё, ў наступны раз зноў "
+"У адваротным выпадку Tisma Slicer, хутчэй за ўсё, ў наступны раз зноў "
 "пацерпіць крах."
 
 #: src/slic3r/GUI/GUI_App.cpp:1700
@@ -13862,11 +13856,11 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:2123
 msgid ""
-"But since this version of PrusaSlicer we don't show this information in "
-"Printer Settings anymore.\n"
-"Settings will be available in physical printers settings."
+"But since this version of Tisma Slicer we don't show this information in "
+"Printer Settings anymore.\nSettings will be available in physical printers "
+"settings."
 msgstr ""
-"Пачынаючы з гэтай версіі PrusaSlicer, мы больш не адлюстроўваем гэтую "
+"Пачынаючы з гэтай версіі Tisma Slicer, мы больш не адлюстроўваем гэтую "
 "інфармацыю ў \"Наладах друкаркі\".\n"
 "Налады будуць даступныя ў падзеле наладаў фізічных друкарак."
 
@@ -14133,8 +14127,8 @@ msgid "Open hyperlink in default browser?"
 msgstr "Ці адчыніць спасылак у інтэрнэт-аглядальніку?"
 
 #: src/slic3r/GUI/GUI_App.cpp:3623 src/slic3r/GUI/GUI_App.cpp:3643
-msgid "PrusaSlicer: Open hyperlink"
-msgstr "PrusaSlicer: адчыніць спасылак"
+msgid "Tisma Slicer: Open hyperlink"
+msgstr "Tisma Slicer: адчыніць спасылак"
 
 #: src/slic3r/GUI/GUI_App.cpp:3628 src/slic3r/GUI/Preferences.cpp:626
 msgid "Suppress to open hyperlink in browser"
@@ -14142,8 +14136,8 @@ msgstr "Забараніць адкрыццё спасылак у інтэрнэ
 
 #: src/slic3r/GUI/GUI_App.cpp:3630 src/slic3r/GUI/MainFrame.cpp:641
 #: src/slic3r/GUI/Plater.cpp:416
-msgid "PrusaSlicer will remember your choice."
-msgstr "PrusaSlicer запомніць ваш выбар."
+msgid "Tisma Slicer will remember your choice."
+msgstr "Tisma Slicer запомніць ваш выбар."
 
 #: src/slic3r/GUI/GUI_App.cpp:3631
 msgid "You will not be asked about it again on hyperlinks hovering."
@@ -14161,8 +14155,8 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:3634 src/slic3r/GUI/MainFrame.cpp:644
 #: src/slic3r/GUI/Plater.cpp:422 src/slic3r/GUI/UnsavedChangesDialog.cpp:962
-msgid "PrusaSlicer: Don't ask me again"
-msgstr "PrusaSlicer: не пытаць зноў"
+msgid "Tisma Slicer: Don't ask me again"
+msgstr "Tisma Slicer: не пытаць зноў"
 
 #: src/slic3r/GUI/GUI_App.cpp:3685
 msgid ""
@@ -14171,7 +14165,7 @@ msgid ""
 msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:3685
-msgid "PrusaSlicer: Open Log in page"
+msgid "Tisma Slicer: Open Log in page"
 msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:3753
@@ -14556,8 +14550,8 @@ msgid "Fill the remaining area of bed with instances of the selected object"
 msgstr "Запоўніць астатнюю вобласць стала асобнікамі абранага аб'екту"
 
 #: src/slic3r/GUI/GUI_Init.cpp:74 src/slic3r/GUI/GUI_Init.cpp:77
-msgid "PrusaSlicer GUI initialization failed"
-msgstr "Памылка ініцыялізацыі графічнага інтэрфейсу PrusaSlicer"
+msgid "Tisma Slicer GUI initialization failed"
+msgstr "Памылка ініцыялізацыі графічнага інтэрфейсу Tisma Slicer"
 
 #: src/slic3r/GUI/GUI_Init.cpp:77
 #, boost-format
@@ -14824,11 +14818,11 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_ObjectList.cpp:2049
 msgid ""
-"This action will break a cut information.\n"
-"After that PrusaSlicer can't guarantee model consistency."
+"This action will break a cut information.\nAfter that Tisma Slicer can't "
+"guarantee model consistency."
 msgstr ""
 "Дзеянне прывядзе да выдалення інфармацыі аб разрэзе.\n"
-"Пасля гэтага PrusaSlicer не зможа гарантаваць ўзгодненасць мадэлі."
+"Пасля гэтага Tisma Slicer не зможа гарантаваць ўзгодненасць мадэлі."
 
 #: src/slic3r/GUI/GUI_ObjectList.cpp:2051
 msgid ""
@@ -16019,18 +16013,18 @@ msgid "Open new G-code viewer"
 msgstr "Адчыніць новы папярэдні прагляд G-code"
 
 #: src/slic3r/GUI/MainFrame.cpp:252
-msgid "Closing PrusaSlicer. Current project is modified."
+msgid "Closing Tisma Slicer. Current project is modified."
 msgstr ""
-"Зачыніць PrusaSlicer.\n"
+"Зачыніць Tisma Slicer.\n"
 "Бягучы праект быў зменены."
 
 #: src/slic3r/GUI/MainFrame.cpp:259
-msgid "PrusaSlicer is closing"
-msgstr "Зачыненне PrusaSlicer"
+msgid "Tisma Slicer is closing"
+msgstr "Зачыненне Tisma Slicer"
 
 #: src/slic3r/GUI/MainFrame.cpp:259
-msgid "Closing PrusaSlicer while some presets are modified."
-msgstr "Зачыненне PrusaSlicer, з зменамі ў профілях."
+msgid "Closing Tisma Slicer while some presets are modified."
+msgstr "Зачыненне Tisma Slicer, з зменамі ў профілях."
 
 #: src/slic3r/GUI/MainFrame.cpp:574 src/slic3r/GUI/Plater.cpp:402
 #: src/slic3r/GUI/Plater.cpp:1914
@@ -16099,12 +16093,12 @@ msgstr "Адчыніць старонку загрузкі драйвераў Pr
 
 #: src/slic3r/GUI/MainFrame.cpp:1380
 msgid "Software &Releases"
-msgstr "&Выпускі праграмнага забеспячэння PrusaSlicer"
+msgstr "&Выпускі праграмнага забеспячэння Tisma Slicer"
 
 #: src/slic3r/GUI/MainFrame.cpp:1380
 msgid "Open the software releases page in your browser"
 msgstr ""
-"Адчыніць старонку выпускаў праграмы PrusaSlicer у інтэрнэт-аглядальніку"
+"Адчыніць старонку выпускаў праграмы Tisma Slicer у інтэрнэт-аглядальніку"
 
 #: src/slic3r/GUI/MainFrame.cpp:1390
 msgid "System &Info"
@@ -17017,8 +17011,8 @@ msgstr "Экспартаванне."
 #. TRN: The text is followed by a hyperlink saying "here." It is necessary to split it in two phrases, sorry.
 #: src/slic3r/GUI/NotificationManager.hpp:965
 msgid ""
-"PrusaSlicer received a download request from supported website, but it's not "
-"allowed. You can allow it"
+"Tisma Slicer received a download request from supported website, but it's "
+"not allowed. You can allow it"
 msgstr ""
 
 #: src/slic3r/GUI/NotificationManager.hpp:966
@@ -17055,16 +17049,15 @@ msgstr "Дыяпазон"
 #: src/slic3r/GUI/OpenGLManager.cpp:383
 #, c-format, boost-format
 msgid ""
-"PrusaSlicer requires OpenGL ES 3.0 capable graphics driver to run "
-"correctly, \n"
-"while OpenGL version %s, renderer %s, vendor %s was detected."
+"Tisma Slicer requires OpenGL ES 3.0 capable graphics driver to run "
+"correctly, \nwhile OpenGL version %s, renderer %s, vendor %s was detected."
 msgstr ""
 
 #: src/slic3r/GUI/OpenGLManager.cpp:386
 #, c-format, boost-format
 msgid ""
-"PrusaSlicer requires OpenGL 3.2 capable graphics driver to run correctly,\n"
-"while OpenGL version %s, renderer %s, vendor %s was detected."
+"Tisma Slicer requires OpenGL 3.2 capable graphics driver to run "
+"correctly,\nwhile OpenGL version %s, renderer %s, vendor %s was detected."
 msgstr ""
 
 #: src/slic3r/GUI/OpenGLManager.cpp:390
@@ -17280,12 +17273,11 @@ msgstr "Спытаць пра незахаваныя змены ў праекц�
 
 #: src/slic3r/GUI/Plater.cpp:417
 msgid ""
-"You will not be asked about it again, when: \n"
-"- Closing PrusaSlicer,\n"
-"- Loading or creating a new project"
+"You will not be asked about it again, when: \n- Closing Tisma Slicer,\n- "
+"Loading or creating a new project"
 msgstr ""
 "Вас больш не спытаюць, калі:\n"
-"- зачыняецца PrusaSlicer,\n"
+"- зачыняецца Tisma Slicer,\n"
 "- загружаецца ці ствараецца новы праект"
 
 #: src/slic3r/GUI/Plater.cpp:906
@@ -17335,20 +17327,20 @@ msgstr "Разгарнуць бакавую панэль"
 
 #: src/slic3r/GUI/Plater.cpp:1324
 msgid ""
-"The preset below was temporarily installed on the active instance of "
-"PrusaSlicer"
+"The preset below was temporarily installed on the active instance of Tisma "
+"Slicer"
 msgid_plural ""
-"The presets below were temporarily installed on the active instance of "
-"PrusaSlicer"
+"The presets below were temporarily installed on the active instance of Tisma "
+"Slicer"
 msgstr[0] ""
 "Прыведзены ніжэй профіль быў часова ўсталяваны на актыўным асобніку "
-"PrusaSlicer"
+"Tisma Slicer"
 msgstr[1] ""
 "Прыведзеныя ніжэй профілі былі часова ўсталяваны на актыўным асобніку "
-"PrusaSlicer"
+"Tisma Slicer"
 msgstr[2] ""
 "Прыведзеныя ніжэй профілі былі часова ўсталяваны на актыўным асобніку "
-"PrusaSlicer"
+"Tisma Slicer"
 
 #: src/slic3r/GUI/Plater.cpp:1423
 msgid "PrintRequest can only be loaded if an SLA printer is selected."
@@ -17367,14 +17359,10 @@ msgstr ""
 #: src/slic3r/GUI/Plater.cpp:1499
 #, boost-format
 msgid ""
-"<b>Unable to load configuration from project\n"
-"\n"
-"File: </b>%1%\n"
-"\n"
-"This project was created in a newer version of PrusaSlicer. Only the "
-"geometry was loaded.\n"
-"Update to the latest version for full compatibility.\n"
-"For more info: <a href=%2%>%2%</a>"
+"<b>Unable to load configuration from project\n\nFile: </b>%1%\n\nThis "
+"project was created in a newer version of Tisma Slicer. Only the geometry "
+"was loaded.\nUpdate to the latest version for full compatibility.\nFor more "
+"info: <a href=%2%>%2%</a>"
 msgstr ""
 
 #: src/slic3r/GUI/Plater.cpp:1514
@@ -17408,24 +17396,24 @@ msgstr "Памер аб'екту роўны нулю"
 #: src/slic3r/GUI/Plater.cpp:1583
 #, c-format, boost-format
 msgid ""
-"The dimensions of the object from file %s seem to be defined in meters.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
+"The dimensions of the object from file %s seem to be defined in meters.\nThe "
+"internal unit of Tisma Slicer is a millimeter. Do you want to recalculate "
 "the dimensions of the object?"
 msgid_plural ""
-"The dimensions of some objects from file %s seem to be defined in meters.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
-"the dimensions of these objects?"
+"The dimensions of some objects from file %s seem to be defined in "
+"meters.\nThe internal unit of Tisma Slicer is a millimeter. Do you want to "
+"recalculate the dimensions of these objects?"
 msgstr[0] ""
 "Здаецца, што вымярэнні аб'екту з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца міліметры.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца міліметры.\n"
 "Ці пералічыць памеры аб'екту?"
 msgstr[1] ""
 "Здаецца, што вымярэнні аб'ектаў з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца міліметры.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца міліметры.\n"
 "Ці пералічыць памеры аб'екту?"
 msgstr[2] ""
 "Здаецца, што вымярэнні аб'ектаў з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца міліметры.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца міліметры.\n"
 "Ці пералічыць памеры аб'екту?"
 
 #: src/slic3r/GUI/Plater.cpp:1587 src/slic3r/GUI/Plater.cpp:1605
@@ -17439,24 +17427,24 @@ msgstr "Ужыць да ўсіх дробных аб'ектаў, якія заг
 #: src/slic3r/GUI/Plater.cpp:1601
 #, c-format, boost-format
 msgid ""
-"The dimensions of the object from file %s seem to be defined in inches.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
+"The dimensions of the object from file %s seem to be defined in inches.\nThe "
+"internal unit of Tisma Slicer is a millimeter. Do you want to recalculate "
 "the dimensions of the object?"
 msgid_plural ""
-"The dimensions of some objects from file %s seem to be defined in inches.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
-"the dimensions of these objects?"
+"The dimensions of some objects from file %s seem to be defined in "
+"inches.\nThe internal unit of Tisma Slicer is a millimeter. Do you want to "
+"recalculate the dimensions of these objects?"
 msgstr[0] ""
 "Здаецца, што вымярэнні аб'екту з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца цалі.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца цалі.\n"
 "Ці пералічыць памеры аб'екту?"
 msgstr[1] ""
 "Здаецца, што вымярэнні аб'ектаў з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца цалі.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца цалі.\n"
 "Ці пералічыць памеры аб'екту?"
 msgstr[2] ""
 "Здаецца, што вымярэнні аб'ектаў з файлу %s зададзены ў метрах.\n"
-"Унутранай адзінкай вымярэння PrusaSlicer з'яўляюцца цалі.\n"
+"Унутранай адзінкай вымярэння Tisma Slicer з'яўляюцца цалі.\n"
 "Ці пералічыць памеры аб'екту?"
 
 #: src/slic3r/GUI/Plater.cpp:1620
@@ -17545,11 +17533,11 @@ msgstr ""
 
 #: src/slic3r/GUI/Plater.cpp:2114
 msgid ""
-"This action will break a cut information.\n"
-"After that PrusaSlicer can't guarantee model consistency"
+"This action will break a cut information.\nAfter that Tisma Slicer can't "
+"guarantee model consistency"
 msgstr ""
 "Прывядзе да разрыву інфармацыі аб разрэзе.\n"
-"Пасля гэтага PrusaSlicer не зможа гарантаваць ўзгодненасць мадэлі"
+"Пасля гэтага Tisma Slicer не зможа гарантаваць ўзгодненасць мадэлі"
 
 #: src/slic3r/GUI/Plater.cpp:2117
 msgid "Delete object"
@@ -18165,7 +18153,7 @@ msgid ""
 "If this is enabled, Slic3r will prompt the last output directory instead of "
 "the one containing the input files."
 msgstr ""
-"Калі ўключана, PrusaSlicer запытае апошні ўжыты каталог захавання замест "
+"Калі ўключана, Tisma Slicer запытае апошні ўжыты каталог захавання замест "
 "таго, які ўтрымлівае зыходныя файлы."
 
 #: src/slic3r/GUI/Preferences.cpp:306
@@ -18177,7 +18165,7 @@ msgid ""
 "If this is enabled, Slic3r will pre-process objects as soon as they're "
 "loaded in order to save time when exporting G-code."
 msgstr ""
-"Калі ўключана, PrusaSlicer будзе папярэдне апрацоўваць аб'екты, як толькі "
+"Калі ўключана, Tisma Slicer будзе папярэдне апрацоўваць аб'екты, як толькі "
 "яны будуць загружаныя, каб зэканоміць час пры экспартаванні G-code."
 
 #: src/slic3r/GUI/Preferences.cpp:312
@@ -18191,7 +18179,7 @@ msgid ""
 "such issues are floating object parts, unsupported extrusions and low bed "
 "adhesion."
 msgstr ""
-"Калі ўключана, PrusaSlicer будзе выдаваць папярэджання пры выяўленні праблем "
+"Калі ўключана, Tisma Slicer будзе выдаваць папярэджання пры выяўленні праблем "
 "у нарэзаным аб'екце, якія могуць быць ліквідаваны з дапамогай апор (і "
 "аблямоўкі).\n"
 "Прыкладамі такіх праблем з'яўляюцца часткі аб'екта, якія праваюць, "
@@ -18210,15 +18198,17 @@ msgstr ""
 "будзе аўтаматычна знаходзіць і загружаць файлы праекту."
 
 #: src/slic3r/GUI/Preferences.cpp:331
-msgid "If enabled, sets PrusaSlicer as default application to open .3mf files."
+msgid ""
+"If enabled, sets Tisma Slicer as default application to open .3mf files."
 msgstr ""
-"Калі ўключана, прызначае PrusaSlicer у якасці першапачатковай праграмы для "
+"Калі ўключана, прызначае Tisma Slicer у якасці першапачатковай праграмы для "
 "адкрыцця файлаў .3mf."
 
 #: src/slic3r/GUI/Preferences.cpp:336
-msgid "If enabled, sets PrusaSlicer as default application to open .stl files."
+msgid ""
+"If enabled, sets Tisma Slicer as default application to open .stl files."
 msgstr ""
-"Калі ўключана, прызначае PrusaSlicer у якасці першапачатковай праграммы для "
+"Калі ўключана, прызначае Tisma Slicer у якасці першапачатковай праграммы для "
 "адкрыцця файлаў .stl."
 
 #: src/slic3r/GUI/Preferences.cpp:345
@@ -18228,7 +18218,7 @@ msgid ""
 "When a new preset version becomes available it is offered at application "
 "startup."
 msgstr ""
-"Калі ўключана, PrusaSlicer загружае абнаўленні ўбудаваных сістэмных профіляў "
+"Калі ўключана, Tisma Slicer загружае абнаўленні ўбудаваных сістэмных профіляў "
 "у фонавым рэжыме.\n"
 "Абнаўленні загружаюцца ў асобнае часовае сховішча.\n"
 "Калі новыя профілі становяцца даступнымі, яны прапануюцца пры запуске "
@@ -18285,8 +18275,8 @@ msgstr ""
 "запытам выбраць дзеянне, якое неабходна выканаць з файлам для загрузкі."
 
 #: src/slic3r/GUI/Preferences.cpp:375 src/slic3r/GUI/Preferences.cpp:379
-msgid "Allow just a single PrusaSlicer instance"
-msgstr "Дазволіць толькі адзін асобнік PrusaSlicer"
+msgid "Allow just a single Tisma Slicer instance"
+msgstr "Дазволіць толькі адзін асобнік Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:376
 msgid ""
@@ -18301,21 +18291,20 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:380
 msgid ""
-"If this is enabled, when starting PrusaSlicer and another instance of the "
-"same PrusaSlicer is already running, that instance will be reactivated "
+"If this is enabled, when starting Tisma Slicer and another instance of the "
+"same Tisma Slicer is already running, that instance will be reactivated "
 "instead."
 msgstr ""
-"Калі ўключана, і іншы асобнік PrusaSlicer ужо запушчаны, то пры запуску "
-"PrusaSlicer гэты асобнік будзе паўторна актываваны."
+"Калі ўключана, і іншы асобнік Tisma Slicer ужо запушчаны, то пры запуску "
+"Tisma Slicer гэты асобнік будзе паўторна актываваны."
 
 #: src/slic3r/GUI/Preferences.cpp:388
 msgid ""
-"Always ask for unsaved changes in project, when: \n"
-"- Closing PrusaSlicer,\n"
-"- Loading or creating a new project"
+"Always ask for unsaved changes in project, when: \n- Closing Tisma "
+"Slicer,\n- Loading or creating a new project"
 msgstr ""
 "Заўсёды запытаць пра незахаваныя змены ў праекце, калі:\n"
-"- зачыняецца PrusaSlicer,\n"
+"- зачыняецца Tisma Slicer,\n"
 "- загружаецца ці ствараецца новы праект"
 
 #: src/slic3r/GUI/Preferences.cpp:396
@@ -18329,12 +18318,12 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:397
 msgid ""
-"Always ask for unsaved changes in presets, when: \n"
-"- Closing PrusaSlicer while some presets are modified,\n"
-"- Loading a new project while some presets are modified"
+"Always ask for unsaved changes in presets, when: \n- Closing Tisma Slicer "
+"while some presets are modified,\n- Loading a new project while some presets "
+"are modified"
 msgstr ""
 "Заўсёды запытаць пра незахаваныя змены ў профілях, калі:\n"
-"- зачыняецца PrusaSlicer пры змене некаторых профіляў,\n"
+"- зачыняецца Tisma Slicer пры змене некаторых профіляў,\n"
 "- загружаецца новы праект пры змене некаторых профіляў"
 
 #: src/slic3r/GUI/Preferences.cpp:403
@@ -18362,28 +18351,28 @@ msgstr ""
 "праекту"
 
 #: src/slic3r/GUI/Preferences.cpp:415
-msgid "Associate .gcode files to PrusaSlicer G-code Viewer"
-msgstr "Звязаць файлы .gcode з папярэднім праглядам G-code у PrusaSlicer"
+msgid "Associate .gcode files to Tisma Slicer G-code Viewer"
+msgstr "Звязаць файлы .gcode з папярэднім праглядам G-code у Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:416
 msgid ""
-"If enabled, sets PrusaSlicer G-code Viewer as default application to open ."
-"gcode files."
+"If enabled, sets Tisma Slicer G-code Viewer as default application to open "
+".gcode files."
 msgstr ""
-"Калі ўключана, прызначае папярэдні прагляд G-code у PrusaSlicer як "
+"Калі ўключана, прызначае папярэдні прагляд G-code у Tisma Slicer як "
 "першапачатковую праграму для адкрыцця файлаў .gcode."
 
 #: src/slic3r/GUI/Preferences.cpp:419
-msgid "Associate .bgcode files to PrusaSlicer G-code Viewer"
+msgid "Associate .bgcode files to Tisma Slicer G-code Viewer"
 msgstr ""
-"Звязаць файлы .bgcode з праграмай папярэдняга прагляду G-code у PrusaSlicer"
+"Звязаць файлы .bgcode з праграмай папярэдняга прагляду G-code у Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:420
 msgid ""
-"If enabled, sets PrusaSlicer G-code Viewer as default application to open ."
-"bgcode files."
+"If enabled, sets Tisma Slicer G-code Viewer as default application to open "
+".bgcode files."
 msgstr ""
-"Калі ўключана, прызначае папярэдні прагляд G-code у PrusaSlicer у якасці "
+"Калі ўключана, прызначае папярэдні прагляд G-code у Tisma Slicer у якасці "
 "першапачатковай праграмы для адкрыцця файлаў .gcode."
 
 #: src/slic3r/GUI/Preferences.cpp:427
@@ -18404,9 +18393,9 @@ msgid "Show splash screen"
 msgstr "Адклюстраваць застаўку"
 
 #: src/slic3r/GUI/Preferences.cpp:443
-msgid "If enabled, PrusaSlicer will be open at the position it was closed"
+msgid "If enabled, Tisma Slicer will be open at the position it was closed"
 msgstr ""
-"Калі ўключана, PrusaSlicer будзе адчынена ў тым жа становішчы, у якім ён быў "
+"Калі ўключана, Tisma Slicer будзе адчынена ў тым жа становішчы, у якім ён быў "
 "зачынены"
 
 #: src/slic3r/GUI/Preferences.cpp:448
@@ -18597,9 +18586,9 @@ msgstr ""
 "code ў двайковым фармаце."
 
 #: src/slic3r/GUI/Preferences.cpp:627
-msgid "If enabled, PrusaSlicer will not open a hyperlinks in your browser."
+msgid "If enabled, Tisma Slicer will not open a hyperlinks in your browser."
 msgstr ""
-"Калі ўключана, PrusaSlicer не будзе адчыняць інтэрнэт-спасылкі ў вашым "
+"Калі ўключана, Tisma Slicer не будзе адчыняць інтэрнэт-спасылкі ў вашым "
 "інтэрнэт-аглядальніку."
 
 #: src/slic3r/GUI/Preferences.cpp:633
@@ -18608,7 +18597,7 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:634
 msgid ""
-"If enabled, PrusaSlicer will show a dialog with quality selection when "
+"If enabled, Tisma Slicer will show a dialog with quality selection when "
 "importing a STEP file."
 msgstr ""
 
@@ -18618,7 +18607,7 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:639
 msgid ""
-"If enabled, PrusaSlicer will show up \"Log in\" button in application top "
+"If enabled, Tisma Slicer will show up \"Log in\" button in application top "
 "bar."
 msgstr ""
 
@@ -18628,7 +18617,7 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:644
 msgid ""
-"If enabled, PrusaSlicer can download and open files from supported websites"
+"If enabled, Tisma Slicer can download and open files from supported websites"
 msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:654
@@ -19393,8 +19382,8 @@ msgid ""
 "identify you later. To detect duplicate entries, a unique number derived "
 "from your system is sent, but the source information cannot be "
 "reconstructed. Apart from that, only general data about your OS, hardware "
-"and OpenGL installation are sent. PrusaSlicer is open source, if you want to "
-"inspect the code actually performing the communication, see %1%."
+"and OpenGL installation are sent. Tisma Slicer is open source, if you want "
+"to inspect the code actually performing the communication, see %1%."
 msgstr ""
 "Мы не адпраўляем аніякай асабістай інфармацыі ці чаго-небудзь, што дазваляе "
 "нам ідэнтыфікаваць вас пазней.\n"
@@ -19402,7 +19391,7 @@ msgstr ""
 "атрыманы з вашай сістэмы, але зыходная інфармацыя не можа быць адноўлена.\n"
 "Акрамя таго, адпраўляцца толькі агульныя дадзеныя аб вашай аперацыйнай "
 "сістэме, абсталяванні і ўсталяванай версіі OpenGL.\n"
-"PrusaSlicer мае адкрыты зыходны код, калі жадаеце праверыць код, які "
+"Tisma Slicer мае адкрыты зыходны код, калі жадаеце праверыць код, які "
 "фактычна выконвае абмен дадзенымі, глядзіце %1%."
 
 #: src/slic3r/GUI/SendSystemInfoDialog.cpp:624
@@ -19586,8 +19575,8 @@ msgid "System Information"
 msgstr "Сістэмная інфармацыя"
 
 #: src/slic3r/GUI/SysInfoDialog.cpp:166
-msgid "Blacklisted libraries loaded into PrusaSlicer process:"
-msgstr "Бібліятэкі з чорнага спіса загружаны ў працэс PrusaSlicer:"
+msgid "Blacklisted libraries loaded into Tisma Slicer process:"
+msgstr "Бібліятэкі з чорнага спіса загружаны ў працэс Tisma Slicer:"
 
 #: src/slic3r/GUI/SysInfoDialog.cpp:178
 msgid "Eigen vectorization supported:"
@@ -19973,14 +19962,12 @@ msgstr "Падказкі аб хуткасці аб'ёмнага выдатку 
 #: src/slic3r/GUI/Tab.cpp:2655
 msgid ""
 "Note: All parameters from this group are moved to the Physical Printer "
-"settings (see changelog).\n"
-"\n"
-"A new Physical Printer profile is created by clicking on the \"cog\" icon "
-"right of the Printer profiles combo box, by selecting the \"Add physical "
-"printer\" item in the Printer combo box. The Physical Printer profile editor "
-"opens also when clicking on the \"cog\" icon in the Printer settings tab. "
-"The Physical Printer profiles are being stored into PrusaSlicer/"
-"physical_printer directory."
+"settings (see changelog).\n\nA new Physical Printer profile is created by "
+"clicking on the \"cog\" icon right of the Printer profiles combo box, by "
+"selecting the \"Add physical printer\" item in the Printer combo box. The "
+"Physical Printer profile editor opens also when clicking on the \"cog\" icon "
+"in the Printer settings tab. The Physical Printer profiles are being stored "
+"into TismaSlicer/physical_printer directory."
 msgstr ""
 "Заўвага: усе налады з гэтай групы перанесеныя ў налады фізічнай друкаркі "
 "(глядзіце спіс зменаў).\n"
@@ -19990,7 +19977,7 @@ msgstr ""
 "друкарку\".\n"
 "Змена профілю фізічнай друкаркі адчыняецца таксама пры націску на гузік "
 "\"шасцярэнька\" на ўкладцы наладаў друкаркі.\n"
-"Профілі фізічных друкарак захоўваюцца ў каталоге PrusaSlicer/"
+"Профілі фізічных друкарак захоўваюцца ў каталоге Tisma Slicer/"
 "physical_printer."
 
 #: src/slic3r/GUI/Tab.cpp:2674
@@ -20733,17 +20720,16 @@ msgstr ""
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:956
 msgid ""
 "You will not be asked about the unsaved changes in presets the next time "
-"you: \n"
-"- Closing PrusaSlicer while some presets are modified,\n"
-"- Loading a new project while some presets are modified"
+"you: \n- Closing Tisma Slicer while some presets are modified,\n- Loading a "
+"new project while some presets are modified"
 msgstr ""
 "Вас не спытаюць аб незахаваных зменах у наладах у наступны раз, калі вы:\n"
-"- зачыніце PrusaSlicer пры змене некаторых наладаў,\n"
+"- зачыніце Tisma Slicer пры змене некаторых наладаў,\n"
 "- загрузіце новы праект пры змене некаторых наладаў"
 
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:959
-msgid "PrusaSlicer will remember your action."
-msgstr "PrusaSlicer запомніць ваш выбар."
+msgid "Tisma Slicer will remember your action."
+msgstr "Tisma Slicer запомніць ваш выбар."
 
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:960
 #, boost-format
@@ -20957,7 +20943,7 @@ msgstr ""
 #: src/slic3r/GUI/UpdateDialogs.cpp:121
 msgid ""
 "Clicking 'Next' will open a browser window where you can select which "
-"variant of PrusaSlicer you want to download."
+"variant of Tisma Slicer you want to download."
 msgstr ""
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:131
@@ -21023,11 +21009,11 @@ msgstr "Абнаўленне наладкі"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:282
 msgid ""
-"PrusaSlicer is not using the newest configuration available.\n"
-"Configuration Wizard may not offer the latest printers, filaments and SLA "
-"materials to be installed."
+"Tisma Slicer is not using the newest configuration available.\nConfiguration "
+"Wizard may not offer the latest printers, filaments and SLA materials to be "
+"installed."
 msgstr ""
-"PrusaSlicer не ўжывае апошнюю даступную наладку.\n"
+"Tisma Slicer не ўжывае апошнюю даступную наладку.\n"
 "Майстар наладкі можа не прапанаваць усталёўку найноўшых друкарак, філаментаў "
 "і матэрыялаў SLA."
 
@@ -21626,16 +21612,16 @@ msgstr ""
 
 #: src/slic3r/Utils/Http.cpp:81
 msgid ""
-"Could not detect system SSL certificate store. PrusaSlicer will be unable to "
-"establish secure network connections."
+"Could not detect system SSL certificate store. Tisma Slicer will be unable "
+"to establish secure network connections."
 msgstr ""
 "Не атрымалася знайсці сістэмнае сховішча SSL-сертыфікатаў.\n"
-"PrusaSlicer не атрымалася ўсталяваць бяспечныя сеткавыя злучэнні."
+"Tisma Slicer не атрымалася ўсталяваць бяспечныя сеткавыя злучэнні."
 
 #: src/slic3r/Utils/Http.cpp:86
 #, boost-format
-msgid "PrusaSlicer detected system SSL certificate store in: %1%"
-msgstr "PrusaSlicer знайшоў сховішча сістэмных SSL-сертыфікатаў у: %1%"
+msgid "Tisma Slicer detected system SSL certificate store in: %1%"
+msgstr "Tisma Slicer знайшоў сховішча сістэмных SSL-сертыфікатаў у: %1%"
 
 #: src/slic3r/Utils/Http.cpp:90
 #, boost-format
@@ -21648,11 +21634,11 @@ msgstr ""
 
 #: src/slic3r/Utils/Http.cpp:99
 msgid ""
-"CURL init has failed. PrusaSlicer will be unable to establish network "
+"CURL init has failed. Tisma Slicer will be unable to establish network "
 "connections. See logs for additional details."
 msgstr ""
 "Памылка ініцыялізацыі URL-адраса кліенту.\n"
-"PrusaSlicer не атрымалася ўсталяваць сеткавыя злучэнні. \n"
+"Tisma Slicer не атрымалася ўсталяваць сеткавыя злучэнні. \n"
 "Глядзіце часопіс для дадатковай інфармацыі."
 
 #: src/slic3r/Utils/MKS.cpp:61
@@ -26296,7 +26282,7 @@ msgid ""
 msgstr ""
 "Калі жадаеце поўнасцю адмовіцца ад гэтай справаздачы аб памылцы, націсніце "
 "кнопку \"Адмена\",\n"
-"але майце на ўвазе, што гэта можа перашкодзіць паляпшэнню PrusaSlicer.\n"
+"але майце на ўвазе, што гэта можа перашкодзіць паляпшэнню Tisma Slicer.\n"
 "Калі гэта магчыма, працягніце стварэнне справаздачы.\n"
 
 #: ../src/msw/registry.cpp:1405
