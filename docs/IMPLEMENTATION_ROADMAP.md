@@ -259,7 +259,7 @@ los datos del usuario.
 | 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Hecho: el panel ya tenía alto máximo con barra de desplazamiento; las flechas de tracción quedaban dentro de la pieza (ahora salen de la cara); tabla de materiales editable con valores propios guardados en `fea_materials.json` (`docs/FEA.md`) |
 | 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
 | 16 | Render: oclusión ambiental y PBR | Decisión |
-| 17 | FEA: multigrid y GPU (Vulkan) | Decisión |
+| 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución (`docs/FEA.md`). GPU pendiente (dependencia nueva) |
 | 18 | Fragmentación de piezas con encastres | Decisión |
 | 19 | Trackhead | Decisión (referencias) |
 | 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |

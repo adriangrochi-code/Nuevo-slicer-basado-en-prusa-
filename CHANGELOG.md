@@ -12,6 +12,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Análisis estructural más rápido (multigrid)**: el solver necesita 15–30 iteraciones en vez de cientos o miles;
+  una pieza de 230 000 vóxeles pasa de 25 s a 3 s, con el mismo resultado.
 - **Asistente de configuración en una sola página**: se abre directo en la lista de impresoras, con todas las marcas
   juntas (resina y filamento de una misma marca, todos los paquetes de Prusa bajo «Prusa») y el buscador; los
   filamentos y resinas se instalan solos y no se descargan perfiles de Prusa (los de Tisma ya vienen incluidos).

@@ -86,9 +86,39 @@ Todo se guarda en el proyecto (3MF) y se puede deshacer.
   mantiene la matriz simétrica y definida positiva también con fibra de carbono.
 - **Temperatura**: rigidez y resistencia × f(T): 1 hasta 23 °C, baja linealmente a 0,5 en la temperatura máxima de
   servicio y cae a 0,02 en los 15 °C siguientes. Es un modelo simplificado.
-- **Solver**: gradiente conjugado con precondicionador de Jacobi, sin ensamblar la matriz (todos los vóxeles
-  comparten la misma matriz de elemento); el producto se hace en paralelo (TBB) en 8 grupos de vóxeles sin nodos
-  comunes. Memoria lineal con el número de vóxeles.
+- **Solver**: gradiente conjugado sin ensamblar la matriz (todos los vóxeles comparten la misma matriz de elemento);
+  el producto se hace en paralelo (TBB) en 8 grupos de vóxeles sin nodos comunes. Precondicionador: multigrid
+  geométrico (`Multigrid.cpp`, ver abajo); en piezas chicas (≤ 15 000 grados de libertad) o si el multigrid no ayuda,
+  Jacobi.
+
+### Multigrid (paso 17)
+
+Con Jacobi, las iteraciones crecen con la cantidad de vóxeles a lo ancho de la pieza (de 600 a 2 900 en las pruebas)
+y el análisis fino tardaba decenas de segundos. El multigrid las deja en 15–30 sea cual sea la resolución:
+
+- Nivel 0: el análisis mismo (su producto y su diagonal), así que el gradiente conjugado converge a la misma solución.
+- Cada nivel grueso junta 2 × 2 × 2 elementos. Su matriz de elemento es el producto de Galerkin Pᵀ K P de los
+  elementos que junta (P: interpolación trilineal de los nodos gruesos), exacto para las paredes, el relleno, el
+  relleno alineado y los huecos dentro del elemento grueso. Se guarda en precisión simple (2,3 kB por elemento
+  grueso, un octavo de los vóxeles).
+- Suavizado: 2 pasadas de Jacobi antes y 2 después (ciclo V simétrico). El amortiguamiento de cada nivel es
+  4 / (3 λ_max), con λ_max de D⁻¹A estimado por el método de la potencia: con un valor fijo (0,6) el suavizado
+  divergía en piezas con paredes y relleno, y el precondicionador dejaba de ser definido positivo (el gradiente
+  conjugado se estancaba).
+- El nivel más grueso (≤ 15 000 grados de libertad) se resuelve directo (Cholesky disperso de Eigen).
+- Red de seguridad: si con el multigrid el gradiente conjugado pasa de 300 iteraciones o pierde la positividad,
+  sigue con Jacobi desde la solución que tiene.
+
+| Caso | Vóxeles | Jacobi | Multigrid |
+|---|---|---|---|
+| Voladizo macizo | 48 000 | 605 it., 1,8 s | 14 it., 0,45 s |
+| Voladizo impreso (paredes y relleno) | 64 000 | 2 275 it., 8,6 s | 20 it., 0,81 s |
+| Barra traccionada a 30° (proyecto de prueba) | 63 000 | 1 127 it., 4,4 s | 21 it., 0,83 s |
+| La misma barra, vóxel de 0,25 mm | 230 000 | 1 925 it., 25,2 s | 25 it., 3,1 s |
+
+Mismo desplazamiento y tensiones (test «Multigrid preconditioner»). La GPU (Vulkan) queda para un paso aparte: hace
+falta una dependencia nueva y su compilación en los tres sistemas, y con el multigrid el análisis más fino ya tarda
+segundos.
 - **Condiciones**: los nodos a menos de 0,9 vóxeles de las caras fijas se bloquean; la fuerza de una carga sobre
   caras se reparte entre los nodos cercanos a ellas; la de una carga puntual entre los nodos a menos de 1,5 vóxeles
   (o el radio indicado) del punto.

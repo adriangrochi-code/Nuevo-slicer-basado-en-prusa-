@@ -14,6 +14,8 @@ add_library(libtisma_fea STATIC
     src/CellsMesh.hpp
     src/Materials.cpp
     src/Analysis.cpp
+    src/Multigrid.hpp
+    src/Multigrid.cpp
     src/ModelSetup.cpp
     src/Optimize.cpp
     src/Structures.cpp

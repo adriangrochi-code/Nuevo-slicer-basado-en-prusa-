@@ -1836,3 +1836,54 @@ TEST_CASE("Infill model matches the sliced toolpaths", "[FEA][Infill]")
         CHECK(v_model == Approx(v_total).epsilon(0.05));
     }
 }
+
+// The multigrid preconditioner converges to the same solution as Jacobi, in fewer iterations on fine grids.
+TEST_CASE("Multigrid preconditioner", "[FEA][Multigrid]")
+{
+    auto run = [](Setup setup, const indexed_triangle_set &its, bool mg, double &seconds) {
+        setup.multigrid = mg;
+        const auto t0 = std::chrono::steady_clock::now();
+        Result res = analyze(its, setup);
+        seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        return res;
+    };
+    SECTION("solid cantilever") {
+        const indexed_triangle_set its = its_make_cube(60., 10., 10.);
+        Setup setup;
+        setup.material   = "PLA";
+        setup.voxel_size = 0.5;
+        setup.tolerance  = 1e-8;
+        setup.fixtures.push_back({ side(its, 0, false) });
+        Load load;
+        load.type      = Load::Type::Faces;
+        load.triangles = side(its, 0, true);
+        load.force     = Vec3d(0., 0., -100.);
+        setup.loads.push_back(load);
+        double tj = 0., tm = 0.;
+        const Result jacobi = run(setup, its, false, tj);
+        const Result mg     = run(setup, its, true, tm);
+        REQUIRE(jacobi.ok);
+        REQUIRE(mg.ok);
+        CHECK(jacobi.multigrid_levels == 0);
+        CHECK(mg.multigrid_levels >= 2);
+        CHECK(mg.max_displacement == Approx(jacobi.max_displacement).epsilon(1e-5));
+        CHECK(mg.max_von_mises == Approx(jacobi.max_von_mises).epsilon(1e-4));
+        CHECK(mg.iterations * 4 < jacobi.iterations);
+        WARN("solid cantilever, " << mg.voxels.size() << " voxels: Jacobi " << jacobi.iterations << " iterations "
+             << tj << " s, multigrid (" << mg.multigrid_levels << " levels) " << mg.iterations << " iterations " << tm << " s");
+    }
+    SECTION("printed cantilever (walls and infill)") {
+        indexed_triangle_set its;
+        Setup setup = printed_cantilever(its, 5., 0.);
+        setup.voxel_size = 0.5;
+        double tj = 0., tm = 0.;
+        const Result jacobi = run(setup, its, false, tj);
+        const Result mg     = run(setup, its, true, tm);
+        REQUIRE(jacobi.ok);
+        REQUIRE(mg.ok);
+        CHECK(mg.max_displacement == Approx(jacobi.max_displacement).epsilon(1e-5));
+        CHECK(mg.iterations * 2 < jacobi.iterations);
+        WARN("printed cantilever, " << mg.voxels.size() << " voxels: Jacobi " << jacobi.iterations << " iterations "
+             << tj << " s, multigrid (" << mg.multigrid_levels << " levels) " << mg.iterations << " iterations " << tm << " s");
+    }
+}

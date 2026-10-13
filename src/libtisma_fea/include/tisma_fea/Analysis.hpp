@@ -159,6 +159,8 @@ struct Setup
     size_t               target_voxels { 60000 };
     // Convergence of the iterative solver (relative residual).
     double               tolerance { 1e-7 };
+    // Preconditioner of the conjugate gradient: geometric multigrid (fewer iterations on fine grids) or Jacobi.
+    bool                 multigrid { true };
     // Walls and infill of the print; disabled = solid part.
     InfillModel          infill;
     // Direction in which the layers are stacked (the Z of the printer) in the coordinates of the setup. The
@@ -232,6 +234,8 @@ struct Result
     std::vector<std::pair<std::string, double>> alternatives;
 
     int                 iterations { 0 };
+    // Levels of the multigrid preconditioner (0: Jacobi).
+    size_t              multigrid_levels { 0 };
     // Number of material orientations used (1 with flat layers).
     size_t              layer_orientations { 1 };
     // Voxels with aligned infill (ribs).

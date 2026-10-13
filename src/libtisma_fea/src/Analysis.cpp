@@ -7,12 +7,14 @@
 //   inside the slice.
 // - Every voxel is a trilinear hexahedron (8 nodes, 2x2x2 Gauss points) with a transversely isotropic material whose
 //   axis is Z (the build direction): the layers are weaker and softer across than along.
-// - The system K u = f is solved with a conjugate gradient with Jacobi preconditioner, without assembling K: the
+// - The system K u = f is solved with a conjugate gradient, preconditioned with a geometric multigrid (Multigrid.hpp)
+//   or, on small grids, with the diagonal (Jacobi), without assembling K: the
 //   product K p is done element by element (the element matrix is the same for all the voxels, scaled by their
 //   fraction of material; one per layer orientation with curved layers, plus the one of the aligned infill of the
 //   voxel), in parallel over 8 groups of voxels which do not share nodes.
 // - Stresses are evaluated at the center of each voxel.
 #include "tisma_fea/Analysis.hpp"
+#include "Multigrid.hpp"
 
 #include <algorithm>
 #include <array>
@@ -762,7 +764,42 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             }
     report(15);
 
-    // 5) Preconditioned conjugate gradient.
+    // Multigrid preconditioner on fine grids (the iterations of Jacobi grow with the number of voxels across).
+    Multigrid mg;
+    bool use_mg = false;
+    if (setup.multigrid) {
+        Multigrid::FineLevel fl;
+        fl.size = grid.size;
+        fl.h    = h;
+        fl.voxels.reserve(grid.voxels.size());
+        for (int v : grid.voxels)
+            fl.voxels.push_back(grid.voxel_ijk(v));
+        fl.elements = elements;
+        fl.nodes.reserve(node_pos.size());
+        for (const Vec3d &p : node_pos)
+            fl.nodes.emplace_back(((p - grid.origin) / h).array().round().cast<int>());
+        fl.fixed    = fixed;
+        fl.diag     = diag;
+        fl.multiply = multiply;
+        auto element_matrix = [&](size_t e) {
+            Matrix24d k = double(vm_mat.stiffness[e]) * orientations[orientation_of[e]].ke;
+            if (const int g = infill_group_of[e]; g >= 0)
+                k += (1. - double(vm_mat.shell[e])) * infill_groups[g].ke;
+            return k;
+        };
+        use_mg = mg.build(std::move(fl), element_matrix, cancel);
+        res.multigrid_levels = use_mg ? mg.levels() : 0;
+    }
+    auto precondition = [&](const std::vector<double> &r, std::vector<double> &z) {
+        if (use_mg)
+            mg.apply(r, z);
+        else
+            for (size_t d = 0; d < n_dofs; ++ d)
+                z[d] = fixed[d] ? 0. : r[d] / diag[d];
+    };
+
+    // 5) Preconditioned conjugate gradient. With the multigrid it takes a few tens of iterations.
+    constexpr int MULTIGRID_MAX_ITERATIONS = 300;
     auto dot = [&](const std::vector<double> &a, const std::vector<double> &b) {
         double s = 0.;
         for (size_t i = 0; i < a.size(); ++ i)
@@ -770,8 +807,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         return s;
     };
     std::vector<double> u(n_dofs, 0.), r = f, z(n_dofs), p(n_dofs), q(n_dofs);
-    for (size_t d = 0; d < n_dofs; ++ d)
-        z[d] = fixed[d] ? 0. : r[d] / diag[d];
+    precondition(r, z);
     p = z;
     double rz = dot(r, z);
     const double f_norm = std::sqrt(dot(f, f));
@@ -806,9 +842,20 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         rel = std::sqrt(dot(r, r)) / f_norm;
         if (rel < setup.tolerance)
             break;
-        for (size_t d = 0; d < n_dofs; ++ d)
-            z[d] = fixed[d] ? 0. : r[d] / diag[d];
-        const double rz_new = dot(r, z);
+        precondition(r, z);
+        double rz_new = dot(r, z);
+        if (use_mg && (! (rz_new > 0.) || it >= MULTIGRID_MAX_ITERATIONS)) {
+            // Safety net: the multigrid does not help on this part; go on from the current solution with Jacobi.
+            use_mg = false;
+            res.multigrid_levels = 0;
+            multiply(u, q);
+            for (size_t d = 0; d < n_dofs; ++ d)
+                r[d] = fixed[d] ? 0. : f[d] - q[d];
+            precondition(r, z);
+            p  = z;
+            rz = dot(r, z);
+            continue;
+        }
         const double beta = rz_new / rz;
         rz = rz_new;
         for (size_t d = 0; d < n_dofs; ++ d)
