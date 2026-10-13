@@ -411,6 +411,45 @@ SCENARIO("Perimeters", "[Perimeters]")
     }
 }
 
+// Tisma: the extra perimeters check skips the offsets of the slice when a bound shows that the upper layer cannot fall
+// into the critical area; under the top of a sphere it still has to add them.
+SCENARIO("Extra perimeters under a dome", "[Perimeters]")
+{
+    // Number of perimeter loops of the whole print.
+    auto count_loops = [](bool extra_perimeters) {
+        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
+            { "skirts",                     0 },
+            { "perimeters",                 3 },
+            { "layer_height",               0.2 },
+            { "first_layer_height",         0.2 },
+            { "extra_perimeters",           extra_perimeters },
+            { "fill_density",               "20%" },
+            { "cooling",                    "0" },
+            { "first_layer_speed",          "100%" },
+            { "perimeter_speed",            99 },
+            { "external_perimeter_speed",   99 },
+            { "small_perimeter_speed",      99 },
+            { "thin_walls",                 0 }
+        });
+        std::string  gcode           = Slic3r::Test::slice({ Slic3r::Test::TestMesh::sphere_50mm }, config);
+        size_t       loops           = 0;
+        bool         in_loop         = false;
+        const double perimeter_speed = config.opt_float("perimeter_speed") * 60.;
+        GCodeReader  parser;
+        parser.parse_buffer(gcode, [&loops, &in_loop, perimeter_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+        {
+            if (line.extruding(self) && line.dist_XY(self) > 0 && is_approx<double>(line.new_F(self), perimeter_speed)) {
+                if (! in_loop)
+                    ++ loops;
+                in_loop = true;
+            } else if (! line.cmd_is("M73"))
+                in_loop = false;
+        });
+        return loops;
+    };
+    REQUIRE(count_loops(true) > count_loops(false));
+}
+
 SCENARIO("Some weird coverage test", "[Perimeters]")
 {
     auto config = Slic3r::DynamicPrintConfig::full_print_config_with({

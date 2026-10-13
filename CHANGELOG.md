@@ -12,6 +12,9 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Laminado más rápido**: la comprobación de perímetros extra ya no calcula dos offsets por isla cuando una cota
+  muestra que la capa de arriba no puede necesitarlos; la etapa de perímetros del Benchy baja de 0,58 a 0,39 s con el
+  mismo G-code byte a byte (`docs/PERFORMANCE.md`).
 - **Marca**: los textos de la interfaz que todavía decían «PrusaSlicer» (preferencias, errores, «no volver a
   preguntar», actualizaciones, ayudas de los ajustes) dicen «Tisma Slicer» en inglés y en los 22 idiomas; también las
   traducciones que ponían «PrusaSlicer» donde el inglés decía Slic3r. Se regeneraron los catálogos `.mo`, así que las

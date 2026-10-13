@@ -168,6 +168,56 @@ std::vector<std::reference_wrapper<const PrintRegion>> PrintObject::all_regions(
     return out;
 }
 
+// Tisma: an upper bound of the length of the upper layer contours that can fall into the critical area of the extra
+// perimeters check (see make_perimeters()), computed without offsetting the slice. The critical area lies inside the
+// slice offset inwards by `depth`, and that offset (Clipper, miter joins) only keeps points at least `depth` from the
+// slice boundary, up to the edges ClipperOffset skips (shorter than 0.005 depth) and rounding. A piece of contour
+// closer than `depth` minus that margin to the boundary is therefore never in it. On contours with short edges the two
+// offsets cost milliseconds each, while most slices need no extra perimeter and their upper contours run close to the
+// boundary, so the bound decides those slices exactly and much faster.
+static double extra_perimeters_critical_length_bound(
+    const Polylines &upper, const std::vector<std::vector<double>> &upper_distances,
+    const AABBTreeLines::LinesDistancer<Linef> &boundary, const BoundingBox &slice_bbox, double depth, double stop_above)
+{
+    const double r = depth - (0.02 * depth + SCALED_EPSILON);
+    if (r <= 0.)
+        return std::numeric_limits<double>::max();
+    BoundingBox inner = slice_bbox;
+    inner.offset(- coord_t(r));
+    if (! inner.defined || inner.min.x() > inner.max.x() || inner.min.y() > inner.max.y())
+        // The critical area is empty.
+        return 0.;
+    // Length of the part of a segment that can be farther than r from the boundary. A point p of segment ab is at most
+    // min(da + |pa|, db + |pb|) <= (da + db + |ab|) / 2 from the boundary. The pieces counted in full get a few units
+    // more for the rounding of the clipped polylines.
+    std::function<double(const Vec2d&, const Vec2d&, double, double, int)> piece =
+        [&](const Vec2d &a, const Vec2d &b, double da, double db, int levels) -> double {
+            const double len = (b - a).norm();
+            if (0.5 * (da + db + len) < r)
+                return 0.;
+            if (levels == 0 || len < 0.1 * r)
+                return len + 4.;
+            const Vec2d m = 0.5 * (a + b);
+            const double dm = boundary.distance_from_lines<false>(m);
+            return piece(a, m, da, dm, levels - 1) + piece(m, b, dm, db, levels - 1);
+        };
+    double length = 0.;
+    for (size_t i = 0; i < upper.size(); ++ i) {
+        const Points &pts = upper[i].points;
+        for (size_t j = 1; j < pts.size(); ++ j) {
+            const Point &a = pts[j - 1];
+            const Point &b = pts[j];
+            if (std::max(a.x(), b.x()) < inner.min.x() || std::min(a.x(), b.x()) > inner.max.x() ||
+                std::max(a.y(), b.y()) < inner.min.y() || std::min(a.y(), b.y()) > inner.max.y())
+                continue;
+            length += piece(a.cast<double>(), b.cast<double>(), upper_distances[i][j - 1], upper_distances[i][j], 8);
+            if (length > stop_above)
+                return length;
+        }
+    }
+    return length;
+}
+
 // 1) Merges typed region slices into stInternal type.
 // 2) Increases an "extra perimeters" counter at region slices where needed.
 // 3) Generates perimeters, gap fills and fill regions (fill regions of type stInternal).
@@ -222,12 +272,27 @@ void PrintObject::make_perimeters()
                     const coord_t ext_perimeter_width   = ext_perimeter_flow.scaled_width();
                     const coord_t ext_perimeter_spacing = ext_perimeter_flow.scaled_spacing();
 
+                    const Polylines upper_layerm_polylines  = to_polylines(upper_layerm_polygons);
+
                     // slice is not const because slice.extra_perimeters is being incremented.
                     for (Surface &slice : layerm.m_slices.surfaces) {
+                        // Tisma: distances of the upper contours from this slice boundary, for the bound below.
+                        const AABBTreeLines::LinesDistancer<Linef> boundary{to_linesf({ slice.expolygon })};
+                        const BoundingBox slice_bbox = get_extents(slice.expolygon);
+                        std::vector<std::vector<double>> upper_distances(upper_layerm_polylines.size());
+                        for (size_t i = 0; i < upper_layerm_polylines.size(); ++ i) {
+                            upper_distances[i].reserve(upper_layerm_polylines[i].points.size());
+                            for (const Point &pt : upper_layerm_polylines[i].points)
+                                upper_distances[i].emplace_back(boundary.distance_from_lines<false>(pt.cast<double>()));
+                        }
                         for (;;) {
                             // compute the total thickness of perimeters
                             const coord_t perimeters_thickness = ext_perimeter_width/2 + ext_perimeter_spacing/2
                                 + (region.config().perimeters-1 + slice.extra_perimeters) * perimeter_spacing;
+                            // Tisma: the same decision as below when not even the bound reaches 30 %.
+                            if (extra_perimeters_critical_length_bound(upper_layerm_polylines, upper_distances, boundary, slice_bbox,
+                                    double(perimeters_thickness), total_loop_length * 0.3) <= total_loop_length * 0.3)
+                                break;
                             // define a critical area where we don't want the upper slice to fall into
                             // (it should either lay over our perimeters or outside this area)
                             const coord_t critical_area_depth = coord_t(perimeter_spacing * 1.5);
@@ -236,7 +301,7 @@ void PrintObject::make_perimeters()
                                 offset(slice.expolygon, float(- perimeters_thickness - critical_area_depth))
                             );
                             // check whether a portion of the upper slices falls inside the critical area
-                            const Polylines intersection = intersection_pl(to_polylines(upper_layerm_polygons), critical_area);
+                            const Polylines intersection = intersection_pl(upper_layerm_polylines, critical_area);
                             // only add an additional loop if at least 30% of the slice loop would benefit from it
                             if (total_length(intersection) <=  total_loop_length*0.3)
                                 break;

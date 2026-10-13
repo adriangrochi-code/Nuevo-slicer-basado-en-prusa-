@@ -34,6 +34,7 @@ intersecciones.
 | Cambio | Efecto en el G-code | Mejora |
 |---|---|---|
 | `merge_bridges` (`LayerRegion.cpp`): quitar los puntos a menos de `SCALED_EPSILON` (0,1 µm) del contorno simplificado (Douglas-Peucker) antes de `closing_ex` | Coordenadas de algunos puentes desplazadas 1–4 µm (≈1,6 % de las líneas del Benchy); filamento y tiempo estimado iguales; área cerrada cambia < 0,001 % | Llamada de 924 ms → 21 ms |
+| Perímetros extra (`PrintObject::make_perimeters`): cota del largo de la capa de arriba que puede caer en el área crítica, sin los dos offsets del contorno (ver abajo) | Ninguno: G-code idéntico byte a byte en los 6 casos y en 5 modelos con cúpulas | Etapa «Perim» del Benchy 0,58 → 0,39 s |
 
 Probado y descartado:
 - Repartir las capas de «Processing external surfaces» de una en una (`simple_partitioner`): no mejora, porque el
@@ -93,6 +94,45 @@ que resume las mallas y matrices de las piezas y volúmenes negativos, la transf
 En la interfaz, cambiar un ajuste que solo afecta al G-code (temperaturas, velocidades, G-code personalizado) ya no
 vuelve a lanzar los 750 000 rayos (~0,7 s en el Benchy). Resultado idéntico (prueba `[TismaCache]`, G-code del
 Benchy igual byte a byte).
+
+## Perímetros extra sin offsets innecesarios
+
+`extra_perimeters` compara cada isla con la capa de arriba: calcula un «área crítica» (la franja entre el contorno
+desplazado hacia adentro el espesor de los perímetros y 1,5 perímetros más adentro) y añade un perímetro si más del
+30 % del contorno de arriba cae en ella. En el Benchy esos dos offsets costaban 1,0 s de CPU (384 iteraciones,
+~2,6 ms cada una). Con el micro-banco de los contornos volcados, el 78 % estaba en `BuildIntersectList` y
+`ProcessEdgesAtTopOfScanbeam` de Clipper: el offset de 1,2 mm sobre contornos con aristas de 85 µm de mediana deja
+cientos de aristas activas en cada franja del barrido.
+
+Simplificar el contorno cambiaba el área crítica (2,7 % en el peor caso con 1 µm). En su lugar, antes de los offsets
+se acota el largo del contorno de arriba que puede caer en el área: el offset hacia adentro (Clipper, uniones en
+inglete) solo deja puntos a una distancia del borde de al menos el espesor de los perímetros, salvo las aristas que
+`ClipperOffset` ignora (más cortas que el 0,5 % del offset) y el redondeo; se descuenta un margen del 2 % más 0,1 µm.
+Para cada segmento de arriba, si las distancias de sus extremos al borde (`da`, `db`, árbol AABB de las líneas de la
+isla) cumplen (`da` + `db` + largo)/2 < radio, ningún punto del segmento llega al área; si no, se parte hasta 8
+veces o se cuenta entero. Si la cota no llega al 30 %, la decisión es la misma que la exacta y se salta el cálculo;
+si llega, se hace el cálculo exacto de siempre.
+
+- Comprobación: en 13 modelos (≈2 700 iteraciones) se calculó a la vez la cota y el largo exacto dentro del offset:
+  ninguna cota quedó por debajo. La cota decide el 99 % de las iteraciones del Benchy.
+- Test `[Perimeters]` «Extra perimeters under a dome»: la esfera de 50 mm tiene más vueltas de perímetro con
+  `extra_perimeters` que sin él (falla si la cota descarta siempre).
+
+| Caso | «Perim» antes | «Perim» después |
+|---|---|---|
+| benchy | 0,58 s | 0,39 s |
+| benchy_x2_gyroid | 1,24 s | 0,87 s |
+| benchy_supports | 0,58 s | 0,33 s |
+| benchy_organic | 0,56 s | 0,34 s |
+| bunny_x1.5 | 0,32 s | 0,33 s |
+| screw_x4 | 0,12 s | 0,10 s |
+
+(mediana de 3; el total varía ±0,3 s entre corridas en este contenedor y no se usa para comparar).
+
+## Correcciones de upstream: revisión del 13-10-2026
+
+`master` de PrusaSlicer sigue en el commit del 21-09-2026 («Bumped up version to 3.0.0-alpha12»), anterior al
+último port (06-10-2026), y no hay versiones 2.9.x nuevas: no hay correcciones nuevas que portar.
 
 ## Pendiente (propuestas)
 
