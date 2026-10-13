@@ -33509,3 +33509,87 @@ msgstr "Largo de las barras"
 
 msgid "Width of the bars"
 msgstr "Ancho de las barras"
+
+msgid "Edit the material table"
+msgstr "Editar la tabla de materiales"
+
+msgid "Materials of the structural analysis"
+msgstr "Materiales del análisis estructural"
+
+msgid "Values of a solid printed part at 23 °C. Change them to the ones of your filament (data sheet or your own test pieces) or add materials. XY: along the layers; Z: across them (layer adhesion). Changed rows are bold; \"Reset / remove\" brings back the values of Tisma or removes your material."
+msgstr "Valores de una pieza impresa maciza a 23 °C. Cambialos por los de tu filamento (hoja de datos o tus propias probetas) o agregá materiales. XY: a lo largo de las capas; Z: entre capas (adherencia). Las filas cambiadas están en negrita; «Restablecer / quitar» vuelve a los valores de Tisma o quita tu material."
+
+msgid "Key"
+msgstr "Clave"
+
+msgid "E XY [MPa]"
+msgstr "E XY [MPa]"
+
+msgid "E Z [MPa]"
+msgstr "E Z [MPa]"
+
+msgid "Poisson"
+msgstr "Poisson"
+
+msgid "Strength XY [MPa]"
+msgstr "Resistencia XY [MPa]"
+
+msgid "Strength Z [MPa]"
+msgstr "Resistencia Z [MPa]"
+
+msgid "Tg [°C]"
+msgstr "Tg [°C]"
+
+msgid "Max. service [°C]"
+msgstr "Servicio máx. [°C]"
+
+msgid "Density [g/cm³]"
+msgstr "Densidad [g/cm³]"
+
+msgid "Print min [°C]"
+msgstr "Impresión mín. [°C]"
+
+msgid "Print max [°C]"
+msgstr "Impresión máx. [°C]"
+
+msgid "Linear"
+msgstr "Lineal"
+
+msgid "Add material"
+msgstr "Agregar material"
+
+msgid "Reset / remove"
+msgstr "Restablecer / quitar"
+
+msgid "mine"
+msgstr "mío"
+
+msgid "Row %1%, %2%: \"%3%\" is not a number"
+msgstr "Fila %1%, %2%: «%3%» no es un número"
+
+msgid "Row %1% (%2%): %3%"
+msgstr "Fila %1% (%2%): %3%"
+
+msgid "Row %1%: the key %2% is repeated"
+msgstr "Fila %1%: la clave %2% está repetida"
+
+msgid "The key is empty"
+msgstr "La clave está vacía"
+
+msgid "The Young's moduli must be positive"
+msgstr "Los módulos de Young deben ser positivos"
+
+msgid "The Poisson ratio must be between 0 and 0.5"
+msgstr "El coeficiente de Poisson debe estar entre 0 y 0,5"
+
+msgid "The strengths must be positive"
+msgstr "Las resistencias deben ser positivas"
+
+msgid "The density must be positive"
+msgstr "La densidad debe ser positiva"
+
+msgid "The maximum service temperature must be above 23 °C"
+msgstr "La temperatura máxima de servicio debe ser mayor que 23 °C"
+
+msgid "The print temperature range is reversed"
+msgstr "El rango de temperatura de impresión está invertido"

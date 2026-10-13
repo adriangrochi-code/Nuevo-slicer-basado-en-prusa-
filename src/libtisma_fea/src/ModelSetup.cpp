@@ -106,7 +106,7 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
             return false;
         }
         out.material = m->key;
-    } else if (! find_material(out.material)) {
+    } else if (! material_by_key(out.material)) {
         error = "Unknown material " + out.material;
         return false;
     }

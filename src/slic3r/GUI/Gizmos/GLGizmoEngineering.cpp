@@ -20,7 +20,10 @@
 #include <tisma_fea/Optimize.hpp>
 #include <tisma_fea/Ribs.hpp>
 
+#include <boost/log/trivial.hpp>
+
 #include "slic3r/GUI/Camera.hpp"
+#include "slic3r/GUI/FeaMaterialsDialog.hpp"
 #include "slic3r/GUI/GLCanvas3D.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/GUI_ObjectList.hpp"
@@ -258,6 +261,9 @@ bool GLGizmoEngineering::on_init()
 {
     m_sphere.init_from(smooth_sphere(16, 1.f));
     m_arrow.init_from(stilized_arrow(16, 1.6f, 4.f, 0.6f, 8.f));
+    std::string error;
+    if (! load_fea_materials(error))
+        BOOST_LOG_TRIVIAL(error) << "Materials of the structural analysis: " << error;
     return true;
 }
 
@@ -1033,11 +1039,55 @@ void GLGizmoEngineering::show_object(bool show)
 void GLGizmoEngineering::update_region_models()
 {
     m_region_models.clear();
+    m_load_marks.clear();
     m_regions_dirty = false;
     const ModelObject *mo = model_object();
     if (mo == nullptr)
         return;
     const Transform3d instance_trafo = mo->instances[instance_idx()]->get_transformation().get_matrix();
+    // The arrows of the loads: at the center of the loaded faces (area weighted) or at the point, with the outer
+    // normal of the surface there (of the faces, or of the triangle nearest to the point).
+    for (const EngineeringLoad &load : mo->engineering.loads) {
+        const int vol = load.type == EngineeringLoad::Type::Point ? load.volume : load.faces.volume;
+        if (vol < 0 || vol >= int(mo->volumes.size()))
+            continue;
+        const ModelVolume &v = *mo->volumes[vol];
+        const indexed_triangle_set &its = v.mesh().its;
+        auto triangle = [&its](size_t t, Vec3d &a, Vec3d &b, Vec3d &c) {
+            a = its.vertices[its.indices[t][0]].cast<double>();
+            b = its.vertices[its.indices[t][1]].cast<double>();
+            c = its.vertices[its.indices[t][2]].cast<double>();
+        };
+        Vec3d point = Vec3d::Zero(), normal = Vec3d::Zero();
+        if (load.type == EngineeringLoad::Type::Point) {
+            point = load.point;
+            double best = std::numeric_limits<double>::max();
+            for (size_t t = 0; t < its.indices.size(); ++ t) {
+                Vec3d a, b, c;
+                triangle(t, a, b, c);
+                const double d = ((a + b + c) / 3. - point).squaredNorm();
+                if (d < best) {
+                    best   = d;
+                    normal = (b - a).cross(c - a);
+                }
+            }
+        } else {
+            double area = 0.;
+            for (int t : load.faces.triangles)
+                if (t >= 0 && t < int(its.indices.size())) {
+                    Vec3d a, b, c;
+                    triangle(size_t(t), a, b, c);
+                    const Vec3d n = (b - a).cross(c - a);
+                    point  += 0.5 * n.norm() * (a + b + c) / 3.;
+                    area   += 0.5 * n.norm();
+                    normal += n;
+                }
+            if (area <= 0.)
+                continue;
+            point /= area;
+        }
+        m_load_marks.push_back({ vol, point, normal, load.force });
+    }
     auto add = [&](const EngineeringRegion &region, const ColorRGBA &color) {
         if (region.volume < 0 || region.volume >= int(mo->volumes.size()))
             return;
@@ -1247,13 +1297,15 @@ void GLGizmoEngineering::render_lattice()
 
 void GLGizmoEngineering::render_loads()
 {
+    if (m_regions_dirty)
+        update_region_models();
     const ModelObject *mo = model_object();
     GLShaderProgram *shader = wxGetApp().get_shader("gouraud_light");
-    if (mo == nullptr || shader == nullptr || mo->engineering.loads.empty())
+    if (mo == nullptr || shader == nullptr || m_load_marks.empty())
         return;
     const Transform3d instance_trafo = mo->instances[instance_idx()]->get_transformation().get_matrix();
     const BoundingBoxf3 bbox = mo->instance_bounding_box(size_t(instance_idx()));
-    const double scale = std::max(0.5, 0.012 * bbox.size().maxCoeff());
+    const double scale = std::max(0.5, 0.02 * bbox.size().maxCoeff());
 
     shader->start_using();
     const Camera &camera = wxGetApp().plater()->get_camera();
@@ -1265,38 +1317,25 @@ void GLGizmoEngineering::render_loads()
         shader->set_uniform("view_normal_matrix", Matrix3d(view_model.matrix().block(0, 0, 3, 3).inverse().transpose()));
         model.render();
     };
-    for (const EngineeringLoad &load : mo->engineering.loads) {
-        Vec3d point;
-        if (load.type == EngineeringLoad::Type::Point) {
-            if (load.volume < 0 || load.volume >= int(mo->volumes.size()))
-                continue;
-            point = instance_trafo * mo->volumes[load.volume]->get_matrix() * load.point;
-        } else {
-            // Centroid of the faces.
-            if (load.faces.volume < 0 || load.faces.volume >= int(mo->volumes.size()) || load.faces.triangles.empty())
-                continue;
-            const ModelVolume &v = *mo->volumes[load.faces.volume];
-            const indexed_triangle_set &its = v.mesh().its;
-            Vec3d sum = Vec3d::Zero();
-            int n = 0;
-            for (int t : load.faces.triangles)
-                if (t >= 0 && t < int(its.indices.size())) {
-                    for (int k = 0; k < 3; ++ k)
-                        sum += its.vertices[its.indices[t][k]].cast<double>();
-                    n += 3;
-                }
-            if (n == 0)
-                continue;
-            point = instance_trafo * v.get_matrix() * (sum / n);
-        }
+    for (const LoadMark &local : m_load_marks) {
+        if (local.volume >= int(mo->volumes.size()))
+            continue;
+        const Transform3d volume_trafo = instance_trafo * mo->volumes[local.volume]->get_matrix();
+        Vec3d normal = volume_trafo.matrix().block<3, 3>(0, 0).inverse().transpose() * local.normal;
+        normal = normal.norm() > 0. ? normal.normalized() : Vec3d::UnitZ();
+        const LoadMark mark { local.volume, volume_trafo * local.point, normal, local.force };
         m_sphere.set_color(LOAD_COLOR);
-        render_model(m_sphere, Geometry::translation_transform(point) * Geometry::scale_transform(scale * 0.8));
-        if (load.force.norm() > 0.) {
-            // The arrow ends at the point and pushes in the direction of the force.
+        render_model(m_sphere, Geometry::translation_transform(mark.point) * Geometry::scale_transform(scale * 0.8));
+        if (mark.force.norm() > 0.) {
+            // The arrow stays outside of the part, along the force: a load that pushes into the surface ends at it, a
+            // load that pulls starts at it. Lifted a bit off the surface, so that a load along the surface shows too.
+            const Vec3d dir = mark.force.normalized();
             Eigen::Quaterniond q;
-            q.setFromTwoVectors(Vec3d::UnitZ(), load.force.normalized());
-            const Transform3d trafo = Geometry::translation_transform(point) * Transform3d(q.toRotationMatrix()) *
-                                      Geometry::scale_transform(scale) * Geometry::translation_transform(-12. * Vec3d::UnitZ());
+            q.setFromTwoVectors(Vec3d::UnitZ(), dir);
+            const bool   pulls = dir.dot(mark.normal) > 0.;
+            const Vec3d  base  = mark.point + 0.5 * scale * mark.normal;
+            const Transform3d trafo = Geometry::translation_transform(base) * Transform3d(q.toRotationMatrix()) *
+                                      Geometry::scale_transform(scale) * Geometry::translation_transform(pulls ? Vec3d::Zero() : Vec3d(-12. * Vec3d::UnitZ()));
             m_arrow.set_color(LOAD_COLOR);
             render_model(m_arrow, trafo);
         }
@@ -1400,7 +1439,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     options.push_back(GUI::format(_u8L("Filament (%1%)"), from_filament ? from_filament->name : filament));
     int selection = 0;
     for (size_t i = 0; i < Fea::materials().size(); ++ i) {
-        options.push_back(Fea::materials()[i].name);
+        // Materials of the user and values changed by the user are marked.
+        options.push_back(Fea::materials()[i].name + (Fea::materials()[i].user ? " *" : ""));
         if (Fea::materials()[i].key == eng.material)
             selection = int(i + 1);
     }
@@ -1408,6 +1448,15 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Change material"));
         eng.material = selection == 0 ? std::string() : Fea::materials()[selection - 1].key;
         m_result_stale = true;
+    }
+    if (ImGuiPureWrap::button(_u8L("Edit the material table") + "...")) {
+        // A modal dialog cannot be opened while ImGui renders.
+        wxGetApp().CallAfter([this]() {
+            if (edit_fea_materials(wxGetApp().plater())) {
+                m_result_stale = true;
+                m_parent.set_as_dirty();
+            }
+        });
     }
     const Fea::Material *material = eng.material.empty() ? from_filament : Fea::find_material(eng.material);
     if (material == nullptr)

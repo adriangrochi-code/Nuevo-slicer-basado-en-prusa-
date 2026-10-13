@@ -207,6 +207,10 @@ private:
     // Render caches.
     struct RegionModel { GLModel model; Transform3d trafo; ColorRGBA color; };
     std::vector<RegionModel> m_region_models;
+    // Where the arrow of each load is drawn: the point (center of the faces) and the outer normal of the surface there,
+    // in the coordinates of the volume, and the force. Updated with the region models.
+    struct LoadMark { int volume; Vec3d point; Vec3d normal; Vec3d force; };
+    std::vector<LoadMark>    m_load_marks;
     bool                     m_regions_dirty { true };
     std::vector<GLModel>     m_result_models;     // one per color of the scale
     bool                     m_result_models_dirty { true };

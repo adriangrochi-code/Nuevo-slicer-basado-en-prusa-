@@ -40,11 +40,19 @@ No hay conducción térmica: la temperatura solo cambia las propiedades del mate
 
 1. Modo Experto → botón **Ingeniería** de la columna: se abre la vista 3D con el panel del objeto seleccionado.
 2. Material (por defecto el del filamento del objeto), temperatura de trabajo y factor de seguridad.
+   «Editar la tabla de materiales…» abre la tabla: se pueden cambiar los valores de un material de Tisma por los de
+   tu filamento (hoja de datos o probetas propias) o agregar materiales. Lo cambiado se guarda en
+   `<carpeta de datos>/fea_materials.json` (solo las filas distintas de las de Tisma; «Restablecer / quitar» vuelve
+   atrás) y se marca con `*` en la lista. Se validan los valores (módulos y resistencias positivos, Poisson entre 0 y
+   0,5, temperatura de servicio mayor que 23 °C). Un análisis en curso usa una copia del material, así que editar la
+   tabla no lo afecta.
 3. «Cara fija»: clic en las caras donde se sujeta la pieza (en piezas STEP se toma la cara CAD completa; en
    mallas, la región plana alrededor del triángulo). Otro clic en la misma cara la quita.
 4. «Carga en una cara» o «Carga en un punto»: fuerza X, Y, Z en N (Z hacia arriba, como en la cama), límite de
    deformación opcional y, para cargas puntuales, el radio en el que se reparte (3 mm por defecto: una carga real
    actúa sobre un área; con radios muy pequeños la tensión local crece sin límite).
+   Cada carga se dibuja con una flecha en el centro de sus caras (o en el punto), siempre por fuera de la pieza:
+   una carga que empuja termina en la superficie y una que tira sale de ella.
 5. «Límite de desplazamiento»: clic en las caras que no deben moverse más que el valor indicado (mm y/o %; con los
    dos vale el menor). Otro clic en la misma cara lo quita. Después del análisis cada zona muestra cuánto se
    desplazó, en rojo si superó su límite.

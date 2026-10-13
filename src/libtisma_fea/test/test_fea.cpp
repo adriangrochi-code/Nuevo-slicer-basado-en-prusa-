@@ -78,6 +78,44 @@ static double end_displacement(const Result &res, int axis, int component)
     return n ? sum / n : 0.;
 }
 
+TEST_CASE("Materials of the user", "[FEA]")
+{
+    const Result before = bar(40., 10., 10., Vec3d(500., 0., 0.), "PLA", 23., 1.);
+    REQUIRE(before.error.empty());
+
+    // Own values for PLA (twice as stiff) and an own material.
+    Material pla = *find_material("PLA");
+    pla.E_xy *= 2.;
+    pla.E_z  *= 2.;
+    Material mine = pla;
+    mine.key  = "my-pla";
+    mine.name = "";
+    set_user_materials({ pla, mine });
+    REQUIRE(find_material("PLA") != nullptr);
+    CHECK(find_material("PLA")->user);
+    CHECK(find_material("PLA")->E_xy == Approx(2. * builtin_materials().front().E_xy));
+    CHECK(material_for_filament_type("PLA")->E_xy == Approx(pla.E_xy));
+    REQUIRE(material_by_key("my-pla"));
+    CHECK(material_by_key("MY-PLA")->name == "MY-PLA");
+    CHECK(materials().size() == builtin_materials().size() + 1);
+
+    // The analysis takes the values of the user: a linear part twice as stiff moves half as much.
+    const Result after = bar(40., 10., 10., Vec3d(500., 0., 0.), "PLA", 23., 1.);
+    REQUIRE(after.error.empty());
+    CHECK(end_displacement(after, 0, 0) == Approx(0.5 * end_displacement(before, 0, 0)).epsilon(1e-6));
+
+    std::string error;
+    Material bad = pla;
+    bad.poisson = 0.5;
+    CHECK(! validate_material(bad, error));
+    CHECK(validate_material(pla, error));
+
+    set_user_materials({});
+    CHECK(! find_material("PLA")->user);
+    CHECK(find_material("MY-PLA") == nullptr);
+    CHECK(materials().size() == builtin_materials().size());
+}
+
 TEST_CASE("Material table", "[FEA]")
 {
     REQUIRE(find_material("pla") != nullptr);

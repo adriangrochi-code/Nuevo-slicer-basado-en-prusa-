@@ -499,11 +499,13 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
     auto report = [&](int p) { if (progress) progress(p); };
     auto cancelled = [&]() { return cancel && cancel(); };
 
-    const Material *material = find_material(setup.material);
-    if (! material) {
+    // A copy: the user may edit the material table while the analysis runs.
+    const std::optional<Material> material_copy = material_by_key(setup.material);
+    if (! material_copy) {
         res.error = "Unknown material " + setup.material;
         return res;
     }
+    const Material *material = &*material_copy;
     if (setup.fixtures.empty()) {
         res.error = "The part has no fixed faces";
         return res;

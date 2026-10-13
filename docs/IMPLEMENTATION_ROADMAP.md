@@ -189,7 +189,7 @@ Decisiones y límites:
 | 5b. Configuración de ingeniería por objeto (`libslic3r/Engineering.hpp`): material, temperatura, factor de seguridad, apoyos por caras, cargas puntuales o por caras con límite de deformación (mm o %); guardada en el 3MF (`Metadata/Tisma_engineering.xml`) y en deshacer/rehacer; las caras CAD siguen a «Volver a teselar»; `build_analysis_input` pasa del objeto al análisis en coordenadas de impresión | Hecho, con pruebas |
 | 5c. GUI (`GLGizmoEngineering`): el botón Ingeniería abre la vista 3D con el panel de análisis del objeto; material (por defecto el del filamento), temperatura y factor de seguridad; clic en caras (cara CAD completa o región plana) para apoyos y cargas, o en puntos para cargas con radio (3 mm por defecto); fuerza en N y límite de deformación; cálculo en segundo plano cancelable; mapa de colores sobre los vóxeles (seguridad, tensión, desplazamiento) con escala; veredicto y materiales alternativos; deshacer/rehacer | Hecho y probado en la GUI (bloque STEP: aguanta a 23 °C; a 130 °C «fuera de temperatura» con PEEK, PEKK, PEI, PSU y PA-CF propuestos; mapa de desplazamientos; Ctrl+Z) |
 | Comparación con CalculiX | Pendiente |
-| Pendiente de la 5c: el panel es alto en pantallas bajas; flechas de cargas por cara en el centroide; tabla de materiales editable | Pendiente |
+| Pendiente de la 5c: el panel es alto en pantallas bajas; flechas de cargas por cara en el centroide; tabla de materiales editable | Hecho (paso 14 de la sección 9) |
 
 Decisiones: solver propio sobre vóxeles con Eigen (sin dependencias nuevas); valores de material de fichas
 técnicas y bibliografía, aproximados y editables más adelante; la pieza se considera maciza hasta la Fase 6.
@@ -256,7 +256,7 @@ los datos del usuario.
 | 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Hecho: 81 textos en inglés y sus traducciones en los 22 idiomas; quedan los créditos y las versiones de PrusaSlicer (`docs/DEPENDENCIES_AND_LICENSES.md`) |
 | 12 | Fase 8: optimizaciones del laminado y bugs heredados | Hecho: perímetros extra sin offsets innecesarios (etapa de perímetros −33 % en el Benchy, G-code idéntico); upstream sin correcciones nuevas desde el último port (`docs/PERFORMANCE.md`). Quedan LTO en Windows y Clipper2 (no autorizado) |
 | 13 | Bambu LAN: revocación TLS en Windows | Hecho: sin comprobación de revocación (Schannel) y subida FTPS con TLS 1.2 para reanudar la sesión como exige vsftpd; test contra la impresora simulada en el CI de Linux y de Windows (`docs/BAMBU_LAN.md`). Falta una impresora real |
-| 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Pendiente |
+| 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Hecho: el panel ya tenía alto máximo con barra de desplazamiento; las flechas de tracción quedaban dentro de la pieza (ahora salen de la cara); tabla de materiales editable con valores propios guardados en `fea_materials.json` (`docs/FEA.md`) |
 | 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
 | 16 | Render: oclusión ambiental y PBR | Decisión |
 | 17 | FEA: multigrid y GPU (Vulkan) | Decisión |

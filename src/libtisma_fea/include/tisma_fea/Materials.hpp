@@ -5,6 +5,7 @@
 #ifndef tisma_fea_Materials_hpp_
 #define tisma_fea_Materials_hpp_
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -40,17 +41,34 @@ struct Material
     // printed in the middle of the range.
     double      print_temperature_min { 0. };
     double      print_temperature_max { 0. };
+    // Defined or changed by the user (a material of its own, or values measured on its own prints).
+    bool        user { false };
 };
 
 // Reference temperature of the properties.
 constexpr double REFERENCE_TEMPERATURE = 23.;
 
-// All the materials of the table.
+// All the materials of the table: the built-in ones, with the values of the user where it changed them, then the
+// materials of the user. The references are valid until set_user_materials(); call these from the thread that edits
+// the table (the GUI), and material_by_key() from the others.
 const std::vector<Material>& materials();
 // The material with the key (case insensitive), or nullptr.
 const Material*              find_material(const std::string &key);
 // The material for a filament_type of a filament profile (PLA, PET, ABS, FLEX, ...), or nullptr.
 const Material*              material_for_filament_type(const std::string &filament_type);
+// Copy of the material with the key (case insensitive); safe from any thread.
+std::optional<Material>      material_by_key(const std::string &key);
+
+// The built-in materials, without the changes of the user.
+const std::vector<Material>& builtin_materials();
+// The materials of the user: an entry with the key of a built-in material replaces its values, the others are added.
+// The keys are stored in upper case; empty keys are ignored.
+void                         set_user_materials(const std::vector<Material> &user);
+// The materials set by set_user_materials().
+std::vector<Material>        user_materials();
+// Checks the values of a material (positive moduli and strengths, Poisson ratio in (0, 0.5), ...); the message tells
+// what is wrong.
+bool                         validate_material(const Material &material, std::string &error);
 
 // Factor (0..1] applied to the stiffness and the strength at the temperature T. Simplified model:
 // 1 up to 23 °C, linear down to 0.5 at the maximum service temperature, then a steep drop to 0.02 within 15 °C.

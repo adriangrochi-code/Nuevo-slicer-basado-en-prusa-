@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <mutex>
 
 namespace Slic3r {
 namespace Fea {
@@ -40,7 +41,18 @@ static std::string upper(std::string s)
     return s;
 }
 
+// The table with the changes of the user (s_table) and the changes themselves (s_user). Written only by
+// set_user_materials(); s_mutex guards the writes and material_by_key().
+static std::mutex            s_mutex;
+static std::vector<Material> s_user;
+static std::vector<Material> s_table = s_materials;
+
 const std::vector<Material>& materials()
+{
+    return s_table;
+}
+
+const std::vector<Material>& builtin_materials()
 {
     return s_materials;
 }
@@ -48,10 +60,70 @@ const std::vector<Material>& materials()
 const Material* find_material(const std::string &key)
 {
     const std::string k = upper(key);
-    for (const Material &m : s_materials)
+    for (const Material &m : s_table)
         if (m.key == k)
             return &m;
     return nullptr;
+}
+
+std::optional<Material> material_by_key(const std::string &key)
+{
+    std::lock_guard<std::mutex> lock(s_mutex);
+    if (const Material *m = find_material(key))
+        return *m;
+    return std::nullopt;
+}
+
+void set_user_materials(const std::vector<Material> &user)
+{
+    std::vector<Material> clean;
+    for (Material m : user) {
+        m.key  = upper(m.key);
+        m.user = true;
+        if (m.key.empty() || std::any_of(clean.begin(), clean.end(), [&m](const Material &o) { return o.key == m.key; }))
+            continue;
+        if (m.name.empty())
+            m.name = m.key;
+        clean.push_back(std::move(m));
+    }
+    std::vector<Material> table = s_materials;
+    for (const Material &m : clean) {
+        auto it = std::find_if(table.begin(), table.end(), [&m](const Material &o) { return o.key == m.key; });
+        if (it != table.end())
+            *it = m;
+        else
+            table.push_back(m);
+    }
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_user  = std::move(clean);
+    s_table = std::move(table);
+}
+
+std::vector<Material> user_materials()
+{
+    std::lock_guard<std::mutex> lock(s_mutex);
+    return s_user;
+}
+
+bool validate_material(const Material &m, std::string &error)
+{
+    if (upper(m.key).empty())
+        error = "The key is empty";
+    else if (m.E_xy <= 0. || m.E_z <= 0.)
+        error = "The Young's moduli must be positive";
+    else if (m.poisson <= 0. || m.poisson >= 0.5)
+        error = "The Poisson ratio must be between 0 and 0.5";
+    else if (m.strength_xy <= 0. || m.strength_z <= 0.)
+        error = "The strengths must be positive";
+    else if (m.density <= 0.)
+        error = "The density must be positive";
+    else if (m.max_service_temperature <= REFERENCE_TEMPERATURE)
+        error = "The maximum service temperature must be above 23 °C";
+    else if (m.print_temperature_max < m.print_temperature_min)
+        error = "The print temperature range is reversed";
+    else
+        return true;
+    return false;
 }
 
 const Material* material_for_filament_type(const std::string &filament_type)
