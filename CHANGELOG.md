@@ -12,6 +12,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Arc overhangs**: velocidad propia de los arcos (`overhang_arcs_speed`, 5 mm/s por defecto, la que usa el autor de
+  Arc Overhang) y distancia máxima (`overhang_arcs_max_distance`, 0 = sin límite; más allá el voladizo se imprime como
+  siempre). Dos calibraciones nuevas: «Arc overhang speed» y «Arc overhang maximum distance», con sus resultados en
+  «Aplicar un resultado de calibración». La opción sigue apagada por defecto (experimental) y está en los ajustes
+  rápidos.
 - **Anti-aliasing en Z con capas no planares**: se pueden usar juntos (menos soporte con el modo voladizos y caras
   superiores con menos escalones). Dispersión de la cara superior: 0,17 → 0,10 mm en una cuña con capas en ondas
   (`docs/Z_ANTIALIASING.md`).

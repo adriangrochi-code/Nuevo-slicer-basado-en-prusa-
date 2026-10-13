@@ -376,6 +376,53 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "coasting";
 
+    // Arc overhangs (Tisma): a row of columns, each carrying a slab that sticks out to the back (+Y) with nothing below,
+    // printed with arcs growing from the column.
+    auto arc_cantilever = [](ModelObject& obj, double x, double width, double length) {
+        add_box(obj, x, 0., 0., width, 10., 10.);
+        add_box(obj, x, 0., 10., width, 10. + length, 2.);
+    };
+    auto arc_settings = [](ModelObject& obj, const Machine& m) {
+        set_layer_height(obj, m.layer);
+        set(obj, "overhang_arcs", "1");
+        set(obj, "overhang_arcs_max_distance", "0");
+        set(obj, "overhangs", "1");
+        set(obj, "support_material", "0");
+        set(obj, "perimeters", "2");
+        set(obj, "fill_density", "15%");
+    };
+
+    tests.push_back({ _L("Arc overhang speed"),
+        _L("Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. "
+           "The first layer of each slab is printed with arc overhangs, at a different speed for each column (from left "
+           "to right)."),
+        _L("Look at the slabs from below: choose the fastest column whose arcs are round, joined to each other and not "
+           "sagging. Its speed is start + step × column number (from the left, starting at 0): it is the arc overhangs "
+           "speed (Calibration > Apply a calibration result). Run the fan at full power, as for bridges."),
+        _L("mm/s"), CalibMode::ArcOverhangSpeed, { 2., 10., 2., 16. }, 1, 0.5, 50.,
+        [arc_cantilever, arc_settings](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                arc_cantilever(obj, i * p.band, std::max(4., p.band - 6.), 15.);
+            arc_settings(obj, m);
+        }, _L("Width of each step") });
+    tests.back().key = "arc_overhang_speed";
+
+    tests.push_back({ _L("Arc overhang maximum distance"),
+        _L("Prints a row of columns in one go, each carrying a slab that sticks out to the back with nothing below, "
+           "longer for each column (from left to right). The first layer of each slab is printed with arc overhangs at "
+           "the arc overhangs speed of the print settings: calibrate the speed first."),
+        _L("Look at the slabs from below: choose the longest one whose arcs reach the end without sagging or coming "
+           "apart. Its length is start + step × column number (from the left, starting at 0): it is the arc overhangs "
+           "maximum distance (Calibration > Apply a calibration result); longer overhangs are printed as usual beyond "
+           "it, supports included."),
+        _L("mm"), CalibMode::ArcOverhangDistance, { 10., 30., 5., 14. }, 0, 1., 100.,
+        [arc_cantilever, arc_settings](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                arc_cantilever(obj, i * p.band, std::max(4., p.band - 6.), std::max(1., p.start + i * p.signed_step()));
+            arc_settings(obj, m);
+        }, _L("Width of each step") });
+    tests.back().key = "arc_overhang_distance";
+
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
@@ -851,6 +898,15 @@ static std::vector<ResultTarget> result_targets()
     out.push_back({ CalibMode::Coasting, _L("Coasting distance"), _L("mm"), Preset::TYPE_FILAMENT,
         [set_all](DynamicPrintConfig& c, double v) { set_all(c, "filament_coast_distance", v); },
         [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "filament_coast_distance"); } });
+    out.push_back({ CalibMode::ArcOverhangSpeed, _L("Arc overhang speed"), _L("mm/s"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) { c.set_key_value("overhang_arcs_speed", new ConfigOptionFloat(v)); },
+        [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_speed"); } });
+    out.push_back({ CalibMode::ArcOverhangDistance, _L("Arc overhang maximum distance"), _L("mm"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("overhang_arcs_max_distance", new ConfigOptionFloat(v));
+            c.set_key_value("overhang_arcs", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_max_distance"); } });
     out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
         [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
         [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });

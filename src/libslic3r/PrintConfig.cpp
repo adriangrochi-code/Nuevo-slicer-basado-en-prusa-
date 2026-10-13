@@ -299,6 +299,8 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
     { "flow_rate",        int(CalibMode::FlowRate) },
     { "coasting",         int(CalibMode::Coasting) },
+    { "arc_overhang_speed", int(CalibMode::ArcOverhangSpeed) },
+    { "arc_overhang_distance", int(CalibMode::ArcOverhangDistance) },
     { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
@@ -1240,6 +1242,28 @@ void PrintConfigDef::init_fff_params()
                     "edge, each arc resting on the previous one. Steep overhangs print without support material.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("overhang_arcs_speed", coFloat);
+    def->label = L("Arc overhangs");
+    def->full_label = L("Arc overhangs speed");
+    def->category = L("Speed");
+    def->tooltip = L("Speed of the arcs of the arc overhangs: slow, so that each arc cools down and holds the next one "
+                    "(Calibration > Arc overhang speed). Set zero to use the bridge speed.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comExpert;
+    // The author of Arc Overhang prints the arcs at about 5 mm/s (github.com/stmcculloch/arc-overhang, README).
+    def->set_default_value(new ConfigOptionFloat(5.));
+
+    def = this->add("overhang_arcs_max_distance", coFloat);
+    def->label = L("Arc overhangs maximum distance");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("The arcs grow up to this distance from where the overhang is anchored; farther out the overhang "
+                    "is printed as usual (Calibration > Arc overhang maximum distance). Set zero for no limit.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.));
 
     def = this->add("stagger_perimeters", coBool);
     def->label = L("Staggered perimeters (Experimental)");
@@ -4291,6 +4315,8 @@ void PrintConfigDef::init_fff_params()
         { "first_layer_offset", L("First layer Z offset") },
         { "flow_rate",        L("Flow rate") },
         { "coasting",         L("Coasting distance") },
+        { "arc_overhang_speed", L("Arc overhang speed") },
+        { "arc_overhang_distance", L("Arc overhang maximum distance") },
         { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));

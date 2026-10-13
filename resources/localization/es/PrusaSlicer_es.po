@@ -33363,3 +33363,36 @@ msgstr "Capas curvas aplicadas: Configuración de impresión > No planar sigue l
 
 msgid "Top surfaces (finish)"
 msgstr "Caras superiores (acabado)"
+
+msgid "Arc overhangs"
+msgstr "Arc overhangs"
+
+msgid "Arc overhangs speed"
+msgstr "Velocidad de los arc overhangs"
+
+msgid "Speed of the arcs of the arc overhangs: slow, so that each arc cools down and holds the next one (Calibration > Arc overhang speed). Set zero to use the bridge speed."
+msgstr "Velocidad de los arcos de los arc overhangs: lenta, para que cada arco se enfríe y sostenga al siguiente (Calibración > Arc overhang speed). Con cero se usa la velocidad de puentes."
+
+msgid "Arc overhangs maximum distance"
+msgstr "Distancia máxima de los arc overhangs"
+
+msgid "The arcs grow up to this distance from where the overhang is anchored; farther out the overhang is printed as usual (Calibration > Arc overhang maximum distance). Set zero for no limit."
+msgstr "Los arcos crecen hasta esta distancia desde donde se apoya el voladizo; más allá el voladizo se imprime como siempre (Calibración > Arc overhang maximum distance). Con cero no hay límite."
+
+msgid "Arc overhang speed"
+msgstr "Velocidad de arc overhang"
+
+msgid "Arc overhang maximum distance"
+msgstr "Distancia máxima de arc overhang"
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. The first layer of each slab is printed with arc overhangs, at a different speed for each column (from left to right)."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale 15 mm hacia atrás sin nada debajo. La primera capa de cada losa se imprime con arc overhangs, a una velocidad distinta en cada columna (de izquierda a derecha)."
+
+msgid "Look at the slabs from below: choose the fastest column whose arcs are round, joined to each other and not sagging. Its speed is start + step × column number (from the left, starting at 0): it is the arc overhangs speed (Calibration > Apply a calibration result). Run the fan at full power, as for bridges."
+msgstr "Mirá las losas desde abajo: elegí la columna más rápida cuyos arcos salgan redondos, unidos entre sí y sin colgar. Su velocidad es inicio + paso × número de columna (desde la izquierda, empezando en 0): es la velocidad de los arc overhangs (Calibración > Aplicar un resultado de calibración). Usá el ventilador al máximo, como en los puentes."
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out to the back with nothing below, longer for each column (from left to right). The first layer of each slab is printed with arc overhangs at the arc overhangs speed of the print settings: calibrate the speed first."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale hacia atrás sin nada debajo, más larga en cada columna (de izquierda a derecha). La primera capa de cada losa se imprime con arc overhangs a la velocidad de la configuración de impresión: calibrá primero la velocidad."
+
+msgid "Look at the slabs from below: choose the longest one whose arcs reach the end without sagging or coming apart. Its length is start + step × column number (from the left, starting at 0): it is the arc overhangs maximum distance (Calibration > Apply a calibration result); longer overhangs are printed as usual beyond it, supports included."
+msgstr "Mirá las losas desde abajo: elegí la más larga cuyos arcos lleguen al final sin colgar ni separarse. Su largo es inicio + paso × número de columna (desde la izquierda, empezando en 0): es la distancia máxima de los arc overhangs (Calibración > Aplicar un resultado de calibración); en voladizos más largos, más allá se imprime como siempre, con soportes incluidos."

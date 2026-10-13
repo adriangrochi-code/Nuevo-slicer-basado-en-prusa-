@@ -1062,7 +1062,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Tisma calibration tests whose steps go along X: where they start (G-code coordinates of the first object).
     m_calib_x0.reset();
     if (const CalibMode mode = print.config().calib_mode.value;
-        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate || mode == CalibMode::Coasting) && ! print.objects().empty() &&
+        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate || mode == CalibMode::Coasting ||
+         mode == CalibMode::ArcOverhangSpeed) && ! print.objects().empty() &&
         ! print.objects().front()->instances().empty()) {
         const PrintObject &object = *print.objects().front();
         BoundingBoxf3 bbox;
@@ -3830,6 +3831,16 @@ std::string GCodeGenerator::_extrude(
 
     if (dynamic_print_and_fan_speeds.print_speed > -1) {
         speed = dynamic_print_and_fan_speeds.print_speed;
+    }
+
+    // Tisma: the arcs of the arc overhangs, slow (0: the bridge speed); the calibration test sets it by patch.
+    if (path_attr.arc_overhang) {
+        double arc_speed = m_config.overhang_arcs_speed.value;
+        if (m_calib_x0 && m_config.calib_mode.value == CalibMode::ArcOverhangSpeed)
+            if (const std::optional<double> value = this->calib_value_along_x(path); value)
+                arc_speed = *value;
+        if (arc_speed > 0.)
+            speed = arc_speed;
     }
 
     // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)

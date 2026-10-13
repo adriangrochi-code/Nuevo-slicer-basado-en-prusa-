@@ -1492,6 +1492,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters", category_path + "extra-perimeters-if-needed");
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
+        optgroup->append_single_option_line("overhang_arcs_max_distance");
         optgroup->append_single_option_line("stagger_perimeters");
         optgroup->append_single_option_line("zaa_enabled");
         optgroup->append_single_option_line("zaa_min_thickness");
@@ -1638,6 +1639,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("support_material_speed");
         optgroup->append_single_option_line("support_material_interface_speed");
         optgroup->append_single_option_line("bridge_speed");
+        optgroup->append_single_option_line("overhang_arcs_speed");
         optgroup->append_single_option_line("over_bridge_speed");
         optgroup->append_single_option_line("gap_fill_speed");
         optgroup->append_single_option_line("ironing_speed");

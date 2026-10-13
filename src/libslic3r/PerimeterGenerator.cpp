@@ -795,6 +795,7 @@ static ExtrusionPaths generate_arc_overhang(const Polygons &overhang_to_cover,
                                             const Polygons &shrinked_overhang_to_cover,
                                             const Polygons &anchoring,
                                             const Flow     &flow,
+                                            double          max_distance,
                                             Polygons       &covered)
 {
     ExtrusionPaths out;
@@ -825,7 +826,13 @@ static ExtrusionPaths generate_arc_overhang(const Polygons &overhang_to_cover,
     for (const Point &corner : { bb.min, bb.max, Point(bb.min.x(), bb.max.y()), Point(bb.max.x(), bb.min.y()) })
         max_r = std::max(max_r, (corner - center).cast<double>().norm());
 
+    // Tisma: the arcs grow up to the maximum distance (0: no limit), the rest of the overhang is printed as usual.
+    if (max_distance > 0.)
+        max_r = std::min(max_r, scale_(max_distance) - spacing);
     Polygons supported = expand(anchoring, float(spacing));
+    // What the next ring may rest on: the anchor and the previous arcs, a bit more than one ring apart (with the
+    // coverage width only, the arcs would stop as soon as they no longer reach the anchor).
+    Polygons reach     = expand(anchoring, float(1.2 * spacing));
     int      misses    = 0;
     size_t   ring      = 0;
     for (double r = spacing; r <= max_r + spacing && misses < 3; r += spacing, ++ ring) {
@@ -840,7 +847,7 @@ static ExtrusionPaths generate_arc_overhang(const Polygons &overhang_to_cover,
         Polylines arcs = intersection_pl(Polylines{ std::move(circle) }, shrinked_overhang_to_cover);
         Polylines kept;
         for (Polyline &arc : arcs)
-            if (arc.length() > 0.5 * spacing && ! intersection_pl(Polylines{ arc }, supported).empty())
+            if (arc.length() > 0.5 * spacing && ! intersection_pl(Polylines{ arc }, reach).empty())
                 kept.emplace_back(std::move(arc));
         if (kept.empty()) {
             ++ misses;
@@ -848,10 +855,13 @@ static ExtrusionPaths generate_arc_overhang(const Polygons &overhang_to_cover,
         }
         misses = 0;
         supported = union_(supported, offset(kept, float(0.75 * spacing)));
+        reach     = union_(reach, offset(kept, float(1.2 * spacing)));
         if (ring % 2 == 1)
             for (Polyline &arc : kept)
                 arc.reverse();
-        extrusion_paths_append(out, std::move(kept), ExtrusionAttributes{ ExtrusionRole::OverhangPerimeter, flow });
+        ExtrusionAttributes attributes{ ExtrusionRole::OverhangPerimeter, flow };
+        attributes.arc_overhang = true;
+        extrusion_paths_append(out, std::move(kept), attributes);
     }
     covered = intersection(overhang_to_cover, supported);
     return out;
@@ -864,7 +874,8 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
                                                                                            double                   scaled_resolution,
                                                                                            const PrintObjectConfig &object_config,
                                                                                            const PrintConfig       &print_config,
-                                                                                           bool                     arcs)
+                                                                                           bool                     arcs,
+                                                                                           double                   arcs_max_distance)
 {
     coord_t anchors_size = std::min(coord_t(scale_(EXTERNAL_INFILL_MARGIN)), overhang_flow.scaled_spacing() * (perimeter_count + 1));
 
@@ -938,7 +949,8 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
         } else if (arcs) {
             // Fill the overhang with arcs growing from the anchor.
             Polygons covered;
-            overhang_region = generate_arc_overhang(overhang_to_cover, shrinked_overhang_to_cover, anchoring, overhang_flow, covered);
+            overhang_region = generate_arc_overhang(overhang_to_cover, shrinked_overhang_to_cover, anchoring, overhang_flow,
+                                                    arcs_max_distance, covered);
             Polygons left = union_(diff(overhang_to_cover, expand(covered, 0.5 * overhang_flow.scaled_spacing())), anchoring);
             inset_overhang_area_left_unfilled.insert(inset_overhang_area_left_unfilled.end(), left.begin(), left.end());
         } else {
@@ -1241,7 +1253,8 @@ void PerimeterGenerator::process_arachne(
                                                                                         loop_number + 1,
                                                                                         params.overhang_flow, params.scaled_resolution,
                                                                                         params.object_config, params.print_config,
-                                                                                        params.config.overhang_arcs);
+                                                                                        params.config.overhang_arcs,
+                                                                                        params.config.overhang_arcs_max_distance.value);
         if (!extra_perimeters.empty()) {
             ExtrusionEntityCollection &this_islands_perimeters = static_cast<ExtrusionEntityCollection&>(*out_loops.entities.back());
             ExtrusionEntitiesPtr       old_entities;
@@ -1611,7 +1624,8 @@ void PerimeterGenerator::process_classic(
                                                                                         loop_number + 1,
                                                                                         params.overhang_flow, params.scaled_resolution,
                                                                                         params.object_config, params.print_config,
-                                                                                        params.config.overhang_arcs);
+                                                                                        params.config.overhang_arcs,
+                                                                                        params.config.overhang_arcs_max_distance.value);
         if (!extra_perimeters.empty()) {
             ExtrusionEntityCollection &this_islands_perimeters = static_cast<ExtrusionEntityCollection&>(*out_loops.entities.back());
             ExtrusionEntitiesPtr       old_entities;

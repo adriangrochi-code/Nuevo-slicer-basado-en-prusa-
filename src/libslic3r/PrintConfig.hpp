@@ -186,6 +186,8 @@ enum class NonPlanarMode { Disabled, Wave, Conical, Overhangs, Stress, Surface }
 // Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
 enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,
                        NonPlanarSlope, NonPlanarZSpeed, FirstLayerOffset, FlowRate, Coasting,
+                       // Arc overhangs: speed of the arcs, length of the overhang (by patches along X).
+                       ArcOverhangSpeed, ArcOverhangDistance,
                        // Resin: exposure time per band of layers (archives with a per layer exposure, GOO).
                        ResinExposure };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
@@ -773,6 +775,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 extra_perimeters))
     ((ConfigOptionBool,                 extra_perimeters_on_overhangs))
     ((ConfigOptionBool,                 overhang_arcs))
+    ((ConfigOptionFloat,                overhang_arcs_speed))
+    ((ConfigOptionFloat,                overhang_arcs_max_distance))
     ((ConfigOptionBool,                 stagger_perimeters))
     ((ConfigOptionFloat,                fill_angle))
     ((ConfigOptionPercent,              fill_density))

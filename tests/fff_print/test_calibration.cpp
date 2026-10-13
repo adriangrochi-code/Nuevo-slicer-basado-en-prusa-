@@ -338,3 +338,64 @@ TEST_CASE("Calibration: coasting distance by towers", "[Calibration][Coasting]")
     CHECK(coast.at(1).first / coast.at(1).second == Approx(0.5).epsilon(0.03));
     CHECK(coast.at(2).first / coast.at(2).second == Approx(1.0).epsilon(0.03));
 }
+
+// Arc overhangs (Tisma): columns 25 mm apart along X, each carrying a slab sticking out 15 mm to the back.
+static std::string slice_arc_cantilevers(const std::vector<std::pair<std::string, ConfigOption*>> &extra, int patches)
+{
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "overhang_arcs",      true },
+        { "overhangs",          true },
+        { "support_material",   false },
+        { "layer_height",       0.2 },
+        { "first_layer_height", 0.2 },
+        { "perimeters",         2 },
+        { "fill_density",       "15%" },
+        { "skirts",             0 },
+    });
+    for (const auto &[key, opt] : extra)
+        config.set_key_value(key, opt);
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "cantilevers";
+    for (int i = 0; i < patches; ++ i) {
+        indexed_triangle_set column = its_make_cube(19., 10., 10.);
+        indexed_triangle_set slab   = its_make_cube(19., 25., 2.);
+        its_translate(column, Vec3f(float(25. * i), 0.f, 0.f));
+        its_translate(slab, Vec3f(float(25. * i), 0.f, 10.f));
+        object->add_volume(TriangleMesh(std::move(column)));
+        object->add_volume(TriangleMesh(std::move(slab)));
+    }
+    object->add_instance();
+    object->ensure_on_bed();
+    Print print;
+    print.apply(model, config);
+    print.validate();
+    return Test::gcode(print);
+}
+
+TEST_CASE("Calibration: arc overhang speed by columns", "[Calibration][ArcOverhangs]")
+{
+    // 2, 4 and 6 mm/s from left to right.
+    const std::string gcode = slice_arc_cantilevers({
+        { "calib_mode",        new ConfigOptionEnum<CalibMode>(CalibMode::ArcOverhangSpeed) },
+        { "calib_start",       new ConfigOptionFloat(2.) },
+        { "calib_end",         new ConfigOptionFloat(6.) },
+        { "calib_step",        new ConfigOptionFloat(2.) },
+        { "calib_band_height", new ConfigOptionFloat(25.) },
+    }, 3);
+    // Length of the overhang perimeters by feed rate, by column.
+    std::map<int, std::map<int, double>> length;
+    for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        length[patch][int(std::round(line.new_F(self)))] += line.dist_XY(self);
+    }, "Overhang perimeter");
+    REQUIRE(length.size() == 3);
+    // Most of the overhang of each column is printed as arcs at the speed of its step.
+    for (int patch = 0; patch < 3; ++ patch) {
+        const int feed = 60 * (2 + 2 * patch);
+        double total = 0.;
+        for (const auto &[f, l] : length[patch])
+            total += l;
+        INFO("column " << patch);
+        CHECK(length[patch][feed] > 0.5 * total);
+    }
+}
