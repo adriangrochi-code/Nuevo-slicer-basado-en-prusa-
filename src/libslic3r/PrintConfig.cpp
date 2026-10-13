@@ -280,7 +280,8 @@ static t_config_enum_values s_keys_map_NonPlanarMode {
     { "conical",  int(NonPlanarMode::Conical) },
     { "overhangs", int(NonPlanarMode::Overhangs) },
     { "stress",    int(NonPlanarMode::Stress) },
-    { "surface",   int(NonPlanarMode::Surface) }
+    { "surface",   int(NonPlanarMode::Surface) },
+    { "automatic", int(NonPlanarMode::Automatic) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
 
@@ -3365,7 +3366,8 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Non-planar");
     def->tooltip = L("Print curved layers instead of flat ones. The object is deformed, sliced as usual and "
                    "the G-code is transformed back, so all perimeters, infill and supports follow the "
-                   "curved layers. Wave: interlocking layers for a more homogeneous strength between layers. "
+                   "curved layers. Automatic (recommended): the layers tilt under the overhangs that would need supports "
+                   "and follow the top surfaces, both as far as the print head allows. Wave: interlocking layers for a more homogeneous strength between layers. "
                    "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). "
                    "Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, "
                    "as much as the print head allows, so that fewer supports are needed. "
@@ -3377,6 +3379,7 @@ void PrintConfigDef::init_fff_params()
                    "print head (Printer Settings > General > Print head).");
     def->set_enum<NonPlanarMode>({
         { "disabled", L("Disabled") },
+        { "automatic", L("Automatic (finish and fewer supports)") },
         { "wave",     L("Wave") },
         { "conical",  L("Conical") },
         { "overhangs", L("Overhangs (fewer supports)") },

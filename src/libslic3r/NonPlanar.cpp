@@ -74,6 +74,9 @@ double Field::g(double x, double y, double z) const
     case Mode::Stress:
     case Mode::Surface:
         return m_params.layers ? m_params.layers_scale * m_params.layers->offset(x, y, z) : 0.;
+    case Mode::Automatic:
+        return (m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.) +
+               (m_params.layers ? m_params.layers_scale * m_params.layers->offset(x, y, z) : 0.);
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         if (m_params.pattern == Pattern::Egg)
@@ -107,6 +110,9 @@ Vec2d Field::grad(double x, double y, double z) const
     case Mode::Stress:
     case Mode::Surface:
         return m_params.layers ? Vec2d(m_params.layers_scale * m_params.layers->grad(x, y, z)) : Vec2d::Zero();
+    case Mode::Automatic:
+        return (m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero()) +
+               (m_params.layers ? Vec2d(m_params.layers_scale * m_params.layers->grad(x, y, z)) : Vec2d::Zero());
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         const double a = m_params.amplitude * k;
@@ -122,6 +128,9 @@ Vec2d Field::grad(double x, double y, double z) const
 
 double Field::dgdz(double x, double y, double z) const
 {
+    if (m_params.mode == Mode::Automatic)
+        return (m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.) +
+               (m_params.layers ? m_params.layers_scale * m_params.layers->dz(x, y, z) : 0.);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.;
     if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
@@ -143,6 +152,9 @@ double Field::bound(double x, double y) const
         return std::abs(m_params.amplitude);
     if (m_params.mode == Mode::SlopeTest)
         return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
+    if (m_params.mode == Mode::Automatic)
+        return (m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.) +
+               (m_params.layers ? std::abs(m_params.layers_scale) * m_params.layers->bound(x, y) : 0.);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.;
     if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
@@ -1357,6 +1369,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarMode::Overhangs: p.mode = Mode::Overhangs; break;
     case NonPlanarMode::Stress:   p.mode = Mode::Stress;   break;
     case NonPlanarMode::Surface:  p.mode = Mode::Surface;  break;
+    case NonPlanarMode::Automatic: p.mode = Mode::Automatic; break;
     }
     switch (config.nonplanar_pattern.value) {
     case NonPlanarPattern::Egg:     p.pattern = Pattern::Egg;     break;
@@ -1627,6 +1640,28 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         ramp.z_ramp = 1.;
         return Deformation(overhang_field(field, config, object_bbox, mesh), ramp);
     }
+    // Tisma: automatic, the layers tilted under the overhangs (as in the overhangs mode) plus the layers following the
+    // top surfaces, the latter reduced where the sum would make the layers too thick or thin, too steep or would let the
+    // print head hit the part. Both bring their deformation in and out by themselves.
+    if (field.mode == Mode::Automatic && ! calibration_test(config)) {
+        Ramp none;
+        none.z_flat = -1e6;
+        none.z_ramp = 1.;
+        FieldParams overhangs = field;
+        overhangs.mode = Mode::Overhangs;
+        overhangs = overhang_field(overhangs, config, object_bbox, mesh);
+        if (overhangs.mode == Mode::Overhangs) {
+            field.overhangs      = overhangs.overhangs;
+            field.overhang_scale = overhangs.overhang_scale;
+        }
+        if (mesh != nullptr && object_bbox.defined) {
+            const std::shared_ptr<const EngineeringLayerField> surface = surface_layer_field(config, object_bbox, *mesh);
+            const FieldParams both = grid_field(field, none, config, object_bbox, surface.get(), mesh);
+            if (both.mode == Mode::Automatic)
+                field = both;
+        }
+        return Deformation(field, none);
+    }
     Ramp ramp;
     ramp.z_flat     = config.nonplanar_flat_below.value;
     ramp.z_ramp     = std::max(0.1, config.nonplanar_ramp_height.value);
@@ -1670,7 +1705,7 @@ double mesh_max_edge(const PrintConfig &config)
         return Z_SPEED_TEST_WAVELENGTH / 10.;
     if (config.nonplanar_mode.value == NonPlanarMode::Wave)
         return std::clamp(wave_wavelength(config) / 10., 0.3, 1.5);
-    if (config.nonplanar_mode.value == NonPlanarMode::Overhangs)
+    if (config.nonplanar_mode.value == NonPlanarMode::Overhangs || config.nonplanar_mode.value == NonPlanarMode::Automatic)
         return 1.;
     return 2.;
 }

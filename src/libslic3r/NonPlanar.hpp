@@ -37,7 +37,9 @@ namespace NonPlanar {
 // Overhangs (Tisma): the layers are tilted only under the overhangs that would need supports (OverhangField).
 // Stress (Tisma): the layers follow the stresses of the structural analysis (LayerGrid).
 // Surface (Tisma): the upper layers follow the top surfaces of the part, for the finish (LayerGrid).
-enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress, Surface };
+// Automatic (Tisma): both at once, the layers tilted under the overhangs (OverhangField) plus the layers following the
+// top surfaces (LayerGrid), for fewer supports and the finish of the tops.
+enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress, Surface, Automatic };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 

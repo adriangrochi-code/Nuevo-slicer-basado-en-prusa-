@@ -100,6 +100,23 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
+## Automático: acabado y menos soportes a la vez (Tisma)
+
+Modo «Automático (acabado y menos soportes)» (`nonplanar_mode = automatic`), el recomendado: junta los dos modos que
+ya funcionan por separado, sin ajustes propios (solo las dos medidas del cabezal).
+
+- **Cómo**: la deformación es la suma de la de «Voladizos» (las capas se hunden hacia los voladizos que necesitarían
+  soporte, tanto como deja el cabezal, en zonas que entran y salen solas) y la de «Caras superiores» (ajuste por
+  mínimos cuadrados a las pendientes de las caras de arriba). Si la suma deja capas demasiado gruesas o finas, demasiado
+  empinadas o el cabezal chocaría, se reduce solo la parte de las caras superiores; la de los voladizos ya cumple sola.
+- **Medido** (test `Automatic non-planar layers: finish of the top and fewer supports`):
+  - hongo con ala a 48° (cabezal 25°): filamento de soporte 683 mm en plano → 0 mm;
+  - bloque con la cara superior de 20 a 24 mm: dispersión de la cara 0,127 mm → 0,058 mm.
+- **Probado y descartado**: pedir las pendientes de los voladizos dentro del mismo ajuste por mínimos cuadrados. El
+  ajuste daba el 74 % de la pendiente pedida y aun pidiendo la del cabezal los soportes bajaban solo 18–25 %: la
+  inclinación fuerte bajo el voladizo choca con el límite de espesor de capa y la reducción uniforme achicaba todo.
+- **Límites**: los de cada modo; donde un voladizo y una cara superior están muy cerca, manda el voladizo.
+
 ## Piel: capas que siguen las caras superiores (Tisma)
 
 Modo «Caras superiores (acabado)» (`nonplanar_mode = surface`). Busca que las caras superiores se vean como una pieza

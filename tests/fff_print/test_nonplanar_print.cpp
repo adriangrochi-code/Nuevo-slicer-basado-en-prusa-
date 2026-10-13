@@ -433,3 +433,36 @@ TEST_CASE("Non-planar layers fitted to the print head clear the part already pri
     REQUIRE(height > 0.1);
     REQUIRE(height < 1.05);
 }
+
+TEST_CASE("Automatic non-planar layers: finish of the top and fewer supports", "[NonPlanar][Automatic]")
+{
+    // The overhangs: the mushroom flaring at 48°, with the print head of the overhangs test.
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 45 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 },
+                                    { "nonplanar_head_clearance_height", 10 }, { "nonplanar_head_clearance_radius", 10 } });
+    const double planar = support_filament(Test::slice({ mushroom(48.) }, config));
+    REQUIRE(planar > 0.);
+    config.set_deserialize_strict({ { "nonplanar_mode", "automatic" } });
+    {
+        Print print;
+        Model model;
+        Test::init_print({ mushroom(48.) }, print, model, config);
+        REQUIRE(print.validate().empty());
+        const double automatic = support_filament(Test::gcode(print));
+        WARN("Support filament of the mushroom: flat " << planar << " mm, automatic " << automatic << " mm");
+        CHECK(automatic < 0.5 * planar);
+    }
+    // The top: the sloped block, as in the surface mode.
+    DynamicPrintConfig top = nonplanar_config("disabled");
+    top.set_deserialize_strict({ { "nonplanar_max_slope", "20" }, { "top_solid_layers", "4" }, { "fill_density", "15%" } });
+    const double flat = top_spread(Test::slice({ sloped_block() }, top));
+    top.set_deserialize_strict({ { "nonplanar_mode", "automatic" } });
+    Print print;
+    Model model;
+    Test::init_print({ sloped_block() }, print, model, top);
+    REQUIRE(print.validate().empty());
+    const double automatic = top_spread(Test::gcode(print));
+    WARN("Spread of the top: flat " << flat << " mm, automatic " << automatic << " mm");
+    CHECK(automatic < 0.6 * flat);
+}

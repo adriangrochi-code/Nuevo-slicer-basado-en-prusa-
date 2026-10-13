@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **No planar «Automático» (acabado y menos soportes)**: un solo modo que inclina las capas bajo los voladizos y las
+  pone paralelas a las caras superiores, dentro de lo que permite el cabezal. En las pruebas: un hongo con ala a 48°
+  pasa de 683 mm de filamento de soporte a ninguno, y la cara superior inclinada de 0,127 a 0,058 mm de dispersión
+  (`docs/NONPLANAR_ANALYSIS.md`).
 - **Proyectos de Bambu Studio y OrcaSlicer**: se abren como proyecto, con cada objeto y sus partes (antes cada parte
   salía como objeto suelto), nombres, extrusores, modificadores con sus ajustes, pintura de colores, placas en las camas
   de Tisma y los ajustes de impresión y filamento traducidos; la impresora sigue siendo la elegida en Tisma
