@@ -3457,6 +3457,37 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("interlock_infill", coBool);
+    def->label = L("Interlocking infill (non-planar)");
+    def->category = L("Infill");
+    def->tooltip = L("Print the sparse infill on waves in Z (an egg-crate surface repeated in every layer), so that the "
+                   "layers of the infill nest into each other instead of meeting on flat planes, where printed parts "
+                   "usually break. The perimeters, the solid infill and the top and bottom surfaces stay flat: the waves "
+                   "fade out next to them, and the flow follows the thickness between the layers. Experimental: check "
+                   "the strength with your own test pieces. Needs absolute XYZ and no arc fitting; not with non-planar "
+                   "layers, spiral vase or belt printers.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("interlock_infill_amplitude", coPercent);
+    def->label = L("Interlocking infill: amplitude");
+    def->category = L("Infill");
+    def->tooltip = L("How far the infill goes up and down from the layer, in percent of the layer height.");
+    def->sidetext = L("%");
+    def->min = 5;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionPercent(50));
+
+    def = this->add("interlock_infill_wavelength", coFloat);
+    def->label = L("Interlocking infill: wavelength");
+    def->category = L("Infill");
+    def->tooltip = L("Distance between two crests of the waves, along X and along Y.");
+    def->sidetext = L("mm");
+    def->min = 2;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(10));
+
     def = this->add("zaa_min_thickness", coPercent);
     def->label = L("Z anti-aliasing: thinnest extrusion");
     def->category = L("Layers and Perimeters");

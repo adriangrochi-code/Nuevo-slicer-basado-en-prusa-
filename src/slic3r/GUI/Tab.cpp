@@ -1564,6 +1564,9 @@ void TabPrint::build()
         optgroup->append_single_option_line("bridge_angle");
         optgroup->append_single_option_line("only_retract_when_crossing_perimeters");
         optgroup->append_single_option_line("infill_first");
+        optgroup->append_single_option_line("interlock_infill");
+        optgroup->append_single_option_line("interlock_infill_amplitude");
+        optgroup->append_single_option_line("interlock_infill_wavelength");
 
     page = add_options_page(L("Skirt and brim"), "skirt+brim");
         category_path = "skirt-and-brim_133969#";

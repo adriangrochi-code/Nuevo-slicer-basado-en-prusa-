@@ -1105,6 +1105,21 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         m_zaa = make_unique<ZAA::Filter>(*m_zaa_surface, params);
     }
 
+    // Interlocking infill (Print::validate() rejects it with non-planar layers, spiral vase, belt printers and arcs).
+    m_interlock.reset();
+    m_interlock_field.reset();
+    if (print.config().interlock_infill.value && ! m_nonplanar) {
+        Interlock::Params field_params;
+        field_params.amplitude  = print.config().interlock_infill_amplitude.value / 100.;
+        field_params.wavelength = std::max(2., print.config().interlock_infill_wavelength.value);
+        m_interlock_field = make_unique<Interlock::Field>(print, field_params);
+        Interlock::FilterParams params;
+        params.seg_len    = std::clamp(field_params.wavelength / 16., 0.2, 1.);
+        params.relative_e = print.config().use_relative_e_distances.value;
+        params.z_offset   = print.config().z_offset.value;
+        m_interlock = make_unique<Interlock::Filter>(*m_interlock_field, params);
+    }
+
     // Staggered perimeters change the Z of the moves: not with the G-code filters that also do (spiral vase,
     // non-planar layers, Z anti-aliasing, belt printers).
     m_stagger_allowed = ! print.config().spiral_vase.value && ! m_nonplanar && ! m_zaa && ! print.config().belt_printer.value;
@@ -1714,11 +1729,19 @@ void GCodeGenerator::process_layers(
             return zaa->process_layer(s);
         });
 
+    const auto interlock = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [interlock = this->m_interlock.get()](std::string s) -> std::string {
+            return interlock->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_nonplanar)
         pipeline_to_string = pipeline_to_string & nonplanar;
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
+    if (m_interlock)
+        pipeline_to_string = pipeline_to_string & interlock;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 
@@ -1828,11 +1851,19 @@ void GCodeGenerator::process_layers(
             return zaa->process_layer(s);
         });
 
+    const auto interlock = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [interlock = this->m_interlock.get()](std::string s) -> std::string {
+            return interlock->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_nonplanar)
         pipeline_to_string = pipeline_to_string & nonplanar;
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
+    if (m_interlock)
+        pipeline_to_string = pipeline_to_string & interlock;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 

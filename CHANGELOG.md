@@ -12,6 +12,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Relleno entrelazado (no planar)**: el relleno disperso ondula en Z con la misma huevera en cada capa, para que las
+  capas encastren en lugar de apoyarse en planos; paredes y superficies quedan planas (`docs/NONPLANAR_ANALYSIS.md`).
 - **Orientación automática para FDM y resina**: en el gizmo de rotación, «Menos material de soporte» (FDM: apoya la
   pieza donde los voladizos piden menos soporte y con buen contacto con la cama) y «Menor fuerza de despegue» (resina:
   sin ventosas y con la capa más grande lo más chica posible) (`docs/ORIENTATION.md`).

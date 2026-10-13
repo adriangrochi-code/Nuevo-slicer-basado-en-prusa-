@@ -298,6 +298,9 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
             toggle_field(el, nonplanar && ! overhangs);
         toggle_field("nonplanar_overhang_threshold", overhangs);
         toggle_field("zaa_min_thickness", config->opt_bool("zaa_enabled"));
+        toggle_field("interlock_infill", ! nonplanar);
+        for (auto el : { "interlock_infill_amplitude", "interlock_infill_wavelength" })
+            toggle_field(el, ! nonplanar && config->opt_bool("interlock_infill"));
         for (auto el : { "nonplanar_pattern", "nonplanar_wavelength" })
             toggle_field(el, wave);
         toggle_field("nonplanar_amplitude", wave && ! fit_head);

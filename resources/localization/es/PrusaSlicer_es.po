@@ -33288,3 +33288,33 @@ msgstr "Menos material de soporte"
 
 msgid "Lay the object on one of its faces so that the overhangs steeper than the support threshold need the least support material, preferring a large contact with the bed for adhesion."
 msgstr "Apoya el objeto sobre una de sus caras de modo que los voladizos más empinados que el umbral de soporte necesiten el menor material de soporte, prefiriendo un contacto grande con la cama para la adherencia."
+
+msgid "Interlocking infill (non-planar)"
+msgstr "Relleno entrelazado (no planar)"
+
+msgid "Print the sparse infill on waves in Z (an egg-crate surface repeated in every layer), so that the layers of the infill nest into each other instead of meeting on flat planes, where printed parts usually break. The perimeters, the solid infill and the top and bottom surfaces stay flat: the waves fade out next to them, and the flow follows the thickness between the layers. Experimental: check the strength with your own test pieces. Needs absolute XYZ and no arc fitting; not with non-planar layers, spiral vase or belt printers."
+msgstr "Imprime el relleno disperso sobre ondas en Z (una superficie de huevera repetida en cada capa), para que las capas del relleno encastren unas en otras en lugar de apoyarse en planos, que es por donde suelen romper las piezas impresas. Los perímetros, el relleno sólido y las superficies superiores e inferiores quedan planos: las ondas se desvanecen junto a ellos y el flujo sigue el espesor entre las capas. Experimental: comprobá la resistencia con tus propias probetas. Requiere XYZ absolutas y sin ajuste de arcos; no con capas no planares, modo vaso ni impresoras de cinta."
+
+msgid "Interlocking infill: amplitude"
+msgstr "Relleno entrelazado: amplitud"
+
+msgid "How far the infill goes up and down from the layer, in percent of the layer height."
+msgstr "Cuánto sube y baja el relleno respecto de la capa, en porcentaje de la altura de capa."
+
+msgid "Interlocking infill: wavelength"
+msgstr "Relleno entrelazado: longitud de onda"
+
+msgid "Distance between two crests of the waves, along X and along Y."
+msgstr "Distancia entre dos crestas de las ondas, a lo largo de X y de Y."
+
+msgid "Interlocking infill cannot be combined with non-planar layers."
+msgstr "El relleno entrelazado no se puede combinar con capas no planares."
+
+msgid "Interlocking infill cannot be combined with the Spiral Vase mode."
+msgstr "El relleno entrelazado no se puede combinar con el modo vaso espiral."
+
+msgid "Interlocking infill cannot be used with belt printers."
+msgstr "El relleno entrelazado no se puede usar con impresoras de cinta."
+
+msgid "Interlocking infill requires Arc fitting to be disabled."
+msgstr "El relleno entrelazado requiere el ajuste de arcos desactivado."

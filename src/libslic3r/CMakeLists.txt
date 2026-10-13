@@ -299,6 +299,9 @@ set(SLIC3R_SOURCES
     NonPlanar.hpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
+    InterlockInfill.cpp
+    InterlockInfill.hpp
+    GCodeMoveLine.hpp
     MultiPoint.hpp
     MutablePriorityQueue.hpp
     NormalUtils.cpp

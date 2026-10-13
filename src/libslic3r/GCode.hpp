@@ -43,6 +43,7 @@
 #include "libslic3r/GCode/Travels.hpp"
 #include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/ZAntiAliasing.hpp"
+#include "libslic3r/InterlockInfill.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
 
@@ -465,6 +466,9 @@ private:
     // Z anti-aliasing: lowers the top extrusions to the surface of the model.
     std::unique_ptr<ZAA::Surface>           m_zaa_surface;
     std::unique_ptr<ZAA::Filter>            m_zaa;
+    // Interlocking infill: puts the sparse infill on waves in Z.
+    std::unique_ptr<Interlock::Field>       m_interlock_field;
+    std::unique_ptr<Interlock::Filter>      m_interlock;
     std::unique_ptr<GCode::WipeTowerIntegration> m_wipe_tower;
 
     // Current fan speed set by dynamic fan speed control.

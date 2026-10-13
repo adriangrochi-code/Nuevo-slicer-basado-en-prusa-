@@ -88,6 +88,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "nonplanar_segment_length",
         "zaa_enabled",
         "zaa_min_thickness",
+        "interlock_infill",
+        "interlock_infill_amplitude",
+        "interlock_infill_wavelength",
         "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
         "avoid_crossing_perimeters_max_detour",
@@ -582,6 +585,17 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return _u8L("Z anti-aliasing cannot be used with belt printers.");
         if (m_config.arc_fitting != ArcFittingType::Disabled)
             return _u8L("Z anti-aliasing requires Arc fitting to be disabled.");
+    }
+
+    if (m_config.interlock_infill) {
+        if (NonPlanar::enabled(m_config))
+            return _u8L("Interlocking infill cannot be combined with non-planar layers.");
+        if (m_config.spiral_vase)
+            return _u8L("Interlocking infill cannot be combined with the Spiral Vase mode.");
+        if (m_config.belt_printer)
+            return _u8L("Interlocking infill cannot be used with belt printers.");
+        if (m_config.arc_fitting != ArcFittingType::Disabled)
+            return _u8L("Interlocking infill requires Arc fitting to be disabled.");
     }
 
     if (m_config.avoid_crossing_perimeters && m_config.avoid_crossing_curled_overhangs) {

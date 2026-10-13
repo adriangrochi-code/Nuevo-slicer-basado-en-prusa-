@@ -38,6 +38,7 @@ add_executable(${_TEST_NAME}_tests
 	test_multi.cpp
 	test_nonplanar_print.cpp
 	test_zaa.cpp
+	test_interlock_infill.cpp
 	test_perimeters.cpp
 	test_print.cpp
 	test_printgcode.cpp

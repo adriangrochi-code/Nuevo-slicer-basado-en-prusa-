@@ -87,6 +87,32 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
+## Relleno entrelazado (Tisma)
+
+Opción «Relleno entrelazado (no planar)» (`interlock_infill`, Configuración de impresión > Relleno > Avanzado). Es el
+punto 2 de la conclusión: en lugar de curvar las capas enteras, solo el relleno disperso ondula en Z.
+
+- **Forma**: el relleno de cada capa sigue la misma superficie de huevera, z = capa + a · sen(2πx/λ) · sen(2πy/λ), con
+  `interlock_infill_amplitude` (porcentaje de la altura de capa, 50 % por defecto) y `interlock_infill_wavelength`
+  (λ, 10 mm). Las capas del relleno encastran unas en otras en lugar de apoyarse en planos, que es por donde suelen
+  romper las piezas impresas.
+- **Lo demás queda plano**: perímetros, relleno sólido, superficies superiores e inferiores. La amplitud baja a cero
+  junto a ellos: en la capa, a lo largo de λ/4 desde el borde del relleno disperso; entre capas, a lo sumo un 20 % de
+  la altura de capa por capa (espesor entre 80 y 120 %), y la capa de relleno pegada a una capa sólida queda plana.
+- **Flujo**: cada tramo extruye según el espesor que queda entre su capa y la de abajo en ese punto (mismo material
+  total que en plano).
+- **Viajes**: después del relleno ondulado, los viajes van por encima de las crestas impresas.
+- **Cómo funciona**: un filtro del G-code de cada capa (como el anti-aliasing en Z), después de los otros filtros que
+  cambian la Z. La amplitud de cada objeto sale de las superficies de relleno disperso de cada capa, en una grilla
+  (`src/libslic3r/InterlockInfill.cpp`).
+- **Compatibilidad**: no con capas no planares, modo vaso, impresoras de cinta ni ajuste de arcos (`Print::validate`).
+- **Tests** (`tests/fff_print/test_interlock_infill.cpp`): bloque de 30 × 30 × 6 mm al 20 %: el relleno queda dentro de
+  ±0,1 mm de su capa y llega a la amplitud completa; la primera y la última capa de relleno disperso quedan planas;
+  todo lo demás está a la Z de su capa; el filamento total cambia menos del 1 %; E absoluta y relativa coinciden.
+- **Sin medir todavía**: la ganancia de resistencia. La idea de capas onduladas para resistencia es la de Active-Z
+  (Penn State, 2017) y la de las interfaces sinuosas entre capas (Western Sydney University), con otras máquinas y
+  ensayos; en Tisma hay que medirla con probetas propias.
+
 ## Fuentes
 
 - S³-Slicer: https://github.com/zhangty019/S3_DeformFDM, https://history.siggraph.org/?p=215754
