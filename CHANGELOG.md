@@ -12,6 +12,12 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Dividir para que entre en la impresora** (clic derecho en el objeto, o el aviso que aparece al cargar un objeto
+  más grande que la impresora): corta el objeto en las piezas justas para el volumen de impresión, donde su sección
+  es más chica, y pone encastres en cada corte (pernos aparte o espigas), más finos donde las paredes no dan para el
+  diámetro elegido. Las piezas y los pernos se reparten en las camas que hagan falta.
+- **Corrección: subida a impresoras Bambu Lab** con las bibliotecas del instalador (curl 8.21): la subida FTPS ahora
+  verifica el nombre de la impresora, sin lo cual la impresora la rechazaba («session reuse required»).
 - **Análisis estructural más rápido (multigrid)**: el solver necesita 15–30 iteraciones en vez de cientos o miles;
   una pieza de 230 000 vóxeles pasa de 25 s a 3 s, con el mismo resultado.
 - **Asistente de configuración en una sola página**: se abre directo en la lista de impresoras, con todas las marcas

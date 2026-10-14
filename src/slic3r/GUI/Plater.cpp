@@ -156,6 +156,7 @@
 
 #include <wx/glcanvas.h>    // Needs to be last because reasons :-/
 #include "WipeTowerDialog.hpp"
+#include "FragmentDialog.hpp"
 
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Platform.hpp"
@@ -1925,6 +1926,9 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
             _L("Your object appears to be too large, so it was automatically scaled down to fit your print bed."),
             _L("Object too large?"));
     }
+    else if (call_selection_changed && !s_multiple_beds.get_loading_project_flag())
+        // Tisma: larger than the printer but not scaled down: offer to split it.
+        q->notify_too_large(obj_idxs);
 
     notification_manager->close_notification_of_type(NotificationType::UpdatedItemsInfo);
     for (const size_t idx : obj_idxs) {
@@ -5676,6 +5680,96 @@ void Plater::update_calibration_notification()
             return true; // close the notification
         });
 }
+// Tisma: printable size to split an object: the bounding box of the bed (the inscribed square of a round bed) and the
+// maximum height (none: unlimited).
+static Vec3d fragment_max_size(const BuildVolume &build_volume, bool inscribed = true)
+{
+    Vec3d size = build_volume.bounding_volume().size();
+    if (inscribed && build_volume.type() == BuildVolume::Type::Circle)
+        size.x() = size.y() = std::sqrt(2.) * unscaled(build_volume.circle().radius);
+    if (build_volume.max_print_height() <= 0.)
+        size.z() = 1e5;
+    return size;
+}
+
+bool Plater::can_fragment() const
+{
+    const Selection &selection = p->get_selection();
+    const int        obj_idx   = selection.get_object_idx();
+    if (obj_idx < 0 || obj_idx >= int(p->model.objects.size()) ||
+        !(selection.is_single_full_instance() || selection.is_single_full_object()))
+        return false;
+    // The pieces replace the object: with several copies, which one would be split is not clear.
+    return p->model.objects[obj_idx]->instances.size() == 1;
+}
+
+void Plater::fragment_object()
+{
+    if (!can_fragment())
+        return;
+    const int    obj_idx = p->get_selection().get_object_idx();
+    ModelObject *object  = p->model.objects[obj_idx];
+    Fragment::Params params;
+    params.max_size = fragment_max_size(p->bed.build_volume());
+    if (p->printer_technology == ptFFF) {
+        // Room for what the arrangement keeps around each piece (SceneBuilder): the skirt, the brim and half of the
+        // distance between objects.
+        const DynamicPrintConfig &config = wxGetApp().preset_bundle->full_config();
+        const double nozzle = config.option<ConfigOptionFloats>("nozzle_diameter")->get_at(0);
+        const double skirt  = config.opt_int("skirts") > 0 ?
+            config.opt_int("skirts") * 1.125 * nozzle + config.opt_float("skirt_distance") : 0.;
+        params.margin = skirt + config.opt_float("brim_width") + 3.;
+    }
+    Fragment::Plan plan;
+    if (!show_fragment_dialog(this, *object, 0, params, plan))
+        return;
+
+    Model           pieces_model;
+    ModelObjectPtrs pieces;
+    {
+        wxBusyCursor wait;
+        pieces = Fragment::apply(*object, 0, plan, params, pieces_model);
+    }
+    if (pieces.empty())
+        return;
+    Plater::TakeSnapshot snapshot(this, _L("Split to fit the printer"));
+    // As the cut tool: the pieces replace the object and are arranged on its bed.
+    apply_cut_object_to_model(size_t(obj_idx), pieces, true);
+}
+
+void Plater::notify_too_large(const std::vector<size_t> &obj_idxs)
+{
+    NotificationManager *nm = get_notification_manager();
+    if (nm == nullptr)
+        return;
+    const BuildVolume &build_volume = p->bed.build_volume();
+    const Vec3d        max_size     = fragment_max_size(build_volume, false);
+    for (size_t idx : obj_idxs) {
+        if (idx >= p->model.objects.size())
+            continue;
+        const ModelObject *object = p->model.objects[idx];
+        if (object->instances.size() != 1)
+            continue;
+        const Vec3d size = object->instance_bounding_box(0).size();
+        if (size.x() <= max_size.x() && size.y() <= max_size.y() && size.z() <= max_size.z())
+            continue;
+        const ObjectID id = object->id();
+        nm->close_notification_of_type(NotificationType::ObjectTooLarge);
+        nm->push_notification(NotificationType::ObjectTooLarge, NotificationManager::NotificationLevel::WarningNotificationLevel,
+            format(_u8L("%1% is larger than the printer."), object->name), _u8L("Split it into pieces with connectors"),
+            [this, id](wxEvtHandler*) {
+                for (size_t i = 0; i < p->model.objects.size(); ++i)
+                    if (p->model.objects[i]->id() == id) {
+                        p->get_selection().add_object((unsigned int)i, true);
+                        fragment_object();
+                        break;
+                    }
+                return true;
+            });
+        // One notification at a time: the last object too large.
+    }
+}
+
 void Plater::reset_with_confirm()
 {
     if (p->model.objects.empty() ||
@@ -5955,7 +6049,7 @@ void Plater::toggle_layers_editing(bool enable)
         canvas3D()->force_main_toolbar_left_action(canvas3D()->get_main_toolbar_item_id("layersediting"));
 }
 
-void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& new_objects)
+void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& new_objects, bool several_beds)
 {
     const int active_bed{s_multiple_beds.get_active_bed()};
 
@@ -6000,7 +6094,7 @@ void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& ne
     s_multiple_beds.set_active_bed(bed_index);
 
     UIThreadWorker w;
-    arrange(w, ArrangeSelectionMode::CurrentBedSelectionOnly);
+    arrange(w, several_beds ? ArrangeSelectionMode::SelectionOnly : ArrangeSelectionMode::CurrentBedSelectionOnly);
     w.wait_for_idle();
     s_multiple_beds.set_active_bed(active_bed);
 }

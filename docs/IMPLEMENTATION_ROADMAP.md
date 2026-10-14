@@ -260,7 +260,7 @@ los datos del usuario.
 | 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
 | 16 | Render: oclusión ambiental y PBR | Decisión |
 | 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución (`docs/FEA.md`). GPU pendiente (dependencia nueva) |
-| 18 | Fragmentación de piezas con encastres | Decisión |
+| 18 | Fragmentación de piezas con encastres | Hecho: «Dividir para que entre en la impresora» corta en las piezas justas por la sección más chica, con pernos o espigas de la herramienta de corte (más finos en paredes finas), desde el menú del objeto o el aviso de objeto demasiado grande (`docs/FRAGMENT.md`). Falta imprimir y pegar una pieza real; colas de milano no |
 | 19 | Trackhead | Decisión (referencias) |
 | 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |
 | 21 | Fase 11: app de teléfono y FEA en la nube | Decisión |

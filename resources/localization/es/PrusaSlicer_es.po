@@ -33604,3 +33604,69 @@ msgid "%1% printer selected. Finish installs it with its settings and filaments.
 msgid_plural "%1% printers selected. Finish installs them with their settings and filaments."
 msgstr[0] "%1% impresora elegida. Finalizar la instala con su configuración y sus filamentos."
 msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración y sus filamentos."
+
+msgid "Split to fit the printer"
+msgstr "Dividir para que entre en la impresora"
+
+msgid "Cut the object into pieces that fit the printer, with connectors to join them"
+msgstr "Cortar el objeto en piezas que entren en la impresora, con encastres para unirlas"
+
+msgid "The object is cut into pieces that fit the printable volume (%1% x %2% x %3% mm), where its section is smallest, and every cut gets connectors to align the pieces when gluing them."
+msgstr "El objeto se corta en piezas que entran en el volumen de impresión (%1% x %2% x %3% mm), donde su sección es más chica, y cada corte lleva encastres para alinear las piezas al pegarlas."
+
+msgid "Pins (separate, in holes of both pieces)"
+msgstr "Pernos (aparte, en agujeros de las dos piezas)"
+
+msgid "Pegs (on one piece, hole in the other)"
+msgstr "Espigas (en una pieza, agujero en la otra)"
+
+msgid "None (glue only)"
+msgstr "Ninguno (solo pegamento)"
+
+msgid "Diameter (mm)"
+msgstr "Diámetro (mm)"
+
+msgid "Depth into each piece (mm)"
+msgstr "Profundidad en cada pieza (mm)"
+
+msgid "Clearance of the holes (mm)"
+msgstr "Holgura de los agujeros (mm)"
+
+msgid "It cannot be split:"
+msgstr "No se puede dividir:"
+
+msgid "The object already fits the printer."
+msgstr "El objeto ya entra en la impresora."
+
+msgid "%1% pieces (%2% x %3% x %4%), %5% cuts, %6% connectors."
+msgstr "%1% piezas (%2% x %3% x %4%), %5% cortes, %6% encastres."
+
+msgid "%1% parts of the cuts are too thin for a connector: glue only."
+msgstr "%1% partes de los cortes son demasiado finas para un encastre: solo pegamento."
+
+msgid "The pins are added as separate objects."
+msgstr "Los pernos se agregan como objetos aparte."
+
+msgid "%1% is larger than the printer."
+msgstr "%1% es más grande que la impresora."
+
+msgid "Split it into pieces with connectors"
+msgstr "Dividirlo en piezas con encastres"
+
+msgid "The printable size is too small for the connectors"
+msgstr "El tamaño de impresión es demasiado chico para los encastres"
+
+msgid "No positions of the cuts keep every piece within the printable size"
+msgstr "Ninguna posición de los cortes deja todas las piezas dentro del tamaño de impresión"
+
+msgid "No such instance"
+msgstr "No existe esa copia"
+
+msgid "The object has no solid part"
+msgstr "El objeto no tiene partes sólidas"
+
+msgid "The printable size is smaller than the margin"
+msgstr "El tamaño de impresión es más chico que el margen"
+
+msgid "More pieces than the %1% beds of a project: some may be left outside the beds, to be printed in another project."
+msgstr "Más piezas que las %1% camas de un proyecto: algunas pueden quedar fuera de las camas, para imprimirlas en otro proyecto."

@@ -149,7 +149,9 @@ enum class NotificationType
     // Failed to download secret repo archive
     FailedSecretVendorUpdateSync,
     // Tisma: a calibration test of the project changes a value along the height of the print.
-    CalibrationActive
+    CalibrationActive,
+    // Tisma: an object larger than the printer, with a link to split it.
+    ObjectTooLarge
 };
 
 class NotificationManager
