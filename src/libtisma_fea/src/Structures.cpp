@@ -35,7 +35,7 @@ InfillZone reinforcement_zone(const indexed_triangle_set &mesh, const Setup &set
 {
     InfillZone zone;
     zone.density        = std::clamp(options.density, 0., 1.);
-    zone.wall_thickness = setup.infill.wall_thickness + std::max(0, options.extra_perimeters) * setup.infill.perimeter_width;
+    zone.wall_thickness = setup.infill.wall_thickness + std::max(0, options.extra_perimeters) * setup.infill.perimeter_spacing;
 
     // Geometry of the supports and of the loads.
     indexed_triangle_set sub;

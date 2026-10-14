@@ -663,6 +663,7 @@ void GCodeProcessor::apply_config(const PrintConfig& config)
 {
     m_parser.apply_config(config);
     m_belt_angle = config.belt_printer.value ? config.belt_angle.value : 0.;
+    m_belt_on_z  = config.belt_axis_z.value;
 
     m_binarizer.set_enabled(config.binary_gcode);
     m_result.is_binary_file = config.binary_gcode;
@@ -773,6 +774,7 @@ void GCodeProcessor::apply_config(const DynamicPrintConfig& config)
 {
     m_parser.apply_config(config);
     m_belt_angle = Belt::enabled(config) ? Belt::angle(config) : 0.;
+    m_belt_on_z  = Belt::belt_on_z(config);
 
     const ConfigOptionEnum<GCodeFlavor>* gcode_flavor = config.option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor");
     if (gcode_flavor != nullptr)
@@ -1430,7 +1432,7 @@ void GCodeProcessor::finalize(bool perform_post_process)
 
     // Belt printers: the times are computed in the axes of the machine; the preview shows the part on the belt.
     if (m_belt_angle > 0.) {
-        const Belt::Frame frame(m_belt_angle);
+        const Belt::Frame frame(m_belt_angle, 0., m_belt_on_z);
         for (GCodeProcessorResult::MoveVertex& move : m_result.moves)
             move.position = frame.machine_to_world(move.position.cast<double>()).cast<float>();
     }

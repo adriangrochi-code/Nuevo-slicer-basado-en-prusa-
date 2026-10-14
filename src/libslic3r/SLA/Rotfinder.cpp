@@ -12,6 +12,7 @@
 #include <array>
 #include <cmath>
 #include <iterator>
+#include <numeric>
 #include <vector>
 #include <cinttypes>
 #include <cstdlib>
@@ -25,6 +26,10 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/AABBTreeIndirect.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
+#include "libslic3r/SLA/SuctionCups.hpp"
 
 namespace Slic3r { namespace sla {
 
@@ -483,6 +488,215 @@ Vec2d find_min_z_height_rotation(const ModelObject &mo,
         return bp.stopcond();
     });
 
+    return {rot[0], rot[1]};
+}
+
+// Tisma: orientation for the least FFF support material and for the lowest SLA peel force.
+
+namespace {
+
+// The rotation of the instance (about X and Y), the first candidate: the result is never worse than the current one.
+XYRotation instance_rotation(const ModelObject &mo)
+{
+    const Vec3d rot = mo.instances.front()->get_rotation();
+    return {rot.x(), rot.y()};
+}
+
+void add_candidate(std::vector<XYRotation> &candidates, const XYRotation &rot)
+{
+    for (const XYRotation &c : candidates)
+        if (std::abs(c[X] - rot[X]) < EPSILON && std::abs(c[Y] - rot[Y]) < EPSILON)
+            return;
+    candidates.emplace_back(rot);
+}
+
+struct FFFSupportScorer
+{
+    const indexed_triangle_set &its;
+    AABBTreeIndirect::Tree3f    tree;
+    const indexed_triangle_set &hull;
+    // -cos of the support threshold: faces whose normal points further down need support.
+    double                      overhang_nz;
+
+    static constexpr double CONTACT_TOLERANCE = 0.1;   // mm above the bed
+    static constexpr double MIN_CONTACT       = 10.;   // mm2
+    static constexpr double CONTACT_SLAB      = 1.;    // mm: the bed contact is worth this much support
+
+    FFFSupportScorer(const indexed_triangle_set &its, const indexed_triangle_set &hull, double threshold_deg) :
+        its(its), tree(AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(its.vertices, its.indices)),
+        hull(hull), overhang_nz(-std::cos(threshold_deg * PI / 180.)) {}
+
+    double operator()(const XYRotation &rot) const
+    {
+        // Instead of turning the mesh, the vertical of the print is turned into the coordinates of the mesh.
+        const Vec3d up   = to_transform3f(rot).cast<double>().linear().transpose() * Vec3d::UnitZ();
+        const Vec3d down = -up;
+        double z_min = std::numeric_limits<double>::max(), z_max = std::numeric_limits<double>::lowest();
+        for (const Vec3f &v : hull.vertices) {
+            z_min = std::min(z_min, v.cast<double>().dot(up));
+            z_max = std::max(z_max, v.cast<double>().dot(up));
+        }
+        double support = 0., contact = 0.;
+        for (const Vec3i &f : its.indices) {
+            const Vec3d a = its.vertices[f[0]].cast<double>(), b = its.vertices[f[1]].cast<double>(),
+                        c = its.vertices[f[2]].cast<double>();
+            const Vec3d cross = (b - a).cross(c - a);
+            const double area2 = cross.norm();
+            if (area2 < EPSILON)
+                continue;
+            const double nz = cross.dot(up) / area2;
+            if (nz >= 0.)
+                continue;
+            // Area projected on the bed.
+            const double projected = - 0.5 * cross.dot(up);
+            if (std::max({ a.dot(up), b.dot(up), c.dot(up) }) <= z_min + CONTACT_TOLERANCE) {
+                contact += projected;
+                continue;
+            }
+            if (nz > overhang_nz)
+                continue;
+            // The support goes down from the face to the part below or to the bed.
+            const Vec3d centroid = (a + b + c) / 3.;
+            double      height   = centroid.dot(up) - z_min;
+            igl::Hit hit;
+            if (AABBTreeIndirect::intersect_ray_first_hit(its.vertices, its.indices, tree, Vec3d(centroid + 1e-3 * down),
+                                                          down, hit))
+                height = std::min(height, double(hit.t));
+            support += projected * height;
+        }
+        double cost = support - CONTACT_SLAB * contact + 1e-3 * (z_max - z_min);
+        if (contact < MIN_CONTACT)
+            cost += 1e12;
+        return cost;
+    }
+};
+
+// Directions evenly spread over the sphere (Fibonacci lattice), as the rotations that put them down.
+std::vector<XYRotation> sphere_rotations(size_t count)
+{
+    std::vector<XYRotation> out;
+    out.reserve(count);
+    const double golden = PI * (3. - std::sqrt(5.));
+    for (size_t i = 0; i < count; ++ i) {
+        const double z = 1. - 2. * (double(i) + 0.5) / double(count);
+        const double r = std::sqrt(std::max(0., 1. - z * z));
+        const Vec3f  dir(float(r * std::cos(golden * double(i))), float(r * std::sin(golden * double(i))), float(z));
+        const auto   q = Eigen::Quaternionf{}.FromTwoVectors(dir, DOWN);
+        out.emplace_back(from_transform3f(Transform3f::Identity() * q));
+    }
+    return out;
+}
+
+struct PeelScore
+{
+    size_t cups     { 0 };
+    double max_area { 0. };
+};
+
+PeelScore peel_score(const TriangleMesh &mesh, const XYRotation &rot, double layer_height, bool bottom_sealed)
+{
+    indexed_triangle_set its = mesh.its;
+    its_transform(its, to_transform3f(rot));
+    float z_min = std::numeric_limits<float>::max(), z_max = std::numeric_limits<float>::lowest();
+    for (const Vec3f &v : its.vertices) {
+        z_min = std::min(z_min, v.z());
+        z_max = std::max(z_max, v.z());
+    }
+    // At most 400 layers: the orientation is compared, not printed.
+    const double h = std::max(layer_height, double(z_max - z_min) / 400.);
+    std::vector<float> zs;
+    for (double z = z_min + 0.5 * h; z < z_max; z += h)
+        zs.emplace_back(float(z));
+    const std::vector<ExPolygons> slices = slice_mesh_ex(its, zs);
+    PeelScore out;
+    for (const ExPolygons &layer : slices) {
+        double area = 0.;
+        for (const ExPolygon &expoly : layer)
+            area += expoly.area();
+        out.max_area = std::max(out.max_area, area * SCALING_FACTOR * SCALING_FACTOR);
+    }
+    out.cups = find_suction_cups(slices, bottom_sealed).size();
+    return out;
+}
+
+} // namespace
+
+Vec2d find_least_fff_support_rotation(const ModelObject &mo, const RotOptimizeParams &params)
+{
+    RotfinderBoilerplate<1000> bp{mo, params};
+
+    // "support_material_threshold": the most horizontal slope printed without support, 0 = automatic.
+    int threshold = 0;
+    if (params.print_config())
+        if (const auto *opt = params.print_config()->option<ConfigOptionInt>("support_material_threshold"))
+            threshold = opt->value;
+    if (const auto *opt = dynamic_cast<const ConfigOptionInt*>(mo.config.option("support_material_threshold")))
+        threshold = opt->value;
+    if (threshold <= 0 || threshold >= 90)
+        threshold = 45;
+
+    const TriangleMesh chull = bp.mesh.convex_hull_3d();
+    std::vector<XYRotation> inputs = { instance_rotation(mo) };
+    for (const XYRotation &rot : get_chull_rotations(bp.mesh, std::max<size_t>(1, bp.max_tries)))
+        add_candidate(inputs, rot);
+    bp.max_tries = inputs.size();
+
+    const FFFSupportScorer scorer(bp.mesh.its, chull.its, double(threshold));
+    XYRotation rot = find_min_score<2>([&bp, &scorer](const XYRotation &rot) {
+        bp.statusfn();
+        return scorer(rot);
+    }, inputs.begin(), inputs.end(), [&bp] { return bp.stopcond(); });
+
+    return {rot[0], rot[1]};
+}
+
+Vec2d find_least_peel_rotation(const ModelObject &mo, const RotOptimizeParams &params)
+{
+    RotfinderBoilerplate<1000> bp{mo, params};
+
+    SLAPrintObjectConfig pocfg;
+    if (params.print_config())
+        pocfg.apply(*params.print_config(), true);
+    pocfg.apply(mo.config.get());
+    const bool on_floor = is_on_floor(pocfg);
+    // As SLAPrintObject::get_elevation(): a part without supports or on the pad is closed at the bottom.
+    const bool bottom_sealed = on_floor || ! pocfg.supports_enable.getBool();
+
+    // The candidates, with the cheap score of the supports.
+    std::vector<XYRotation> inputs = { instance_rotation(mo) };
+    for (const XYRotation &rot : on_floor ? get_chull_rotations(bp.mesh, std::max<size_t>(1, bp.max_tries)) :
+                                            sphere_rotations(std::max<size_t>(50, bp.max_tries / 2)))
+        add_candidate(inputs, rot);
+    std::vector<double> supports(inputs.size(), 0.);
+    execution::for_each(ex_tbb, size_t(0), inputs.size(), [&](size_t i) {
+        if (bp.stopcond())
+            return;
+        const Transform3f tr = to_transform3f(inputs[i]);
+        supports[i] = on_floor ? get_supportedness_onfloor_score(bp.mesh, tr) : get_supportedness_score(bp.mesh, tr);
+    }, std::max<size_t>(1, inputs.size() / std::max(1u, std::thread::hardware_concurrency())));
+
+    // The best for the supports are sliced.
+    std::vector<size_t> order(inputs.size());
+    std::iota(order.begin(), order.end(), size_t(0));
+    std::sort(order.begin(), order.end(), [&supports](size_t a, size_t b) { return supports[a] < supports[b]; });
+    order.resize(std::min(order.size(), size_t(std::max(4.f, 16.f * params.accuracy()))));
+    bp.status    = 0;
+    bp.max_tries = unsigned(order.size());
+    std::vector<PeelScore> scores(order.size());
+    execution::for_each(ex_tbb, size_t(0), order.size(), [&](size_t i) {
+        if (bp.stopcond())
+            return;
+        scores[i] = peel_score(bp.mesh, inputs[order[i]], pocfg.layer_height.getFloat(), bottom_sealed);
+    }, 1);
+    for (size_t i = 0; i < order.size(); ++ i)
+        bp.statusfn();
+
+    size_t best = 0;
+    for (size_t i = 1; i < order.size(); ++ i)
+        if (scores[i].cups < scores[best].cups ||
+            (scores[i].cups == scores[best].cups && scores[i].max_area < scores[best].max_area * (1. - 1e-3)))
+            best = i;
+    const XYRotation &rot = inputs[order[best]];
     return {rot[0], rot[1]};
 }
 

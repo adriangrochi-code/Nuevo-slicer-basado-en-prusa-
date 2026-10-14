@@ -5,6 +5,7 @@ add_executable(${_TEST_NAME}_tests
     test_line.cpp
     test_point.cpp
 	test_3mf.cpp
+	test_bambu_project.cpp
 	test_aabbindirect.cpp
 	test_kdtreeindirect.cpp
 	test_arachne.cpp
@@ -17,6 +18,7 @@ add_executable(${_TEST_NAME}_tests
 	test_cut_surface.cpp
 	test_elephant_foot_compensation.cpp
 	test_expolygon.cpp
+	test_fragment.cpp
 	test_geometry.cpp
 	test_placeholder_parser.cpp
 	test_polygon.cpp

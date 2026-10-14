@@ -29,16 +29,41 @@ namespace Slic3r {
 
 class ModelVolume;
 class PrintConfig;
+struct EngineeringLayerField;
 
 namespace NonPlanar {
 
 // SlopeTest: calibration of the maximum layer slope (ridges whose slope grows in bands along X).
 // Overhangs (Tisma): the layers are tilted only under the overhangs that would need supports (OverhangField).
-enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs };
+// Stress (Tisma): the layers follow the stresses of the structural analysis (LayerGrid).
+// Surface (Tisma): the upper layers follow the top surfaces of the part, for the finish (LayerGrid).
+// Automatic (Tisma): both at once, the layers tilted under the overhangs (OverhangField) plus the layers following the
+// top surfaces (LayerGrid), for fewer supports and the finish of the tops.
+enum class Mode { Disabled, Wave, Conical, SlopeTest, Overhangs, Stress, Surface, Automatic };
 enum class Pattern { Egg, Ridges, Twisted };
 enum class FlowPolicy { Preserve, Uniform, Off };
 
 class OverhangField;
+class LayerGrid;
+
+// Conical layers whose slope changes with the radius, taken from the part (Tisma). The idea of a cone whose angle
+// depends on the radius is that of Joshua Bird's radial non-planar slicer (github.com/jyjblrd/radial_non_planar_slicer,
+// where the angle is a formula set by hand for each model); no code of it is used. Here the slope at each radius is the
+// one the overhangs of the part at that radius need, within the free angle of the print head (build_radial_profile()).
+struct RadialProfile
+{
+    // Slope of the layers dz/dr (+ = rising outwards) at the radii i * step from the center of the field, and its
+    // integral from the center (the height of the layer). Linear between the radii, constant beyond the last one.
+    double              step { 1. };
+    std::vector<double> slope;
+    std::vector<double> height;
+    // Height of the lowest overhang that needs the cone: the layers reach their full slope below it.
+    double              z_first { 0. };
+
+    double slope_at(double r) const;
+    double height_at(double r) const;
+    bool   empty() const;
+};
 
 struct FieldParams
 {
@@ -50,6 +75,9 @@ struct FieldParams
     double  twist_deg_per_mm { 3. };    // twisted: rotation of the ridges per mm of height
     double  cone_angle_deg   { 15. };   // conical: positive = cone rises outwards
     double  cone_tip_radius  { 2. };    // conical: smoothing of the cone tip
+    // Conical with a slope that changes with the radius (from the part), scaled by radial_scale; replaces the cone angle.
+    std::shared_ptr<const RadialProfile> radial;
+    double  radial_scale     { 1. };
     // Center of the field (object coordinates).
     Vec2d   center           { Vec2d::Zero() };
     // SlopeTest: the slope of the ridges (wavelength above, along Y) is slope_start_deg + i * slope_step_deg in
@@ -63,6 +91,10 @@ struct FieldParams
     // overhang_scale (reduced until the layer thickness and the slope are acceptable).
     std::shared_ptr<const OverhangField> overhangs;
     double  overhang_scale   { 1. };
+    // Stress and Surface: the layer shape given on a grid (computed by the structural analysis, or to follow the top
+    // surfaces), scaled by layers_scale (reduced until the layer thickness and the slope are acceptable).
+    std::shared_ptr<const LayerGrid> layers;
+    double  layers_scale     { 1. };
     // Tangent of the slope at x and its derivative along x (smooth transitions between the bands).
     std::pair<double, double> slope_test_tangent(double x) const;
 };
@@ -207,6 +239,69 @@ public:
     std::pair<double, Vec2d> sample(const Zone &zone, double x, double y) const;
 };
 
+// Tisma: layer offsets given at the nodes of a grid (EngineeringLayerField): computed by the structural analysis
+// (stresses mode) or to follow the top surfaces (surface mode). Trilinear between the nodes; zero outside of the grid.
+class LayerGrid
+{
+public:
+    // part_min: minimum corner of the part in the coordinates where the field is sampled.
+    LayerGrid(const EngineeringLayerField &field, const Vec3d &part_min);
+
+    double offset(double x, double y, double z) const;
+    // Horizontal gradient and derivative along z of the offset.
+    Vec2d  grad(double x, double y, double z) const;
+    double dz(double x, double y, double z) const;
+    // Upper bound of |offset(x, y, z)| for any z.
+    double bound(double x, double y) const;
+
+private:
+    // Node coordinates (fractional) of a point, false outside of the grid.
+    bool   locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const;
+    double node(int i, int j, int k) const { return m_offset[(size_t(k) * m_ny + j) * m_nx + i]; }
+
+    Vec3d              m_origin;   // node (0, 0, 0) in the coordinates of the samples
+    double             m_cell { 1. };
+    int                m_nx { 0 }, m_ny { 0 }, m_nz { 0 };
+    std::vector<float> m_offset;
+    // Largest |offset| of each column of nodes.
+    std::vector<float> m_column_max;
+};
+
+// Tisma: the slope a layer should have at a point along a horizontal direction, with its weight in the least squares.
+struct SlopeTarget
+{
+    Vec3d  point { Vec3d::Zero() };
+    Vec2d  dir { Vec2d::UnitX() };   // unit
+    double slope { 0. };             // tangent along dir
+    double weight { 1. };
+};
+
+struct LayerFitParams
+{
+    // Layers flat up to this height above the bottom of the part [mm].
+    double z_flat { 0.6 };
+    // Smallest distance between the nodes [mm] and largest number of nodes (the cells grow for large parts).
+    double min_cell { 1. };
+    size_t max_nodes { 40000 };
+    // Weight of the targets against the smoothness and the layer thickness (the limits of the layer thickness and
+    // of the head are applied afterwards by scaling the offset down).
+    double target_weight { 1. };
+    // Weights of the change of the slope from a cell to the next one and of the change of the offset along Z.
+    double smooth_weight { 0.3 };
+    double thickness_weight { 1. };
+};
+
+// Tisma: the layer offset (relative to the minimum corner of bbox) whose slopes fit the targets best by least squares,
+// with smooth layers, little change of the offset along Z (layer thickness) and flat first layers, on a 3D grid solved
+// with conjugate gradients. Used by the stresses mode (libtisma_fea) and the surface mode. False if it did not converge.
+bool fit_layer_field(const std::vector<SlopeTarget> &targets, const BoundingBoxf3 &bbox, const LayerFitParams &params,
+                     EngineeringLayerField &out);
+
+// Tisma: the slopes asked by the top surfaces of a mesh: every face looking up wants the layer as steep as itself
+// (clamped to the free angles of the print head, tangents tan_x and tan_y), weighted by its area and by how
+// horizontal it is (the stairs of a layer show the most on flat slopes). Faces below z_flat are left alone.
+std::vector<SlopeTarget> surface_slope_targets(const indexed_triangle_set &mesh, double tan_x, double tan_y, double z_flat);
+
 struct OverhangParams
 {
     // Steepest overhang that prints well on flat layers, degrees from the vertical.
@@ -223,6 +318,15 @@ struct OverhangParams
 
 // Overhang field of a mesh (object coordinates, real space), empty if no overhang needs it.
 std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle_set &mesh, const OverhangParams &params);
+
+// Radial profile of the conical layers for a mesh (object coordinates, real space) around center: at the radius of each
+// overhang the layers slope as much as it needs to print 5° below the threshold once the part is sheared for the
+// slicing (descending outwards under the overhangs that face outwards, rising under those that face inwards), within the
+// free angle of the head (2° below the threshold is accepted where the head does not allow more); between them and
+// towards the center the slope changes gradually (over a quarter of the radius of the part, at least 5 mm) and it is
+// flat at the center. Empty if no overhang needs it.
+std::shared_ptr<const RadialProfile> build_radial_profile(const indexed_triangle_set &mesh, const Vec2d &center,
+                                                          const OverhangParams &params);
 // The model parts of an object transformed to object coordinates (the mesh the non-planar layers are built from).
 indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo);
 
@@ -337,9 +441,13 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
 
 // Deformation for a print object, from the print configuration (fitted to the print head if nonplanar_fit_head).
 // object_bbox: bounding box of the object in object (centered) coordinates. mesh: the object in the same coordinates,
-// needed by the overhangs mode (without it the layers stay flat).
+// needed by the overhangs mode (without it the layers stay flat). stress: the layers computed by the structural
+// analysis for the object, needed by the stresses mode (without it, or if the part changed since, the layers stay
+// flat).
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
-                             const indexed_triangle_set *mesh = nullptr);
+                             const indexed_triangle_set *mesh = nullptr, const EngineeringLayerField *stress = nullptr);
+// Whether the layers computed by the structural analysis still fit the part (same size of its bounding box).
+bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox);
 // Mesh subdivision length suited to the configured field.
 double mesh_max_edge(const PrintConfig &config);
 GCodeFilterParams make_filter_params(const PrintConfig &config);

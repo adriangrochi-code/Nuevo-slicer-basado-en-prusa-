@@ -70,6 +70,34 @@ struct EngineeringLimit
     template<class Archive> void serialize(Archive &ar) { ar(name, faces, max_displacement, max_displacement_percent); }
 };
 
+// Shape of curved layers that follow the stresses of the structural analysis (non-planar mode "stress"): the layers
+// are the surfaces z = s + offset(x, y, z), with the offset given at the nodes of a grid. The grid is relative to the
+// minimum corner of the bounding box of the printable parts as placed on the bed, so that it does not depend on where
+// the object is on the bed.
+struct EngineeringLayerField
+{
+    // Node (0, 0, 0) relative to the minimum corner of the part and the distance between the nodes [mm].
+    Vec3d              origin { Vec3d::Zero() };
+    double             cell { 1. };
+    int                nx { 0 }, ny { 0 }, nz { 0 };
+    // Size of the bounding box of the part when the field was computed: the part must not change since.
+    Vec3d              part_size { Vec3d::Zero() };
+    // Offset of the layers at the nodes [mm], x first, then y, then z.
+    std::vector<float> offset;
+    // Safety factors of the analysis with flat layers and with these layers (0 = not computed), for the reports.
+    double             safety_flat { 0. };
+    double             safety_curved { 0. };
+
+    bool empty() const { return offset.empty(); }
+    bool operator==(const EngineeringLayerField &rhs) const {
+        return origin == rhs.origin && cell == rhs.cell && nx == rhs.nx && ny == rhs.ny && nz == rhs.nz &&
+               part_size == rhs.part_size && offset == rhs.offset && safety_flat == rhs.safety_flat &&
+               safety_curved == rhs.safety_curved;
+    }
+    bool operator!=(const EngineeringLayerField &rhs) const { return ! (*this == rhs); }
+    template<class Archive> void serialize(Archive &ar) { ar(origin, cell, nx, ny, nz, part_size, offset, safety_flat, safety_curved); }
+};
+
 // Working conditions of an object: where it is held, the loads, the ambient temperature and the material.
 struct EngineeringSetup
 {
@@ -80,14 +108,16 @@ struct EngineeringSetup
     std::vector<EngineeringRegion> fixtures;
     std::vector<EngineeringLoad>   loads;
     std::vector<EngineeringLimit>  limits;
+    // Curved layers computed from the stresses (empty = none).
+    EngineeringLayerField          layer_field;
 
-    bool empty() const { return fixtures.empty() && loads.empty() && limits.empty() && material.empty() && temperature == 23. && safety_factor == 2.; }
+    bool empty() const { return fixtures.empty() && loads.empty() && limits.empty() && material.empty() && temperature == 23. && safety_factor == 2. && layer_field.empty(); }
     bool operator==(const EngineeringSetup &rhs) const {
         return material == rhs.material && temperature == rhs.temperature && safety_factor == rhs.safety_factor &&
-               fixtures == rhs.fixtures && loads == rhs.loads && limits == rhs.limits;
+               fixtures == rhs.fixtures && loads == rhs.loads && limits == rhs.limits && layer_field == rhs.layer_field;
     }
     bool operator!=(const EngineeringSetup &rhs) const { return ! (*this == rhs); }
-    template<class Archive> void serialize(Archive &ar) { ar(material, temperature, safety_factor, fixtures, loads, limits); }
+    template<class Archive> void serialize(Archive &ar) { ar(material, temperature, safety_factor, fixtures, loads, limits, layer_field); }
 };
 
 } // namespace Slic3r

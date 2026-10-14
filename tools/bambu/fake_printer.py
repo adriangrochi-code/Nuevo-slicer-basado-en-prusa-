@@ -6,7 +6,10 @@
 - Implicit FTPS (same credentials): stores uploads in <dir>/sdcard.
 - A test CA (<dir>/ca.pem) signs the server certificate, whose common name is the serial number, as on the printers.
 
-Python standard library and the openssl command only. Usage:
+- Like the printers, the FTPS server requires the data connection to resume the TLS session of the control connection
+  (vsftpd require_ssl_reuse) and answers PASV with the address 0.0.0.0.
+
+Python standard library and the openssl command only (OPENSSL=<path> if it is not in PATH). Usage:
     python3 tools/bambu/fake_printer.py --dir /tmp/fake [--mqtt-port 18883] [--ftps-port 18990]
 """
 import argparse
@@ -29,14 +32,15 @@ def make_certificates(d):
     if os.path.exists(crt):
         return crt, key
     run = lambda *a: subprocess.run(a, check=True, capture_output=True)
-    run("openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", ca_key, "-out", ca, "-days", "3650",
+    openssl = os.environ.get("OPENSSL", "openssl")
+    run(openssl, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", ca_key, "-out", ca, "-days", "3650",
         "-subj", "/C=CN/O=Fake BBL/CN=Fake BBL CA", "-addext", "basicConstraints=critical,CA:TRUE",
         "-addext", "keyUsage=critical,keyCertSign,cRLSign")
-    run("openssl", "req", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", csr, "-subj", "/CN=" + SERIAL)
+    run(openssl, "req", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", csr, "-subj", "/CN=" + SERIAL)
     ext = os.path.join(d, "server.ext")
     with open(ext, "w") as f:
         f.write("basicConstraints=CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n")
-    run("openssl", "x509", "-req", "-in", csr, "-CA", ca, "-CAkey", ca_key, "-CAcreateserial", "-out", crt,
+    run(openssl, "x509", "-req", "-in", csr, "-CA", ca, "-CAkey", ca_key, "-CAcreateserial", "-out", crt,
         "-days", "3650", "-extfile", ext)
     return crt, key
 
@@ -171,11 +175,22 @@ class FtpsHandler(socketserver.StreamRequestHandler):
                     passive.bind(("127.0.0.1", 0))
                     passive.listen(1)
                     port = passive.getsockname()[1]
-                    self.reply(f"227 Entering Passive Mode (127,0,0,1,{port // 256},{port % 256})")
+                    # The printers answer with 0.0.0.0 instead of their address; clients must use the address of the
+                    # control connection.
+                    self.reply(f"227 Entering Passive Mode (0,0,0,0,{port // 256},{port % 256})")
                 elif cmd == "STOR" and passive is not None:
                     self.reply("150 Opening data connection")
                     conn, _ = passive.accept()
                     data_conn = server.tls.wrap_socket(conn, server_side=True)
+                    # vsftpd on the printers requires the data connection to resume the TLS session of the control
+                    # connection (require_ssl_reuse): "522 SSL connection failed: session reuse required".
+                    if server.require_reuse and not data_conn.session_reused:
+                        data_conn.close()
+                        passive.close()
+                        passive = None
+                        self.reply("522 SSL connection failed: session reuse required")
+                        print("FTPS data connection without TLS session reuse: 522", flush=True)
+                        continue
                     path = os.path.join(sdcard, os.path.basename(arg))
                     with open(path, "wb") as f:
                         while True:
@@ -204,9 +219,9 @@ class TlsServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, address, handler, tls, data_dir):
+    def __init__(self, address, handler, tls, data_dir, require_reuse=True):
         super().__init__(address, handler)
-        self.tls, self.data_dir = tls, data_dir
+        self.tls, self.data_dir, self.require_reuse = tls, data_dir, require_reuse
 
     def get_request(self):
         sock, addr = super().get_request()
@@ -218,11 +233,13 @@ def main():
     parser.add_argument("--dir", required=True)
     parser.add_argument("--mqtt-port", type=int, default=18883)
     parser.add_argument("--ftps-port", type=int, default=18990)
+    parser.add_argument("--no-session-reuse", action="store_true",
+                        help="accept FTPS data connections that do not resume the TLS session")
     args = parser.parse_args()
     os.makedirs(args.dir, exist_ok=True)
     tls = tls_context(*make_certificates(args.dir))
     servers = [TlsServer(("127.0.0.1", args.mqtt_port), MqttHandler, tls, args.dir),
-               TlsServer(("127.0.0.1", args.ftps_port), FtpsHandler, tls, args.dir)]
+               TlsServer(("127.0.0.1", args.ftps_port), FtpsHandler, tls, args.dir, not args.no_session_reuse)]
     for s in servers[1:]:
         threading.Thread(target=s.serve_forever, daemon=True).start()
     print(f"fake printer {SERIAL}: MQTT {args.mqtt_port}, FTPS {args.ftps_port}, access code {ACCESS_CODE}", flush=True)

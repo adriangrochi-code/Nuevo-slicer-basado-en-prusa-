@@ -12,6 +12,106 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Ingeniería con impresoras de resina**: el análisis estructural de la pieza maciza o ahuecada y la búsqueda del
+  espesor de pared y el relleno interior más livianos que aguantan las cargas. Nuevo **relleno interior** de las piezas
+  ahuecadas (Print Settings > Hollowing): barras a 45° y verticales que se imprimen sin soportes. Materiales de resina
+  de las hojas de datos de Elegoo y Formlabs.
+- **Impresoras de cinta**: perfiles de la BLACKBELT 3D (y varioDrive, 15° a 45°, de BlackBelt Cura), la Creality CR-30
+  (de Creality Print) y la IdeaFormer IR3 V2 (de VertexSlice): 42 impresoras. Nueva opción «La cinta es el eje Z»
+  (activada: así son estas tres); la cinta arranca en 0 en la primera capa.
+- **Más impresoras de los laminadores de los fabricantes**: 11 modelos nuevos de Creality Print (K3, Z2, K1C y K1 Max
+  2025, serie GS, Sonic, Ender-3 V3 Mega) y uno de Elegoo Slicer.
+- **Dividir para que entre en la impresora** (clic derecho en el objeto, o el aviso que aparece al cargar un objeto
+  más grande que la impresora): corta el objeto en las piezas justas para el volumen de impresión, donde su sección
+  es más chica, y pone encastres en cada corte (pernos aparte o espigas), más finos donde las paredes no dan para el
+  diámetro elegido. Las piezas y los pernos se reparten en las camas que hagan falta.
+- **Corrección: subida a impresoras Bambu Lab** con las bibliotecas del instalador (curl 8.21): la subida FTPS ahora
+  verifica el nombre de la impresora, sin lo cual la impresora la rechazaba («session reuse required»).
+- **Análisis estructural más rápido (multigrid)**: el solver necesita 15–30 iteraciones en vez de cientos o miles;
+  una pieza de 230 000 vóxeles pasa de 25 s a 3 s, con el mismo resultado.
+- **Asistente de configuración en una sola página**: se abre directo en la lista de impresoras, con todas las marcas
+  juntas (resina y filamento de una misma marca, todos los paquetes de Prusa bajo «Prusa») y el buscador; los
+  filamentos y resinas se instalan solos y no se descargan perfiles de Prusa (los de Tisma ya vienen incluidos).
+  «Mi impresora no está en la lista» abre las páginas de la impresora personalizada.
+- **Corrección: cierre al cambiar de impresora**. Elegir en la ventana principal una impresora convertida de
+  OrcaSlicer con «@» en el nombre (por ejemplo la Prusa CORE One de Orca) seleccionaba otra y, si era de resina, el
+  programa se cerraba; también hacía que las impresoras agregadas «no se abrieran».
+- **Ingeniería: tabla de materiales editable** (Material > «Editar la tabla de materiales…»): valores propios para
+  los materiales de Tisma (los de tu filamento o tus probetas) y materiales nuevos, guardados en la carpeta de datos
+  y marcados con `*`. Las flechas de las cargas que tiran de una cara ya no quedan escondidas dentro de la pieza.
+- **Bambu Lab por LAN**: la subida por FTPS reanuda la sesión TLS como exige el servidor de las impresoras (con
+  TLS 1.3 podía fallar con «session reuse required»); la impresora simulada ahora exige lo mismo y el test corre en el
+  CI de Linux y de Windows, donde prueba el TLS de Windows (Schannel) y la comprobación de revocación.
+- **Laminado más rápido**: la comprobación de perímetros extra ya no calcula dos offsets por isla cuando una cota
+  muestra que la capa de arriba no puede necesitarlos; la etapa de perímetros del Benchy baja de 0,58 a 0,39 s con el
+  mismo G-code byte a byte (`docs/PERFORMANCE.md`).
+- **Marca**: los textos de la interfaz que todavía decían «PrusaSlicer» (preferencias, errores, «no volver a
+  preguntar», actualizaciones, ayudas de los ajustes) dicen «Tisma Slicer» en inglés y en los 22 idiomas; también las
+  traducciones que ponían «PrusaSlicer» donde el inglés decía Slic3r. Se regeneraron los catálogos `.mo`, así que las
+  traducciones al español agregadas en esta versión ya se ven en el programa.
+- **Análisis estructural: relleno y paredes como se laminan**: las paredes ahora tienen el espesor del material que
+  ponen los perímetros (eran un 17 % más gruesas) y el relleno el material que deposita cada patrón (el panal pone un
+  tercio más de lo pedido, el panal 3D un 11 % menos). La masa del análisis coincide con la laminada dentro de ±3 % en
+  los patrones regulares (`docs/FEA.md`).
+- **Análisis estructural comparado con CalculiX**: barra a tracción, voladizos a lo largo de X y de Z y una escuadra
+  en L coinciden con CalculiX dentro del 1,3 % en desplazamientos y tensiones; queda como test automático
+  (`docs/FEA.md`).
+- **Probetas de resistencia entre capas** (Calibración > «Non-planar: layer strength test pieces»): tres barras
+  macizas con capas en onda para romper colgando peso y comparar con las mismas impresas planas; el panel explica cómo
+  calcular la tensión de rotura.
+- **Cono según la pieza**: el modo no planar Cónico ya no usa un ángulo fijo; en cada radio las capas se inclinan lo
+  que piden los voladizos de la pieza (hacia abajo bajo los que miran hacia afuera, hacia arriba bajo los que miran
+  hacia adentro), planas en el centro y donde nada lo pide, dentro del ángulo libre del cabezal. En los tests, un hongo
+  con ala a 52° pasa de 705 mm de filamento de soporte a ninguno. Idea del laminador radial de Joshua Bird,
+  reimplementada sin su código (`docs/NONPLANAR_ANALYSIS.md`).
+- **Piel + núcleo en un clic** (Ingeniería > Optimizar > «Skin + core»): la piel con capas no planares automáticas y
+  el núcleo con el relleno mínimo por zonas y nervios según las tensiones, calculado con esas capas y aplicado al
+  terminar. Sin caras fijas y cargas aplica solo la piel.
+- **Relleno nervado según las tensiones**: al aplicar el relleno mínimo de Ingeniería, donde la pieza trabaja en una
+  dirección (traccionada o a flexión) el relleno se pone en líneas paralelas a esa dirección en todas las capas, como
+  nervios, con modificadores «Infill ribs N°». El análisis los cuenta: el relleno alineado es más rígido y
+  resistente a lo largo de sus líneas y mucho más débil a lo ancho, y el relleno mínimo solo usa los nervios si queda
+  más liviano (en una probeta de tracción, 27 % en vez de 31 %). También se analiza bien el patrón «Aligned
+  Rectilinear» del perfil (`docs/FEA.md`).
+- **No planar «Automático» (acabado y menos soportes)**: un solo modo que inclina las capas bajo los voladizos y las
+  pone paralelas a las caras superiores, dentro de lo que permite el cabezal. En las pruebas: un hongo con ala a 48°
+  pasa de 683 mm de filamento de soporte a ninguno, y la cara superior inclinada de 0,127 a 0,058 mm de dispersión
+  (`docs/NONPLANAR_ANALYSIS.md`).
+- **Proyectos de Bambu Studio y OrcaSlicer**: se abren como proyecto, con cada objeto y sus partes (antes cada parte
+  salía como objeto suelto), nombres, extrusores, modificadores con sus ajustes, pintura de colores, placas en las camas
+  de Tisma y los ajustes de impresión y filamento traducidos; la impresora sigue siendo la elegida en Tisma
+  (`docs/BAMBU_PROJECTS.md`).
+- **Abrir un 3MF**: el diálogo explica cada opción y ya no dice «PrusaSlicer».
+- **No planar con dos variables**: la página «No planar» de la configuración de impresión solo elige el tipo de capas.
+  Cuánto se curvan sale de las dos medidas del cabezal (ángulo libre y holgura boquilla-cabezal, en la impresora): las
+  ondas suben hasta la holgura con la pendiente del ángulo, y ondas y conos se suavizan solos si el cabezal fuera a
+  chocar con lo ya impreso. Los perfiles con amplitud o longitud de onda puestas a mano pasan a ajustarse al cabezal.
+- **Arc overhangs**: velocidad propia de los arcos (`overhang_arcs_speed`, 5 mm/s por defecto, la que usa el autor de
+  Arc Overhang) y distancia máxima (`overhang_arcs_max_distance`, 0 = sin límite; más allá el voladizo se imprime como
+  siempre). Dos calibraciones nuevas: «Arc overhang speed» y «Arc overhang maximum distance», con sus resultados en
+  «Aplicar un resultado de calibración». La opción sigue apagada por defecto (experimental) y está en los ajustes
+  rápidos.
+- **Anti-aliasing en Z con capas no planares**: se pueden usar juntos (menos soporte con el modo voladizos y caras
+  superiores con menos escalones). Dispersión de la cara superior: 0,17 → 0,10 mm en una cuña con capas en ondas
+  (`docs/Z_ANTIALIASING.md`).
+- **No planar «Superficie» (acabado)**: las capas de arriba se ponen paralelas a las caras superiores de la pieza, tanto
+  como deja el cabezal, para que una cara inclinada o curva salga como una capa continua y no en escalones. En un bloque
+  de 24 mm con la cara inclinada 5,7° la dispersión de la cara pasa de 0,127 mm (plano) a 0,058 mm
+  (`docs/NONPLANAR_ANALYSIS.md`).
+- **Asistente de configuración**: con impresoras convertidas de Cura u OrcaSlicer ya se puede terminar. Antes volvía
+  a pedir los filamentos por defecto sin fin y solo dejaba avanzar con una impresora personalizada. Los perfiles nombran
+  los filamentos de la biblioteca como se cargan (« @Template»).
+- **Capas curvas por tensiones**: Ingeniería calcula capas no planares que se inclinan hacia donde tiran de la pieza,
+  tanto como deja el cabezal, y las compara con capas planas (factor de seguridad). Con «Usar las capas curvas», el
+  modo no planar «Tensiones» las lamina (`docs/NONPLANAR_ANALYSIS.md`).
+- **Relleno entrelazado (no planar)**: el relleno disperso ondula en Z con la misma huevera en cada capa, para que las
+  capas encastren en lugar de apoyarse en planos; paredes y superficies quedan planas (`docs/NONPLANAR_ANALYSIS.md`).
+- **Orientación automática para FDM y resina**: en el gizmo de rotación, «Menos material de soporte» (FDM: apoya la
+  pieza donde los voladizos piden menos soporte y con buen contacto con la cama) y «Menor fuerza de despegue» (resina:
+  sin ventosas y con la capa más grande lo más chica posible) (`docs/ORIENTATION.md`).
+- **Resina: detector de ventosas**: al laminar avisa de los huecos cerrados abajo y abiertos hacia el film que el vacío
+  puede arrancar, con la altura, el área y cómo arreglarlo (`docs/RESINA.md`).
+- **Avisos de laminado de cada pieza**: ya no desaparecen al terminar de laminar (afectaba sobre todo a resina).
 - **296 impresoras nuevas tomadas de UltiMaker Cura** (las que Tisma no tenía), con procesos genéricos y filamentos de
   1,75 / 2,85 mm; todas laminan (`docs/PRINTER_PROFILES.md`).
 - **Anti-aliasing en Z**: las caras superiores inclinadas siguen al modelo en lugar de salir en escalones; el relleno

@@ -189,7 +189,7 @@ Decisiones y límites:
 | 5b. Configuración de ingeniería por objeto (`libslic3r/Engineering.hpp`): material, temperatura, factor de seguridad, apoyos por caras, cargas puntuales o por caras con límite de deformación (mm o %); guardada en el 3MF (`Metadata/Tisma_engineering.xml`) y en deshacer/rehacer; las caras CAD siguen a «Volver a teselar»; `build_analysis_input` pasa del objeto al análisis en coordenadas de impresión | Hecho, con pruebas |
 | 5c. GUI (`GLGizmoEngineering`): el botón Ingeniería abre la vista 3D con el panel de análisis del objeto; material (por defecto el del filamento), temperatura y factor de seguridad; clic en caras (cara CAD completa o región plana) para apoyos y cargas, o en puntos para cargas con radio (3 mm por defecto); fuerza en N y límite de deformación; cálculo en segundo plano cancelable; mapa de colores sobre los vóxeles (seguridad, tensión, desplazamiento) con escala; veredicto y materiales alternativos; deshacer/rehacer | Hecho y probado en la GUI (bloque STEP: aguanta a 23 °C; a 130 °C «fuera de temperatura» con PEEK, PEKK, PEI, PSU y PA-CF propuestos; mapa de desplazamientos; Ctrl+Z) |
 | Comparación con CalculiX | Pendiente |
-| Pendiente de la 5c: el panel es alto en pantallas bajas; flechas de cargas por cara en el centroide; tabla de materiales editable | Pendiente |
+| Pendiente de la 5c: el panel es alto en pantallas bajas; flechas de cargas por cara en el centroide; tabla de materiales editable | Hecho (paso 14 de la sección 9) |
 
 Decisiones: solver propio sobre vóxeles con Eigen (sin dependencias nuevas); valores de material de fichas
 técnicas y bibliografía, aproximados y editables más adelante; la pieza se considera maciza hasta la Fase 6.
@@ -236,7 +236,42 @@ Notas para las fases 10 y 11 (para decidir más adelante, no implementadas):
 - Pendiente de decidir: precio y cuotas, cuentas y pago, almacenamiento y privacidad de los modelos, envío a la
   impresora (PrusaConnect, OctoPrint, Bambu…), plataforma de la app.
 
-## 9. Decisiones pendientes (para el usuario)
+## 9. Pendiente, numerado (13-10-2026)
+
+Se avanza en este orden, de a un paso. «Físico» = necesita imprimir y medir; «Decisión» = necesita la autorización o
+los datos del usuario.
+
+| # | Paso | Estado |
+|---|---|---|
+| 1 | Probetas no planares en el menú Calibración: hongo (soportes) y bloque inclinado (acabado), en modo Automático | Hecho (Calibración > «Non-planar: automatic mode test pieces»); falta imprimirlas |
+| 2 | Relleno nervado que sigue las tensiones del FEA (el «núcleo» de piel + núcleo) | Hecho (Ingeniería > Relleno mínimo > «Infill ribs along the stresses»), y 2b: el FEA modela el relleno alineado (ortótropo) y el relleno mínimo cuenta los nervios; falta calibrar los factores con probetas |
+| 3 | Preset de un clic «Piel + núcleo» | Hecho (Ingeniería > Optimizar > «Skin + core»: no planar Automático + relleno mínimo por zonas con nervios) |
+| 4 | Cono no planar con ángulo variable según el radio (idea del slicer radial, reimplementada) | Hecho: modo Cónico con la pendiente de cada radio sacada de los voladizos de la pieza (`docs/NONPLANAR_ANALYSIS.md`) |
+| 5 | Calibraciones no planares restantes | Hecho: probetas de resistencia entre capas (Calibración > «Non-planar: layer strength test pieces»); falta imprimirlas |
+| 6 | Comparar el FEA con CalculiX | Hecho: 4 casos (tracción, voladizos en X y en Z, escuadra en L) dentro del 1,3 %; test «Agrees with CalculiX» (`docs/FEA.md`) |
+| 7 | Validar el relleno con las trayectorias laminadas reales | Hecho: paredes con el espaciado real de los perímetros y material depositado por patrón; volumen dentro de ±3,2 % en los patrones regulares (`docs/FEA.md`) |
+| 8 | Exponentes del relleno y del lattice con probetas | Físico |
+| 9 | Arc overhangs e impresoras de cinta en una impresora real | Físico |
+| 10 | Cierre al agregar varias impresoras de resina | Hecho: reproducido (cambiar de una impresora de resina a una convertida de Orca con «@» en el nombre seleccionaba otra y se cerraba); corregido, y el asistente queda en una sola lista de impresoras con los perfiles de Tisma, sin descargas (`docs/PRINTER_PROFILES.md`). Falta confirmarlo en Windows |
+| 11 | Unos 80 textos visibles que todavía dicen «PrusaSlicer» | Hecho: 81 textos en inglés y sus traducciones en los 22 idiomas; quedan los créditos y las versiones de PrusaSlicer (`docs/DEPENDENCIES_AND_LICENSES.md`) |
+| 12 | Fase 8: optimizaciones del laminado y bugs heredados | Hecho: perímetros extra sin offsets innecesarios (etapa de perímetros −33 % en el Benchy, G-code idéntico); upstream sin correcciones nuevas desde el último port (`docs/PERFORMANCE.md`). Quedan LTO en Windows y Clipper2 (no autorizado) |
+| 13 | Bambu LAN: revocación TLS en Windows | Hecho: sin comprobación de revocación (Schannel) y subida FTPS con TLS 1.2 para reanudar la sesión como exige vsftpd; test contra la impresora simulada en el CI de Linux y de Windows (`docs/BAMBU_LAN.md`). Falta una impresora real |
+| 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Hecho: el panel ya tenía alto máximo con barra de desplazamiento; las flechas de tracción quedaban dentro de la pieza (ahora salen de la cara); tabla de materiales editable con valores propios guardados en `fea_materials.json` (`docs/FEA.md`) |
+| 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
+| 16 | Render: oclusión ambiental y PBR | Decisión |
+| 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución (`docs/FEA.md`). GPU pendiente (dependencia nueva) |
+| 18 | Fragmentación de piezas con encastres | Hecho: «Dividir para que entre en la impresora» corta en las piezas justas por la sección más chica, con pernos o espigas de la herramienta de corte (más finos en paredes finas), desde el menú del objeto o el aviso de objeto demasiado grande (`docs/FRAGMENT.md`). Falta imprimir y pegar una pieza real; colas de milano no |
+| 19 | Trackhead | Decisión (referencias) |
+| 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |
+| 21 | Fase 11: app de teléfono y FEA en la nube | Decisión |
+| 22 | Versión pública (con las obligaciones de la AGPL) | Pendiente |
+
+Hecho desde la última revisión de este documento: capas curvas guiadas por el FEA (9c) y relleno entrelazado (9d);
+capas que siguen las caras superiores; modo no planar Automático (acabado y menos soportes); no planar con solo dos
+medidas del cabezal; Z anti-aliasing con no planar; arc overhangs con velocidad, distancia máxima y calibraciones;
+orientación automática FFF y SLA; proyectos de Bambu Studio / OrcaSlicer; Ingeniería con impresoras de resina (paredes y relleno interior de la pieza ahuecada).
+
+## 10. Decisiones pendientes (para el usuario)
 
 | Decisión | Propuesta de partida (no decidida) |
 |---|---|

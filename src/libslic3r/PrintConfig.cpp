@@ -278,7 +278,10 @@ static t_config_enum_values s_keys_map_NonPlanarMode {
     { "disabled", int(NonPlanarMode::Disabled) },
     { "wave",     int(NonPlanarMode::Wave) },
     { "conical",  int(NonPlanarMode::Conical) },
-    { "overhangs", int(NonPlanarMode::Overhangs) }
+    { "overhangs", int(NonPlanarMode::Overhangs) },
+    { "stress",    int(NonPlanarMode::Stress) },
+    { "surface",   int(NonPlanarMode::Surface) },
+    { "automatic", int(NonPlanarMode::Automatic) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NonPlanarMode)
 
@@ -297,6 +300,8 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "first_layer_offset", int(CalibMode::FirstLayerOffset) },
     { "flow_rate",        int(CalibMode::FlowRate) },
     { "coasting",         int(CalibMode::Coasting) },
+    { "arc_overhang_speed", int(CalibMode::ArcOverhangSpeed) },
+    { "arc_overhang_distance", int(CalibMode::ArcOverhangDistance) },
     { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
@@ -1120,7 +1125,7 @@ void PrintConfigDef::init_fff_params()
     def = this->add("end_gcode", coString);
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file. "
-                   "Note that you can use placeholder variables for all PrusaSlicer settings.");
+                   "Note that you can use placeholder variables for all Tisma Slicer settings.");
     def->multiline = true;
     def->full_width = true;
     def->height = 12;
@@ -1131,7 +1136,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("End G-code");
     def->tooltip = L("This end procedure is inserted at the end of the output file, before the printer end gcode (and "
                    "before any toolchange from this filament in case of multimaterial printers). "
-                   "Note that you can use placeholder variables for all PrusaSlicer settings. "
+                   "Note that you can use placeholder variables for all Tisma Slicer settings. "
                    "If you have multiple extruders, the gcode is processed in extruder order.");
     def->multiline = true;
     def->full_width = true;
@@ -1238,6 +1243,28 @@ void PrintConfigDef::init_fff_params()
                     "edge, each arc resting on the previous one. Steep overhangs print without support material.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("overhang_arcs_speed", coFloat);
+    def->label = L("Arc overhangs");
+    def->full_label = L("Arc overhangs speed");
+    def->category = L("Speed");
+    def->tooltip = L("Speed of the arcs of the arc overhangs: slow, so that each arc cools down and holds the next one "
+                    "(Calibration > Arc overhang speed). Set zero to use the bridge speed.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comExpert;
+    // The author of Arc Overhang prints the arcs at about 5 mm/s (github.com/stmcculloch/arc-overhang, README).
+    def->set_default_value(new ConfigOptionFloat(5.));
+
+    def = this->add("overhang_arcs_max_distance", coFloat);
+    def->label = L("Arc overhangs maximum distance");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("The arcs grow up to this distance from where the overhang is anchored; farther out the overhang "
+                    "is printed as usual (Calibration > Arc overhang maximum distance). Set zero for no limit.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.));
 
     def = this->add("stagger_perimeters", coBool);
     def->label = L("Staggered perimeters (Experimental)");
@@ -1932,7 +1959,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("G-code flavor");
     def->tooltip = L("Some G/M-code commands, including temperature control and others, are not universal. "
                    "Set this option to your printer's firmware to get a compatible output. "
-                   "The \"No extrusion\" flavor prevents PrusaSlicer from exporting any extrusion value at all.");
+                   "The \"No extrusion\" flavor prevents Tisma Slicer from exporting any extrusion value at all.");
     def->set_enum<GCodeFlavor>({
         { "reprap",         "RepRap/Sprinter" },
         { "reprapfirmware", "RepRapFirmware" },
@@ -2049,7 +2076,7 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Advanced");
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
-                     "PrusaSlicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
+                     "Tisma Slicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
                      "shorter than infill_anchor_max is found, the infill line is connected to a perimeter segment at just one side "
                      "and the length of the perimeter segment taken is limited to this parameter, but no longer than anchor_length_max. "
                      "Set this parameter to zero to disable anchoring perimeters connected to a single infill line.");
@@ -2072,7 +2099,7 @@ void PrintConfigDef::init_fff_params()
     def->category    = def_infill_anchor_min->category;
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
                      "If expressed as percentage (example: 15%) it is calculated over infill extrusion width. "
-                     "PrusaSlicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
+                     "Tisma Slicer tries to connect two close infill lines to a short perimeter segment. If no such perimeter segment "
                      "shorter than this parameter is found, the infill line is connected to a perimeter segment at just one side "
                      "and the length of the perimeter segment taken is limited to infill_anchor, but no longer than this parameter. "
                      "Set this parameter to zero to disable anchoring.");
@@ -2326,7 +2353,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Belt printer");
     def->tooltip = L("The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; "
                      "it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, "
-                     "Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, "
+                     "the belt (it moves between layers) and the gantry. Supports, raft, brim, skirt, wipe tower, "
                      "sequential printing, spiral vase and arc fitting are not available on a belt.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
@@ -2341,14 +2368,23 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(45.));
 
+    def = this->add("belt_axis_z", coBool);
+    def->label = L("The belt is the Z axis");
+    def->full_label = L("Belt printer: the belt is the Z axis");
+    def->tooltip = L("The belt moves with the Z axis of the firmware and the inclined gantry with the Y axis, as in the BlackBelt, "
+                     "Creality CR-30 and IdeaFormer IR3 V2 printers. Off: the belt is the Y axis and the gantry the Z axis.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(true));
+
     // Tisma: geometry of the print head for the collision check of non-planar layers.
     def = this->add("nonplanar_head_clearance_height", coFloat);
     def->label = L("Head clearance height");
     def->full_label = L("Print head clearance height (non-planar)");
     def->tooltip = L("Vertical distance from the nozzle tip to the lowest point of the print head around it (heater "
-                     "block with its sock, part cooling duct, probe). Measure it on your printer. Non-planar layers "
-                     "are refused if the part already printed would rise higher than this within the head clearance "
-                     "radius. 0 disables the check.");
+                     "block with its sock, part cooling duct, probe). Measure it on your printer. With the free angle, it "
+                     "is all the non-planar layers need: the waves rise at most this height from trough to crest, and the "
+                     "layers are made gentler where the part already printed would rise higher than this next to the "
+                     "nozzle. 0 disables the check.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
@@ -2370,8 +2406,8 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Print head free angle along X (non-planar)");
     def->tooltip = L("Steepest slope of the layers rising along X that the print head allows without touching the part: "
                      "the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising "
-                     "along X. The non-planar layers use it for their slope instead of the maximum layer slope of the "
-                     "print settings. 0 = not measured, use the maximum layer slope.");
+                     "along X. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer "
+                     "slope of the print settings (20° by default).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;
@@ -2383,8 +2419,8 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Print head free angle along Y (non-planar)");
     def->tooltip = L("Steepest slope of the layers rising along Y that the print head allows without touching the part: "
                      "the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising "
-                     "along Y. The non-planar layers use it for their slope instead of the maximum layer slope of the "
-                     "print settings. 0 = not measured, use the maximum layer slope.");
+                     "along Y. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer "
+                     "slope of the print settings (20° by default).");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 89;
@@ -2489,7 +2525,7 @@ void PrintConfigDef::init_fff_params()
     def->full_label = L("Maximum junction deviation");
     def->category = L("Machine limits");
     def->tooltip = L("Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\n"
-                     "When enabled, PrusaSlicer uses it for time estimates and G-code Viewer speeds instead of Jerk.");
+                     "When enabled, Tisma Slicer uses it for time estimates and G-code Viewer speeds instead of Jerk.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
@@ -3008,7 +3044,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("travel_lift_before_obstacle", coBools);
     def->label = L("Steeper ramp before obstacles");
-    def->tooltip = L("If enabled, PrusaSlicer detects obstacles along the travel path and makes the slope steeper "
+    def->tooltip = L("If enabled, Tisma Slicer detects obstacles along the travel path and makes the slope steeper "
                      "in case an obstacle might be hit during the initial phase of the travel.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools{false});
@@ -3338,15 +3374,27 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Non-planar");
     def->tooltip = L("Print curved layers instead of flat ones. The object is deformed, sliced as usual and "
                    "the G-code is transformed back, so all perimeters, infill and supports follow the "
-                   "curved layers. Wave: interlocking layers for a more homogeneous strength between layers. "
-                   "Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). "
+                   "curved layers. Automatic (recommended): the layers tilt under the overhangs that would need supports "
+                   "and follow the top surfaces, both as far as the print head allows. Wave: interlocking layers for a more homogeneous strength between layers. "
+                   "Conical: cone shaped layers around the center of the part whose slope at each radius is the one the "
+                   "overhangs of the part at that radius need (round parts that flare outwards or inwards), flat where "
+                   "nothing needs it. "
                    "Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, "
-                   "as much as the print head allows, so that fewer supports are needed.");
+                   "as much as the print head allows, so that fewer supports are needed. "
+                   "Stresses: the layers tilt towards where the part is pulled, as computed in Engineering "
+                   "(Curved layers for strength), so that the pull runs more along the layers. "
+                   "Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head "
+                   "allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with "
+                   "Z anti-aliasing). How curved the layers are comes from the free angle and the clearance height of the "
+                   "print head (Printer Settings > General > Print head).");
     def->set_enum<NonPlanarMode>({
         { "disabled", L("Disabled") },
+        { "automatic", L("Automatic (finish and fewer supports)") },
         { "wave",     L("Wave") },
         { "conical",  L("Conical") },
-        { "overhangs", L("Overhangs (fewer supports)") }
+        { "overhangs", L("Overhangs (fewer supports)") },
+        { "stress",   L("Stresses (stronger, from Engineering)") },
+        { "surface",  L("Top surfaces (finish)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Disabled));
@@ -3402,8 +3450,9 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_cone_angle", coFloat);
     def->label = L("Cone angle");
     def->category = L("Non-planar");
-    def->tooltip = L("Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", "
-                   "only its sign is used: the slope is the free angle of the print head.");
+    def->tooltip = L("Conical layers without \"Fit to the print head\": slope of the cone, positive values rise outwards. "
+                   "With it (the default) the slope at each radius comes from the overhangs of the part and this value is "
+                   "not used.");
     def->sidetext = L("°");
     def->min = -60;
     def->max = 60;
@@ -3442,8 +3491,8 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Make the layers as curved as the print head allows, instead of using the wave amplitude and the "
                    "cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer "
                    "Settings > General > Print head), the waves rise at most the head clearance height from trough to "
-                   "crest, and the layer thickness stays within the allowed range. Conical layers keep the direction "
-                   "of the cone angle set here (rising outwards or inwards).");
+                   "crest, and the layer thickness stays within the allowed range. Conical layers take their slope at "
+                   "each radius from the overhangs of the part.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(true));
 
@@ -3452,10 +3501,41 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top "
                    "infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness "
-                   "left, so that the top follows the model. Needs absolute XYZ and no arc fitting; not with non-planar "
+                   "left, so that the top follows the model. With non-planar layers it follows the top within the curved "
+                   "layers. Needs absolute XYZ and no arc fitting; not with spiral vase or belt printers.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("interlock_infill", coBool);
+    def->label = L("Interlocking infill (non-planar)");
+    def->category = L("Infill");
+    def->tooltip = L("Print the sparse infill on waves in Z (an egg-crate surface repeated in every layer), so that the "
+                   "layers of the infill nest into each other instead of meeting on flat planes, where printed parts "
+                   "usually break. The perimeters, the solid infill and the top and bottom surfaces stay flat: the waves "
+                   "fade out next to them, and the flow follows the thickness between the layers. Experimental: check "
+                   "the strength with your own test pieces. Needs absolute XYZ and no arc fitting; not with non-planar "
                    "layers, spiral vase or belt printers.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("interlock_infill_amplitude", coPercent);
+    def->label = L("Interlocking infill: amplitude");
+    def->category = L("Infill");
+    def->tooltip = L("How far the infill goes up and down from the layer, in percent of the layer height.");
+    def->sidetext = L("%");
+    def->min = 5;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionPercent(50));
+
+    def = this->add("interlock_infill_wavelength", coFloat);
+    def->label = L("Interlocking infill: wavelength");
+    def->category = L("Infill");
+    def->tooltip = L("Distance between two crests of the waves, along X and along Y.");
+    def->sidetext = L("mm");
+    def->min = 2;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(10));
 
     def = this->add("zaa_min_thickness", coPercent);
     def->label = L("Z anti-aliasing: thinnest extrusion");
@@ -3504,7 +3584,7 @@ void PrintConfigDef::init_fff_params()
     def = this->add("nonplanar_flow_policy", coEnum);
     def->label = L("Flow");
     def->category = L("Non-planar");
-    def->tooltip = L("Preserve: keep the volumetric flow PrusaSlicer planned, adjusting the speed to the curved "
+    def->tooltip = L("Preserve: keep the volumetric flow Tisma Slicer planned, adjusting the speed to the curved "
                    "path and layer thickness. Uniform: print everything except external perimeters, overhangs, "
                    "bridges and gap fill at the same volumetric flow, for an even bonding between lines. "
                    "Off: keep the speeds unchanged.");
@@ -3539,16 +3619,16 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("autoemit_temperature_commands", coBool);
     def->label = L("Emit temperature commands automatically");
-    def->tooltip = L("When enabled, PrusaSlicer will check whether your custom Start G-Code contains G-codes to set "
+    def->tooltip = L("When enabled, Tisma Slicer will check whether your custom Start G-Code contains G-codes to set "
                      "extruder, bed or chamber temperature (M104, M109, M140, M190, M141 and M191). "
                      "If so, the temperatures will not be emitted automatically so you're free to customize "
                      "the order of heating commands and other custom actions. Note that you can use "
-                     "placeholder variables for all PrusaSlicer settings, so you can put "
+                     "placeholder variables for all Tisma Slicer settings, so you can put "
                      "a \"M109 S[first_layer_temperature]\" command wherever you want.\n"
                      "If your custom Start G-Code does NOT contain these G-codes, "
-                     "PrusaSlicer will execute the Start G-Code after heated chamber was set to its temperature, "
+                     "Tisma Slicer will execute the Start G-Code after heated chamber was set to its temperature, "
                      "bed reached its target temperature and extruder just started heating.\n\n"
-                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed or chamber, "
+                     "When disabled, Tisma Slicer will NOT emit commands to heat up extruder, bed or chamber, "
                      "leaving all to Custom Start G-Code.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
@@ -3585,11 +3665,11 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Start G-code");
     def->tooltip = L("This start procedure is inserted at the beginning, after any printer start gcode (and "
                    "after any toolchange to this filament in case of multi-material printers). "
-                   "This is used to override settings for a specific filament. If PrusaSlicer detects "
+                   "This is used to override settings for a specific filament. If Tisma Slicer detects "
                    "M104, M109, M140 or M190 in your custom codes, such commands will "
                    "not be prepended automatically so you're free to customize the order "
                    "of heating commands and other custom actions. Note that you can use placeholder variables "
-                   "for all PrusaSlicer settings, so you can put a \"M109 S[first_layer_temperature]\" command "
+                   "for all Tisma Slicer settings, so you can put a \"M109 S[first_layer_temperature]\" command "
                    "wherever you want. If you have multiple extruders, the gcode is processed "
                    "in extruder order.");
     def->multiline = true;
@@ -4075,9 +4155,9 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("toolchange_gcode", coString);
     def->label = L("Tool change G-code");
-    def->tooltip = L("This custom code is inserted before every toolchange. Placeholder variables for all PrusaSlicer settings "
+    def->tooltip = L("This custom code is inserted before every toolchange. Placeholder variables for all Tisma Slicer settings "
                      "as well as {toolchange_z}, {previous_extruder} and {next_extruder} can be used. When a tool-changing command "
-                     "which changes to the correct extruder is included (such as T{next_extruder}), PrusaSlicer will emit no other such command. "
+                     "which changes to the correct extruder is included (such as T{next_extruder}), Tisma Slicer will emit no other such command. "
                      "It is therefore possible to script custom behaviour both before and after the toolchange.");
     def->multiline = true;
     def->full_width = true;
@@ -4251,6 +4331,8 @@ void PrintConfigDef::init_fff_params()
         { "first_layer_offset", L("First layer Z offset") },
         { "flow_rate",        L("Flow rate") },
         { "coasting",         L("Coasting distance") },
+        { "arc_overhang_speed", L("Arc overhang speed") },
+        { "arc_overhang_distance", L("Arc overhang maximum distance") },
         { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
@@ -5297,6 +5379,29 @@ void PrintConfigDef::init_sla_params()
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(3.));
     
+    // Tisma: struts inside the cavity of a hollowed part (src/libslic3r/SLA/InteriorInfill.hpp).
+    def = this->add("hollowing_infill_density", coPercent);
+    def->label = L("Interior infill");
+    def->category = L("Hollowing");
+    def->tooltip  = L("Struts inside the cavity of a hollowed model, vertical and at 45 degrees so that they need no supports: "
+                      "the part of the cavity they fill. 0 = empty cavity.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 60;
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionPercent(0));
+
+    def = this->add("hollowing_infill_cell", coFloat);
+    def->label = L("Interior infill cell");
+    def->category = L("Hollowing");
+    def->tooltip  = L("Distance between the struts of the interior infill. The struts are thinner for a smaller cell "
+                      "at the same infill.");
+    def->sidetext = L("mm");
+    def->min = 3;
+    def->max = 50;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(8.));
+
     def = this->add("hollowing_quality", coFloat);
     def->label = L("Accuracy");
     def->category = L("Hollowing");
@@ -6603,8 +6708,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 
     def = this->add("config_compatibility", coEnum);
     def->label = L("Forward-compatibility rule when loading configurations from config files and project files (3MF, AMF).");
-    def->tooltip = L("This version of PrusaSlicer may not understand configurations produced by the newest PrusaSlicer versions. "
-        "For example, newer PrusaSlicer may extend the list of supported firmware flavors. One may decide to "
+    def->tooltip = L("This version of Tisma Slicer may not understand configurations produced by the newest PrusaSlicer versions. "
+        "For example, newer versions may extend the list of supported firmware flavors. One may decide to "
         "bail out or to substitute an unknown value with a default silently or verbosely.");
     def->set_enum<ForwardCompatibilitySubstitutionRule>({
         { "disable",        L("Bail out on unknown configuration values") },
@@ -6662,8 +6767,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 
     def = this->add("single_instance", coBool);
     def->label = L("Single instance mode");
-    def->tooltip = L("If enabled, the command line arguments are sent to an existing instance of GUI PrusaSlicer, "
-                     "or an existing PrusaSlicer window is activated. "
+    def->tooltip = L("If enabled, the command line arguments are sent to an existing instance of GUI Tisma Slicer, "
+                     "or an existing Tisma Slicer window is activated. "
                      "Overrides the \"single_instance\" configuration value from application preferences.");
 
     def = this->add("delete-after-load", coString);
@@ -6712,12 +6817,12 @@ ReadWriteSlicingStatesConfigDef::ReadWriteSlicingStatesConfigDef()
     def = this->add("position", coFloats);
     def->label = L("Position");
     def->tooltip = L("Position of the extruder at the beginning of the custom G-code block. If the custom G-code travels somewhere else, "
-                     "it should write to this variable so PrusaSlicer knows where it travels from when it gets control back.");
+                     "it should write to this variable so Tisma Slicer knows where it travels from when it gets control back.");
 
     def = this->add("e_retracted", coFloats);
     def->label = L("Retraction");
     def->tooltip = L("Retraction state at the beginning of the custom G-code block. If the custom G-code moves the extruder axis, "
-                     "it should write to this variable so PrusaSlicer deretracts correctly when it gets control back.");
+                     "it should write to this variable so Tisma Slicer deretracts correctly when it gets control back.");
 
     def = this->add("e_restart_extra", coFloats);
     def->label = L("Extra deretraction");

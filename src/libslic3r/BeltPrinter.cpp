@@ -18,11 +18,12 @@
 namespace Slic3r {
 namespace Belt {
 
-Frame::Frame(double angle_deg, double c_offset) :
+Frame::Frame(double angle_deg, double c_offset, bool belt_on_z) :
     angle(std::clamp(angle_deg, 10., 80.)),
     sin_a(std::sin(angle * PI / 180.)),
     cos_a(std::cos(angle * PI / 180.)),
-    c_offset(c_offset)
+    c_offset(c_offset),
+    belt_on_z(belt_on_z)
 {}
 
 Transform3d Frame::world_to_slicing() const
@@ -38,13 +39,16 @@ Transform3d Frame::world_to_slicing() const
 Vec3d Frame::slicing_to_machine(const Vec3d &p) const
 {
     const double c = p.z() + c_offset;
-    // Y: the belt moves the part by c / sin between layers; Z: along the gantry.
-    return { p.x(), c / sin_a, - p.y() + c * cos_a / sin_a };
+    // The belt moves the part by (layer height) / sin between layers, from 0 at the first layer (the start G-code sets
+    // the belt to 0); the gantry axis runs along the gantry, from 0 on the belt.
+    const double belt = p.z() / sin_a, gantry = - p.y() + c * cos_a / sin_a;
+    return belt_on_z ? Vec3d(p.x(), gantry, belt) : Vec3d(p.x(), belt, gantry);
 }
 
 Vec3d Frame::machine_to_world(const Vec3d &m) const
 {
-    return { m.x(), m.y() - m.z() * cos_a, m.z() * sin_a };
+    const double belt = belt_on_z ? m.z() : m.y(), gantry = belt_on_z ? m.y() : m.z();
+    return { m.x(), belt - gantry * cos_a, gantry * sin_a };
 }
 
 Vec3d Frame::layer_normal_world() const
@@ -62,6 +66,12 @@ double angle(const DynamicPrintConfig &config)
 {
     const ConfigOptionFloat *opt = config.option<ConfigOptionFloat>("belt_angle");
     return opt != nullptr ? opt->value : 45.;
+}
+
+bool belt_on_z(const DynamicPrintConfig &config)
+{
+    const ConfigOptionBool *opt = config.option<ConfigOptionBool>("belt_axis_z");
+    return opt == nullptr || opt->value;
 }
 
 void transform_model(Model &model, const Frame &frame, double &c_offset)
@@ -148,6 +158,7 @@ void GCodeTransform::process_line(std::string_view line, std::string &out)
         if (letter == 'X' || letter == 'Y' || letter == 'Z') {
             const std::string value(word.substr(1));
             m_pos[letter - 'X'] = std::atof(value.c_str());
+            m_known[letter - 'X'] = true;
             has_axis = true;
         } else {
             others += ' ';
@@ -160,9 +171,19 @@ void GCodeTransform::process_line(std::string_view line, std::string &out)
         return;
     }
     const Vec3d machine = m_frame.slicing_to_machine(m_pos);
+    // An axis of the machine moves only when the slicing coordinates it depends on are known: before the first
+    // move in the plane of the layer (the first "G1 Z" of the print) the gantry would go to a position computed
+    // from b = 0, outside of the part.
+    const int belt_axis = m_frame.belt_on_z ? 2 : 1;
+    bool      machine_known[3];
+    machine_known[0]             = m_known[0];
+    machine_known[belt_axis]     = m_known[2];
+    machine_known[3 - belt_axis] = m_known[1] && m_known[2];
     out.append(code.substr(0, i + 2));
     char buf[64];
     for (int axis = 0; axis < 3; ++ axis) {
+        if (! machine_known[axis])
+            continue;
         // 3 decimals, as the G-code writer of PrusaSlicer; emit only the axes which change.
         const double v = std::round(machine[axis] * 1000.) / 1000.;
         if (m_emitted[axis] && std::abs(v - m_last_machine[axis]) < 0.0005)

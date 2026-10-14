@@ -68,6 +68,7 @@
 #include "libslic3r/Format/STL.hpp"
 #include "libslic3r/Format/AMF.hpp"
 #include "libslic3r/Format/3mf.hpp"
+#include "libslic3r/Format/BambuProject.hpp"
 #include "libslic3r/Format/OBJ.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Model.hpp"
@@ -155,6 +156,7 @@
 
 #include <wx/glcanvas.h>    // Needs to be last because reasons :-/
 #include "WipeTowerDialog.hpp"
+#include "FragmentDialog.hpp"
 
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Platform.hpp"
@@ -417,13 +419,13 @@ struct Plater::priv
                         if (dialog.IsCheckBoxChecked()) {
                             wxString preferences_item = _L("Ask for unsaved changes in project");
                             wxString msg =
-                                _L("PrusaSlicer will remember your choice.") + "\n\n" +
+                                _L("Tisma Slicer will remember your choice.") + "\n\n" +
                                 _L("You will not be asked about it again, when: \n"
-                                    "- Closing PrusaSlicer,\n"
+                                    "- Closing Tisma Slicer,\n"
                                     "- Loading or creating a new project") + "\n\n" +
                                 format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
 
-                            MessageDialog msg_dlg(mainframe, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
+                            MessageDialog msg_dlg(mainframe, msg, _L("Tisma Slicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
                             if (msg_dlg.ShowModal() == wxID_CANCEL)
                                 return wxID_CANCEL;
 
@@ -1365,8 +1367,8 @@ void Plater::notify_about_installed_presets()
     const auto& names = wxGetApp().preset_bundle->tmp_installed_presets;
     // show notification about temporarily installed presets
     if (!names.empty()) {
-        std::string notif_text = into_u8(_L_PLURAL("The preset below was temporarily installed on the active instance of PrusaSlicer",
-            "The presets below were temporarily installed on the active instance of PrusaSlicer", names.size())) + ":";
+        std::string notif_text = into_u8(_L_PLURAL("The preset below was temporarily installed on the active instance of Tisma Slicer",
+            "The presets below were temporarily installed on the active instance of Tisma Slicer", names.size())) + ":";
         for (const std::string& name : names)
             notif_text += "\n - " + name;
         get_notification_manager()->push_notification(NotificationType::CustomNotification,
@@ -1522,7 +1524,19 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
         if (load_config) {
 
-            if (!config_loaded.empty()) {
+            if (!config_loaded.empty() && is_bambu_project_3mf(path.string())) {
+                // Tisma: a project of Bambu Studio / OrcaSlicer brings only print and filament settings, printed on
+                // the printer selected here: they go over the current settings, one value per extruder of it.
+                loaded_printer_technology = ptFFF;
+                config = wxGetApp().preset_bundle->full_config();
+                for (const std::string &key : config_loaded.keys()) {
+                    auto *loaded  = dynamic_cast<ConfigOptionVectorBase*>(config_loaded.option(key));
+                    auto *current = dynamic_cast<const ConfigOptionVectorBase*>(config.option(key));
+                    if (loaded != nullptr && current != nullptr && !loaded->empty() && loaded->size() != current->size())
+                        loaded->resize(current->size());
+                }
+                config += std::move(config_loaded);
+            } else if (!config_loaded.empty()) {
                 // Based on the printer technology field found in the loaded config, select the base for the config,
                 loaded_printer_technology = Preset::printer_technology(config_loaded);
 
@@ -1541,7 +1555,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     const wxString url = "https://prusa.io/3mf-transfer";
                     // TRN: %1% is filename of the project, %2% is url link.
                     wxString message = format_wxstr(_L("<b>Unable to load configuration from project\n\nFile: </b>%1%\n\n"
-                        "This project was created in a newer version of PrusaSlicer. Only the geometry was loaded.\n"
+                        "This project was created in a newer version of Tisma Slicer. Only the geometry was loaded.\n"
                         "Update to the latest version for full compatibility.\nFor more info: <a href=%2%>%2%</a>"),
                         from_path(filename), url);
                     HtmlCapableRichMessageDialog dialog(q, message ,title, wxOK,
@@ -1626,9 +1640,9 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     if (answer_convert_from_meters == wxOK_DEFAULT) {
                         RichMessageDialog dlg(q, format_wxstr(_L_PLURAL(
                             "The dimensions of the object from file %s seem to be defined in meters.\n"
-                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?",
+                            "The internal unit of Tisma Slicer is a millimeter. Do you want to recalculate the dimensions of the object?",
                             "The dimensions of some objects from file %s seem to be defined in meters.\n"
-                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of these objects?", model.objects.size()), from_path(filename)) + "\n",
+                            "The internal unit of Tisma Slicer is a millimeter. Do you want to recalculate the dimensions of these objects?", model.objects.size()), from_path(filename)) + "\n",
                             _L("The object is too small"), wxICON_QUESTION | wxYES_NO);
                         dlg.ShowCheckBox(_L("Apply to all the remaining small objects being loaded."));
                         answer = dlg.ShowModal();
@@ -1644,9 +1658,9 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     if (answer_convert_from_imperial_units == wxOK_DEFAULT) {
                         RichMessageDialog dlg(q, format_wxstr(_L_PLURAL(
                             "The dimensions of the object from file %s seem to be defined in inches.\n"
-                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of the object?",
+                            "The internal unit of Tisma Slicer is a millimeter. Do you want to recalculate the dimensions of the object?",
                             "The dimensions of some objects from file %s seem to be defined in inches.\n"
-                            "The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate the dimensions of these objects?", model.objects.size()), from_path(filename)) + "\n",
+                            "The internal unit of Tisma Slicer is a millimeter. Do you want to recalculate the dimensions of these objects?", model.objects.size()), from_path(filename)) + "\n",
                             _L("The object is too small"), wxICON_QUESTION | wxYES_NO);
                         dlg.ShowCheckBox(_L("Apply to all the remaining small objects being loaded."));
                         answer = dlg.ShowModal();
@@ -1912,6 +1926,9 @@ std::vector<size_t> Plater::priv::load_model_objects(const ModelObjectPtrs& mode
             _L("Your object appears to be too large, so it was automatically scaled down to fit your print bed."),
             _L("Object too large?"));
     }
+    else if (call_selection_changed && !s_multiple_beds.get_loading_project_flag())
+        // Tisma: larger than the printer but not scaled down: offer to split it.
+        q->notify_too_large(obj_idxs);
 
     notification_manager->close_notification_of_type(NotificationType::UpdatedItemsInfo);
     for (const size_t idx : obj_idxs) {
@@ -2162,7 +2179,7 @@ bool Plater::priv::delete_object_from_model(size_t obj_idx)
         InfoDialog dialog(q, _L("Delete object which is a part of cut object"), 
                              _L("You try to delete an object which is a part of a cut object.") + "\n" + 
                                 _L("This action will break a cut information.\n"
-                                "After that PrusaSlicer can't guarantee model consistency"), 
+                                "After that Tisma Slicer can't guarantee model consistency"), 
                                 false, wxYES | wxCANCEL | wxCANCEL_DEFAULT | wxICON_WARNING);
         dialog.SetButtonLabel(wxID_YES, _L("Delete object"));
         if (dialog.ShowModal() == wxID_CANCEL)
@@ -3429,22 +3446,31 @@ void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
     std::vector<int> warning_steps = { evt.status.warning_step };
     std::vector<int> flagss = { int(evt.status.flags) };
 
-    if (warning_steps.front() == -1) {
+    // All the warnings are shown again: those of the print steps, then those of the steps of every object.
+    const bool all_warnings = warning_steps.front() == -1;
+    if (all_warnings) {
         flagss = { PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS, PrintBase::SlicingStatus::UPDATE_PRINT_OBJECT_STEP_WARNINGS };
         notification_manager->close_slicing_errors_and_warnings();
     }
 
     for (int flags : flagss ) {
-        if (warning_steps.front() == -1) {
+        // Tisma: the list of steps is made for each kind (it was made only for the first one, so the warnings of the
+        // object steps were closed above and never shown again), with the objects of the resin print too.
+        if (all_warnings) {
             warning_steps.clear();
+            object_ids = { evt.status.warning_object_id };
             if (flags == PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS) {
                 int i = 0;
                 while (i < int(printer_technology == ptFFF ? psCount : slapsCount)) { warning_steps.push_back(i); ++i; }
             } else {
                 int i = 0;
                 while (i < int(printer_technology == ptFFF ? posCount : slaposCount)) { warning_steps.push_back(i); ++i; }
-                for (const PrintObject* po : wxGetApp().plater()->active_fff_print().objects())
-                    object_ids.push_back(po->id());
+                if (printer_technology == ptFFF)
+                    for (const PrintObject* po : wxGetApp().plater()->active_fff_print().objects())
+                        object_ids.push_back(po->id());
+                else
+                    for (const SLAPrintObject* po : wxGetApp().plater()->active_sla_print().objects())
+                        object_ids.push_back(po->id());
             }
         }
 
@@ -5079,7 +5105,7 @@ LoadProjectsDialog::LoadProjectsDialog(const std::vector<fs::path>& paths)
     id++;
     // all new window
     if (instances_allowed) {
-        btn = new wxRadioButton(this, wxID_ANY, _L("Start a new instance of PrusaSlicer"), wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
+        btn = new wxRadioButton(this, wxID_ANY, _L("Open in a new window"), wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
         btn->SetValue(id == m_action);
         btn->Bind(wxEVT_RADIOBUTTON, [this, id, contains_projects](wxCommandEvent&) {
             m_action = id;
@@ -5348,13 +5374,20 @@ ProjectDropDialog::ProjectDropDialog(const std::string& filename)
 
     bool single_instance_only = wxGetApp().app_config->get_bool("single_instance");
     wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
+    // Tisma: each action with a line saying what it does.
     wxArrayString choices;
+    std::vector<wxString> descriptions;
     choices.reserve(4);
     choices.Add(_L("Open as project"));
+    descriptions.push_back(_L("Models, plates and their print, filament and printer settings, instead of the current project."));
     choices.Add(_L("Import 3D models only"));
+    descriptions.push_back(_L("Adds the models to the current project, printed with the current settings."));
     choices.Add(_L("Import config only"));
-    if (!single_instance_only)
-        choices.Add(_L("Start new PrusaSlicer instance"));
+    descriptions.push_back(_L("Loads only the print, filament and printer settings of the file."));
+    if (!single_instance_only) {
+        choices.Add(_L("Open in a new window"));
+        descriptions.push_back(_L("Opens the file as a project in another window, keeping this one as it is."));
+    }
 
     main_sizer->Add(new wxStaticText(this, wxID_ANY,
         get_wraped_wxString(_L("Select an action to apply to the file") + ": " + from_u8(filename))), 0, wxEXPAND | wxALL, 10);
@@ -5373,6 +5406,10 @@ ProjectDropDialog::ProjectDropDialog(const std::string& filename)
         btn->SetValue(id == m_action);
         btn->Bind(wxEVT_RADIOBUTTON, [this, id](wxCommandEvent&) { m_action = id; });
         stb_sizer->Add(btn, 0, wxEXPAND | wxTOP, 5);
+        wxStaticText* description = new wxStaticText(this, wxID_ANY, descriptions[size_t(id)]);
+        description->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+        description->Wrap(55 * wxGetApp().em_unit());
+        stb_sizer->Add(description, 0, wxEXPAND | wxLEFT, 3 * wxGetApp().em_unit());
         id++;
     }
     main_sizer->Add(stb_sizer, 1, wxEXPAND | wxRIGHT | wxLEFT, 10);
@@ -5643,6 +5680,96 @@ void Plater::update_calibration_notification()
             return true; // close the notification
         });
 }
+// Tisma: printable size to split an object: the bounding box of the bed (the inscribed square of a round bed) and the
+// maximum height (none: unlimited).
+static Vec3d fragment_max_size(const BuildVolume &build_volume, bool inscribed = true)
+{
+    Vec3d size = build_volume.bounding_volume().size();
+    if (inscribed && build_volume.type() == BuildVolume::Type::Circle)
+        size.x() = size.y() = std::sqrt(2.) * unscaled(build_volume.circle().radius);
+    if (build_volume.max_print_height() <= 0.)
+        size.z() = 1e5;
+    return size;
+}
+
+bool Plater::can_fragment() const
+{
+    const Selection &selection = p->get_selection();
+    const int        obj_idx   = selection.get_object_idx();
+    if (obj_idx < 0 || obj_idx >= int(p->model.objects.size()) ||
+        !(selection.is_single_full_instance() || selection.is_single_full_object()))
+        return false;
+    // The pieces replace the object: with several copies, which one would be split is not clear.
+    return p->model.objects[obj_idx]->instances.size() == 1;
+}
+
+void Plater::fragment_object()
+{
+    if (!can_fragment())
+        return;
+    const int    obj_idx = p->get_selection().get_object_idx();
+    ModelObject *object  = p->model.objects[obj_idx];
+    Fragment::Params params;
+    params.max_size = fragment_max_size(p->bed.build_volume());
+    if (p->printer_technology == ptFFF) {
+        // Room for what the arrangement keeps around each piece (SceneBuilder): the skirt, the brim and half of the
+        // distance between objects.
+        const DynamicPrintConfig &config = wxGetApp().preset_bundle->full_config();
+        const double nozzle = config.option<ConfigOptionFloats>("nozzle_diameter")->get_at(0);
+        const double skirt  = config.opt_int("skirts") > 0 ?
+            config.opt_int("skirts") * 1.125 * nozzle + config.opt_float("skirt_distance") : 0.;
+        params.margin = skirt + config.opt_float("brim_width") + 3.;
+    }
+    Fragment::Plan plan;
+    if (!show_fragment_dialog(this, *object, 0, params, plan))
+        return;
+
+    Model           pieces_model;
+    ModelObjectPtrs pieces;
+    {
+        wxBusyCursor wait;
+        pieces = Fragment::apply(*object, 0, plan, params, pieces_model);
+    }
+    if (pieces.empty())
+        return;
+    Plater::TakeSnapshot snapshot(this, _L("Split to fit the printer"));
+    // As the cut tool: the pieces replace the object and are arranged on its bed.
+    apply_cut_object_to_model(size_t(obj_idx), pieces, true);
+}
+
+void Plater::notify_too_large(const std::vector<size_t> &obj_idxs)
+{
+    NotificationManager *nm = get_notification_manager();
+    if (nm == nullptr)
+        return;
+    const BuildVolume &build_volume = p->bed.build_volume();
+    const Vec3d        max_size     = fragment_max_size(build_volume, false);
+    for (size_t idx : obj_idxs) {
+        if (idx >= p->model.objects.size())
+            continue;
+        const ModelObject *object = p->model.objects[idx];
+        if (object->instances.size() != 1)
+            continue;
+        const Vec3d size = object->instance_bounding_box(0).size();
+        if (size.x() <= max_size.x() && size.y() <= max_size.y() && size.z() <= max_size.z())
+            continue;
+        const ObjectID id = object->id();
+        nm->close_notification_of_type(NotificationType::ObjectTooLarge);
+        nm->push_notification(NotificationType::ObjectTooLarge, NotificationManager::NotificationLevel::WarningNotificationLevel,
+            format(_u8L("%1% is larger than the printer."), object->name), _u8L("Split it into pieces with connectors"),
+            [this, id](wxEvtHandler*) {
+                for (size_t i = 0; i < p->model.objects.size(); ++i)
+                    if (p->model.objects[i]->id() == id) {
+                        p->get_selection().add_object((unsigned int)i, true);
+                        fragment_object();
+                        break;
+                    }
+                return true;
+            });
+        // One notification at a time: the last object too large.
+    }
+}
+
 void Plater::reset_with_confirm()
 {
     if (p->model.objects.empty() ||
@@ -5922,7 +6049,7 @@ void Plater::toggle_layers_editing(bool enable)
         canvas3D()->force_main_toolbar_left_action(canvas3D()->get_main_toolbar_item_id("layersediting"));
 }
 
-void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& new_objects)
+void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& new_objects, bool several_beds)
 {
     const int active_bed{s_multiple_beds.get_active_bed()};
 
@@ -5967,7 +6094,7 @@ void Plater::apply_cut_object_to_model(size_t obj_idx, const ModelObjectPtrs& ne
     s_multiple_beds.set_active_bed(bed_index);
 
     UIThreadWorker w;
-    arrange(w, ArrangeSelectionMode::CurrentBedSelectionOnly);
+    arrange(w, several_beds ? ArrangeSelectionMode::SelectionOnly : ArrangeSelectionMode::CurrentBedSelectionOnly);
     w.wait_for_idle();
     s_multiple_beds.set_active_bed(active_bed);
 }
@@ -6696,11 +6823,6 @@ void Plater::open_engineering()
     if (p->model.objects.empty()) {
         get_notification_manager()->push_notification(NotificationType::CustomNotification,
             NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Load a part to analyze it in Engineering."));
-        return;
-    }
-    if (printer_technology() != ptFFF) {
-        get_notification_manager()->push_notification(NotificationType::CustomNotification,
-            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("The structural analysis is available for FFF printers."));
         return;
     }
     GLCanvas3D* canvas = p->view3D->get_canvas3d();

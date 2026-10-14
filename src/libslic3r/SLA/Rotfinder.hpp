@@ -70,6 +70,19 @@ Vec2d find_least_supports_rotation(const ModelObject &modelobj,
 Vec2d find_min_z_height_rotation(const ModelObject &mo,
                                  const RotOptimizeParams &params = {});
 
+// Tisma: rotation of an FFF print with the least support material. The candidates lay a face of the convex hull on the
+// bed; each is scored by the volume of support under the overhangs steeper than the support threshold of the
+// configuration (45 degrees from the horizontal when automatic), from the overhang down to the part or the bed, minus
+// a 1 mm slab of the area touching the bed (adhesion). Orientations standing on less than 10 mm2 are avoided.
+Vec2d find_least_fff_support_rotation(const ModelObject &mo,
+                                      const RotOptimizeParams &params = {});
+
+// Tisma: rotation of an SLA print with the lowest peel force and no suction cups. Among the orientations needing the
+// fewest supports (the score of find_least_supports_rotation), the one with no suction cups (sla/SuctionCups.hpp)
+// and then the smallest largest layer is chosen: the force that tears each layer from the film grows with its area.
+Vec2d find_least_peel_rotation(const ModelObject &mo,
+                               const RotOptimizeParams &params = {});
+
 } // namespace sla
 } // namespace Slic3r
 

@@ -149,7 +149,9 @@ enum class NotificationType
     // Failed to download secret repo archive
     FailedSecretVendorUpdateSync,
     // Tisma: a calibration test of the project changes a value along the height of the print.
-    CalibrationActive
+    CalibrationActive,
+    // Tisma: an object larger than the printer, with a link to split it.
+    ObjectTooLarge
 };
 
 class NotificationManager
@@ -967,7 +969,7 @@ private:
 		, NotificationLevel::RegularNotificationLevel
 		, 10
 		// TRN: The text is followed by a hyperlink saying "here." It is necessary to split it in two phrases, sorry.
-		, _u8L("PrusaSlicer received a download request from supported website, but it's not allowed. You can allow it")
+		, _u8L("Tisma Slicer received a download request from supported website, but it's not allowed. You can allow it")
 		, _u8L("here.")
 		,  [](wxEvtHandler* evnthndlr) {
 			wxGetApp().open_preferences("downloader_url_registered", "Other");

@@ -1236,6 +1236,12 @@ void MenuFactory::append_menu_items_split(wxMenu *menu)
 
     append_submenu(menu, split_menu, wxID_ANY, _L("Split"), _L("Split the selected object"), "",
         []() { return plater()->can_split(true); }, m_parent);
+
+    // Tisma: cut into pieces that fit the printer, with connectors.
+    append_menu_item(menu, wxID_ANY, _L("Split to fit the printer") + dots,
+        _L("Cut the object into pieces that fit the printer, with connectors to join them"),
+        [](wxCommandEvent&) { plater()->fragment_object(); }, "cut_", menu,
+        []() { return plater()->can_fragment(); }, m_parent);
 }
 
 void MenuFactory::append_immutable_part_menu_items(wxMenu* menu)

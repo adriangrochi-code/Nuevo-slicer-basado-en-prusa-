@@ -137,6 +137,8 @@ set(SLIC3R_SOURCES
     format.hpp
     Format/3mf.cpp
     Format/3mf.hpp
+    Format/BambuProject.cpp
+    Format/BambuProject.hpp
     Format/AMF.cpp
     Format/AMF.hpp
     Format/OBJ.cpp
@@ -297,8 +299,14 @@ set(SLIC3R_SOURCES
     MultiPoint.cpp
     NonPlanar.cpp
     NonPlanar.hpp
+    NonPlanarFit.cpp
+    Fragment.cpp
+    Fragment.hpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
+    InterlockInfill.cpp
+    InterlockInfill.hpp
+    GCodeMoveLine.hpp
     MultiPoint.hpp
     MutablePriorityQueue.hpp
     NormalUtils.cpp
@@ -463,6 +471,8 @@ set(SLIC3R_SOURCES
     SLA/ConcaveHull.cpp
     SLA/Hollowing.hpp
     SLA/Hollowing.cpp
+    SLA/InteriorInfill.cpp
+    SLA/InteriorInfill.hpp
     SLA/JobController.hpp
     SLA/SupportPoint.hpp
     SLA/SupportPointGenerator.hpp
@@ -476,6 +486,8 @@ set(SLIC3R_SOURCES
     SLA/BranchingTreeSLA.cpp
     SLA/ZCorrection.hpp
     SLA/ZCorrection.cpp
+    SLA/SuctionCups.hpp
+    SLA/SuctionCups.cpp
     SLA/Workflows.hpp
     SLA/Workflows.cpp
     SLA/SupportIslands/EvaluateNeighbor.cpp

@@ -17,7 +17,11 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
   de PrusaSlicer y Slic3r (ya están en la pantalla de inicio y en "Acerca de").
 - **Marcas**: "Prusa" y "PrusaSlicer" son marcas de Prusa Research. El fork ya usa nombre, logo y carpeta de datos
   propios. Siguen apareciendo como identificadores internos (`SLIC3R_APP_KEY`, metadatos del 3MF) por
-  compatibilidad, y en los perfiles del fabricante Prusa, que es lo habitual en otros forks.
+  compatibilidad, y en los perfiles del fabricante Prusa, que es lo habitual en otros forks. En la interfaz el
+  programa se llama «Tisma Slicer»; «PrusaSlicer» solo queda donde nombra al original: los créditos («basado en
+  PrusaSlicer»), las versiones de PrusaSlicer de las instantáneas de configuración y los avisos de archivos o ajustes
+  de versiones más nuevas («Tisma Slicer o PrusaSlicer»). Los catálogos de traducción siguen llamándose
+  `PrusaSlicer*.po` / `PrusaSlicer.mo` porque los busca por `SLIC3R_APP_KEY`.
 - Código de **OrcaSlicer** (AGPL-3.0): se puede portar con atribución. El suite de calibraciones actual está
   inspirado en Orca, pero el código y los modelos son propios; no se copió código de Orca.
 
@@ -72,7 +76,25 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | Origen | Versión | Licencia | Notas |
 |---|---|---|---|
 | Perfiles de impresoras, procesos y filamentos de OrcaSlicer (con imágenes y camas) | commit `1d577ea` | AGPL-3.0 | Convertidos con `tools/profiles/convert_orca_profiles.py`. Ver `docs/PRINTER_PROFILES.md`. |
+| Impresoras de cinta de BlackBelt Cura (`resources/definitions/blackbelt*.def.json`, `resources/variants/blackbelt*`) | commit `4e18b19` | LGPL-3.0 (el mismo texto, `resources/licenses/Cura-LGPL-3.0.txt`) | Datos de la máquina y G-code de inicio y fin, convertidos con `tools/profiles/make_belt_profiles.py` a `resources/profiles/Belt_BLACKBELT_3D.ini`. |
+| Perfil de la IdeaFormer IR3 V2 de VertexSlice (`resources/profiles/IdeaFormer`) | commit `1d6ad28` | AGPL-3.0 | Impresora, proceso y filamentos, convertidos con `tools/profiles/make_belt_profiles.py` a `resources/profiles/Belt_IdeaFormer.ini`. |
+| Perfiles de Creality Print (`resources/profiles/Creality`: CR-30 y los modelos que faltaban) | commit `59ae8cb` | AGPL-3.0 | `make_belt_profiles.py` (CR-30, `Belt_Creality.ini`) y `convert_orca_profiles.py --prefix CrealityPrint_` (`CrealityPrint_Creality.ini`). |
+| Perfil de la M3D Enabler D8500 MM de Elegoo Slicer | commit `2d507e3` | AGPL-3.0 | `convert_orca_profiles.py --prefix ElegooSlicer_` (`ElegooSlicer_M3D.ini`). |
+| Eje de la cinta de la Creality CR-30 en su firmware (`Marlin/Configuration.h`, `Z_MAX_POS 20000000`) | commit `a916aa2` | GPL-3.0 (solo un dato de referencia; no se copia nada) | Documentación. |
 | Definiciones de impresoras de UltiMaker Cura (`resources/definitions`, `resources/extruders`) | commit `5bea2f8` | LGPL-3.0 (compatible con AGPL-3.0; texto en `resources/licenses/Cura-LGPL-3.0.txt`) | Solo los datos de la máquina, convertidos con `tools/profiles/convert_cura_profiles.py` a `resources/profiles/Cura_*.ini`. Ver `docs/PRINTER_PROFILES.md`. |
+
+### Datos de materiales de resina (`src/libtisma_fea/src/Materials.cpp`)
+
+Solo valores numéricos de las hojas de datos técnicas de los fabricantes (no se copia texto ni código):
+
+| Material | Fuente |
+|---|---|
+| Resina estándar Elegoo | Elegoo Standard Resin TDS (copia de un distribuidor: https://www.123-3d.co.uk/pdf/Elegoo_Standaard_Resin_TDS_EN.pdf) |
+| Resina estándar Formlabs (FLGPCL03) | Formlabs Clear Resin V4 TDS (https://cdn.goengineer.com/formlabs-clear-resin-v4-resin-technical-data-sheet.pdf) |
+| Formlabs Tough 2000 | Formlabs Tough 2000 TDS (https://cdn.goengineer.com/formlabs-tough-2000-resin-technical-data-sheet.pdf) |
+
+Las hojas no dan densidad ni coeficiente de Poisson: se usan 1,15 g/cm³ y 0,35, valores típicos de fotopolímeros
+curados (marcados así en la nota de cada material).
 
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
@@ -128,4 +150,5 @@ dependencias nuevas, y usar CalculiX como referencia externa de validación. Ver
 | amannn/action-semantic-pull-request | Comprueba que el título del PR sea un Conventional Commit | MIT |
 | signpath/github-action-submit-signing-request | Firma de Windows con SignPath | MIT **(sin verificar)** |
 | actions/checkout, cache, upload-artifact, download-artifact (GitHub) | Workflows | MIT |
+| CalculiX ccx 2.21 (calculix.de, paquete `calculix-ccx` de Debian/Ubuntu) | Resultados de referencia para validar el análisis estructural (`src/libtisma_fea/test/calculix/run_calculix.py`); se ejecuta aparte, no se enlaza ni se distribuye: en el repositorio solo quedan los números (`calculix_reference.hpp`) | GPL-2.0 |
 | obra/superpowers (skills `systematic-debugging` y `verification-before-completion`, copiadas en `.claude/skills/`) | Instrucciones para Claude Code | MIT (`.claude/skills/LICENSE-superpowers`) |

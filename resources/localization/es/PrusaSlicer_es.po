@@ -178,34 +178,34 @@ msgstr ""
 #: src/libslic3r/Format/3mf.cpp:2283
 msgid ""
 "The selected 3MF contains FDM supports painted object using a newer version "
-"of PrusaSlicer and is not compatible."
+"of Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "El 3MF seleccionado contiene un objeto pintado compatible con FDM que "
-"utiliza una versión más reciente de PrusaSlicer y no es compatible."
+"utiliza una versión más reciente de Tisma Slicer y no es compatible."
 
 #: src/libslic3r/Format/3mf.cpp:2287
 msgid ""
-"The selected 3MF contains seam painted object using a newer version of "
-"PrusaSlicer and is not compatible."
+"The selected 3MF contains seam painted object using a newer version of Tisma "
+"Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "El 3MF seleccionado contiene un objeto pintado con una versión más reciente "
-"de PrusaSlicer y no es compatible."
+"de Tisma Slicer y no es compatible."
 
 #: src/libslic3r/Format/3mf.cpp:2291
 msgid ""
 "The selected 3MF contains fuzzy skin painted object using a newer version of "
-"PrusaSlicer and is not compatible."
+"Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "El archivo 3MF seleccionado contiene un objeto pintado con piel difusa, "
-"creado con una versión más reciente de PrusaSlicer, y no es compatible."
+"creado con una versión más reciente de Tisma Slicer, y no es compatible."
 
 #: src/libslic3r/Format/3mf.cpp:2295
 msgid ""
 "The selected 3MF contains multi-material painted object using a newer "
-"version of PrusaSlicer and is not compatible."
+"version of Tisma Slicer or PrusaSlicer and is not compatible."
 msgstr ""
 "El 3MF seleccionado contiene un objeto pintado multimaterial que utiliza una "
-"versión más reciente de PrusaSlicer y no es compatible."
+"versión más reciente de Tisma Slicer y no es compatible."
 
 #: src/libslic3r/Format/AMF.cpp:1005
 #, boost-format
@@ -1978,25 +1978,25 @@ msgstr ""
 #: src/libslic3r/PrintConfig.cpp:1073
 msgid ""
 "This end procedure is inserted at the end of the output file. Note that you "
-"can use placeholder variables for all PrusaSlicer settings."
+"can use placeholder variables for all Tisma Slicer settings."
 msgstr ""
 "Este procedimiento final se inserta al final del archivo de salida. Ten en "
 "cuenta que puedes usar variables de marcador de posición para todas las "
-"configuraciones de PrusaSlicer."
+"configuraciones de Tisma Slicer."
 
 #: src/libslic3r/PrintConfig.cpp:1083
 msgid ""
 "This end procedure is inserted at the end of the output file, before the "
 "printer end gcode (and before any toolchange from this filament in case of "
 "multimaterial printers). Note that you can use placeholder variables for all "
-"PrusaSlicer settings. If you have multiple extruders, the gcode is processed "
-"in extruder order."
+"Tisma Slicer settings. If you have multiple extruders, the gcode is "
+"processed in extruder order."
 msgstr ""
 "Este procedimiento final se inserta al final del archivo de salida, antes "
 "del código G final de la impresora (y antes de cualquier cambio de "
 "herramienta desde este filamento en el caso de impresoras multimateriales). "
 "Ten en cuenta que puede usar variables de marcador de posición para todas "
-"las configuraciones de PrusaSlicer. Si tienes varios extrusores, el código G "
+"las configuraciones de Tisma Slicer. Si tienes varios extrusores, el código G "
 "se procesa en orden de extrusor."
 
 #: src/libslic3r/PrintConfig.cpp:1094
@@ -3129,13 +3129,13 @@ msgstr "Tipo de código G"
 msgid ""
 "Some G/M-code commands, including temperature control and others, are not "
 "universal. Set this option to your printer's firmware to get a compatible "
-"output. The \"No extrusion\" flavor prevents PrusaSlicer from exporting any "
+"output. The \"No extrusion\" flavor prevents Tisma Slicer from exporting any "
 "extrusion value at all."
 msgstr ""
 "Algunos comandos de códigos G/M, incluidos el control de temperatura y "
 "otros, no son universales. Configura esta opción en el firmware de tu "
 "impresora para obtener una salida compatible. El tipo \"Sin extrusión\" "
-"evita que PrusaSlicer exporte ningún valor de extrusión."
+"evita que Tisma Slicer exporte ningún valor de extrusión."
 
 #: src/libslic3r/PrintConfig.cpp:1849
 msgid "No extrusion"
@@ -3283,7 +3283,7 @@ msgstr "Longitud del relleno del anclaje"
 msgid ""
 "Connect an infill line to an internal perimeter with a short segment of an "
 "additional perimeter. If expressed as percentage (example: 15%) it is "
-"calculated over infill extrusion width. PrusaSlicer tries to connect two "
+"calculated over infill extrusion width. Tisma Slicer tries to connect two "
 "close infill lines to a short perimeter segment. If no such perimeter "
 "segment shorter than infill_anchor_max is found, the infill line is "
 "connected to a perimeter segment at just one side and the length of the "
@@ -3293,7 +3293,7 @@ msgid ""
 msgstr ""
 "Conecta una línea de relleno a un perímetro interno con un segmento corto de "
 "un perímetro adicional. Si se expresa como porcentaje (por ejemplo: 15%), se "
-"calcula sobre el ancho de extrusión del relleno. PrusaSlicer intenta "
+"calcula sobre el ancho de extrusión del relleno. Tisma Slicer intenta "
 "conectar dos líneas de relleno cercanas a un segmento de perímetro corto. Si "
 "no se encuentra tal segmento de perímetro más corto que infill_anchor_max, "
 "la línea de relleno se conecta a un segmento de perímetro en un solo lado y "
@@ -3334,7 +3334,7 @@ msgstr "Máxima longitud del relleno del anclaje"
 msgid ""
 "Connect an infill line to an internal perimeter with a short segment of an "
 "additional perimeter. If expressed as percentage (example: 15%) it is "
-"calculated over infill extrusion width. PrusaSlicer tries to connect two "
+"calculated over infill extrusion width. Tisma Slicer tries to connect two "
 "close infill lines to a short perimeter segment. If no such perimeter "
 "segment shorter than this parameter is found, the infill line is connected "
 "to a perimeter segment at just one side and the length of the perimeter "
@@ -3343,7 +3343,7 @@ msgid ""
 msgstr ""
 "Conecta una línea de relleno a un perímetro interno con un segmento corto de "
 "un perímetro adicional. Si se expresa como porcentaje (por ejemplo: 15%), se "
-"calcula sobre el ancho de extrusión del relleno. PrusaSlicer intenta "
+"calcula sobre el ancho de extrusión del relleno. Tisma Slicer intenta "
 "conectar dos líneas de relleno cercanas a un segmento de perímetro corto. Si "
 "no se encuentra un segmento de perímetro más corto que este parámetro, la "
 "línea de relleno se conecta a un segmento de perímetro en un solo lado y la "
@@ -3752,13 +3752,13 @@ msgstr "Desviación máxima de la unión"
 
 #: src/libslic3r/PrintConfig.cpp:2311
 msgid ""
-"Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\n"
-"When enabled, PrusaSlicer uses it for time estimates and G-code Viewer "
-"speeds instead of Jerk."
+"Maximum Junction Deviation (M205 J; applies only if JD > 0 on Marlin).\nWhen "
+"enabled, Tisma Slicer uses it for time estimates and G-code Viewer speeds "
+"instead of Jerk."
 msgstr ""
 "Desviación Máxima de la Unión (M205 J; solo se aplica si el parámetro > 0 en "
 "el firmware Marlin).\n"
-"Cuando está habilitado, PrusaSlicer lo utiliza para estimaciones de tiempo y "
+"Cuando está habilitado, Tisma Slicer lo utiliza para estimaciones de tiempo y "
 "velocidades del visor de código G en lugar del Jerk."
 
 #: src/libslic3r/PrintConfig.cpp:2320
@@ -4416,11 +4416,11 @@ msgstr "Rampa más pronunciada antes de los obstáculos"
 
 #: src/libslic3r/PrintConfig.cpp:2830
 msgid ""
-"If enabled, PrusaSlicer detects obstacles along the travel path and makes "
+"If enabled, Tisma Slicer detects obstacles along the travel path and makes "
 "the slope steeper in case an obstacle might be hit during the initial phase "
 "of the travel."
 msgstr ""
-"Si se activa, PrusaSlicer detecta obstáculos a lo largo de la trayectoria de "
+"Si se activa, Tisma Slicer detecta obstáculos a lo largo de la trayectoria de "
 "desplazamiento y hace que la pendiente sea más pronunciada en caso de que se "
 "pueda golpear un obstáculo durante la fase inicial del desplazamiento."
 
@@ -4885,34 +4885,33 @@ msgstr "Emite órdenes de temperatura automáticamente"
 
 #: src/libslic3r/PrintConfig.cpp:3169
 msgid ""
-"When enabled, PrusaSlicer will check whether your custom Start G-Code "
+"When enabled, Tisma Slicer will check whether your custom Start G-Code "
 "contains G-codes to set extruder, bed or chamber temperature (M104, M109, "
 "M140, M190, M141 and M191). If so, the temperatures will not be emitted "
 "automatically so you're free to customize the order of heating commands and "
 "other custom actions. Note that you can use placeholder variables for all "
-"PrusaSlicer settings, so you can put a \"M109 S[first_layer_temperature]\" "
-"command wherever you want.\n"
-"If your custom Start G-Code does NOT contain these G-codes, PrusaSlicer will "
-"execute the Start G-Code after heated chamber was set to its temperature, "
-"bed reached its target temperature and extruder just started heating.\n"
-"\n"
-"When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed "
-"or chamber, leaving all to Custom Start G-Code."
+"Tisma Slicer settings, so you can put a \"M109 S[first_layer_temperature]\" "
+"command wherever you want.\nIf your custom Start G-Code does NOT contain "
+"these G-codes, Tisma Slicer will execute the Start G-Code after heated "
+"chamber was set to its temperature, bed reached its target temperature and "
+"extruder just started heating.\n\nWhen disabled, Tisma Slicer will NOT emit "
+"commands to heat up extruder, bed or chamber, leaving all to Custom Start "
+"G-Code."
 msgstr ""
-"Cuando está habilitado, PrusaSlicer comprobará si tu Código G Inicial "
+"Cuando está habilitado, Tisma Slicer comprobará si tu Código G Inicial "
 "personalizado contiene Códigos G para establecer la temperatura del "
 "extrusor, la base o la cámara (M104, M109, M140, M190, M141 y M191). Si es "
 "así, las temperaturas no se emitirán automáticamente por lo que eres libre "
 "de personalizar el orden de los comandos de calentamiento y otras acciones "
 "personalizadas. Ten en cuenta que puedes utilizar variables de marcador de "
-"posición para todos los ajustes de PrusaSlicer, por lo que puede poner un "
+"posición para todos los ajustes de Tisma Slicer, por lo que puede poner un "
 "comando \"M109 S[first_layer_temperature]\" donde quieras.\n"
 "Si tu Código G Inicial personalizado NO contiene estos Códigos G, "
-"PrusaSlicer ejecutará el Código G Inicial después de que la cámara calentada "
+"Tisma Slicer ejecutará el Código G Inicial después de que la cámara calentada "
 "haya sido ajustada a su temperatura, la base haya alcanzado su temperatura "
 "objetivo y el extrusor acabe de empezar a calentarse.\n"
 "\n"
-"Cuando está deshabilitado, PrusaSlicer NO emitirá comandos para calentar el "
+"Cuando está deshabilitado, Tisma Slicer NO emitirá comandos para calentar el "
 "extrusor, la base o la cámara, dejando todo al Código G Inicial "
 "Personalizado."
 
@@ -4937,10 +4936,10 @@ msgid ""
 "This start procedure is inserted at the beginning, after any printer start "
 "gcode (and after any toolchange to this filament in case of multi-material "
 "printers). This is used to override settings for a specific filament. If "
-"PrusaSlicer detects M104, M109, M140 or M190 in your custom codes, such "
+"Tisma Slicer detects M104, M109, M140 or M190 in your custom codes, such "
 "commands will not be prepended automatically so you're free to customize the "
 "order of heating commands and other custom actions. Note that you can use "
-"placeholder variables for all PrusaSlicer settings, so you can put a \"M109 "
+"placeholder variables for all Tisma Slicer settings, so you can put a \"M109 "
 "S[first_layer_temperature]\" command wherever you want. If you have multiple "
 "extruders, the gcode is processed in extruder order."
 msgstr ""
@@ -4948,11 +4947,11 @@ msgstr ""
 "cualquier impresora inicie un código G (y después de cualquier cambio de "
 "herramienta a este filamento en el caso de impresoras de materiales "
 "múltiples). Esto se utiliza para anular la configuración de un filamento "
-"específico. Si PrusaSlicer detecta un M104, M109, M140 o M190 en tus códigos "
+"específico. Si Tisma Slicer detecta un M104, M109, M140 o M190 en tus códigos "
 "personalizados, dichos comandos no se agregarán automáticamente, por lo que "
 "puede personalizar el orden de los comandos de calentamiento y otras "
 "acciones personalizadas. Ten en cuenta que puedes usar variables de marcador "
-"de posición para todas las configuraciones de PrusaSlicer, por lo que puedes "
+"de posición para todas las configuraciones de Tisma Slicer, por lo que puedes "
 "colocar un comando \"M109 S [first_layer_temperature]\" donde lo desees. Si "
 "tienes varias extrusorrs, el código G se procesa en el orden del extrusor."
 
@@ -5566,17 +5565,17 @@ msgstr ""
 #: src/libslic3r/PrintConfig.cpp:3705
 msgid ""
 "This custom code is inserted before every toolchange. Placeholder variables "
-"for all PrusaSlicer settings as well as {toolchange_z}, {previous_extruder} "
+"for all Tisma Slicer settings as well as {toolchange_z}, {previous_extruder} "
 "and {next_extruder} can be used. When a tool-changing command which changes "
-"to the correct extruder is included (such as T{next_extruder}), PrusaSlicer "
+"to the correct extruder is included (such as T{next_extruder}), Tisma Slicer "
 "will emit no other such command. It is therefore possible to script custom "
 "behaviour both before and after the toolchange."
 msgstr ""
 "Este código personalizado se inserta antes de cada cambio de herramienta. Se "
 "pueden utilizar variables de marcador de posición para todos los ajustes de "
-"PrusaSlicer, así como {toolchange_z}, {previous_extruder} y {next_extruder}. "
+"Tisma Slicer, así como {toolchange_z}, {previous_extruder} y {next_extruder}. "
 "Cuando se incluye un comando de cambio de herramienta que cambia al extrusor "
-"correcto (como T{next_extruder}), PrusaSlicer no emitirá ningún otro comando "
+"correcto (como T{next_extruder}), Tisma Slicer no emitirá ningún otro comando "
 "de este tipo. Por lo tanto, es posible programar un comportamiento "
 "personalizado tanto antes como después del cambio de herramienta."
 
@@ -7415,13 +7414,13 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:6192
 msgid ""
-"This version of PrusaSlicer may not understand configurations produced by "
-"the newest PrusaSlicer versions. For example, newer PrusaSlicer may extend "
-"the list of supported firmware flavors. One may decide to bail out or to "
+"This version of Tisma Slicer may not understand configurations produced by "
+"the newest PrusaSlicer versions. For example, newer versions may extend the "
+"list of supported firmware flavors. One may decide to bail out or to "
 "substitute an unknown value with a default silently or verbosely."
 msgstr ""
-"Esta versión de PrusaSlicer puede no entender las configuraciones producidas "
-"por las versiones más nuevas de PrusaSlicer. Por ejemplo, el PrusaSlicer más "
+"Esta versión de Tisma Slicer puede no entender las configuraciones producidas "
+"por las versiones más nuevas de Tisma Slicer. Por ejemplo, el Tisma Slicer más "
 "reciente puede ampliar la lista de tipos de firmware soportados. Uno puede "
 "decidir abandonar o sustituir un valor desconocido con un valor por defecto "
 "silenciosamente o verbosamente."
@@ -7544,12 +7543,12 @@ msgstr "Modo de instancia única"
 #: src/libslic3r/PrintConfig.cpp:6251
 msgid ""
 "If enabled, the command line arguments are sent to an existing instance of "
-"GUI PrusaSlicer, or an existing PrusaSlicer window is activated. Overrides "
+"GUI Tisma Slicer, or an existing Tisma Slicer window is activated. Overrides "
 "the \"single_instance\" configuration value from application preferences."
 msgstr ""
 "Si está habilitado, los argumentos de la línea de comando se envían a una "
-"instancia existente de GUI PrusaSlicer, o se activa una ventana de "
-"PrusaSlicer existente. Anula el valor de configuración \"single_instance\" "
+"instancia existente de GUI Tisma Slicer, o se activa una ventana de "
+"Tisma Slicer existente. Anula el valor de configuración \"single_instance\" "
 "de las preferencias de la aplicación."
 
 #: src/libslic3r/PrintConfig.cpp:6256
@@ -7591,11 +7590,11 @@ msgstr "Posición"
 msgid ""
 "Position of the extruder at the beginning of the custom G-code block. If the "
 "custom G-code travels somewhere else, it should write to this variable so "
-"PrusaSlicer knows where it travels from when it gets control back."
+"Tisma Slicer knows where it travels from when it gets control back."
 msgstr ""
 "Posición del extrusor al comienzo del bloque de código G personalizado. Si "
 "el código G personalizado viaja a otro lugar, debe escribir en esta variable "
-"para que PrusaSlicer sepa desde dónde viaja cuando recupere el control."
+"para que Tisma Slicer sepa desde dónde viaja cuando recupere el control."
 
 #: src/libslic3r/PrintConfig.cpp:6304 src/slic3r/GUI/Tab.cpp:3430
 msgid "Retraction"
@@ -7604,12 +7603,12 @@ msgstr "Retracción"
 #: src/libslic3r/PrintConfig.cpp:6305
 msgid ""
 "Retraction state at the beginning of the custom G-code block. If the custom "
-"G-code moves the extruder axis, it should write to this variable so "
-"PrusaSlicer deretracts correctly when it gets control back."
+"G-code moves the extruder axis, it should write to this variable so Tisma "
+"Slicer deretracts correctly when it gets control back."
 msgstr ""
 "Estado de retracción al comienzo del bloque de código G personalizado. Si el "
 "código G personalizado mueve el eje del extrusor, debe escribir en esta "
-"variable para que PrusaSlicer se retraiga correctamente cuando recupere el "
+"variable para que Tisma Slicer se retraiga correctamente cuando recupere el "
 "control."
 
 #: src/libslic3r/PrintConfig.cpp:6309
@@ -8408,14 +8407,14 @@ msgstr "La toma de una instantánea de la configuración ha fallado."
 
 #: src/slic3r/Config/Snapshot.cpp:602
 msgid ""
-"PrusaSlicer has encountered an error while taking a configuration snapshot."
+"Tisma Slicer has encountered an error while taking a configuration snapshot."
 msgstr ""
-"PrusaSlicer ha encontrado un error al tomar una instantánea de la "
+"Tisma Slicer ha encontrado un error al tomar una instantánea de la "
 "configuración."
 
 #: src/slic3r/Config/Snapshot.cpp:603
-msgid "PrusaSlicer error"
-msgstr "Error de PrusaSlicer"
+msgid "Tisma Slicer error"
+msgstr "Error de Tisma Slicer"
 
 #: src/slic3r/Config/Snapshot.cpp:605
 msgid "Continue"
@@ -8579,15 +8578,15 @@ msgstr ""
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:91
 #, boost-format
-msgid "PrusaSlicer has encountered a fatal error: \"%1%\""
-msgstr "PrusaSlicer ha encontrado un error fatal: \"%1%\""
+msgid "Tisma Slicer has encountered a fatal error: \"%1%\""
+msgstr "Tisma Slicer ha encontrado un error fatal: \"%1%\""
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:92
 msgid ""
-"Please save your project and restart PrusaSlicer. We would be glad if you "
+"Please save your project and restart Tisma Slicer. We would be glad if you "
 "reported the issue."
 msgstr ""
-"Por favor, guarda tu proyecto y reinicia PrusaSlicer. Estaremos encantados "
+"Por favor, guarda tu proyecto y reinicia Tisma Slicer. Estaremos encantados "
 "de que nos informes del problema."
 
 #: src/slic3r/GUI/BackgroundSlicingProcess.cpp:183
@@ -9489,12 +9488,12 @@ msgid "Files association"
 msgstr "Asociación de archivos"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1819 src/slic3r/GUI/Preferences.cpp:330
-msgid "Associate .3mf files to PrusaSlicer"
-msgstr "Asociar archivos .3mf a PrusaSlicer"
+msgid "Associate .3mf files to Tisma Slicer"
+msgstr "Asociar archivos .3mf a Tisma Slicer"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1820 src/slic3r/GUI/Preferences.cpp:335
-msgid "Associate .stl files to PrusaSlicer"
-msgstr "Asociar archivos .stl a PrusaSlicer"
+msgid "Associate .stl files to Tisma Slicer"
+msgstr "Asociar archivos .stl a Tisma Slicer"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1830
 msgid "View mode"
@@ -9502,13 +9501,13 @@ msgstr "Modo de vista"
 
 #: src/slic3r/GUI/ConfigWizard.cpp:1832
 msgid ""
-"PrusaSlicer's user interfaces comes in three variants:\n"
-"Simple, Advanced, and Expert.\n"
-"The Simple mode shows only the most frequently used settings relevant for "
-"regular 3D printing. The other two offer progressively more sophisticated "
-"fine-tuning, they are suitable for advanced and expert users, respectively."
+"Tisma Slicer's user interfaces comes in three variants:\nSimple, Advanced, "
+"and Expert.\nThe Simple mode shows only the most frequently used settings "
+"relevant for regular 3D printing. The other two offer progressively more "
+"sophisticated fine-tuning, they are suitable for advanced and expert users, "
+"respectively."
 msgstr ""
-"Las interfaces de usuario de PrusaSlicer tiene tres variantes:\n"
+"Las interfaces de usuario de Tisma Slicer tiene tres variantes:\n"
 "Simple, avanzado y experto.\n"
 "El modo Simple muestra solo las configuraciones usadas con más frecuencia "
 "relevantes para la impresión 3D normal. Los otros dos ofrecen ajustes "
@@ -9906,11 +9905,11 @@ msgstr "Has iniciado sesión como %1%."
 #: src/slic3r/GUI/ConfigWizardWebViewPage.cpp:44
 #: src/slic3r/GUI/ConfigWizardWebViewPage.cpp:71
 msgid ""
-"Log in to control your printers remotely through the built-in Connect in "
-"PrusaSlicer."
+"Log in to control your printers remotely through Prusa Connect, built into "
+"Tisma Slicer."
 msgstr ""
 "Inicia sesión para controlar tus impresoras de forma remota a través del "
-"Connect integrado en PrusaSlicer."
+"Connect integrado en Tisma Slicer."
 
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:256
 msgid ""
@@ -9936,10 +9935,10 @@ msgstr ""
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:447
 msgid ""
 "Performing desktop integration failed - could not create Gcodeviewer desktop "
-"file. PrusaSlicer desktop file was probably created successfully."
+"file. Tisma Slicer desktop file was probably created successfully."
 msgstr ""
 "Falló la integración del escritorio - no se ha podido crear el archivo de "
-"escritorio de Gcodeviewer. El archivo de escritorio de PrusaSlicer se creó "
+"escritorio de Gcodeviewer. El archivo de escritorio de Tisma Slicer se creó "
 "probablemente con éxito."
 
 #: src/slic3r/GUI/DesktopIntegrationDialog.cpp:497
@@ -13918,11 +13917,11 @@ msgstr "%1% fue sustituido con %2%"
 
 #: src/slic3r/GUI/GUI.cpp:203
 msgid ""
-"Most likely the configuration was produced by a newer version of PrusaSlicer "
-"or by some PrusaSlicer fork."
+"Most likely the configuration was produced by a newer version of Tisma "
+"Slicer or PrusaSlicer, or by another fork."
 msgstr ""
 "Lo más probable es que la configuración haya sido producida por una versión "
-"más reciente de PrusaSlicer o por algún fork de PrusaSlicer."
+"más reciente de Tisma Slicer o por algún fork de Tisma Slicer."
 
 #: src/slic3r/GUI/GUI.cpp:204
 msgid "The following values were substituted:"
@@ -14054,14 +14053,12 @@ msgstr "Error fatal"
 
 #: src/slic3r/GUI/GUI_App.cpp:752
 msgid ""
-"PrusaSlicer has encountered a localization error. Please report to "
-"PrusaSlicer team, what language was active and in which scenario this issue "
-"happened. Thank you.\n"
-"\n"
-"The application will now terminate."
+"Tisma Slicer has encountered a localization error. Please report to Tisma "
+"Slicer team, what language was active and in which scenario this issue "
+"happened. Thank you.\n\nThe application will now terminate."
 msgstr ""
-"PrusaSlicer ha encontrado un error de localización. Por favor, informa al "
-"equipo de PrusaSlicer qué idioma estaba activo y en qué escenario ocurrió "
+"Tisma Slicer ha encontrado un error de localización. Por favor, informa al "
+"equipo de Tisma Slicer qué idioma estaba activo y en qué escenario ocurrió "
 "este problema. Gracias.\n"
 "\n"
 "La aplicación terminará ahora."
@@ -14126,16 +14123,15 @@ msgstr "¿Continuar e importar una nueva configuración?"
 
 #: src/slic3r/GUI/GUI_App.cpp:1353
 msgid ""
-"You are running a 32 bit build of PrusaSlicer on 64-bit Windows.\n"
-"32 bit build of PrusaSlicer will likely not be able to utilize all the RAM "
-"available in the system.\n"
-"Please download and install a 64 bit build of PrusaSlicer from https://www."
-"prusa3d.cz/prusaslicer/.\n"
-"Do you wish to continue?"
+"You are running a 32 bit build of Tisma Slicer on 64-bit Windows.\n32 bit "
+"build of Tisma Slicer will likely not be able to utilize all the RAM "
+"available in the system.\nPlease download and install a 64 bit build of "
+"Tisma Slicer from https://www.prusa3d.cz/prusaslicer/.\nDo you wish to "
+"continue?"
 msgstr ""
-"Está ejecutando una versión de 32 bits de PrusaSlicer en Windows de 64 "
+"Está ejecutando una versión de 32 bits de Tisma Slicer en Windows de 64 "
 "bits.\n"
-"La versión de 32 bits de PrusaSlicer probablemente no podrá utilizar toda la "
+"La versión de 32 bits de Tisma Slicer probablemente no podrá utilizar toda la "
 "RAM disponible en el sistema.\n"
 "Por favor, descarga e instala una versión de 64 bits de PrusaSlice desde "
 "https://www.prusa3d.cz/prusaslicer/.\n"
@@ -14197,22 +14193,20 @@ msgid "Restore window position on start"
 msgstr "Restaurar la posición de la ventana al inicio"
 
 #: src/slic3r/GUI/GUI_App.cpp:1687
-msgid "PrusaSlicer started after a crash"
-msgstr "PrusaSlicer se inició después de un bloqueo"
+msgid "Tisma Slicer started after a crash"
+msgstr "Tisma Slicer se inició después de un bloqueo"
 
 #: src/slic3r/GUI/GUI_App.cpp:1688
 #, boost-format
 msgid ""
-"PrusaSlicer crashed last time when attempting to set window position.\n"
-"We are sorry for the inconvenience, it unfortunately happens with certain "
-"multiple-monitor setups.\n"
-"More precise reason for the crash: \"%1%\".\n"
-"For more information see our GitHub issue tracker: \"%2%\" and \"%3%\"\n"
-"\n"
-"To avoid this problem, consider disabling \"%4%\" in \"Preferences\". "
+"Tisma Slicer crashed last time when attempting to set window position.\nWe "
+"are sorry for the inconvenience, it unfortunately happens with certain "
+"multiple-monitor setups.\nMore precise reason for the crash: \"%1%\".\nFor "
+"more information see our GitHub issue tracker: \"%2%\" and \"%3%\"\n\nTo "
+"avoid this problem, consider disabling \"%4%\" in \"Preferences\". "
 "Otherwise, the application will most likely crash again next time."
 msgstr ""
-"PrusaSlicer se bloqueó la última vez al intentar establecer la posición de "
+"Tisma Slicer se bloqueó la última vez al intentar establecer la posición de "
 "la ventana.\n"
 "Sentimos las molestias, pero desgraciadamente ocurre con ciertas "
 "configuraciones de múltiples monitores.\n"
@@ -14243,11 +14237,11 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:2123
 msgid ""
-"But since this version of PrusaSlicer we don't show this information in "
-"Printer Settings anymore.\n"
-"Settings will be available in physical printers settings."
+"But since this version of Tisma Slicer we don't show this information in "
+"Printer Settings anymore.\nSettings will be available in physical printers "
+"settings."
 msgstr ""
-"Pero dado que a partir de esta versión de PrusaSlicer ya no mostramos esta "
+"Pero dado que a partir de esta versión de Tisma Slicer ya no mostramos esta "
 "información en los ajustes de impresora.\n"
 "Los ajustes se mostrarán en la configuración de impresora física."
 
@@ -14522,8 +14516,8 @@ msgid "Open hyperlink in default browser?"
 msgstr "¿Abrir el hipervínculo en el navegador por defecto?"
 
 #: src/slic3r/GUI/GUI_App.cpp:3623 src/slic3r/GUI/GUI_App.cpp:3643
-msgid "PrusaSlicer: Open hyperlink"
-msgstr "PrusaSlicer: Abrir hipervínculo"
+msgid "Tisma Slicer: Open hyperlink"
+msgstr "Tisma Slicer: Abrir hipervínculo"
 
 #: src/slic3r/GUI/GUI_App.cpp:3628 src/slic3r/GUI/Preferences.cpp:626
 msgid "Suppress to open hyperlink in browser"
@@ -14531,8 +14525,8 @@ msgstr "Suprimir para abrir hipervínculo en el navegador"
 
 #: src/slic3r/GUI/GUI_App.cpp:3630 src/slic3r/GUI/MainFrame.cpp:641
 #: src/slic3r/GUI/Plater.cpp:416
-msgid "PrusaSlicer will remember your choice."
-msgstr "PrusaSlicer recordará tu elección."
+msgid "Tisma Slicer will remember your choice."
+msgstr "Tisma Slicer recordará tu elección."
 
 #: src/slic3r/GUI/GUI_App.cpp:3631
 msgid "You will not be asked about it again on hyperlinks hovering."
@@ -14550,8 +14544,8 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_App.cpp:3634 src/slic3r/GUI/MainFrame.cpp:644
 #: src/slic3r/GUI/Plater.cpp:422 src/slic3r/GUI/UnsavedChangesDialog.cpp:962
-msgid "PrusaSlicer: Don't ask me again"
-msgstr "PrusaSlicer: No me vuelvas a preguntar"
+msgid "Tisma Slicer: Don't ask me again"
+msgstr "Tisma Slicer: No me vuelvas a preguntar"
 
 #: src/slic3r/GUI/GUI_App.cpp:3685
 msgid ""
@@ -14563,8 +14557,8 @@ msgstr ""
 "(Si selecciona 'Sí', no se te volverá a preguntar.)"
 
 #: src/slic3r/GUI/GUI_App.cpp:3685
-msgid "PrusaSlicer: Open Log in page"
-msgstr "PrusaSlicer: Abrir la página de Inicio de sesión"
+msgid "Tisma Slicer: Open Log in page"
+msgstr "Tisma Slicer: Abrir la página de Inicio de sesión"
 
 #: src/slic3r/GUI/GUI_App.cpp:3753
 msgid "Check for application update has failed."
@@ -14951,8 +14945,8 @@ msgstr ""
 "Rellenar el área restante de la base con copias del objeto seleccionado"
 
 #: src/slic3r/GUI/GUI_Init.cpp:74 src/slic3r/GUI/GUI_Init.cpp:77
-msgid "PrusaSlicer GUI initialization failed"
-msgstr "Hubo un error al abrir el GUI de PrusaSlicer"
+msgid "Tisma Slicer GUI initialization failed"
+msgstr "Hubo un error al abrir el GUI de Tisma Slicer"
 
 #: src/slic3r/GUI/GUI_Init.cpp:77
 #, boost-format
@@ -15212,11 +15206,11 @@ msgstr ""
 
 #: src/slic3r/GUI/GUI_ObjectList.cpp:2049
 msgid ""
-"This action will break a cut information.\n"
-"After that PrusaSlicer can't guarantee model consistency."
+"This action will break a cut information.\nAfter that Tisma Slicer can't "
+"guarantee model consistency."
 msgstr ""
 "La acción romperá la información de un corte.\n"
-"Tras ello PrusaSlicer no puede garantizar la consistencia del modelo."
+"Tras ello Tisma Slicer no puede garantizar la consistencia del modelo."
 
 #: src/slic3r/GUI/GUI_ObjectList.cpp:2051
 msgid ""
@@ -16412,16 +16406,16 @@ msgid "Open new G-code viewer"
 msgstr "Abrir visor código G nuevo"
 
 #: src/slic3r/GUI/MainFrame.cpp:252
-msgid "Closing PrusaSlicer. Current project is modified."
-msgstr "Cerrando PrusaSlicer. Se modifica el proyecto actual."
+msgid "Closing Tisma Slicer. Current project is modified."
+msgstr "Cerrando Tisma Slicer. Se modifica el proyecto actual."
 
 #: src/slic3r/GUI/MainFrame.cpp:259
-msgid "PrusaSlicer is closing"
-msgstr "PrusaSlicer se está cerrando"
+msgid "Tisma Slicer is closing"
+msgstr "Tisma Slicer se está cerrando"
 
 #: src/slic3r/GUI/MainFrame.cpp:259
-msgid "Closing PrusaSlicer while some presets are modified."
-msgstr "Cerrando PrusaSlicer mientras se modifican algunos ajustes."
+msgid "Closing Tisma Slicer while some presets are modified."
+msgstr "Cerrando Tisma Slicer mientras se modifican algunos ajustes."
 
 #: src/slic3r/GUI/MainFrame.cpp:574 src/slic3r/GUI/Plater.cpp:402
 #: src/slic3r/GUI/Plater.cpp:1914
@@ -17412,10 +17406,10 @@ msgstr "Exportando."
 #. TRN: The text is followed by a hyperlink saying "here." It is necessary to split it in two phrases, sorry.
 #: src/slic3r/GUI/NotificationManager.hpp:965
 msgid ""
-"PrusaSlicer received a download request from supported website, but it's not "
-"allowed. You can allow it"
+"Tisma Slicer received a download request from supported website, but it's "
+"not allowed. You can allow it"
 msgstr ""
-"PrusaSlicer ha recibido una solicitud de descarga desde un sitio web "
+"Tisma Slicer ha recibido una solicitud de descarga desde un sitio web "
 "compatible, pero no está permitido. Puedes permitirlo."
 
 #: src/slic3r/GUI/NotificationManager.hpp:966
@@ -17452,21 +17446,20 @@ msgstr "Rango"
 #: src/slic3r/GUI/OpenGLManager.cpp:383
 #, c-format, boost-format
 msgid ""
-"PrusaSlicer requires OpenGL ES 3.0 capable graphics driver to run "
-"correctly, \n"
-"while OpenGL version %s, renderer %s, vendor %s was detected."
+"Tisma Slicer requires OpenGL ES 3.0 capable graphics driver to run "
+"correctly, \nwhile OpenGL version %s, renderer %s, vendor %s was detected."
 msgstr ""
-"PrusaSlicer requiere un controlador gráfico compatible con OpenGL 3.0 para "
+"Tisma Slicer requiere un controlador gráfico compatible con OpenGL 3.0 para "
 "funcionar correctamente, \n"
 "mientras que OpenGL versión %s, renderer %s, vendor %s fue detectado."
 
 #: src/slic3r/GUI/OpenGLManager.cpp:386
 #, c-format, boost-format
 msgid ""
-"PrusaSlicer requires OpenGL 3.2 capable graphics driver to run correctly,\n"
-"while OpenGL version %s, renderer %s, vendor %s was detected."
+"Tisma Slicer requires OpenGL 3.2 capable graphics driver to run "
+"correctly,\nwhile OpenGL version %s, renderer %s, vendor %s was detected."
 msgstr ""
-"PrusaSlicer requiere un controlador gráfico compatible con OpenGL 3.2 para "
+"Tisma Slicer requiere un controlador gráfico compatible con OpenGL 3.2 para "
 "funcionar correctamente,\n"
 "mientras que OpenGL versión %s, renderer %s, vendor %s fue detectado."
 
@@ -17686,12 +17679,11 @@ msgstr "Preguntar por los cambios no guardados en el proyecto"
 
 #: src/slic3r/GUI/Plater.cpp:417
 msgid ""
-"You will not be asked about it again, when: \n"
-"- Closing PrusaSlicer,\n"
-"- Loading or creating a new project"
+"You will not be asked about it again, when: \n- Closing Tisma Slicer,\n- "
+"Loading or creating a new project"
 msgstr ""
 "No se te preguntará de nuevo al: \n"
-"- Cerrar PrusaSlicer,\n"
+"- Cerrar Tisma Slicer,\n"
 "- Cargar o crear un nuevo proyecto"
 
 #: src/slic3r/GUI/Plater.cpp:906
@@ -17741,17 +17733,17 @@ msgstr "Expandir barra lateral"
 
 #: src/slic3r/GUI/Plater.cpp:1324
 msgid ""
-"The preset below was temporarily installed on the active instance of "
-"PrusaSlicer"
+"The preset below was temporarily installed on the active instance of Tisma "
+"Slicer"
 msgid_plural ""
-"The presets below were temporarily installed on the active instance of "
-"PrusaSlicer"
+"The presets below were temporarily installed on the active instance of Tisma "
+"Slicer"
 msgstr[0] ""
 "El ajuste de abajo fue instalado temporalmente en la instancia activa de "
-"PrusaSlicer"
+"Tisma Slicer"
 msgstr[1] ""
 "Los ajustes de abajo fueron instalados temporalmente en la instancia activa "
-"de PrusaSlicer"
+"de Tisma Slicer"
 
 #: src/slic3r/GUI/Plater.cpp:1423
 msgid "PrintRequest can only be loaded if an SLA printer is selected."
@@ -17771,20 +17763,16 @@ msgstr "No se ha cargado la configuración"
 #: src/slic3r/GUI/Plater.cpp:1499
 #, boost-format
 msgid ""
-"<b>Unable to load configuration from project\n"
-"\n"
-"File: </b>%1%\n"
-"\n"
-"This project was created in a newer version of PrusaSlicer. Only the "
-"geometry was loaded.\n"
-"Update to the latest version for full compatibility.\n"
-"For more info: <a href=%2%>%2%</a>"
+"<b>Unable to load configuration from project\n\nFile: </b>%1%\n\nThis "
+"project was created in a newer version of Tisma Slicer. Only the geometry "
+"was loaded.\nUpdate to the latest version for full compatibility.\nFor more "
+"info: <a href=%2%>%2%</a>"
 msgstr ""
 "<b>No se puede cargar la configuración del proyecto\n"
 "\n"
 "Archivo: </b>%1%\n"
 "\n"
-"Este proyecto fue creado en una versión más reciente de PrusaSlicer. Solo se "
+"Este proyecto fue creado en una versión más reciente de Tisma Slicer. Solo se "
 "cargó la geometría.\n"
 "Actualiza a la última versión para una compatibilidad total.\n"
 "Para más info: <a href=%2%>%2%</a>"
@@ -17819,20 +17807,20 @@ msgstr "El tamaño del objeto es cero"
 #: src/slic3r/GUI/Plater.cpp:1583
 #, c-format, boost-format
 msgid ""
-"The dimensions of the object from file %s seem to be defined in meters.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
+"The dimensions of the object from file %s seem to be defined in meters.\nThe "
+"internal unit of Tisma Slicer is a millimeter. Do you want to recalculate "
 "the dimensions of the object?"
 msgid_plural ""
-"The dimensions of some objects from file %s seem to be defined in meters.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
-"the dimensions of these objects?"
+"The dimensions of some objects from file %s seem to be defined in "
+"meters.\nThe internal unit of Tisma Slicer is a millimeter. Do you want to "
+"recalculate the dimensions of these objects?"
 msgstr[0] ""
 "Las dimensiones del objeto del archivo %s parecen estar definidas en metros. "
-"La unidad interna de PrusaSlicer es el milímetro. ¿Quieres recalcular las "
+"La unidad interna de Tisma Slicer es el milímetro. ¿Quieres recalcular las "
 "dimensiones del objeto?"
 msgstr[1] ""
 "Las dimensiones de algunos objetos del archivo %s parecen estar definidas en "
-"metros. La unidad interna de PrusaSlicer es el milímetro. ¿Quiere recalcular "
+"metros. La unidad interna de Tisma Slicer es el milímetro. ¿Quiere recalcular "
 "las dimensiones de estos objetos?"
 
 #: src/slic3r/GUI/Plater.cpp:1587 src/slic3r/GUI/Plater.cpp:1605
@@ -17846,20 +17834,20 @@ msgstr "Aplicar a todos los objetos pequeños restantes que se cargan."
 #: src/slic3r/GUI/Plater.cpp:1601
 #, c-format, boost-format
 msgid ""
-"The dimensions of the object from file %s seem to be defined in inches.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
+"The dimensions of the object from file %s seem to be defined in inches.\nThe "
+"internal unit of Tisma Slicer is a millimeter. Do you want to recalculate "
 "the dimensions of the object?"
 msgid_plural ""
-"The dimensions of some objects from file %s seem to be defined in inches.\n"
-"The internal unit of PrusaSlicer is a millimeter. Do you want to recalculate "
-"the dimensions of these objects?"
+"The dimensions of some objects from file %s seem to be defined in "
+"inches.\nThe internal unit of Tisma Slicer is a millimeter. Do you want to "
+"recalculate the dimensions of these objects?"
 msgstr[0] ""
 "Las dimensiones del objeto del archivo %s parecen estar definidas en "
-"pulgadas. La unidad interna de PrusaSlicer es el milímetro. ¿Quiere "
+"pulgadas. La unidad interna de Tisma Slicer es el milímetro. ¿Quiere "
 "recalcular las dimensiones del objeto?"
 msgstr[1] ""
 "Las dimensiones de algunos objetos del archivo %s parecen estar definidas en "
-"pulgadas. La unidad interna de PrusaSlicer es el milímetro. ¿Quiere "
+"pulgadas. La unidad interna de Tisma Slicer es el milímetro. ¿Quiere "
 "recalcular las dimensiones de estos objetos?"
 
 #: src/slic3r/GUI/Plater.cpp:1620
@@ -17949,11 +17937,11 @@ msgstr "Estás intentando borrar un objeto que es parte de un objeto cortado."
 
 #: src/slic3r/GUI/Plater.cpp:2114
 msgid ""
-"This action will break a cut information.\n"
-"After that PrusaSlicer can't guarantee model consistency"
+"This action will break a cut information.\nAfter that Tisma Slicer can't "
+"guarantee model consistency"
 msgstr ""
 "La acción romperá la información de un corte.\n"
-"Tras ello PrusaSlicer no puede garantizar la consistencia del modelo"
+"Tras ello Tisma Slicer no puede garantizar la consistencia del modelo"
 
 #: src/slic3r/GUI/Plater.cpp:2117
 msgid "Delete object"
@@ -18638,15 +18626,17 @@ msgstr ""
 "cargue los ficheros cuando se invoque."
 
 #: src/slic3r/GUI/Preferences.cpp:331
-msgid "If enabled, sets PrusaSlicer as default application to open .3mf files."
+msgid ""
+"If enabled, sets Tisma Slicer as default application to open .3mf files."
 msgstr ""
-"Si está habilitado, establece a PrusaSlicer como aplicación predeterminada "
+"Si está habilitado, establece a Tisma Slicer como aplicación predeterminada "
 "para abrir archivos .3mf."
 
 #: src/slic3r/GUI/Preferences.cpp:336
-msgid "If enabled, sets PrusaSlicer as default application to open .stl files."
+msgid ""
+"If enabled, sets Tisma Slicer as default application to open .stl files."
 msgstr ""
-"Si está habilitado, establece a PrusaSlicer como aplicación predeterminada "
+"Si está habilitado, establece a Tisma Slicer como aplicación predeterminada "
 "para abrir archivos .stl."
 
 #: src/slic3r/GUI/Preferences.cpp:345
@@ -18714,8 +18704,8 @@ msgstr ""
 "seleccionar la acción a realizar en el archivo a cargar."
 
 #: src/slic3r/GUI/Preferences.cpp:375 src/slic3r/GUI/Preferences.cpp:379
-msgid "Allow just a single PrusaSlicer instance"
-msgstr "Permitir una sola instancia de PrusaSlicer"
+msgid "Allow just a single Tisma Slicer instance"
+msgstr "Permitir una sola instancia de Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:376
 msgid ""
@@ -18730,21 +18720,20 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:380
 msgid ""
-"If this is enabled, when starting PrusaSlicer and another instance of the "
-"same PrusaSlicer is already running, that instance will be reactivated "
+"If this is enabled, when starting Tisma Slicer and another instance of the "
+"same Tisma Slicer is already running, that instance will be reactivated "
 "instead."
 msgstr ""
-"Si está habilitado, al iniciar PrusaSlicer y ya se está ejecutando otra "
-"instancia del mismo PrusaSlicer, esa instancia se reactivará en su lugar."
+"Si está habilitado, al iniciar Tisma Slicer y ya se está ejecutando otra "
+"instancia del mismo Tisma Slicer, esa instancia se reactivará en su lugar."
 
 #: src/slic3r/GUI/Preferences.cpp:388
 msgid ""
-"Always ask for unsaved changes in project, when: \n"
-"- Closing PrusaSlicer,\n"
-"- Loading or creating a new project"
+"Always ask for unsaved changes in project, when: \n- Closing Tisma "
+"Slicer,\n- Loading or creating a new project"
 msgstr ""
 "Preguntar siempre por los cambios no guardados en el proyecto al: \n"
-"- Cerrar PrusaSlicer,\n"
+"- Cerrar Tisma Slicer,\n"
 "- Cargar o crear un nuevo proyecto"
 
 #: src/slic3r/GUI/Preferences.cpp:396
@@ -18758,12 +18747,12 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:397
 msgid ""
-"Always ask for unsaved changes in presets, when: \n"
-"- Closing PrusaSlicer while some presets are modified,\n"
-"- Loading a new project while some presets are modified"
+"Always ask for unsaved changes in presets, when: \n- Closing Tisma Slicer "
+"while some presets are modified,\n- Loading a new project while some presets "
+"are modified"
 msgstr ""
 "Preguntar siempre por los cambios no guardados en los ajustes, cuando: \n"
-"- Al cerrar PrusaSlicer mientras se modifican algunos ajustes,\n"
+"- Al cerrar Tisma Slicer mientras se modifican algunos ajustes,\n"
 "- Cargar un nuevo proyecto mientras se modifican algunos ajustes"
 
 #: src/slic3r/GUI/Preferences.cpp:403
@@ -18795,27 +18784,27 @@ msgstr ""
 "nuevo proyecto"
 
 #: src/slic3r/GUI/Preferences.cpp:415
-msgid "Associate .gcode files to PrusaSlicer G-code Viewer"
-msgstr "Asociar archivos .gcode al Visor de CódigoG de PrusaSlicer"
+msgid "Associate .gcode files to Tisma Slicer G-code Viewer"
+msgstr "Asociar archivos .gcode al Visor de CódigoG de Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:416
 msgid ""
-"If enabled, sets PrusaSlicer G-code Viewer as default application to open ."
-"gcode files."
+"If enabled, sets Tisma Slicer G-code Viewer as default application to open "
+".gcode files."
 msgstr ""
-"Si está habilitado, establece el Visor de CódigoG de PrusaSlicer como "
+"Si está habilitado, establece el Visor de CódigoG de Tisma Slicer como "
 "aplicación predeterminada para abrir archivos .gcode."
 
 #: src/slic3r/GUI/Preferences.cpp:419
-msgid "Associate .bgcode files to PrusaSlicer G-code Viewer"
-msgstr "Asociar archivos .bgcode a Visor de CódigoG de PrusaSlicer"
+msgid "Associate .bgcode files to Tisma Slicer G-code Viewer"
+msgstr "Asociar archivos .bgcode a Visor de CódigoG de Tisma Slicer"
 
 #: src/slic3r/GUI/Preferences.cpp:420
 msgid ""
-"If enabled, sets PrusaSlicer G-code Viewer as default application to open ."
-"bgcode files."
+"If enabled, sets Tisma Slicer G-code Viewer as default application to open "
+".bgcode files."
 msgstr ""
-"Si está habilitado, establece el Visor de CódigoG de PrusaSlicer como "
+"Si está habilitado, establece el Visor de CódigoG de Tisma Slicer como "
 "aplicación predeterminada para abrir archivos .bgcode."
 
 #: src/slic3r/GUI/Preferences.cpp:427
@@ -18835,8 +18824,8 @@ msgid "Show splash screen"
 msgstr "Mostrar pantalla splash"
 
 #: src/slic3r/GUI/Preferences.cpp:443
-msgid "If enabled, PrusaSlicer will be open at the position it was closed"
-msgstr "Si se activa, PrusaSlicer se abrirá en la posición en la que se cerró"
+msgid "If enabled, Tisma Slicer will be open at the position it was closed"
+msgstr "Si se activa, Tisma Slicer se abrirá en la posición en la que se cerró"
 
 #: src/slic3r/GUI/Preferences.cpp:448
 msgid "Clear Undo / Redo stack on new project"
@@ -19025,9 +19014,9 @@ msgstr ""
 "G en formato binario."
 
 #: src/slic3r/GUI/Preferences.cpp:627
-msgid "If enabled, PrusaSlicer will not open a hyperlinks in your browser."
+msgid "If enabled, Tisma Slicer will not open a hyperlinks in your browser."
 msgstr ""
-"Si está activado, PrusaSlicer no abrirá los hipervínculos en tu navegador."
+"Si está activado, Tisma Slicer no abrirá los hipervínculos en tu navegador."
 
 #: src/slic3r/GUI/Preferences.cpp:633
 msgid "Show STEP file import parameters"
@@ -19035,10 +19024,10 @@ msgstr "Mostrar parámetros de importación de archivos STEP"
 
 #: src/slic3r/GUI/Preferences.cpp:634
 msgid ""
-"If enabled, PrusaSlicer will show a dialog with quality selection when "
+"If enabled, Tisma Slicer will show a dialog with quality selection when "
 "importing a STEP file."
 msgstr ""
-"Si se activa, PrusaSlicer mostrará un diálogo con la selección de calidad al "
+"Si se activa, Tisma Slicer mostrará un diálogo con la selección de calidad al "
 "importar un archivo STEP."
 
 #: src/slic3r/GUI/Preferences.cpp:638
@@ -19048,10 +19037,10 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:639
 msgid ""
-"If enabled, PrusaSlicer will show up \"Log in\" button in application top "
+"If enabled, Tisma Slicer will show up \"Log in\" button in application top "
 "bar."
 msgstr ""
-"Si se activa, PrusaSlicer mostrará el botón \"Iniciar sesión\" en la barra "
+"Si se activa, Tisma Slicer mostrará el botón \"Iniciar sesión\" en la barra "
 "superior de la aplicación."
 
 #: src/slic3r/GUI/Preferences.cpp:643
@@ -19061,9 +19050,9 @@ msgstr ""
 
 #: src/slic3r/GUI/Preferences.cpp:644
 msgid ""
-"If enabled, PrusaSlicer can download and open files from supported websites"
+"If enabled, Tisma Slicer can download and open files from supported websites"
 msgstr ""
-"Si está habilitado, PrusaSlicer puede descargar y abrir archivos desde "
+"Si está habilitado, Tisma Slicer puede descargar y abrir archivos desde "
 "sitios web compatibles."
 
 #: src/slic3r/GUI/Preferences.cpp:654
@@ -19841,14 +19830,14 @@ msgid ""
 "identify you later. To detect duplicate entries, a unique number derived "
 "from your system is sent, but the source information cannot be "
 "reconstructed. Apart from that, only general data about your OS, hardware "
-"and OpenGL installation are sent. PrusaSlicer is open source, if you want to "
-"inspect the code actually performing the communication, see %1%."
+"and OpenGL installation are sent. Tisma Slicer is open source, if you want "
+"to inspect the code actually performing the communication, see %1%."
 msgstr ""
 "No enviamos ninguna información personal ni nada que nos permita "
 "identificarle posteriormente. Para detectar entradas duplicadas, se envía un "
 "número único derivado de su sistema, pero la información de origen no puede "
 "reconstruirse. Aparte de eso, solo se envían datos generales sobre tu "
-"sistema operativo, hardware e instalación de OpenGL. PrusaSlicer es de "
+"sistema operativo, hardware e instalación de OpenGL. Tisma Slicer es de "
 "código abierto, si quiere inspeccionar el código que realmente realiza la "
 "comunicación, vea %1%."
 
@@ -20028,8 +20017,8 @@ msgid "System Information"
 msgstr "Información del sistema"
 
 #: src/slic3r/GUI/SysInfoDialog.cpp:166
-msgid "Blacklisted libraries loaded into PrusaSlicer process:"
-msgstr "Bibliotecas de la lista negra cargadas en el proceso PrusaSlicer:"
+msgid "Blacklisted libraries loaded into Tisma Slicer process:"
+msgstr "Bibliotecas de la lista negra cargadas en el proceso Tisma Slicer:"
 
 #: src/slic3r/GUI/SysInfoDialog.cpp:178
 msgid "Eigen vectorization supported:"
@@ -20418,14 +20407,12 @@ msgstr "Sugerencias de flujo volumétrico no disponibles"
 #: src/slic3r/GUI/Tab.cpp:2655
 msgid ""
 "Note: All parameters from this group are moved to the Physical Printer "
-"settings (see changelog).\n"
-"\n"
-"A new Physical Printer profile is created by clicking on the \"cog\" icon "
-"right of the Printer profiles combo box, by selecting the \"Add physical "
-"printer\" item in the Printer combo box. The Physical Printer profile editor "
-"opens also when clicking on the \"cog\" icon in the Printer settings tab. "
-"The Physical Printer profiles are being stored into PrusaSlicer/"
-"physical_printer directory."
+"settings (see changelog).\n\nA new Physical Printer profile is created by "
+"clicking on the \"cog\" icon right of the Printer profiles combo box, by "
+"selecting the \"Add physical printer\" item in the Printer combo box. The "
+"Physical Printer profile editor opens also when clicking on the \"cog\" icon "
+"in the Printer settings tab. The Physical Printer profiles are being stored "
+"into TismaSlicer/physical_printer directory."
 msgstr ""
 "Nota: Todos los parámetros de este grupo se han desplazado a la "
 "configuración de Impresora física (consulte el registro de cambios).\n"
@@ -20436,7 +20423,7 @@ msgstr ""
 "combinado de impresora. El editor de perfil de Impresora física también se "
 "abre al hacer clic en el icono \"engranaje\" en la pestaña Configuración de "
 "impresora. Los perfiles de la impresora física se almacenan en el directorio "
-"PrusaSlicer/physical_printer."
+"TismaSlicer/physical_printer."
 
 #: src/slic3r/GUI/Tab.cpp:2674
 msgid ""
@@ -21192,18 +21179,17 @@ msgstr ""
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:956
 msgid ""
 "You will not be asked about the unsaved changes in presets the next time "
-"you: \n"
-"- Closing PrusaSlicer while some presets are modified,\n"
-"- Loading a new project while some presets are modified"
+"you: \n- Closing Tisma Slicer while some presets are modified,\n- Loading a "
+"new project while some presets are modified"
 msgstr ""
 "No se te preguntará por los cambios no guardados en los ajustes la próxima "
 "vez que lo hagas: \n"
-"- Cerrar PrusaSlicer mientras se modifican algunos ajustes,\n"
+"- Cerrar Tisma Slicer mientras se modifican algunos ajustes,\n"
 "- Cargar un nuevo proyecto mientras se modifican algunos ajustes"
 
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:959
-msgid "PrusaSlicer will remember your action."
-msgstr "PrusaSlicer recordará tu acción."
+msgid "Tisma Slicer will remember your action."
+msgstr "Tisma Slicer recordará tu acción."
 
 #: src/slic3r/GUI/UnsavedChangesDialog.cpp:960
 #, boost-format
@@ -21419,10 +21405,10 @@ msgstr ""
 #: src/slic3r/GUI/UpdateDialogs.cpp:121
 msgid ""
 "Clicking 'Next' will open a browser window where you can select which "
-"variant of PrusaSlicer you want to download."
+"variant of Tisma Slicer you want to download."
 msgstr ""
 "Al hacer clic en 'Siguiente' se abrirá una ventana del navegador en la que "
-"podrás seleccionar qué variante de PrusaSlicer deseas descargar."
+"podrás seleccionar qué variante de Tisma Slicer deseas descargar."
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:131
 msgid "Next"
@@ -21483,11 +21469,11 @@ msgstr "Actualización de configuración"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:282
 msgid ""
-"PrusaSlicer is not using the newest configuration available.\n"
-"Configuration Wizard may not offer the latest printers, filaments and SLA "
-"materials to be installed."
+"Tisma Slicer is not using the newest configuration available.\nConfiguration "
+"Wizard may not offer the latest printers, filaments and SLA materials to be "
+"installed."
 msgstr ""
-"PrusaSlicer no utiliza la configuración más reciente disponible.\n"
+"Tisma Slicer no utiliza la configuración más reciente disponible.\n"
 "Es posible que el Asistente de Configuración no muestre las últimas "
 "impresoras, filamentos y materiales SLA para instalar."
 
@@ -22100,17 +22086,17 @@ msgstr ""
 
 #: src/slic3r/Utils/Http.cpp:81
 msgid ""
-"Could not detect system SSL certificate store. PrusaSlicer will be unable to "
-"establish secure network connections."
+"Could not detect system SSL certificate store. Tisma Slicer will be unable "
+"to establish secure network connections."
 msgstr ""
-"No se pudo detectar el almacén de certificados SSL del sistema. PrusaSlicer "
+"No se pudo detectar el almacén de certificados SSL del sistema. Tisma Slicer "
 "no podrá establecer conexiones de red seguras."
 
 #: src/slic3r/Utils/Http.cpp:86
 #, boost-format
-msgid "PrusaSlicer detected system SSL certificate store in: %1%"
+msgid "Tisma Slicer detected system SSL certificate store in: %1%"
 msgstr ""
-"PrusaSlicer detectó el almacenamiento de certificados SSL del sistema en: %1%"
+"Tisma Slicer detectó el almacenamiento de certificados SSL del sistema en: %1%"
 
 #: src/slic3r/Utils/Http.cpp:90
 #, boost-format
@@ -22124,10 +22110,10 @@ msgstr ""
 
 #: src/slic3r/Utils/Http.cpp:99
 msgid ""
-"CURL init has failed. PrusaSlicer will be unable to establish network "
+"CURL init has failed. Tisma Slicer will be unable to establish network "
 "connections. See logs for additional details."
 msgstr ""
-"CURL init ha fallado. PrusaSlicer no podrá establecer conexiones de red. "
+"CURL init ha fallado. Tisma Slicer no podrá establecer conexiones de red. "
 "Consulta los registros para obtener detalles adicionales."
 
 #: src/slic3r/Utils/MKS.cpp:61
@@ -31359,8 +31345,8 @@ msgstr "Ángulo del cono"
 msgid "Conical"
 msgstr "Cónica"
 
-msgid "Conical layers: slope of the cone. Positive values rise outwards. With \"Fit to the print head\", only its sign is used: the slope is the free angle of the print head."
-msgstr "Capas cónicas: pendiente del cono. Los valores positivos suben hacia afuera. Con «Ajustar al cabezal» solo se usa su signo: la pendiente es el ángulo libre del cabezal."
+msgid "Conical layers without \"Fit to the print head\": slope of the cone, positive values rise outwards. With it (the default) the slope at each radius comes from the overhangs of the part and this value is not used."
+msgstr "Capas cónicas sin «Ajustar al cabezal»: pendiente del cono, los valores positivos suben hacia afuera. Con esa opción (la predeterminada) la pendiente en cada radio sale de los voladizos de la pieza y este valor no se usa."
 
 msgid "Connect"
 msgstr "Conectar"
@@ -32154,8 +32140,12 @@ msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en 
 msgid "Rendering quality"
 msgstr "Calidad de render"
 
-msgid "Quality of the 3D view of the objects, of the bed and of the G-code preview. Classic: lighting per vertex, as PrusaSlicer 2.9. Per pixel: smooth lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and shadows of the main light (needs a faster graphics card)."
-msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como PrusaSlicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
+msgid ""
+"Quality of the 3D view of the objects, of the bed and of the G-code preview. "
+"Classic: lighting per vertex, as Tisma Slicer 2.9. Per pixel: smooth "
+"lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and "
+"shadows of the main light (needs a faster graphics card)."
+msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como Tisma Slicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
 
 msgid "Per pixel"
 msgstr "Por píxel"
@@ -32319,8 +32309,8 @@ msgstr "Impresora"
 msgid "Belt printer"
 msgstr "Impresora de cinta"
 
-msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
-msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, Y la cinta (avanza entre capas) y Z a lo largo del cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
+msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, the belt (it moves between layers) and the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
+msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, la cinta (avanza entre capas) y el cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
 
 msgid "Gantry angle"
 msgstr "Ángulo del cabezal"
@@ -33061,8 +33051,8 @@ msgstr "Pendiente más empinada de las capas que suben a lo largo de Y que el ca
 msgid "Fit to the print head"
 msgstr "Ajustar al cabezal"
 
-msgid "Make the layers as curved as the print head allows, instead of using the wave amplitude and the cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer Settings > General > Print head), the waves rise at most the head clearance height from trough to crest, and the layer thickness stays within the allowed range. Conical layers keep the direction of the cone angle set here (rising outwards or inwards)."
-msgstr "Curva las capas tanto como permite el cabezal, en lugar de usar la amplitud de onda y el ángulo del cono de aquí: la pendiente de las capas es el ángulo libre del cabezal en X y en Y (Configuración de impresora > General > Cabezal), las ondas suben como mucho la altura libre del cabezal de valle a cresta y el espesor de capa queda dentro del rango permitido. Las capas cónicas mantienen el sentido del ángulo del cono de aquí (subiendo hacia afuera o hacia adentro)."
+msgid "Make the layers as curved as the print head allows, instead of using the wave amplitude and the cone angle set here: the layer slope is the free angle of the head along X and along Y (Printer Settings > General > Print head), the waves rise at most the head clearance height from trough to crest, and the layer thickness stays within the allowed range. Conical layers take their slope at each radius from the overhangs of the part."
+msgstr "Curva las capas tanto como permite el cabezal, en lugar de usar la amplitud de onda y el ángulo del cono de aquí: la pendiente de las capas es el ángulo libre del cabezal en X y en Y (Configuración de impresora > General > Cabezal), las ondas suben como mucho la altura libre del cabezal de valle a cresta y el espesor de capa queda dentro del rango permitido. Las capas cónicas toman la pendiente de cada radio de los voladizos de la pieza."
 
 msgid "Steepest layer slope the nozzle can print without the nozzle body hitting the part (3 axis printers). Slicing fails if the layers are steeper. Used where the free angles of the print head along X and Y are not measured (Printer Settings > General > Print head)."
 msgstr "Pendiente de capa más empinada que la boquilla puede imprimir sin que su cuerpo choque con la pieza (impresoras de 3 ejes). El laminado falla si las capas son más empinadas. Se usa donde no están medidos los ángulos libres del cabezal en X y en Y (Configuración de impresora > General > Cabezal)."
@@ -33235,8 +33225,8 @@ msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de 
 msgid "Step 1: narrowest free groove φ in that row, walls along Y (second block)"
 msgstr "Paso 1: ranura libre más angosta φ en esa fila, paredes a lo largo de Y (segundo bloque)"
 
-msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed."
-msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes."
+msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed. Stresses: the layers tilt towards where the part is pulled, as computed in Engineering (Curved layers for strength), so that the pull runs more along the layers. Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with Z anti-aliasing)."
+msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes. Tensiones: las capas se inclinan hacia donde tiran de la pieza, según lo calculado en Ingeniería (Capas curvas para resistencia), para que el tirón vaya más a lo largo de las capas. Caras superiores: las capas de arriba siguen las caras superiores de la pieza, tanto como permite el cabezal, para que las caras inclinadas y curvas se vean como una sola capa continua en lugar de escalones (mejor con anti-aliasing en Z)."
 
 msgid "Overhangs (fewer supports)"
 msgstr "Voladizos (menos soportes)"
@@ -33250,17 +33240,14 @@ msgstr "Modo voladizos: el voladizo más inclinado, medido desde la vertical, qu
 msgid "Z anti-aliasing"
 msgstr "Anti-aliasing en Z"
 
-msgid "Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness left, so that the top follows the model. Needs absolute XYZ and no arc fitting; not with non-planar layers, spiral vase or belt printers."
-msgstr "Suaviza los escalones de las superficies superiores inclinadas: donde la superficie del modelo cruza una capa, el relleno superior, el planchado, los perímetros y el relleno de huecos bajan hasta la superficie y extruyen solo el espesor que queda, así la cara superior sigue al modelo. Requiere XYZ absolutos y sin ajuste de arcos; no con capas no planares, modo jarrón ni impresoras de cinta."
+msgid "Smooth the stairs of the sloped top surfaces: where the surface of the model crosses a layer, the top infill, ironing, perimeters and gap fill are lowered to the surface and extrude only the thickness left, so that the top follows the model. With non-planar layers it follows the top within the curved layers. Needs absolute XYZ and no arc fitting; not with spiral vase or belt printers."
+msgstr "Suaviza los escalones de las superficies superiores inclinadas: donde la superficie del modelo cruza una capa, el relleno superior, el planchado, los perímetros y el relleno de huecos bajan hasta la superficie y extruyen solo el espesor que queda, así la cara superior sigue al modelo. Con capas no planares sigue la cara superior dentro de las capas curvas. Requiere XYZ absolutos y sin ajuste de arcos; no con modo jarrón ni impresoras de cinta."
 
 msgid "Z anti-aliasing: thinnest extrusion"
 msgstr "Anti-aliasing en Z: extrusión más fina"
 
 msgid "The extrusions are lowered at most down to this thickness, in percent of the layer height."
 msgstr "Las extrusiones bajan como mucho hasta este espesor, en porcentaje de la altura de capa."
-
-msgid "Z anti-aliasing cannot be combined with non-planar layers."
-msgstr "El anti-aliasing en Z no se puede combinar con capas no planares."
 
 msgid "Z anti-aliasing cannot be combined with the Spiral Vase mode."
 msgstr "El anti-aliasing en Z no se puede combinar con el modo jarrón."
@@ -33270,3 +33257,500 @@ msgstr "El anti-aliasing en Z no se puede usar con impresoras de cinta."
 
 msgid "Z anti-aliasing requires Arc fitting to be disabled."
 msgstr "El anti-aliasing en Z requiere el ajuste de arcos desactivado."
+
+msgid "Suction cup in %1%: a hollow closed at the bottom and open towards the film, from %2% mm to %3% mm above the bottom of the part (up to %4% mm²). The vacuum while peeling can tear the print off or deform it. Drill a drain hole of 3 to 5 mm in its floor (Hollow and drill) or rotate the part so that the hollow opens towards the build plate.%5%"
+msgstr "Ventosa en %1%: un hueco cerrado abajo y abierto hacia el film, de %2% mm a %3% mm sobre la base de la pieza (hasta %4% mm²). El vacío al despegar puede arrancar o deformar la impresión. Hacé un agujero de drenaje de 3 a 5 mm en su piso (Vaciado y taladrado) o girá la pieza para que el hueco quede abierto hacia la plataforma.%5%"
+
+msgid "%1% suction cups in total."
+msgstr "%1% ventosas en total."
+
+msgid "Lowest peel force"
+msgstr "Menor fuerza de despegue"
+
+msgid "Among the orientations needing few supports, choose one without suction cups (hollows closed below and open towards the film) and with the smallest largest layer: the force that tears each layer from the film grows with its area."
+msgstr "Entre las orientaciones que necesitan pocos soportes, elige una sin ventosas (huecos cerrados abajo y abiertos hacia el film) y con la capa más grande lo más chica posible: la fuerza que despega cada capa del film crece con su área."
+
+msgid "Least support material"
+msgstr "Menos material de soporte"
+
+msgid "Lay the object on one of its faces so that the overhangs steeper than the support threshold need the least support material, preferring a large contact with the bed for adhesion."
+msgstr "Apoya el objeto sobre una de sus caras de modo que los voladizos más empinados que el umbral de soporte necesiten el menor material de soporte, prefiriendo un contacto grande con la cama para la adherencia."
+
+msgid "Interlocking infill (non-planar)"
+msgstr "Relleno entrelazado (no planar)"
+
+msgid "Print the sparse infill on waves in Z (an egg-crate surface repeated in every layer), so that the layers of the infill nest into each other instead of meeting on flat planes, where printed parts usually break. The perimeters, the solid infill and the top and bottom surfaces stay flat: the waves fade out next to them, and the flow follows the thickness between the layers. Experimental: check the strength with your own test pieces. Needs absolute XYZ and no arc fitting; not with non-planar layers, spiral vase or belt printers."
+msgstr "Imprime el relleno disperso sobre ondas en Z (una superficie de huevera repetida en cada capa), para que las capas del relleno encastren unas en otras en lugar de apoyarse en planos, que es por donde suelen romper las piezas impresas. Los perímetros, el relleno sólido y las superficies superiores e inferiores quedan planos: las ondas se desvanecen junto a ellos y el flujo sigue el espesor entre las capas. Experimental: comprobá la resistencia con tus propias probetas. Requiere XYZ absolutas y sin ajuste de arcos; no con capas no planares, modo vaso ni impresoras de cinta."
+
+msgid "Interlocking infill: amplitude"
+msgstr "Relleno entrelazado: amplitud"
+
+msgid "How far the infill goes up and down from the layer, in percent of the layer height."
+msgstr "Cuánto sube y baja el relleno respecto de la capa, en porcentaje de la altura de capa."
+
+msgid "Interlocking infill: wavelength"
+msgstr "Relleno entrelazado: longitud de onda"
+
+msgid "Distance between two crests of the waves, along X and along Y."
+msgstr "Distancia entre dos crestas de las ondas, a lo largo de X y de Y."
+
+msgid "Interlocking infill cannot be combined with non-planar layers."
+msgstr "El relleno entrelazado no se puede combinar con capas no planares."
+
+msgid "Interlocking infill cannot be combined with the Spiral Vase mode."
+msgstr "El relleno entrelazado no se puede combinar con el modo vaso espiral."
+
+msgid "Interlocking infill cannot be used with belt printers."
+msgstr "El relleno entrelazado no se puede usar con impresoras de cinta."
+
+msgid "Interlocking infill requires Arc fitting to be disabled."
+msgstr "El relleno entrelazado requiere el ajuste de arcos desactivado."
+
+msgid "Stresses (stronger, from Engineering)"
+msgstr "Tensiones (más resistente, desde Ingeniería)"
+
+msgid "Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength)."
+msgstr "Capas no planares según las tensiones: primero calculalas en Ingeniería (Capas curvas para resistencia)."
+
+msgid "Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again."
+msgstr "Capas no planares según las tensiones: la pieza cambió desde que se calcularon en Ingeniería, calculalas de nuevo."
+
+msgid "Curved layers for strength"
+msgstr "Capas curvas para resistencia"
+
+msgid "Remove the curved layers"
+msgstr "Quitar las capas curvas"
+
+msgid "Tilts the layers towards where the part is pulled, as far as the print head allows, so that the pull runs more along the layers (non-planar layers, 3 axes)."
+msgstr "Inclina las capas hacia donde tiran de la pieza, tanto como permite el cabezal, para que el tirón vaya más a lo largo de las capas (capas no planares, 3 ejes)."
+
+msgid "Compute curved layers"
+msgstr "Calcular capas curvas"
+
+msgid "Flat layers: safety factor %1$.2f"
+msgstr "Capas planas: factor de seguridad %1$.2f"
+
+msgid "Curved layers: safety factor %1$.2f (x %2$.2f)"
+msgstr "Capas curvas: factor de seguridad %1$.2f (x %2$.2f)"
+
+msgid "Use the curved layers"
+msgstr "Usar las capas curvas"
+
+msgid "The curved layers do not help these loads: keep the flat layers."
+msgstr "Las capas curvas no ayudan con estas cargas: dejá las capas planas."
+
+msgid "The object has curved layers (safety factor %1$.2f -> %2$.2f)."
+msgstr "El objeto tiene capas curvas (factor de seguridad %1$.2f -> %2$.2f)."
+
+msgid "The object has curved layers."
+msgstr "El objeto tiene capas curvas."
+
+msgid "Experimental: check the strength with your own test pieces. The layer thickness, the print head and the first flat layers limit the tilt."
+msgstr "Experimental: comprobá la resistencia con tus propias probetas. El espesor de capa, el cabezal y las primeras capas planas limitan la inclinación."
+
+msgid "Curved layers applied: Print Settings > Non-planar follows the stresses. Slice to see the layers."
+msgstr "Capas curvas aplicadas: Configuración de impresión > No planar sigue las tensiones. Laminá para ver las capas."
+
+msgid "Top surfaces (finish)"
+msgstr "Caras superiores (acabado)"
+
+msgid "Arc overhangs"
+msgstr "Arc overhangs"
+
+msgid "Arc overhangs speed"
+msgstr "Velocidad de los arc overhangs"
+
+msgid "Speed of the arcs of the arc overhangs: slow, so that each arc cools down and holds the next one (Calibration > Arc overhang speed). Set zero to use the bridge speed."
+msgstr "Velocidad de los arcos de los arc overhangs: lenta, para que cada arco se enfríe y sostenga al siguiente (Calibración > Arc overhang speed). Con cero se usa la velocidad de puentes."
+
+msgid "Arc overhangs maximum distance"
+msgstr "Distancia máxima de los arc overhangs"
+
+msgid "The arcs grow up to this distance from where the overhang is anchored; farther out the overhang is printed as usual (Calibration > Arc overhang maximum distance). Set zero for no limit."
+msgstr "Los arcos crecen hasta esta distancia desde donde se apoya el voladizo; más allá el voladizo se imprime como siempre (Calibración > Arc overhang maximum distance). Con cero no hay límite."
+
+msgid "Arc overhang speed"
+msgstr "Velocidad de arc overhang"
+
+msgid "Arc overhang maximum distance"
+msgstr "Distancia máxima de arc overhang"
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. The first layer of each slab is printed with arc overhangs, at a different speed for each column (from left to right)."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale 15 mm hacia atrás sin nada debajo. La primera capa de cada losa se imprime con arc overhangs, a una velocidad distinta en cada columna (de izquierda a derecha)."
+
+msgid "Look at the slabs from below: choose the fastest column whose arcs are round, joined to each other and not sagging. Its speed is start + step × column number (from the left, starting at 0): it is the arc overhangs speed (Calibration > Apply a calibration result). Run the fan at full power, as for bridges."
+msgstr "Mirá las losas desde abajo: elegí la columna más rápida cuyos arcos salgan redondos, unidos entre sí y sin colgar. Su velocidad es inicio + paso × número de columna (desde la izquierda, empezando en 0): es la velocidad de los arc overhangs (Calibración > Aplicar un resultado de calibración). Usá el ventilador al máximo, como en los puentes."
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out to the back with nothing below, longer for each column (from left to right). The first layer of each slab is printed with arc overhangs at the arc overhangs speed of the print settings: calibrate the speed first."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale hacia atrás sin nada debajo, más larga en cada columna (de izquierda a derecha). La primera capa de cada losa se imprime con arc overhangs a la velocidad de la configuración de impresión: calibrá primero la velocidad."
+
+msgid "Look at the slabs from below: choose the longest one whose arcs reach the end without sagging or coming apart. Its length is start + step × column number (from the left, starting at 0): it is the arc overhangs maximum distance (Calibration > Apply a calibration result); longer overhangs are printed as usual beyond it, supports included."
+msgstr "Mirá las losas desde abajo: elegí la más larga cuyos arcos lleguen al final sin colgar ni separarse. Su largo es inicio + paso × número de columna (desde la izquierda, empezando en 0): es la distancia máxima de los arc overhangs (Calibración > Aplicar un resultado de calibración); en voladizos más largos, más allá se imprime como siempre, con soportes incluidos."
+
+msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers for overhangs without supports (best on 4/5 axis printers). Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed. Stresses: the layers tilt towards where the part is pulled, as computed in Engineering (Curved layers for strength), so that the pull runs more along the layers. Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with Z anti-aliasing). How curved the layers are comes from the free angle and the clearance height of the print head (Printer Settings > General > Print head)."
+msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono para voladizos sin soportes (mejor en impresoras de 4/5 ejes). Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes. Tensiones: las capas se inclinan hacia donde tiran de la pieza, según lo calculado en Ingeniería (Capas curvas para resistencia), para que el tirón vaya más a lo largo de las capas. Caras superiores: las capas de arriba siguen las caras superiores de la pieza, tanto como permite el cabezal, para que las caras inclinadas y curvas se vean como una sola capa continua en lugar de escalones (mejor con anti-aliasing en Z). Cuánto se curvan las capas lo deciden el ángulo libre y la holgura del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Vertical distance from the nozzle tip to the lowest point of the print head around it (heater block with its sock, part cooling duct, probe). Measure it on your printer. With the free angle, it is all the non-planar layers need: the waves rise at most this height from trough to crest, and the layers are made gentler where the part already printed would rise higher than this next to the nozzle. 0 disables the check."
+msgstr "Distancia vertical desde la punta de la boquilla hasta el punto más bajo del cabezal a su alrededor (bloque calefactor con su funda, ducto de ventilación de la pieza, sensor). Mídela en tu impresora. Junto con el ángulo libre, es todo lo que necesitan las capas no planares: las ondas suben como mucho esta altura del valle a la cresta, y las capas se suavizan donde la pieza ya impresa subiría más que esto junto a la boquilla. 0 desactiva la comprobación."
+
+msgid "Steepest slope of the layers rising along X that the print head allows without touching the part: the smaller of the two directions (+X and -X), measured on the static gauge with its ramps rising along X. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer slope of the print settings (20° by default)."
+msgstr "Pendiente más empinada de las capas que suben a lo largo de X que el cabezal permite sin tocar la pieza: la menor de las dos direcciones (+X y -X), medida con la galga estática con sus rampas subiendo a lo largo de X. Las capas no planares nunca son más empinadas que esto. 0 = sin medir, se usa la pendiente máxima de la configuración de impresión (20° por defecto)."
+
+msgid "Steepest slope of the layers rising along Y that the print head allows without touching the part: the smaller of the two directions (+Y and -Y), measured on the static gauge with its ramps rising along Y. The non-planar layers are never steeper than this. 0 = not measured, use the maximum layer slope of the print settings (20° by default)."
+msgstr "Pendiente más empinada de las capas que suben a lo largo de Y que el cabezal permite sin tocar la pieza: la menor de las dos direcciones (+Y y -Y), medida con la galga estática con sus rampas subiendo a lo largo de Y. Las capas no planares nunca son más empinadas que esto. 0 = sin medir, se usa la pendiente máxima de la configuración de impresión (20° por defecto)."
+
+msgid "Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the nominal one (allowed %3% %% to %4% %%). Check the free angle and the clearance height of the print head (Printer Settings > General > Print head)."
+msgstr "Capas no planares: el espesor de capa variaría entre %1% %% y %2% %% del nominal (se permite de %3% %% a %4% %%). Revisa el ángulo libre y la holgura del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Non-planar layers: the layers would be up to %1%° steep, more than the print head allows (%2%° along X, %3%° along Y). Check the free angle of the print head (Printer Settings > General > Print head)."
+msgstr "Capas no planares: las capas tendrían hasta %1%° de pendiente, más de lo que permite el cabezal (%2%° en X, %3%° en Y). Revisa el ángulo libre del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Non-planar layers: the print head would hit the part. At %1% mm of height, the part already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the %4% mm the print head allows there. Check the free angle and the clearance height of the print head (Printer Settings > General > Print head)."
+msgstr "Capas no planares: el cabezal chocaría con la pieza. A %1% mm de altura, la pieza ya impresa sube %2% mm sobre la punta de la boquilla a %3% mm de ella, más que los %4% mm que admite el cabezal ahí. Revisa el ángulo libre y la holgura del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Models, plates and their print, filament and printer settings, instead of the current project."
+msgstr "Modelos, placas y sus ajustes de impresión, filamento e impresora, en lugar del proyecto actual."
+
+msgid "Adds the models to the current project, printed with the current settings."
+msgstr "Agrega los modelos al proyecto actual, impresos con los ajustes actuales."
+
+msgid "Loads only the print, filament and printer settings of the file."
+msgstr "Carga solo los ajustes de impresión, filamento e impresora del archivo."
+
+msgid "Open in a new window"
+msgstr "Abrir en una ventana nueva"
+
+msgid "Opens the file as a project in another window, keeping this one as it is."
+msgstr "Abre el archivo como proyecto en otra ventana y deja esta como está."
+
+msgid "Open a new window"
+msgstr "Abrir una ventana nueva"
+
+msgid "Open %1%"
+msgstr "Abrir %1%"
+
+msgid "Open &%1%"
+msgstr "Abrir &%1%"
+
+msgid "Print curved layers instead of flat ones. The object is deformed, sliced as usual and the G-code is transformed back, so all perimeters, infill and supports follow the curved layers. Automatic (recommended): the layers tilt under the overhangs that would need supports and follow the top surfaces, both as far as the print head allows. Wave: interlocking layers for a more homogeneous strength between layers. Conical: cone shaped layers around the center of the part whose slope at each radius is the one the overhangs of the part at that radius need (round parts that flare outwards or inwards), flat where nothing needs it. Overhangs: the layers stay flat and are tilted only under the overhangs that would need supports, as much as the print head allows, so that fewer supports are needed. Stresses: the layers tilt towards where the part is pulled, as computed in Engineering (Curved layers for strength), so that the pull runs more along the layers. Top surfaces: the upper layers follow the top surfaces of the part, as far as the print head allows, so that sloped and curved tops look like one continuous layer instead of stairs (best with Z anti-aliasing). How curved the layers are comes from the free angle and the clearance height of the print head (Printer Settings > General > Print head)."
+msgstr "Imprime capas curvas en lugar de planas. El objeto se deforma, se lamina como siempre y el G-code se transforma de vuelta, así perímetros, relleno y soportes siguen las capas curvas. Automático (recomendado): las capas se inclinan bajo los voladizos que necesitarían soporte y siguen las caras superiores, ambas cosas tanto como permite el cabezal. Onda: capas entrelazadas para una resistencia más pareja entre capas. Cónico: capas en forma de cono alrededor del centro de la pieza, con la pendiente que necesitan los voladizos de la pieza en cada radio (piezas redondas que se abren hacia afuera o hacia adentro), planas donde nada lo necesita. Voladizos: las capas quedan planas y se inclinan solo bajo los voladizos que necesitarían soporte, tanto como permite el cabezal, así hacen falta menos soportes. Tensiones: las capas se inclinan hacia donde tiran de la pieza, según lo calculado en Ingeniería (Capas curvas para resistencia), para que el tirón vaya más a lo largo de las capas. Caras superiores: las capas de arriba siguen las caras superiores de la pieza, tanto como permite el cabezal, para que las caras inclinadas y curvas se vean como una sola capa continua en lugar de escalones (mejor con anti-aliasing en Z). Cuánto se curvan las capas lo deciden el ángulo libre y la holgura del cabezal (Ajustes de la impresora > General > Cabezal)."
+
+msgid "Automatic (finish and fewer supports)"
+msgstr "Automático (acabado y menos soportes)"
+
+msgid "Prints, in one go, a mushroom whose underside flares out at the overhang angle (stem of 10 mm, flare up to 15 mm, cap up to 18 mm) and a 30 mm block whose top slopes at the top angle. It uses the non-planar mode Automatic and supports where needed (both set in the print settings, shown as modified). Print it again with Non-planar layers set to Disabled to compare."
+msgstr "Imprime de una vez un hongo cuya parte de abajo se abre con el ángulo de voladizo (tallo de 10 mm, ala hasta 15 mm, sombrero hasta 18 mm) y un bloque de 30 mm cuya cara superior se inclina con el ángulo de la cara. Usa el modo no planar Automático y soportes donde hagan falta (los dos se ponen en la configuración de impresión, que queda como modificada). Imprimila otra vez con Capas no planares en Desactivado para comparar."
+
+msgid "Supports: with flat layers the flare of the mushroom needs supports; with the automatic mode it should print without them, or with far fewer (look at the preview before printing). Finish: compare the top of the block with that of the flat print, the stairs of the layers should be much smaller. The flare is printable only if the free angle of the print head is at least the overhang angle minus 45°."
+msgstr "Soportes: con capas planas el ala del hongo necesita soportes; con el modo automático debería imprimirse sin ellos o con muchos menos (miralo en la vista previa antes de imprimir). Acabado: compará la cara superior del bloque con la de la impresión plana; los escalones de las capas deberían ser mucho más chicos. El ala se puede imprimir solo si el ángulo libre del cabezal es al menos el ángulo del voladizo menos 45°."
+
+msgid "Non-planar: automatic mode test pieces"
+msgstr "No planar: probetas del modo automático"
+
+msgid "Overhang angle of the mushroom"
+msgstr "Ángulo del voladizo del hongo"
+
+msgid "Slope of the top of the block"
+msgstr "Pendiente de la cara superior del bloque"
+
+msgid "Infill ribs along the stresses"
+msgstr "Nervios del relleno según las tensiones"
+
+msgid "Where the part works in one direction (pulled or bent along it) its infill lines are laid along that direction in every layer, as the ribs of a part designed for the loads. The analysis counts them (stiffer and stronger along the lines, much weaker across) and keeps them only if the infill is lighter."
+msgstr "Donde la pieza trabaja en una dirección (traccionada o a flexión a lo largo de ella) las líneas del relleno se ponen en esa dirección en todas las capas, como los nervios de una pieza diseñada para las cargas. El análisis los tiene en cuenta (más rígido y resistente a lo largo de las líneas, mucho más débil a lo ancho) y solo los usa si el relleno queda más liviano."
+
+msgid "With %1% zones of ribs along the stresses (%2% %% without them)."
+msgstr "Con %1% zonas de nervios según las tensiones (%2% %% sin ellos)."
+
+msgid "Skin + core"
+msgstr "Piel + núcleo"
+
+msgid "In one click, a part finished as injection molded and designed for its loads: the skin with automatic non-planar layers (top faces that follow the surface, fewer supports) and the core with the lightest infill by zones and ribs along the stresses, applied when found."
+msgstr "En un clic, una pieza terminada como inyectada y diseñada para sus cargas: la piel con capas no planares automáticas (caras superiores que siguen la superficie, menos soportes) y el núcleo con el relleno mínimo por zonas y nervios según las tensiones, aplicado al encontrarlo."
+
+msgid "automatic non-planar skin + lightest infill with ribs"
+msgstr "piel no planar automática + relleno mínimo con nervios"
+
+msgid "Skin: Print Settings > Non-planar is now Automatic (top faces that follow the surface, fewer supports)."
+msgstr "Piel: Configuración de impresión > No planar ahora es Automático (caras superiores que siguen la superficie, menos soportes)."
+
+msgid "Skin: Print Settings > Non-planar was already Automatic."
+msgstr "Piel: Configuración de impresión > No planar ya estaba en Automático."
+
+msgid "Core: add the fixed faces and the loads of the part to find the lightest infill with ribs."
+msgstr "Núcleo: agregá las caras fijas y las cargas de la pieza para buscar el relleno mínimo con nervios."
+
+msgid "Core: searching the lightest infill with ribs along the stresses..."
+msgstr "Núcleo: buscando el relleno mínimo con nervios según las tensiones..."
+
+msgid "Core:"
+msgstr "Núcleo:"
+
+msgid "Core: not even 100 % infill meets the requirements: add perimeters, choose another material or reinforce the shape."
+msgstr "Núcleo: ni con el 100 % de relleno se cumplen los requisitos: agregá perímetros, elegí otro material o reforzá la forma."
+
+msgid "Ribs along the stresses would not make the infill lighter: not used."
+msgstr "Los nervios según las tensiones no harían más liviano el relleno: no se usan."
+
+msgid "%1% modifiers \"%2%\" lay the infill lines along the stresses."
+msgstr "%1% modificadores «%2%» ponen las líneas del relleno según las tensiones."
+
+msgid "Non-planar: layer strength test pieces"
+msgstr "No planar: probetas de resistencia entre capas"
+
+msgid "Prints three solid bars standing up, 5 mm thick, on pedestals tall enough for the bars to start where the curved layers are complete; a wedge at the top holds the string. It uses the non-planar wave layers (interlocking layers, set in the print settings, shown as modified) and 100 % infill. Print it again with Non-planar layers set to Disabled to compare."
+msgstr "Imprime tres barras macizas de pie, de 5 mm de espesor, sobre pedestales lo bastante altos para que las barras empiecen donde las capas curvas ya están completas; una cuña arriba sujeta el hilo. Usa las capas no planares en onda (capas entrelazadas, puestas en la configuración de impresión, que se ve modificada) y relleno al 100 %. Imprimilas de nuevo con Capas no planares en Desactivado para comparar."
+
+msgid "Clamp each pedestal in a vise with the bar horizontal and the 5 mm side vertical, hang a bucket by a string just below the wedge and add water until the bar breaks; weigh the bucket. The bar breaks across the layers at the pedestal. Compare the average of the three bars printed with curved layers with that of the three printed flat: their ratio is the gain in strength between layers. The stress at the break is 6 x F x L / (W x T²), with F the weight in N (kg x 9.81), L the distance from the pedestal to the string, W the width of the bar and T = 5 mm."
+msgstr "Sujetá cada pedestal en una morsa con la barra horizontal y el lado de 5 mm vertical, colgá un balde con un hilo justo debajo de la cuña y agregá agua hasta que la barra se rompa; pesá el balde. La barra se rompe entre capas, junto al pedestal. Compará el promedio de las tres barras impresas con capas curvas con el de las tres impresas planas: el cociente es la ganancia de resistencia entre capas. La tensión de rotura es 6 x F x L / (W x T²), con F el peso en N (kg x 9,81), L la distancia del pedestal al hilo, W el ancho de la barra y T = 5 mm."
+
+msgid "Length of the bars"
+msgstr "Largo de las barras"
+
+msgid "Width of the bars"
+msgstr "Ancho de las barras"
+
+msgid "Edit the material table"
+msgstr "Editar la tabla de materiales"
+
+msgid "Materials of the structural analysis"
+msgstr "Materiales del análisis estructural"
+
+msgid "Values of a solid printed part at 23 °C. Change them to the ones of your filament (data sheet or your own test pieces) or add materials. XY: along the layers; Z: across them (layer adhesion). Changed rows are bold; \"Reset / remove\" brings back the values of Tisma or removes your material."
+msgstr "Valores de una pieza impresa maciza a 23 °C. Cambialos por los de tu filamento (hoja de datos o tus propias probetas) o agregá materiales. XY: a lo largo de las capas; Z: entre capas (adherencia). Las filas cambiadas están en negrita; «Restablecer / quitar» vuelve a los valores de Tisma o quita tu material."
+
+msgid "Key"
+msgstr "Clave"
+
+msgid "E XY [MPa]"
+msgstr "E XY [MPa]"
+
+msgid "E Z [MPa]"
+msgstr "E Z [MPa]"
+
+msgid "Poisson"
+msgstr "Poisson"
+
+msgid "Strength XY [MPa]"
+msgstr "Resistencia XY [MPa]"
+
+msgid "Strength Z [MPa]"
+msgstr "Resistencia Z [MPa]"
+
+msgid "Tg [°C]"
+msgstr "Tg [°C]"
+
+msgid "Max. service [°C]"
+msgstr "Servicio máx. [°C]"
+
+msgid "Density [g/cm³]"
+msgstr "Densidad [g/cm³]"
+
+msgid "Print min [°C]"
+msgstr "Impresión mín. [°C]"
+
+msgid "Print max [°C]"
+msgstr "Impresión máx. [°C]"
+
+msgid "Linear"
+msgstr "Lineal"
+
+msgid "Add material"
+msgstr "Agregar material"
+
+msgid "Reset / remove"
+msgstr "Restablecer / quitar"
+
+msgid "mine"
+msgstr "mío"
+
+msgid "Row %1%, %2%: \"%3%\" is not a number"
+msgstr "Fila %1%, %2%: «%3%» no es un número"
+
+msgid "Row %1% (%2%): %3%"
+msgstr "Fila %1% (%2%): %3%"
+
+msgid "Row %1%: the key %2% is repeated"
+msgstr "Fila %1%: la clave %2% está repetida"
+
+msgid "The key is empty"
+msgstr "La clave está vacía"
+
+msgid "The Young's moduli must be positive"
+msgstr "Los módulos de Young deben ser positivos"
+
+msgid "The Poisson ratio must be between 0 and 0.5"
+msgstr "El coeficiente de Poisson debe estar entre 0 y 0,5"
+
+msgid "The strengths must be positive"
+msgstr "Las resistencias deben ser positivas"
+
+msgid "The density must be positive"
+msgstr "La densidad debe ser positiva"
+
+msgid "The maximum service temperature must be above 23 °C"
+msgstr "La temperatura máxima de servicio debe ser mayor que 23 °C"
+
+msgid "The print temperature range is reversed"
+msgstr "El rango de temperatura de impresión está invertido"
+
+msgid "Check your printers: choose the brand, or search them by name. You can choose printers of several brands, filament and resin ones."
+msgstr "Marcá tus impresoras: elegí la marca o buscalas por nombre. Podés elegir impresoras de varias marcas, de filamento y de resina."
+
+msgid "My printer is not in the list: define a custom printer"
+msgstr "Mi impresora no está en la lista: definir una impresora personalizada"
+
+msgid "%1% printer selected. Finish installs it with its settings and filaments."
+msgid_plural "%1% printers selected. Finish installs them with their settings and filaments."
+msgstr[0] "%1% impresora elegida. Finalizar la instala con su configuración y sus filamentos."
+msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración y sus filamentos."
+
+msgid "Split to fit the printer"
+msgstr "Dividir para que entre en la impresora"
+
+msgid "Cut the object into pieces that fit the printer, with connectors to join them"
+msgstr "Cortar el objeto en piezas que entren en la impresora, con encastres para unirlas"
+
+msgid "The object is cut into pieces that fit the printable volume (%1% x %2% x %3% mm), where its section is smallest, and every cut gets connectors to align the pieces when gluing them."
+msgstr "El objeto se corta en piezas que entran en el volumen de impresión (%1% x %2% x %3% mm), donde su sección es más chica, y cada corte lleva encastres para alinear las piezas al pegarlas."
+
+msgid "Pins (separate, in holes of both pieces)"
+msgstr "Pernos (aparte, en agujeros de las dos piezas)"
+
+msgid "Pegs (on one piece, hole in the other)"
+msgstr "Espigas (en una pieza, agujero en la otra)"
+
+msgid "None (glue only)"
+msgstr "Ninguno (solo pegamento)"
+
+msgid "Diameter (mm)"
+msgstr "Diámetro (mm)"
+
+msgid "Depth into each piece (mm)"
+msgstr "Profundidad en cada pieza (mm)"
+
+msgid "Clearance of the holes (mm)"
+msgstr "Holgura de los agujeros (mm)"
+
+msgid "It cannot be split:"
+msgstr "No se puede dividir:"
+
+msgid "The object already fits the printer."
+msgstr "El objeto ya entra en la impresora."
+
+msgid "%1% pieces (%2% x %3% x %4%), %5% cuts, %6% connectors."
+msgstr "%1% piezas (%2% x %3% x %4%), %5% cortes, %6% encastres."
+
+msgid "%1% parts of the cuts are too thin for a connector: glue only."
+msgstr "%1% partes de los cortes son demasiado finas para un encastre: solo pegamento."
+
+msgid "The pins are added as separate objects."
+msgstr "Los pernos se agregan como objetos aparte."
+
+msgid "%1% is larger than the printer."
+msgstr "%1% es más grande que la impresora."
+
+msgid "Split it into pieces with connectors"
+msgstr "Dividirlo en piezas con encastres"
+
+msgid "The printable size is too small for the connectors"
+msgstr "El tamaño de impresión es demasiado chico para los encastres"
+
+msgid "No positions of the cuts keep every piece within the printable size"
+msgstr "Ninguna posición de los cortes deja todas las piezas dentro del tamaño de impresión"
+
+msgid "No such instance"
+msgstr "No existe esa copia"
+
+msgid "The object has no solid part"
+msgstr "El objeto no tiene partes sólidas"
+
+msgid "The printable size is smaller than the margin"
+msgstr "El tamaño de impresión es más chico que el margen"
+
+msgid "More pieces than the %1% beds of a project: some may be left outside the beds, to be printed in another project."
+msgstr "Más piezas que las %1% camas de un proyecto: algunas pueden quedar fuera de las camas, para imprimirlas en otro proyecto."
+
+msgid "The belt is the Z axis"
+msgstr "La cinta es el eje Z"
+
+msgid "Belt printer: the belt is the Z axis"
+msgstr "Impresora de cinta: la cinta es el eje Z"
+
+msgid "The belt moves with the Z axis of the firmware and the inclined gantry with the Y axis, as in the BlackBelt, Creality CR-30 and IdeaFormer IR3 V2 printers. Off: the belt is the Y axis and the gantry the Z axis."
+msgstr "La cinta se mueve con el eje Z del firmware y el cabezal inclinado con el eje Y, como en las impresoras BlackBelt, Creality CR-30 e IdeaFormer IR3 V2. Desactivado: la cinta es el eje Y y el cabezal el eje Z."
+
+msgid "Interior infill"
+msgstr "Relleno interior"
+
+msgid "Struts inside the cavity of a hollowed model, vertical and at 45 degrees so that they need no supports: the part of the cavity they fill. 0 = empty cavity."
+msgstr "Barras dentro de la cavidad de un modelo ahuecado, verticales y a 45 grados para que no necesiten soportes: la parte de la cavidad que llenan. 0 = cavidad vacía."
+
+msgid "Interior infill cell"
+msgstr "Celda del relleno interior"
+
+msgid "Distance between the struts of the interior infill. The struts are thinner for a smaller cell at the same infill."
+msgstr "Distancia entre las barras del relleno interior. Con una celda más chica y el mismo relleno, las barras son más finas."
+
+msgid "Apply walls and interior infill"
+msgstr "Aplicar paredes y relleno interior"
+
+msgid "Applied: \"%1%\" is printed solid. Slice again to see it in the preview."
+msgstr "Aplicado: «%1%» se imprime maciza. Laminá de nuevo para verlo en la vista previa."
+
+msgid "Applied: \"%1%\" hollowed with walls of %2$.1f mm and %3% %% interior infill. Slice again to see it in the preview."
+msgstr "Aplicado: «%1%» ahuecada con paredes de %2$.1f mm y %3% %% de relleno interior. Laminá de nuevo para verlo en la vista previa."
+
+msgid "Walls and interior infill"
+msgstr "Paredes y relleno interior"
+
+msgid "Searches the thinnest walls and the lowest interior infill of the hollowed part which meet the safety factor and the deformation limits, and compares them with the solid part."
+msgstr "Busca las paredes más finas y el relleno interior más bajo de la pieza ahuecada que cumplen el factor de seguridad y los límites de deformación, y los compara con la pieza maciza."
+
+msgid "Interior infill: self-supporting struts in cells of %1$.1f mm (Print Settings > Hollowing)."
+msgstr "Relleno interior: barras autoportantes en celdas de %1$.1f mm (Configuración de Impresión > Vaciando el interior)."
+
+msgid "Find walls and infill"
+msgstr "Buscar paredes y relleno"
+
+msgid "Add the fixed faces and the loads of the part first."
+msgstr "Primero agregá las caras fijas y las cargas de la pieza."
+
+msgid "Solid: %1$.1f g, safety factor %2$.2f"
+msgstr "Maciza: %1$.1f g, factor de seguridad %2$.2f"
+
+msgid "Walls %1$.1f mm: does not hold"
+msgstr "Paredes de %1$.1f mm: no aguanta"
+
+msgid "Walls %1$.1f mm, empty: %2$.1f g, safety factor %3$.2f"
+msgstr "Paredes de %1$.1f mm, vacía: %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Walls %1$.1f mm, infill %2% %%: %3$.1f g, safety factor %4$.2f"
+msgstr "Paredes de %1$.1f mm, relleno %2% %%: %3$.1f g, factor de seguridad %4$.2f"
+
+msgid "Lightest: %1$.0f %% of the resin of the solid part."
+msgstr "La más liviana: %1$.0f %% de la resina de la pieza maciza."
+
+msgid "Apply walls and infill"
+msgstr "Aplicar paredes y relleno"
+
+msgid "A hollowed part needs drain holes (Hollow and drill tool) to let the resin out of the cavity."
+msgstr "Una pieza ahuecada necesita agujeros de drenaje (herramienta Vaciado y taladrado) para que salga la resina de la cavidad."
+
+msgid "No hollowed part meets the requirements: print it solid."
+msgstr "Ninguna pieza ahuecada cumple los requisitos: imprimila maciza."
+
+msgid "Apply solid"
+msgstr "Aplicar maciza"
+
+msgid "Not even the solid part meets the requirements: choose another resin or reinforce the shape."
+msgstr "Ni siquiera la pieza maciza cumple los requisitos: elegí otra resina o reforzá la forma."
+
+msgid "Resin (%1%)"
+msgstr "Resina (%1%)"
+
+msgid "Printed part (hollowing and interior infill of the profile)"
+msgstr "Pieza impresa (vaciado y relleno interior del perfil)"
+
+msgid "Walls %1$.1f mm: no room for a cavity (solid)"
+msgstr "Paredes de %1$.1f mm: no queda lugar para una cavidad (maciza)"

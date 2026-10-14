@@ -5,8 +5,10 @@
 #ifndef tisma_fea_Analysis_hpp_
 #define tisma_fea_Analysis_hpp_
 
+#include <array>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -54,12 +56,18 @@ struct DisplacementLimit
 struct InfillZone
 {
     indexed_triangle_set mesh;
+    // < 0: the density of what is below (the part or the previous zones), as a modifier without fill_density.
     double               density { 0.2 };
+    // Aligned infill (aligned rectilinear: the lines of every layer in one direction): direction of the lines from
+    // the X axis of the setup in the plane of the layers [°]; < 0 = not aligned; NaN = the one of what is below.
+    double               aligned_angle_deg { std::numeric_limits<double>::quiet_NaN() };
     // Thickness of the walls inside the zone (more perimeters: local reinforcement), < 0 = the one of the part.
     double               wall_thickness { -1. };
     // Exponents of the infill of the zone, < 0 = the ones of the part.
     double               stiffness_exponent { -1. };
     double               strength_exponent { -1. };
+    // Material deposited per nominal density of the pattern of the zone (infill_deposit_factor()), < 0 = the part's.
+    double               deposit_factor { -1. };
     // The mesh is material at the density of the zone (a solid modifier, the struts of a lattice): every voxel
     // gets the fraction of its volume inside the mesh, instead of all or nothing by its center.
     bool                 volume_fraction { false };
@@ -72,6 +80,7 @@ struct InfillZone
 // properties are homogenized: E_infill = E * density^stiffness_exponent, strength * density^strength_exponent.
 // The exponents depend on the infill pattern (see infill_exponents()); they are approximate and should be
 // calibrated with printed specimens.
+// Aligned infill (aligned_angle_deg >= 0, the ribs) is orthotropic instead (see aligned_infill_factors()).
 struct InfillModel
 {
     bool                    enabled { false };
@@ -80,11 +89,20 @@ struct InfillModel
     // Thickness of the solid shell [mm] on walls and on top / bottom surfaces.
     double                  wall_thickness { 0.9 };
     double                  top_bottom_thickness { 0.8 };
-    // Perimeters of the walls and the width of one of them [mm] (wall_thickness = perimeters * perimeter_width).
+    // Perimeters of the walls and the width of one of them [mm]. The walls are as thick as the material they hold:
+    // the spacing of the external perimeter plus that of the others (rounded beads, Flow::rounded_rectangle_
+    // extrusion_spacing()), see wall_thickness_of().
     int                     perimeters { 2 };
     double                  perimeter_width { 0.45 };
+    double                  perimeter_spacing { 0.45 };
+    double                  external_perimeter_spacing { 0.45 };
+    // Material deposited by the infill pattern per nominal density (infill_deposit_factor()): the infill of the
+    // analysis is min(1, deposit_factor * density) of the material, for the mass and the properties.
+    double                  deposit_factor { 1. };
     double                  stiffness_exponent { 1.5 };
     double                  strength_exponent { 1.5 };
+    // Aligned infill of the whole part: direction of the lines [°] as InfillZone::aligned_angle_deg, < 0 = not.
+    double                  aligned_angle_deg { -1. };
     // Zones with other densities, applied in order (the later ones win).
     std::vector<InfillZone> zones;
     // When set, the density of the infill at a point (overrides density and zones). Used by the optimizer.
@@ -93,6 +111,36 @@ struct InfillModel
 
 // Exponents of the homogenized infill for a pattern name of the print settings (rectilinear, grid, gyroid, ...).
 std::pair<double, double> infill_exponents(const std::string &pattern);
+
+// Fraction of material the slicer actually deposits in the sparse infill per nominal density of the pattern, measured
+// on Tisma's own slicing (test "Infill model matches the sliced toolpaths", docs/FEA.md): the lines overlap at their
+// crossings and anchors, honeycomb deposits a third more, 3D honeycomb less. Adaptive and support cubic and lightning
+// depend on the shape of the part (denser only under the top surfaces): 1, approximate.
+double infill_deposit_factor(const std::string &pattern);
+
+// Thickness of solid material of walls of n perimeters.
+inline double wall_thickness_of(const InfillModel &infill, int n)
+{
+    return n <= 0 ? 0. : infill.external_perimeter_spacing + double(n - 1) * infill.perimeter_spacing;
+}
+
+// Aligned infill: all the lines of every layer in one direction (L), stacked into walls along the layer normal (N),
+// with gaps between them across (T). Factors of the properties of the solid material:
+// - along the lines and along the walls (E_L, E_N, G_LN and their strengths): the lines are continuous, so the rule
+//   of mixtures (Voigt bound) gives density;
+// - across the lines (E_T, G_LT, G_TN and their strengths): the walls are only joined by the perimeters and the
+//   connections of the lines, so they work in bending; the scaling of bending dominated cellular solids is used,
+//   E ~ density^2 and strength ~ 0.3 * density^1.5 (Gibson & Ashby, "Cellular Solids", 2nd ed., 1997, ch. 5), and
+//   never more than the isotropic infill of the same density (iso_stiffness, iso_strength).
+// Approximate values, to be calibrated with printed specimens as the exponents.
+struct AlignedInfillFactors
+{
+    double along { 1. };
+    double across { 1. };
+    double strength_along { 1. };
+    double strength_across { 1. };
+};
+AlignedInfillFactors aligned_infill_factors(double density, double iso_stiffness, double iso_strength);
 
 // Angular step of the groups of layer normals (Setup::layer_normal) [°].
 constexpr double LAYER_NORMAL_STEP_DEG = 2.;
@@ -111,6 +159,8 @@ struct Setup
     size_t               target_voxels { 60000 };
     // Convergence of the iterative solver (relative residual).
     double               tolerance { 1e-7 };
+    // Preconditioner of the conjugate gradient: geometric multigrid (fewer iterations on fine grids) or Jacobi.
+    bool                 multigrid { true };
     // Walls and infill of the print; disabled = solid part.
     InfillModel          infill;
     // Direction in which the layers are stacked (the Z of the printer) in the coordinates of the setup. The
@@ -153,6 +203,8 @@ struct Result
     std::vector<float>  von_mises;          // [MPa]
     std::vector<float>  failure_index;      // stress / strength at the temperature, > 1 = breaks
     std::vector<Vec3f>  displacement;       // at the center of the voxel [mm]
+    // Homogenized stress at the center of the voxel in the coordinates of the setup [MPa]: xx, yy, zz, yz, xz, xy.
+    std::vector<std::array<float, 6>> stress;
     // Fraction of material in the voxel (1 = solid, shell; the infill density inside).
     std::vector<float>  density;
     // Interior voxels (not in the shell): their density is the one of the infill.
@@ -182,8 +234,12 @@ struct Result
     std::vector<std::pair<std::string, double>> alternatives;
 
     int                 iterations { 0 };
+    // Levels of the multigrid preconditioner (0: Jacobi).
+    size_t              multigrid_levels { 0 };
     // Number of material orientations used (1 with flat layers).
     size_t              layer_orientations { 1 };
+    // Voxels with aligned infill (ribs).
+    size_t              aligned_voxels { 0 };
     double              residual { 0. };
 };
 

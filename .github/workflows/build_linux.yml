@@ -108,6 +108,15 @@ jobs:
         if: ${{ inputs.run_tests }}
         run: ctest --test-dir build --output-on-failure --timeout 3600 -j 2 -E libseqarrange_tests
 
+      # Bambu Lab LAN client (MQTT and FTPS over TLS) against the fake printer, docs/BAMBU_LAN.md.
+      - name: Bambu LAN against the fake printer
+        if: ${{ inputs.run_tests }}
+        run: |
+          fake="$RUNNER_TEMP/bambu-fake"
+          python3 tools/bambu/fake_printer.py --dir "$fake" > "$fake.log" 2>&1 &
+          timeout 60 bash -c "until grep -q 'fake printer' '$fake.log'; do sleep 0.5; done" || { cat "$fake.log"; exit 1; }
+          TISMA_BAMBU_FAKE="$fake" build/tests/slic3rutils/slic3rutils_tests "[BambuLanFake]" || { cat "$fake.log"; exit 1; }
+
       - name: AppImage
         run: |
           appimage=$(packaging/linux/make_appimage.sh build "$TISMA_VERSION" dist | tail -n 1)

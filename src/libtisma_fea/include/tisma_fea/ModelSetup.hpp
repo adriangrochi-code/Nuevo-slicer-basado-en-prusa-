@@ -36,6 +36,10 @@ struct ModelAnalysisInput
 bool build_analysis_input(const ModelObject &object, size_t instance_idx, const std::string &filament_type,
                           ModelAnalysisInput &out, std::string &error, const DynamicPrintConfig *print_config = nullptr);
 
+// The print configuration is the one of a resin printer (SLA): the part is solid or hollowed (hollowing_enable, with
+// walls of hollowing_min_thickness and the interior infill hollowing_infill_density).
+bool is_resin(const DynamicPrintConfig &print_config);
+
 // Width of the perimeter lines [mm] of the object with the print configuration (a percent is of the layer height, as
 // in PrusaSlicer).
 double line_width(const ModelObject &object, const DynamicPrintConfig &print_config);
@@ -46,6 +50,10 @@ extern const char *INFILL_ZONE_NAME;
 // Applies an infill to the object: its infill density and, for the zones (in print coordinates of the instance),
 // infill modifiers. The modifiers created by a previous call are replaced. Returns the number of modifiers.
 size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones);
+
+// Resin printers: hollows the object with walls of wall_thickness and the interior infill (0..1), or makes it solid
+// (wall_thickness <= 0), with the settings of the object (hollowing_*).
+void apply_resin_structure(ModelObject &object, double wall_thickness, double infill_density);
 
 // Names of the modifiers of the local reinforcements and of the lattice.
 extern const char *REINFORCEMENT_NAME;

@@ -380,10 +380,10 @@ bool OpenGLManager::init_gl()
             // Complain about the OpenGL version.
             wxString message = format_wxstr(
 #if SLIC3R_OPENGL_ES
-                _L("PrusaSlicer requires OpenGL ES 3.0 capable graphics driver to run correctly, \n"
+                _L("Tisma Slicer requires OpenGL ES 3.0 capable graphics driver to run correctly, \n"
                    "while OpenGL version %s, renderer %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #else
-                _L("PrusaSlicer requires OpenGL 3.2 capable graphics driver to run correctly,\n"
+                _L("Tisma Slicer requires OpenGL 3.2 capable graphics driver to run correctly,\n"
                    "while OpenGL version %s, renderer %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #endif // SLIC3R_OPENGL_ES
             message += "\n";

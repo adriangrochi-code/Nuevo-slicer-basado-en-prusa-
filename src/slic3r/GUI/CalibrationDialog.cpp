@@ -63,6 +63,8 @@ struct Machine
     double layer    { 0.2 };
     // Non-planar tests: height where the curved layers are complete (NonPlanar::nonplanar_test_start_height()).
     double nonplanar_start { 8.6 };
+    // Height where the curved layers of the print settings (not of a test) are complete: flat below + transition.
+    double nonplanar_curved { 5.6 };
     double first_layer     { 0.2 };
 };
 
@@ -84,6 +86,11 @@ struct Test
     wxString      band_label { wxString() };
     // Stable identifier (the titles are translated).
     std::string   key;
+    // Test pieces with a single value instead of steps: the label of the value (the band, labelled by band_label, is
+    // then in the unit of the test too).
+    wxString      single_label { wxString() };
+    // Print settings the test needs (applied to the print settings, which show them as modified).
+    std::vector<std::pair<std::string, std::string>> print_settings;
 };
 
 // --- Geometry helpers ----------------------------------------------------------------------------------------
@@ -99,6 +106,25 @@ void add_cylinder(ModelObject& obj, double cx, double cy, double z, double r, do
 {
     indexed_triangle_set its = its_make_cylinder(r, h);
     its_translate(its, Vec3f(float(cx), float(cy), float(z)));
+    obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Prism along Y (from y to y + depth) whose cross-section in XZ is a trapezoid centered at cx: bottom_width at z,
+// top_width at z + height.
+void add_trapezoid_prism(ModelObject& obj, double cx, double y, double z, double bottom_width, double top_width, double height, double depth)
+{
+    indexed_triangle_set its;
+    const double xs[4] = { cx - 0.5 * bottom_width, cx + 0.5 * bottom_width, cx + 0.5 * top_width, cx - 0.5 * top_width };
+    const double zs[4] = { z, z, z + height, z + height };
+    for (double yy : { y, y + depth })
+        for (int i = 0; i < 4; ++i)
+            its.vertices.emplace_back(float(xs[i]), float(yy), float(zs[i]));
+    // Front (y), back (y + depth) and the four sides, facing out.
+    const int f[12][3] = { { 0, 2, 1 }, { 0, 3, 2 }, { 4, 5, 6 }, { 4, 6, 7 },
+                           { 0, 1, 5 }, { 0, 5, 4 }, { 1, 2, 6 }, { 1, 6, 5 },
+                           { 2, 3, 7 }, { 2, 7, 6 }, { 3, 0, 4 }, { 3, 4, 7 } };
+    for (const auto& t : f)
+        its.indices.emplace_back(t[0], t[1], t[2]);
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
@@ -376,6 +402,53 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "coasting";
 
+    // Arc overhangs (Tisma): a row of columns, each carrying a slab that sticks out to the back (+Y) with nothing below,
+    // printed with arcs growing from the column.
+    auto arc_cantilever = [](ModelObject& obj, double x, double width, double length) {
+        add_box(obj, x, 0., 0., width, 10., 10.);
+        add_box(obj, x, 0., 10., width, 10. + length, 2.);
+    };
+    auto arc_settings = [](ModelObject& obj, const Machine& m) {
+        set_layer_height(obj, m.layer);
+        set(obj, "overhang_arcs", "1");
+        set(obj, "overhang_arcs_max_distance", "0");
+        set(obj, "overhangs", "1");
+        set(obj, "support_material", "0");
+        set(obj, "perimeters", "2");
+        set(obj, "fill_density", "15%");
+    };
+
+    tests.push_back({ _L("Arc overhang speed"),
+        _L("Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. "
+           "The first layer of each slab is printed with arc overhangs, at a different speed for each column (from left "
+           "to right)."),
+        _L("Look at the slabs from below: choose the fastest column whose arcs are round, joined to each other and not "
+           "sagging. Its speed is start + step × column number (from the left, starting at 0): it is the arc overhangs "
+           "speed (Calibration > Apply a calibration result). Run the fan at full power, as for bridges."),
+        _L("mm/s"), CalibMode::ArcOverhangSpeed, { 2., 10., 2., 16. }, 1, 0.5, 50.,
+        [arc_cantilever, arc_settings](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                arc_cantilever(obj, i * p.band, std::max(4., p.band - 6.), 15.);
+            arc_settings(obj, m);
+        }, _L("Width of each step") });
+    tests.back().key = "arc_overhang_speed";
+
+    tests.push_back({ _L("Arc overhang maximum distance"),
+        _L("Prints a row of columns in one go, each carrying a slab that sticks out to the back with nothing below, "
+           "longer for each column (from left to right). The first layer of each slab is printed with arc overhangs at "
+           "the arc overhangs speed of the print settings: calibrate the speed first."),
+        _L("Look at the slabs from below: choose the longest one whose arcs reach the end without sagging or coming "
+           "apart. Its length is start + step × column number (from the left, starting at 0): it is the arc overhangs "
+           "maximum distance (Calibration > Apply a calibration result); longer overhangs are printed as usual beyond "
+           "it, supports included."),
+        _L("mm"), CalibMode::ArcOverhangDistance, { 10., 30., 5., 14. }, 0, 1., 100.,
+        [arc_cantilever, arc_settings](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i)
+                arc_cantilever(obj, i * p.band, std::max(4., p.band - 6.), std::max(1., p.start + i * p.signed_step()));
+            arc_settings(obj, m);
+        }, _L("Width of each step") });
+    tests.back().key = "arc_overhang_distance";
+
     // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
 
     tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
@@ -492,6 +565,94 @@ std::vector<Test> make_tests()
 
     tests.back().key = "nonplanar_head_gauge";
 
+    // Tisma: the automatic non-planar mode on two shapes of the tests (tests/fff_print/test_nonplanar_print.cpp).
+    tests.push_back({ _L("Non-planar: automatic mode test pieces"),
+        _L("Prints, in one go, a mushroom whose underside flares out at the overhang angle (stem of 10 mm, flare up to "
+           "15 mm, cap up to 18 mm) and a 30 mm block whose top slopes at the top angle. It uses the non-planar mode "
+           "Automatic and supports where needed (both set in the print settings, shown as modified). Print it again "
+           "with Non-planar layers set to Disabled to compare."),
+        _L("Supports: with flat layers the flare of the mushroom needs supports; with the automatic mode it should print "
+           "without them, or with far fewer (look at the preview before printing). Finish: compare the top of the block "
+           "with that of the flat print, the stairs of the layers should be much smaller. The flare is printable only "
+           "if the free angle of the print head is at least the overhang angle minus 45°."),
+        "°", CalibMode::Disabled, { 48., 48., 1., 6. }, 0, 1., 75.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            // Mushroom: profile (radius, z) turned around the Z axis, centered at (12, 15).
+            const double angle = std::clamp(p.start, 0., 70.);
+            const double r_cap = 5. + 5. * std::tan(angle * M_PI / 180.);
+            const std::vector<Vec2d> profile { { 5., 0. }, { 5., 10. }, { r_cap, 15. }, { r_cap, 18. } };
+            constexpr int segments = 72;
+            const Vec2d center(std::max(12., r_cap + 1.), 15.);
+            indexed_triangle_set its;
+            const int n = int(profile.size());
+            for (int s = 0; s < segments; ++ s) {
+                const double a = 2. * M_PI * s / segments;
+                for (const Vec2d &q : profile)
+                    its.vertices.emplace_back(float(center.x() + q.x() * std::cos(a)), float(center.y() + q.x() * std::sin(a)), float(q.y()));
+            }
+            const int bottom = int(its.vertices.size());
+            its.vertices.emplace_back(float(center.x()), float(center.y()), 0.f);
+            const int top = int(its.vertices.size());
+            its.vertices.emplace_back(float(center.x()), float(center.y()), float(profile.back().y()));
+            for (int s = 0; s < segments; ++ s) {
+                const int a = s * n, b = ((s + 1) % segments) * n;
+                for (int i = 0; i + 1 < n; ++ i) {
+                    its.indices.emplace_back(a + i, b + i, b + i + 1);
+                    its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
+                }
+                its.indices.emplace_back(bottom, b, a);
+                its.indices.emplace_back(top, a + n - 1, b + n - 1);
+            }
+            obj.add_volume(TriangleMesh(std::move(its)));
+            // Block with its top sloping along X, next to the mushroom.
+            const double slope = std::tan(std::clamp(p.band, 0., 30.) * M_PI / 180.);
+            add_heightfield_block(obj, 30., 30., 1., [slope](double x, double) { return 18. + slope * x; });
+            obj.volumes.back()->translate(Vec3d(2. * center.x() + 5., 0., 0.));
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "15%");
+            set(obj, "top_solid_layers", "4");
+        }, _L("Slope of the top of the block") });
+    tests.back().key = "nonplanar_automatic";
+    tests.back().single_label = _L("Overhang angle of the mushroom");
+    tests.back().print_settings = { { "nonplanar_mode", "automatic" }, { "support_material", "1" },
+                                    { "support_material_auto", "1" } };
+
+    // Tisma: strength across the layers with curved (wave) layers against flat ones. A comparative test, not a standard
+    // one: the same bars printed both ways and broken the same way.
+    tests.push_back({ _L("Non-planar: layer strength test pieces"),
+        _L("Prints three solid bars standing up, 5 mm thick, on pedestals tall enough for the bars to start where the "
+           "curved layers are complete; a wedge at the top holds the string. It uses the non-planar wave layers "
+           "(interlocking layers, set in the print settings, shown as modified) and 100 % infill. Print it again with "
+           "Non-planar layers set to Disabled to compare."),
+        _L("Clamp each pedestal in a vise with the bar horizontal and the 5 mm side vertical, hang a bucket by a string "
+           "just below the wedge and add water until the bar breaks; weigh the bucket. The bar breaks across the layers "
+           "at the pedestal. Compare the average of the three bars printed with curved layers with that of the three "
+           "printed flat: their ratio is the gain in strength between layers. The stress at the break is "
+           "6 x F x L / (W x T²), with F the weight in N (kg x 9.81), L the distance from the pedestal to the string, W "
+           "the width of the bar and T = 5 mm."),
+        "mm", CalibMode::Disabled, { 20., 20., 1., 40. }, 0, 1., 40.,
+        [](ModelObject& obj, const Params& p, const Machine& m) {
+            const double width = std::clamp(p.start, 10., 40.), length = std::clamp(p.band, 20., 80.), thickness = 5.;
+            // Pedestal: 2 mm above where the curved layers are complete (the bars break at its top), at least 6 mm to clamp.
+            const double pedestal = std::max(6., m.nonplanar_curved + 2.);
+            const double pitch = width + 20.;
+            for (int i = 0; i < 3; ++i) {
+                const double x0 = i * pitch;
+                add_box(obj, x0, 0., 0., width + 10., 20., pedestal);
+                add_box(obj, x0 + 5., 7.5, pedestal, width, thickness, length);
+                // Wedge widening at 45° (no supports), then a cap: the string stays below it.
+                add_trapezoid_prism(obj, x0 + 5. + 0.5 * width, 7.5, pedestal + length, width, width + 6., 3., thickness);
+                add_box(obj, x0 + 2., 7.5, pedestal + length + 3., width + 6., thickness, 2.);
+            }
+            set_layer_height(obj, m.layer);
+            set(obj, "perimeters", "2");
+            set(obj, "fill_density", "100%");
+        }, _L("Length of the bars") });
+    tests.back().key = "nonplanar_strength";
+    tests.back().single_label = _L("Width of the bars");
+    tests.back().print_settings = { { "nonplanar_mode", "wave" } };
+
     return tests;
 }
 
@@ -525,11 +686,18 @@ public:
         };
         // Offsets may be negative.
         const double min_value = test.mode == CalibMode::FirstLayerOffset ? - test.max_value : 0.;
-        m_start = add_field(_L("Start value"),         defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
-        m_end   = add_field(_L("End value"),           defaults.end,   min_value, test.max_value, test.increment, test.digits, test.unit);
-        m_step  = add_field(_L("Step"),                defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
-        m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
-                            defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
+        // Test pieces with one value of each (no steps): the value and the band in the unit of the test.
+        m_single = ! test.single_label.empty();
+        if (m_single) {
+            m_start = add_field(test.single_label, defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_band  = add_field(test.band_label, defaults.band, 0., test.max_value, test.increment, test.digits, test.unit);
+        } else {
+            m_start = add_field(_L("Start value"),         defaults.start, min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_end   = add_field(_L("End value"),           defaults.end,   min_value, test.max_value, test.increment, test.digits, test.unit);
+            m_step  = add_field(_L("Step"),                defaults.step,  test.increment / 10., test.max_value, test.increment, test.digits + 1, test.unit);
+            m_band  = add_field(test.band_label.empty() ? _L("Height of each step") : test.band_label,
+                                defaults.band,  0.2, 50., 0.5, 1, _L("mm"));
+        }
         main->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
 
         m_along_x = ! test.band_label.empty();
@@ -548,19 +716,30 @@ public:
             main->Add(btns, 0, wxEXPAND | wxALL, em);
 
         for (wxSpinCtrlDouble* ctrl : { m_start, m_end, m_step, m_band })
-            ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_summary(); });
+            if (ctrl != nullptr)
+                ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_summary(); });
         update_summary();
 
         SetSizerAndFit(main);
         CenterOnParent();
     }
 
-    Params params() const { return { m_start->GetValue(), m_end->GetValue(), m_step->GetValue(), m_band->GetValue() }; }
+    Params params() const
+    {
+        if (m_single)
+            return { m_start->GetValue(), m_start->GetValue(), 1., m_band->GetValue() };
+        return { m_start->GetValue(), m_end->GetValue(), m_step->GetValue(), m_band->GetValue() };
+    }
 
 private:
     void update_summary()
     {
         const Params p = params();
+        if (m_single) {
+            m_summary->SetLabel(wxString());
+            Layout();
+            return;
+        }
         m_summary->SetLabel(m_count_only ? format_wxstr(_L("%1% grooves in each row, rows %2%, %3% and %4% mm deep."), p.steps(),
                                                         wxString::Format("%.1f", p.band / 3.), wxString::Format("%.1f", 2. * p.band / 3.),
                                                         wxString::Format("%.1f", p.band)) : m_along_x ?
@@ -577,6 +756,7 @@ private:
     bool              m_along_x { false };
     bool              m_base_band { false }; // a base below the steps (resin exposure tower)
     bool              m_count_only { false };
+    bool              m_single { false };
 };
 
 void run_test(wxWindow* parent, const Test& test, const Params* initial = nullptr)
@@ -601,6 +781,7 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
         PrintConfig print_config;
         print_config.apply(wxGetApp().preset_bundle->full_config(), true);
         machine.nonplanar_start = NonPlanar::nonplanar_test_start_height(print_config);
+        machine.nonplanar_curved = print_config.nonplanar_flat_below.value + print_config.nonplanar_ramp_height.value;
     }
 
     Model model;
@@ -616,6 +797,16 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
     calib.set_key_value("calib_band_height", new ConfigOptionFloat(p.band));
 
     wxGetApp().plater()->load_calibration(model, calib);
+
+    // Print settings of the test.
+    if (! test.print_settings.empty())
+        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+            DynamicPrintConfig conf = *tab->get_config();
+            ConfigSubstitutionContext ctxt { ForwardCompatibilitySubstitutionRule::Disable };
+            for (const auto& [key, value] : test.print_settings)
+                conf.set_deserialize(key, value, ctxt);
+            tab->load_config(conf);
+        }
 }
 
 const std::vector<Test>& tests()
@@ -851,6 +1042,15 @@ static std::vector<ResultTarget> result_targets()
     out.push_back({ CalibMode::Coasting, _L("Coasting distance"), _L("mm"), Preset::TYPE_FILAMENT,
         [set_all](DynamicPrintConfig& c, double v) { set_all(c, "filament_coast_distance", v); },
         [floats_first](const DynamicPrintConfig& c) { return floats_first(c, "filament_coast_distance"); } });
+    out.push_back({ CalibMode::ArcOverhangSpeed, _L("Arc overhang speed"), _L("mm/s"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) { c.set_key_value("overhang_arcs_speed", new ConfigOptionFloat(v)); },
+        [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_speed"); } });
+    out.push_back({ CalibMode::ArcOverhangDistance, _L("Arc overhang maximum distance"), _L("mm"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("overhang_arcs_max_distance", new ConfigOptionFloat(v));
+            c.set_key_value("overhang_arcs", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_max_distance"); } });
     out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
         [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
         [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });

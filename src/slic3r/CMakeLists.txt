@@ -145,6 +145,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/FrequentlyChangedParameters.hpp
     GUI/CalibrationDialog.cpp
     GUI/CalibrationDialog.hpp
+    GUI/FeaMaterialsDialog.cpp
+    GUI/FeaMaterialsDialog.hpp
+    GUI/FragmentDialog.cpp
+    GUI/FragmentDialog.hpp
     GUI/NavRail.cpp
     GUI/NavRail.hpp
     GUI/QuickSettings.cpp

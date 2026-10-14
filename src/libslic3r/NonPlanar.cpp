@@ -6,10 +6,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <unordered_map>
 
 #include <admesh/stl.h>
 
+#include "libslic3r/Engineering.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Model.hpp"
@@ -50,6 +52,147 @@ std::pair<double, double> FieldParams::slope_test_tangent(double x) const
     return { a + (b - a) * w, (b - a) * dw };
 }
 
+// ---------------------------------------------------------- RadialProfile
+
+static inline double smoothstep_unit(double t)
+{
+    t = std::clamp(t, 0., 1.);
+    return t * t * (3. - 2. * t);
+}
+
+bool RadialProfile::empty() const
+{
+    return std::all_of(slope.begin(), slope.end(), [](double q) { return q == 0.; });
+}
+
+double RadialProfile::slope_at(double r) const
+{
+    if (slope.empty())
+        return 0.;
+    const double t = std::max(0., r) / step;
+    const size_t i = size_t(t);
+    if (i + 1 >= slope.size())
+        return slope.back();
+    const double f = t - double(i);
+    return slope[i] + (slope[i + 1] - slope[i]) * f;
+}
+
+double RadialProfile::height_at(double r) const
+{
+    if (slope.empty())
+        return 0.;
+    const double t = std::max(0., r) / step;
+    const size_t i = size_t(t);
+    if (i + 1 >= slope.size())
+        return height.back() + slope.back() * (std::max(0., r) - step * double(slope.size() - 1));
+    // Exact integral of the linear slope.
+    const double d = (t - double(i)) * step;
+    return height[i] + slope[i] * d + 0.5 * (slope[i + 1] - slope[i]) / step * d * d;
+}
+
+std::shared_ptr<const RadialProfile> build_radial_profile(const indexed_triangle_set &mesh, const Vec2d &center,
+                                                          const OverhangParams &params)
+{
+    const double tan_max = std::min(params.tan_x, params.tan_y);
+    if (tan_max <= 0. || mesh.indices.empty())
+        return nullptr;
+    double r_max = 0.;
+    for (const stl_vertex &v : mesh.vertices)
+        r_max = std::max(r_max, (v.head<2>().cast<double>() - center).norm());
+    if (r_max <= 0.)
+        return nullptr;
+    auto profile = std::make_shared<RadialProfile>();
+    profile->step = std::clamp(r_max / 200., 0.25, 1.);
+    const size_t n = size_t(std::ceil(r_max / profile->step)) + 2;
+    // Slope needed at each radius, rising outwards (under overhangs facing inwards) and descending outwards (under
+    // those facing outwards).
+    std::vector<double> rise(n, 0.), descend(n, 0.);
+    // As the overhangs mode: printable beyond the threshold, aiming 5° below it (the supports are found layer by layer,
+    // with the extrusion width), or 2° below it where the head does not allow more.
+    auto sin_deg = [](double deg) { return std::sin(std::max(0., deg) * M_PI / 180.); };
+    const double limit   = sin_deg(params.threshold_deg);
+    const double aim     = sin_deg(params.threshold_deg - 5.);
+    const double accept  = sin_deg(params.threshold_deg - 2.);
+    const double ceiling = std::sin(params.ceiling_deg * M_PI / 180.);
+    double z_first = std::numeric_limits<double>::max();
+    for (size_t t = 0; t < mesh.indices.size(); ++ t) {
+        const Vec3f nf = its_face_normal(mesh, int(t));
+        const Vec3d nrm = nf.cast<double>();
+        // Printable on flat layers, or a ceiling left to the bridges and the supports.
+        if (! (nrm.z() < - limit) || nrm.z() < - ceiling)
+            continue;
+        const stl_triangle_vertex_indices &f = mesh.indices[t];
+        const Vec3d c = (mesh.vertices[f[0]] + mesh.vertices[f[1]] + mesh.vertices[f[2]]).cast<double>() / 3.;
+        if (c.z() < params.z_flat)
+            continue;
+        const Vec2d d = c.head<2>() - center;
+        const double r = d.norm();
+        if (r < 1e-6)
+            continue;
+        // Only the radial part of the overhang can be helped by a cone.
+        const double n_r = nrm.head<2>().dot(d / r);
+        const double a   = std::abs(n_r);
+        if (a < 0.1)
+            continue;
+        // The part is sliced sheared, z' = z - g(r): layers of slope u radially (descending under the face) turn its
+        // normal into (a + u |n_z|, n_t, n_z), less steep as u grows. (A rotation would need less, but the slicing shears.)
+        const double n_t2 = std::max(0., nrm.head<2>().squaredNorm() - n_r * n_r);
+        auto below = [&](double u, double sin_limit) {
+            const double h = a + u * std::abs(nrm.z());
+            return nrm.z() / std::sqrt(h * h + n_t2 + nrm.z() * nrm.z()) >= - sin_limit;
+        };
+        double hi = tan_max;
+        if (below(tan_max, aim)) {
+            double lo = 0.;
+            for (int i = 0; i < 30; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (below(mid, aim) ? hi : lo) = mid;
+            }
+        } else if (! below(tan_max, accept))
+            // Not printable within the free angle of the head: left to the supports, as the overhangs mode does.
+            continue;
+        // Over the radii the triangle covers.
+        double r_lo = r, r_hi = r;
+        for (int k = 0; k < 3; ++ k) {
+            const double rv = (mesh.vertices[f[k]].head<2>().cast<double>() - center).norm();
+            r_lo = std::min(r_lo, rv);
+            r_hi = std::max(r_hi, rv);
+        }
+        std::vector<double> &need = n_r > 0. ? descend : rise;
+        const size_t b_lo = std::min(n - 1, size_t(std::floor(r_lo / profile->step)));
+        const size_t b_hi = std::min(n - 1, size_t(std::ceil(r_hi / profile->step)));
+        for (size_t b = b_lo; b <= b_hi; ++ b)
+            need[b] = std::max(need[b], hi);
+        for (int k = 0; k < 3; ++ k)
+            z_first = std::min(z_first, double(mesh.vertices[f[k]].z()));
+    }
+    if (z_first == std::numeric_limits<double>::max())
+        return nullptr;
+    // Envelopes: the slope changes gradually around each overhang, over a quarter of the radius of the part (at least
+    // 5 mm) from flat to the steepest the head allows.
+    const double rate = tan_max / std::max(5., 0.25 * r_max) * profile->step;
+    auto envelope = [n, rate](const std::vector<double> &need) {
+        std::vector<double> out(need);
+        for (size_t i = 1; i < n; ++ i)
+            out[i] = std::max(out[i], out[i - 1] - rate);
+        for (size_t i = n - 1; i-- > 0;)
+            out[i] = std::max(out[i], out[i + 1] - rate);
+        return out;
+    };
+    const std::vector<double> up = envelope(rise), down = envelope(descend);
+    profile->slope.assign(n, 0.);
+    profile->height.assign(n, 0.);
+    for (size_t i = 0; i < n; ++ i) {
+        // Flat at the center (no tip), within the head.
+        const double r = double(i) * profile->step;
+        profile->slope[i] = std::clamp(up[i] - down[i], - tan_max, tan_max) * smoothstep_unit(r / std::max(2., 2. * profile->step));
+        if (i > 0)
+            profile->height[i] = profile->height[i - 1] + 0.5 * (profile->slope[i - 1] + profile->slope[i]) * profile->step;
+    }
+    profile->z_first = z_first;
+    return profile;
+}
+
 double Field::g(double x, double y, double z) const
 {
     const double dx = x - m_params.center.x();
@@ -58,6 +201,8 @@ double Field::g(double x, double y, double z) const
     case Mode::Disabled:
         return 0.;
     case Mode::Conical: {
+        if (m_params.radial)
+            return m_params.radial_scale * m_params.radial->height_at(std::hypot(dx, dy));
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         return std::tan(m_params.cone_angle_deg * M_PI / 180.) * (r - m_params.cone_tip_radius);
     }
@@ -69,6 +214,12 @@ double Field::g(double x, double y, double z) const
     case Mode::Overhangs:
         // The layers sink towards the overhangs.
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.;
+    case Mode::Stress:
+    case Mode::Surface:
+        return m_params.layers ? m_params.layers_scale * m_params.layers->offset(x, y, z) : 0.;
+    case Mode::Automatic:
+        return (m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink(x, y, z) : 0.) +
+               (m_params.layers ? m_params.layers_scale * m_params.layers->offset(x, y, z) : 0.);
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         if (m_params.pattern == Pattern::Egg)
@@ -88,6 +239,13 @@ Vec2d Field::grad(double x, double y, double z) const
     case Mode::Disabled:
         return Vec2d::Zero();
     case Mode::Conical: {
+        if (m_params.radial) {
+            const double r = std::hypot(dx, dy);
+            if (r < 1e-9)
+                return Vec2d::Zero();
+            const double q = m_params.radial_scale * m_params.radial->slope_at(r);
+            return { q * dx / r, q * dy / r };
+        }
         const double r = std::sqrt(dx * dx + dy * dy + m_params.cone_tip_radius * m_params.cone_tip_radius);
         const double t = std::tan(m_params.cone_angle_deg * M_PI / 180.);
         return { t * dx / r, t * dy / r };
@@ -99,6 +257,12 @@ Vec2d Field::grad(double x, double y, double z) const
     }
     case Mode::Overhangs:
         return m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero();
+    case Mode::Stress:
+    case Mode::Surface:
+        return m_params.layers ? Vec2d(m_params.layers_scale * m_params.layers->grad(x, y, z)) : Vec2d::Zero();
+    case Mode::Automatic:
+        return (m_params.overhangs ? Vec2d(- m_params.overhang_scale * m_params.overhangs->sink_grad(x, y, z)) : Vec2d::Zero()) +
+               (m_params.layers ? Vec2d(m_params.layers_scale * m_params.layers->grad(x, y, z)) : Vec2d::Zero());
     case Mode::Wave: {
         const double k = TWO_PI / m_params.wavelength;
         const double a = m_params.amplitude * k;
@@ -114,8 +278,13 @@ Vec2d Field::grad(double x, double y, double z) const
 
 double Field::dgdz(double x, double y, double z) const
 {
+    if (m_params.mode == Mode::Automatic)
+        return (m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.) +
+               (m_params.layers ? m_params.layers_scale * m_params.layers->dz(x, y, z) : 0.);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? - m_params.overhang_scale * m_params.overhangs->sink_dz(x, y, z) : 0.;
+    if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
+        return m_params.layers ? m_params.layers_scale * m_params.layers->dz(x, y, z) : 0.;
     if (m_params.mode != Mode::Wave || m_params.pattern != Pattern::Twisted)
         return 0.;
     const double k  = TWO_PI / m_params.wavelength;
@@ -133,8 +302,13 @@ double Field::bound(double x, double y) const
         return std::abs(m_params.amplitude);
     if (m_params.mode == Mode::SlopeTest)
         return m_params.slope_test_tangent(x).first / (TWO_PI / m_params.wavelength);
+    if (m_params.mode == Mode::Automatic)
+        return (m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.) +
+               (m_params.layers ? std::abs(m_params.layers_scale) * m_params.layers->bound(x, y) : 0.);
     if (m_params.mode == Mode::Overhangs)
         return m_params.overhangs ? m_params.overhang_scale * m_params.overhangs->bound(x, y) : 0.;
+    if (m_params.mode == Mode::Stress || m_params.mode == Mode::Surface)
+        return m_params.layers ? std::abs(m_params.layers_scale) * m_params.layers->bound(x, y) : 0.;
     return std::abs(this->g(x, y, 0.));
 }
 
@@ -471,6 +645,98 @@ double OverhangField::bound(double x, double y) const
     for (const Zone &zone : zones)
         out += this->sample(zone, x, y).first;
     return out;
+}
+
+LayerGrid::LayerGrid(const EngineeringLayerField &field, const Vec3d &part_min) :
+    m_origin(part_min + field.origin), m_cell(std::max(1e-3, field.cell)), m_nx(field.nx), m_ny(field.ny), m_nz(field.nz),
+    m_offset(field.offset)
+{
+    if (m_offset.size() != size_t(m_nx) * size_t(m_ny) * size_t(m_nz) || m_nx < 2 || m_ny < 2 || m_nz < 2) {
+        m_offset.clear();
+        m_nx = m_ny = m_nz = 0;
+        return;
+    }
+    m_column_max.assign(size_t(m_nx) * m_ny, 0.f);
+    for (int k = 0; k < m_nz; ++ k)
+        for (int j = 0; j < m_ny; ++ j)
+            for (int i = 0; i < m_nx; ++ i) {
+                float &m = m_column_max[size_t(j) * m_nx + i];
+                m = std::max(m, std::abs(float(this->node(i, j, k))));
+            }
+}
+
+bool LayerGrid::locate(double x, double y, double z, int &i, int &j, int &k, double &tx, double &ty, double &tz) const
+{
+    if (m_offset.empty())
+        return false;
+    const double fx = (x - m_origin.x()) / m_cell, fy = (y - m_origin.y()) / m_cell, fz = (z - m_origin.z()) / m_cell;
+    if (fx < 0. || fy < 0. || fz < 0. || fx > m_nx - 1 || fy > m_ny - 1 || fz > m_nz - 1)
+        return false;
+    i  = std::min(int(fx), m_nx - 2);
+    j  = std::min(int(fy), m_ny - 2);
+    k  = std::min(int(fz), m_nz - 2);
+    tx = fx - i;
+    ty = fy - j;
+    tz = fz - k;
+    return true;
+}
+
+double LayerGrid::offset(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return 0.;
+    double v = 0.;
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        v += (a ? tx : 1. - tx) * (b ? ty : 1. - ty) * (d ? tz : 1. - tz) * this->node(i + a, j + b, k + d);
+    }
+    return v;
+}
+
+Vec2d LayerGrid::grad(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return Vec2d::Zero();
+    Vec2d g = Vec2d::Zero();
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        const double v  = this->node(i + a, j + b, k + d);
+        const double wz = d ? tz : 1. - tz;
+        g.x() += (a ? 1. : -1.) * (b ? ty : 1. - ty) * wz * v;
+        g.y() += (a ? tx : 1. - tx) * (b ? 1. : -1.) * wz * v;
+    }
+    return g / m_cell;
+}
+
+double LayerGrid::dz(double x, double y, double z) const
+{
+    int i, j, k;
+    double tx, ty, tz;
+    if (! this->locate(x, y, z, i, j, k, tx, ty, tz))
+        return 0.;
+    double g = 0.;
+    for (int c = 0; c < 8; ++ c) {
+        const int a = c & 1, b = (c >> 1) & 1, d = c >> 2;
+        g += (a ? tx : 1. - tx) * (b ? ty : 1. - ty) * (d ? 1. : -1.) * this->node(i + a, j + b, k + d);
+    }
+    return g / m_cell;
+}
+
+double LayerGrid::bound(double x, double y) const
+{
+    if (m_offset.empty())
+        return 0.;
+    const int i = int(std::floor((x - m_origin.x()) / m_cell)), j = int(std::floor((y - m_origin.y()) / m_cell));
+    double m = 0.;
+    for (int jj = j; jj <= j + 1; ++ jj)
+        for (int ii = i; ii <= i + 1; ++ ii)
+            if (ii >= 0 && jj >= 0 && ii < m_nx && jj < m_ny)
+                m = std::max(m, double(m_column_max[size_t(jj) * m_nx + ii]));
+    return m;
 }
 
 namespace {
@@ -1228,6 +1494,21 @@ double nonplanar_test_start_height(const PrintConfig &config)
     return config.nonplanar_flat_below.value + TEST_RAMP_HEIGHT;
 }
 
+// Waves fitted to the print head (Tisma): the two measurements of the head decide them. The steepest slope of a wave of
+// amplitude a and wavelength L is a * 2 pi / L, which must be the free angle of the head, and the wave rises 2 a from
+// trough to crest, which must be the clearance height: L = pi * height / tan(angle). Without a clearance height, or
+// with the waves set by hand, the wavelength of the print settings.
+static double wave_wavelength(const PrintConfig &config)
+{
+    if (config.nonplanar_fit_head.value) {
+        const HeadLimits head = head_limits(config);
+        const double tan_min = std::min(head.tan_x, head.tan_y);
+        if (head.height > 0. && tan_min > 0.)
+            return std::clamp(M_PI * head.height / tan_min, 4., 100.);
+    }
+    return std::max(1., config.nonplanar_wavelength.value);
+}
+
 static FieldParams field_params(const PrintConfig &config)
 {
     FieldParams p;
@@ -1236,6 +1517,9 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarMode::Wave:     p.mode = Mode::Wave;     break;
     case NonPlanarMode::Conical:  p.mode = Mode::Conical;  break;
     case NonPlanarMode::Overhangs: p.mode = Mode::Overhangs; break;
+    case NonPlanarMode::Stress:   p.mode = Mode::Stress;   break;
+    case NonPlanarMode::Surface:  p.mode = Mode::Surface;  break;
+    case NonPlanarMode::Automatic: p.mode = Mode::Automatic; break;
     }
     switch (config.nonplanar_pattern.value) {
     case NonPlanarPattern::Egg:     p.pattern = Pattern::Egg;     break;
@@ -1243,7 +1527,7 @@ static FieldParams field_params(const PrintConfig &config)
     case NonPlanarPattern::Twisted: p.pattern = Pattern::Twisted; break;
     }
     p.amplitude        = config.nonplanar_amplitude.value;
-    p.wavelength       = std::max(1., config.nonplanar_wavelength.value);
+    p.wavelength       = wave_wavelength(config);
     p.angle_deg        = config.nonplanar_angle.value;
     p.twist_deg_per_mm = config.nonplanar_twist.value;
     p.cone_angle_deg   = config.nonplanar_cone_angle.value;
@@ -1290,6 +1574,8 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
         // The wave rises 2 * amplitude from its troughs to its crests, which must pass below the print head.
         if (head.height > 0.)
             field.amplitude = std::min(field.amplitude, 0.5 * head.height);
+    } else if (field.mode == Mode::Conical && field.radial) {
+        // From the part: already within the free angle of the head.
     } else if (field.mode == Mode::Conical) {
         // The cone slopes the same in every direction: the smaller free angle. The sign (rising outwards or inwards)
         // is the one set by the user.
@@ -1304,6 +1590,8 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
             FieldParams f = field;
             if (f.mode == Mode::Wave)
                 f.amplitude *= s;
+            else if (f.radial)
+                f.radial_scale *= s;
             else
                 f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
             return f;
@@ -1366,7 +1654,136 @@ static FieldParams overhang_field(FieldParams field, const PrintConfig &config, 
     return field;
 }
 
-Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh)
+// Waves and cones fitted to the print head: their amplitude / cone tangent reduced until the print head clears the part
+// already printed (Print::validate() would refuse them otherwise).
+static FieldParams clear_print_head(FieldParams field, const Ramp &ramp, const PrintConfig &config, const indexed_triangle_set &mesh)
+{
+    const HeadClearance head = head_clearance(config);
+    if ((head.height <= 0. && head.profile.empty()) || head.radius <= 0. ||
+        (field.mode != Mode::Wave && field.mode != Mode::Conical))
+        return field;
+    const double tangent = std::tan(field.cone_angle_deg * M_PI / 180.);
+    auto scaled = [&field, tangent](double s) {
+        FieldParams f = field;
+        if (f.mode == Mode::Wave)
+            f.amplitude *= s;
+        else if (f.radial)
+            f.radial_scale *= s;
+        else
+            f.cone_angle_deg = std::atan(tangent * s) * 180. / M_PI;
+        return f;
+    };
+    auto clear = [&](double s) { return ! check_head_collision(Deformation(scaled(s), ramp), mesh, head).collides; };
+    if (clear(1.))
+        return field;
+    double lo = 0., hi = 1.;
+    for (int i = 0; i < 12; ++ i) {
+        const double mid = 0.5 * (lo + hi);
+        (clear(mid) ? lo : hi) = mid;
+    }
+    return scaled(lo);
+}
+
+bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox)
+{
+    if (field.empty() || ! object_bbox.defined)
+        return false;
+    const Vec3d d = object_bbox.size() - field.part_size;
+    return d.cwiseAbs().maxCoeff() <= std::max(0.05, 0.005 * field.part_size.maxCoeff());
+}
+
+// Stresses and surface modes: the layers given on a grid, reduced until the layer thickness and the slope are acceptable
+// and the print head clears the part (mesh: object coordinates, may be null).
+static FieldParams grid_field(FieldParams field, const Ramp &ramp, const PrintConfig &config,
+                              const BoundingBoxf3 &object_bbox, const EngineeringLayerField *stress,
+                              const indexed_triangle_set *mesh)
+{
+    if (stress == nullptr || ! layer_field_matches(*stress, object_bbox)) {
+        field.mode = Mode::Disabled;
+        return field;
+    }
+    field.layers = std::make_shared<LayerGrid>(*stress, object_bbox.min);
+    const HeadLimits limits = head_limits(config);
+    auto acceptable = [&](double s) {
+        FieldParams f = field;
+        f.layers_scale = s;
+        const Deformation d(f, ramp);
+        const Deformation::Check c = d.check(object_bbox);
+        return c.j_min >= J_MIN && c.j_max <= J_MAX &&
+               (limits.tan_x <= 0. || limits.tan_y <= 0. || d.head_slope_ratio(object_bbox, limits.tan_x, limits.tan_y) <= 1.);
+    };
+    if (! acceptable(1.)) {
+        double lo = 0., hi = 1.;
+        for (int i = 0; i < 20; ++ i) {
+            const double mid = 0.5 * (lo + hi);
+            (acceptable(mid) ? lo : hi) = mid;
+        }
+        field.layers_scale = lo;
+    }
+    // The print head must not hit the part already printed (a slower check: only once the rest is acceptable).
+    const HeadClearance head = head_clearance(config);
+    if (mesh != nullptr && (head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
+        auto clear = [&](double s) {
+            FieldParams f = field;
+            f.layers_scale = s;
+            return ! check_head_collision(Deformation(f, ramp), *mesh, head).collides;
+        };
+        if (! clear(field.layers_scale)) {
+            double lo = 0., hi = field.layers_scale;
+            for (int i = 0; i < 12; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (clear(mid) ? lo : hi) = mid;
+            }
+            field.layers_scale = lo;
+        }
+    }
+    return field;
+}
+
+// Weights of the fit of the surface mode (tuned on sloped blocks of 9 and 24 mm: the higher the part, the closer the
+// layers get to its top).
+static constexpr double SURFACE_TARGET_WEIGHT = 100.;
+static constexpr double SURFACE_SMOOTH_WEIGHT = 3.;
+
+// Surface mode: the layer offset whose slopes fit the top surfaces of the mesh. The same mesh and settings come back
+// several times (validation, slicing, G-code, analysis): the last result is kept.
+static std::shared_ptr<const EngineeringLayerField> surface_layer_field(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
+                                                                         const indexed_triangle_set &mesh)
+{
+    const HeadLimits limits = head_limits(config);
+    LayerFitParams params;
+    params.z_flat        = config.nonplanar_flat_below.value;
+    // The top surfaces are few nodes of the grid: they must win against the smoothness of the rest.
+    params.target_weight = SURFACE_TARGET_WEIGHT;
+    params.smooth_weight = SURFACE_SMOOTH_WEIGHT;
+    // Key: the settings and the mesh.
+    size_t key = std::hash<double>()(limits.tan_x) ^ (std::hash<double>()(limits.tan_y) << 1) ^ (std::hash<double>()(params.z_flat) << 2);
+    auto mix = [&key](size_t h) { key ^= h + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2); };
+    mix(mesh.vertices.size());
+    mix(mesh.indices.size());
+    for (const stl_vertex &v : mesh.vertices)
+        for (int i = 0; i < 3; ++ i)
+            mix(std::hash<float>()(v[i]));
+    static std::mutex cache_mutex;
+    static size_t cache_key = 0;
+    static std::shared_ptr<const EngineeringLayerField> cache;
+    {
+        std::lock_guard<std::mutex> lock(cache_mutex);
+        if (cache && cache_key == key)
+            return cache;
+    }
+    auto field = std::make_shared<EngineeringLayerField>();
+    const std::vector<SlopeTarget> targets = surface_slope_targets(mesh, limits.tan_x, limits.tan_y, params.z_flat);
+    if (! fit_layer_field(targets, object_bbox, params, *field))
+        field.reset();
+    std::lock_guard<std::mutex> lock(cache_mutex);
+    cache_key = key;
+    cache     = field;
+    return field;
+}
+
+Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh,
+                             const EngineeringLayerField *stress)
 {
     FieldParams field = field_params(config);
     if (object_bbox.defined) {
@@ -1379,6 +1796,28 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         ramp.z_ramp = 1.;
         return Deformation(overhang_field(field, config, object_bbox, mesh), ramp);
     }
+    // Tisma: automatic, the layers tilted under the overhangs (as in the overhangs mode) plus the layers following the
+    // top surfaces, the latter reduced where the sum would make the layers too thick or thin, too steep or would let the
+    // print head hit the part. Both bring their deformation in and out by themselves.
+    if (field.mode == Mode::Automatic && ! calibration_test(config)) {
+        Ramp none;
+        none.z_flat = -1e6;
+        none.z_ramp = 1.;
+        FieldParams overhangs = field;
+        overhangs.mode = Mode::Overhangs;
+        overhangs = overhang_field(overhangs, config, object_bbox, mesh);
+        if (overhangs.mode == Mode::Overhangs) {
+            field.overhangs      = overhangs.overhangs;
+            field.overhang_scale = overhangs.overhang_scale;
+        }
+        if (mesh != nullptr && object_bbox.defined) {
+            const std::shared_ptr<const EngineeringLayerField> surface = surface_layer_field(config, object_bbox, *mesh);
+            const FieldParams both = grid_field(field, none, config, object_bbox, surface.get(), mesh);
+            if (both.mode == Mode::Automatic)
+                field = both;
+        }
+        return Deformation(field, none);
+    }
     Ramp ramp;
     ramp.z_flat     = config.nonplanar_flat_below.value;
     ramp.z_ramp     = std::max(0.1, config.nonplanar_ramp_height.value);
@@ -1389,9 +1828,42 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
     } else {
         if (config.nonplanar_flat_top.value && object_bbox.defined)
             ramp.z_top = object_bbox.max.z();
-        // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user.
-        if (config.nonplanar_fit_head.value)
+        // Tisma: the layers computed by the structural analysis, within the limits of the print head.
+        if (field.mode == Mode::Stress)
+            return Deformation(grid_field(field, ramp, config, object_bbox, stress, mesh), ramp);
+        // Tisma: the upper layers follow the top surfaces (the whole height takes the transition).
+        if (field.mode == Mode::Surface) {
+            if (mesh == nullptr || ! object_bbox.defined)
+                return Deformation(FieldParams(), ramp);
+            const std::shared_ptr<const EngineeringLayerField> surface = surface_layer_field(config, object_bbox, *mesh);
+            // The fit brings the layers in from the flat first layers over the whole height by itself.
+            Ramp none;
+            none.z_flat = -1e6;
+            none.z_ramp = 1.;
+            return Deformation(grid_field(field, none, config, object_bbox, surface.get(), mesh), none);
+        }
+        // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user, and smaller
+        // still where the print head would hit the part already printed.
+        if (config.nonplanar_fit_head.value) {
+            // Tisma: the cone from the part, its slope at each radius the one its overhangs need. The layers reach it
+            // gradually from the flat first layers up to the lowest of those overhangs.
+            if (field.mode == Mode::Conical && mesh != nullptr && object_bbox.defined) {
+                const HeadLimits limits = head_limits(config);
+                OverhangParams params;
+                params.threshold_deg = config.nonplanar_overhang_threshold.value;
+                params.tan_x         = limits.tan_x;
+                params.tan_y         = limits.tan_y;
+                params.z_flat        = config.nonplanar_flat_below.value;
+                field.radial = build_radial_profile(*mesh, field.center, params);
+                if (! field.radial)
+                    // No overhang a cone can help: flat layers.
+                    return Deformation(FieldParams(), ramp);
+                ramp.z_ramp = std::max(ramp.z_ramp, field.radial->z_first - ramp.z_flat);
+            }
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));
+            if (mesh != nullptr)
+                field = clear_print_head(field, ramp, config, *mesh);
+        }
     }
     return Deformation(field, ramp);
 }
@@ -1403,8 +1875,8 @@ double mesh_max_edge(const PrintConfig &config)
     if (config.calib_mode.value == CalibMode::NonPlanarZSpeed)
         return Z_SPEED_TEST_WAVELENGTH / 10.;
     if (config.nonplanar_mode.value == NonPlanarMode::Wave)
-        return std::clamp(config.nonplanar_wavelength.value / 10., 0.3, 1.5);
-    if (config.nonplanar_mode.value == NonPlanarMode::Overhangs)
+        return std::clamp(wave_wavelength(config) / 10., 0.3, 1.5);
+    if (config.nonplanar_mode.value == NonPlanarMode::Overhangs || config.nonplanar_mode.value == NonPlanarMode::Automatic)
         return 1.;
     return 2.;
 }

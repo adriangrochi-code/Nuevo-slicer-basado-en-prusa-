@@ -1430,6 +1430,8 @@ Print::ApplyStatus Print::apply(const Model &model_in, DynamicPrintConfig new_fu
                                           model_volume_list_changed(model_object, model_object_new, ModelVolumeType::SUPPORT_ENFORCER);
         bool layer_height_ranges_differ = ! layer_height_ranges_equal(model_object.layer_config_ranges, model_object_new.layer_config_ranges, model_object_new.layer_height_profile.empty());
         bool model_origin_translation_differ = model_object.origin_translation != model_object_new.origin_translation;
+        // Tisma: the curved layers computed by the structural analysis (non-planar mode "stress") shape the slices.
+        bool layer_field_differ         = model_object.engineering.layer_field != model_object_new.engineering.layer_field;
         auto print_objects_range        = print_object_status_db.get_range(model_object);
         // The list actually can be empty if all instances are out of the print bed.
         //assert(print_objects_range.begin() != print_objects_range.end());
@@ -1438,7 +1440,7 @@ Print::ApplyStatus Print::apply(const Model &model_in, DynamicPrintConfig new_fu
             model_object_status.print_object_regions = print_objects_range.begin()->print_object->m_shared_regions;
             model_object_status.print_object_regions->ref_cnt_inc();
         }
-        if (solid_or_modifier_differ || model_origin_translation_differ || layer_height_ranges_differ || virtual_extruders_differ ||
+        if (solid_or_modifier_differ || model_origin_translation_differ || layer_height_ranges_differ || virtual_extruders_differ || layer_field_differ ||
             ! model_object.layer_height_profile.timestamp_matches(model_object_new.layer_height_profile)) {
             // The very first step (the slicing step) is invalidated. One may freely remove all associated PrintObjects.
             model_object_status.print_object_regions_status = 

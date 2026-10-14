@@ -4,6 +4,10 @@ license as Tisma) into vendor bundles of Tisma / PrusaSlicer (resources/profiles
 
 Usage: convert_orca_profiles.py <OrcaSlicer>/resources/profiles <Tisma>/resources/profiles [--orca-commit HASH]
 
+Slicers based on OrcaSlicer or Bambu Studio (Creality Print, QIDI Studio...) are converted the same way with
+--prefix <Prefix_> --source "<name>" --url <repository>: only their printer models that Tisma has in no bundle yet
+(including the ones converted from OrcaSlicer), and not their generic filament library (the one of Orca is used).
+
 - Every Orca vendor becomes a bundle "Orca_<vendor>" (shown as "<vendor>", or "<vendor> (OrcaSlicer)" when Tisma has a
   bundle of that vendor already). The generic filament library of Orca becomes a templates bundle (compatible with all
   the printers, as the "Templates" bundle of PrusaSlicer).
@@ -192,6 +196,7 @@ PLACEHOLDERS = {
     'z_hop': 'retract_lift',
     'printable_height': 'max_print_height',
     'initial_layer_print_height': 'first_layer_height',
+    'initial_layer_height': 'first_layer_height',
     'filament_flow_ratio': 'extrusion_multiplier',
     'outer_wall_volumetric_speed': 'filament_max_volumetric_speed[initial_extruder]',
     'bed_temperature_initial_layer_single_extruder': 'first_layer_bed_temperature[initial_extruder]',
@@ -245,6 +250,17 @@ ACCELERATIONS = {'external_perimeter_acceleration', 'perimeter_acceleration', 'i
                  'solid_infill_acceleration', 'top_solid_infill_acceleration', 'first_layer_acceleration',
                  'travel_acceleration', 'bridge_acceleration'}
 
+
+
+# Version of the bundles: raise it (with a line in BUNDLE_HISTORY) when the output changes, so that the bundles already
+# installed in the data folder are updated.
+BUNDLE_VERSION = '1.0.1'
+BUNDLE_HISTORY = '1.0.1 Default filaments of the library named as loaded (@Template).\n'
+
+def template_name(name):
+    """Name of a filament of the library as loaded by Tisma: the library is a templates bundle and PrusaSlicer adds
+    " @Template" to the names of the filaments of such bundles (PresetBundle::load_configbundle)."""
+    return name + ' @Template'
 
 def normalize_model(vendor, model):
     """Model name without the vendor and the punctuation, to find the same printer in two vendor bundles."""
@@ -335,6 +351,8 @@ class Converter:
         if not text:
             return text
         ctx = ctx or {}
+        # The height of the nozzle (Creality Print, in the filament start G-code, where Tisma has no "position").
+        text = re.sub(r'(?<![A-Za-z0-9_])position\[2\]', 'layer_z', text)
         names = '|'.join(sorted(map(re.escape, PLACEHOLDERS), key=len, reverse=True))
         # Legacy syntax [name]: no index allowed (a vector gives the value of the current extruder).
         text = re.sub(r'\[(' + names + r')\]', lambda m: '[' + PLACEHOLDERS[m.group(1)].split('[')[0] + ']', text)
@@ -657,6 +675,10 @@ def main():
                     help='root of the Tisma sources (to read the option types)')
     ap.add_argument('--orca-commit', default='')
     ap.add_argument('--vendors', default='', help='comma separated subset of vendors (for testing)')
+    ap.add_argument('--prefix', default='Orca_', help='prefix of the bundles (another slicer based on Orca: e.g. CrealityPrint_)')
+    ap.add_argument('--source', default='OrcaSlicer', help='name of the slicer the profiles come from')
+    ap.add_argument('--url', default='https://github.com/SoftFever/OrcaSlicer', help='repository of the slicer')
+    ap.add_argument('--maker', default='', help='maker of all the vendors of the slicer (QIDI Studio names them by series)')
     args = ap.parse_args()
 
     conv = Converter(tisma_option_types(args.tisma_root), orca_option_defaults(args.orca_profiles))
@@ -671,7 +693,7 @@ def main():
     used_names = set()
     for ini in glob.glob(os.path.join(out_dir, '*.ini')):
         stem = os.path.basename(ini)[:-4]
-        if stem.startswith('Orca_'):
+        if stem.startswith(args.prefix):
             continue
         existing_vendors.add(stem.lower())
         section = ''
@@ -689,9 +711,14 @@ def main():
                 if m and section == 'vendor':
                     existing_vendors.add(m.group(1).strip().lower())
                     vendor_name = m.group(1).strip()
+                    if stem.startswith('Orca_'):
+                        # Converting another slicer: "Anker (OrcaSlicer)" is the vendor Anker.
+                        vendor_name = re.sub(r'\s*\(OrcaSlicer\)$', '', vendor_name)
                 if m and section.startswith('printer_model:'):
                     existing_models.add(normalize_model(vendor_name, m.group(1)))
                     existing_models.add(normalize_model(stem, m.group(1)))
+                    if stem.startswith('Orca_'):
+                        existing_models.add(normalize_model(stem[len('Orca_'):], m.group(1)))
 
     # All the presets of Orca, by vendor.
     vendors = {}
@@ -750,17 +777,28 @@ def main():
     for vendor in order:
         index, presets = vendors[vendor]
         is_library = vendor == 'OrcaFilamentLibrary'
-        vid = 'Orca_' + sanitize(vendor)
-        display = VENDOR_DISPLAY_NAMES.get(vendor, vendor)
+        vid = args.prefix + sanitize(vendor)
+        if is_library and args.prefix != 'Orca_':
+            # Another slicer: its filament library is only read (lookups); Tisma uses the one of Orca.
+            continue
+        display = args.maker or VENDOR_DISPLAY_NAMES.get(vendor, vendor)
         shown = 'OrcaSlicer filaments' if is_library else (
-            display + ' (OrcaSlicer)' if (vendor.lower() in existing_vendors or sanitize(vendor).lower() in existing_vendors or
+            display + ' (%s)' % args.source if (vendor.lower() in existing_vendors or sanitize(vendor).lower() in existing_vendors or
                                           display.lower() in existing_vendors) else display)
 
         # Printer models already in Tisma (from the PrusaSlicer repository): not converted again.
         duplicated_models = set()
         for (kind, name), data in presets.items():
-            if kind == 'machine_model' and normalize_model(vendor, name) in existing_models:
+            if kind == 'machine_model' and (normalize_model(vendor, name) in existing_models or
+                                            (args.maker and normalize_model(args.maker, name) in existing_models)):
                 duplicated_models.add(name)
+        # Belt printers (machine_is_belt of Creality Print, printer_is_belt of VertexSlice) are made, with their belt
+        # settings, by make_belt_profiles.py.
+        for (kind, name), data in presets.items():
+            if kind == 'printer' and str(data.get('instantiation', 'true')).lower() != 'false':
+                flat = flatten(vendor, 'printer', data)
+                if str(first(flat.get('machine_is_belt', flat.get('printer_is_belt', '0')))) == '1':
+                    duplicated_models.add(flat.get('printer_model', ''))
         if duplicated_models:
             for key in [k for k, d in presets.items() if k[0] == 'printer' and
                         str(d.get('instantiation', 'true')).lower() != 'false' and
@@ -786,7 +824,7 @@ def main():
             else:
                 new = name.replace('@System', '@Orca') if is_library else name
                 if (kind, new) in used_names:
-                    new = '%s @Orca %s' % (name, vendor)
+                    new = '%s @%s %s' % (name, 'Orca' if args.prefix == 'Orca_' else args.source, vendor)
             used_names.add((kind, new))
             rename[(kind, name)] = new
             return new
@@ -800,10 +838,10 @@ def main():
             if kind == 'printer':
                 nozzle_of[name] = to_float(first(flatten(vendor, kind, data).get('nozzle_diameter', ['0.4'])), 0.4)
 
-        lines = ['# Profiles converted from OrcaSlicer (https://github.com/SoftFever/OrcaSlicer, resources/profiles/%s), AGPLv3.' % vendor,
+        lines = ['# Profiles converted from %s (%s, resources/profiles/%s), AGPLv3.' % (args.source, args.url, vendor),
                  '# Generated by tools/profiles/convert_orca_profiles.py%s. Do not edit: run the converter again.' %
                  (' from commit ' + args.orca_commit if args.orca_commit else ''),
-                 '', '[vendor]', 'repo_id = non-prusa-fff', 'name = ' + shown, 'config_version = 1.0.0',
+                 '', '[vendor]', 'repo_id = non-prusa-fff', 'name = ' + shown, 'config_version = ' + BUNDLE_VERSION,
                  'config_update_url = ', '']
         if is_library:
             lines.insert(-1, 'templates_profile = 1')
@@ -828,6 +866,7 @@ def main():
 
         # Filaments of the vendor identical to a filament of the library (Orca copies the generic filaments for every
         # printer): the printers use the one of the library, which is compatible with all of them.
+        library_aliases = set()
         if not is_library:
             for (kind, name), data in list(presets.items()):
                 if kind != 'filament' or str(data.get('instantiation', 'true')).lower() == 'false':
@@ -845,6 +884,7 @@ def main():
                 theirs = conv.convert('filament', flatten('OrcaFilamentLibrary', 'filament', pd), 0.4)
                 if mine == theirs:
                     rename[('filament', name)] = parent.replace('@System', '@Orca')
+                    library_aliases.add(name)
                     del presets[(kind, name)]
                     total['aliased_filaments'] = total.get('aliased_filaments', 0) + 1
         # Identical processes and filaments (Orca repeats them for every printer of a family): one preset with the
@@ -933,6 +973,8 @@ def main():
                 if d2 is None and ('filament', x) not in rename:
                     continue
                 n2 = rename.get(('filament', x)) if ('filament', x) in rename else (x.replace('@System', '@Orca') if v2 == 'OrcaFilamentLibrary' else None)
+                if n2 and (x in library_aliases or (('filament', x) not in rename and v2 == 'OrcaFilamentLibrary')):
+                    n2 = template_name(n2)
                 if n2 and n2 not in mats:
                     mats.append(n2)
             if mats:
@@ -1002,10 +1044,12 @@ def main():
                     if ref:
                         v2, d2 = lookup(vendor, target_kind, ref)
                         if (target_kind, ref) in rename:
-                            section_lines.append('%s = %s' % (key, rename[(target_kind, ref)]))
+                            target = rename[(target_kind, ref)]
+                            section_lines.append('%s = %s' % (key, template_name(target) if target_kind == 'filament' and ref in library_aliases else target))
                         elif v2 == 'OrcaFilamentLibrary':
-                            section_lines.append('%s = %s' % (key, ref.replace('@System', '@Orca')))
-                tag = 'PRINTER_VENDOR_ORCA_%s' % sanitize(vendor).upper()
+                            target = ref.replace('@System', '@Orca')
+                            section_lines.append('%s = %s' % (key, template_name(target) if target_kind == 'filament' else target))
+                tag = 'PRINTER_VENDOR_%s_%s' % (args.prefix.strip('_').upper(), sanitize(vendor).upper())
                 notes = values.get('printer_notes', '')
                 if tag not in notes:
                     own['printer_notes'] = (notes + '\\n' if notes else '') + tag
@@ -1035,8 +1079,9 @@ def main():
         with open(os.path.join(out_dir, vid + '.ini'), 'w', encoding='utf-8', newline='\n') as f:
             f.write('\n'.join(lines) + '\n')
         with open(os.path.join(out_dir, vid + '.idx'), 'w', encoding='utf-8', newline='\n') as f:
-            f.write('min_slic3r_version = 2.9.0\n1.0.0 Converted from OrcaSlicer%s.\n' %
-                    (' ' + args.orca_commit[:10] if args.orca_commit else ''))
+            history = BUNDLE_HISTORY if args.prefix == 'Orca_' else ''
+            f.write('min_slic3r_version = 2.9.0\n' + history + '1.0.0 Converted from %s%s.\n' %
+                    (args.source, ' ' + args.orca_commit[:10] if args.orca_commit else ''))
         if files_to_copy:
             os.makedirs(vendor_dir, exist_ok=True)
             for f in files_to_copy:

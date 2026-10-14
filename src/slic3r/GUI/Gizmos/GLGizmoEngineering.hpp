@@ -21,6 +21,7 @@
 #include <tisma_fea/Structures.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Orientation.hpp>
+#include <tisma_fea/StressLayers.hpp>
 
 namespace Slic3r {
 
@@ -69,11 +70,17 @@ private:
     // The face of the triangle: the B-Rep face for STEP parts, the flat region around it otherwise.
     void         pick_face(const ModelVolume &volume, int volume_idx, int facet, EngineeringRegion &region) const;
     void         add_at_mouse(const Vec2d &mouse);
+    // The material of the part: the filament type (FFF) or the material type of the resin (SLA).
     std::string  filament_type(const ModelObject &object) const;
+    // A resin printer is selected: the part is solid or hollowed, only its walls and interior infill are optimized.
+    static bool  resin();
 
     void start_analysis();
     void start_optimization();
     void apply_optimization(bool zones);
+    // Skin + core in one click: the automatic non-planar layers of the print settings (skin) and the lightest
+    // infill by zones with ribs, applied when found (core).
+    void start_skin_core();
     // Builds the input of an analysis of the printed part and remembers its material, temperature and object.
     bool prepare_input(Fea::ModelAnalysisInput &input, JobSize size = JobSize::Many);
     // Sets the size of the voxels of the analysis for the chosen quality (limited to a number of voxels).
@@ -83,11 +90,19 @@ private:
     void start_orientation();
     // Rotates the instance so that the recommended axis is printed vertically (the loads rotate with the part).
     void rotate_to_recommended();
+    // Curved layers that follow the stresses: computes them and applies them to the object (non-planar mode "stress").
+    void start_curved_layers();
+    void apply_curved_layers();
+    void remove_curved_layers();
     // Runs a job in the background; its result is stored in *pending under the mutex.
     template<class T> void launch(std::function<T()> job, std::optional<T> *pending);
     void start_reinforcement();
     void apply_reinforcement();
     void start_lattice();
+    // Resin printers: the lightest walls and interior infill (hollowing) and applying them to the object.
+    void start_resin_structure();
+    void apply_resin_structure(bool solid);
+    void render_resin_optimize(const ModelObject &object, float width);
     void apply_lattice();
     void render_lattice();
     void cancel_analysis();
@@ -136,6 +151,8 @@ private:
     std::optional<Fea::ReinforcementResult> m_pending_reinf;
     std::optional<Fea::LatticeResult>       m_pending_lattice;
     std::optional<Fea::OrientationResult>   m_pending_orient;
+    std::optional<Fea::CurvedLayersResult>  m_pending_layers;
+    std::optional<Fea::ResinOptimizeResult> m_pending_resin;
     bool              m_job_optimize { false };
 
     std::optional<Fea::Result> m_result;
@@ -159,6 +176,9 @@ private:
     // Recommended orientation.
     std::optional<Fea::OrientationResult> m_orient;
     ObjectID                   m_orient_object;
+    // Curved layers for strength.
+    std::optional<Fea::CurvedLayersResult> m_layers;
+    ObjectID                   m_layers_object;
     // Applied infill, shown until the object changes.
     std::string                m_applied_note;
     ObjectID                   m_applied_object;
@@ -166,8 +186,17 @@ private:
     std::optional<Fea::OptimizeResult> m_opt;
     ObjectID                   m_opt_object;
     bool                       m_opt_zones { true };
+    // Infill lines along the stresses (ribs) in the search, and whether the last search tried them.
+    bool                       m_opt_ribs { true };
+    bool                       m_opt_ribs_tried { false };
+    // Skin + core: the infill found is applied as soon as the search ends.
+    bool                       m_skin_core_pending { false };
+    std::string                m_skin_core_note;
     bool                       m_open_infill_section { false };
     std::atomic<double>        m_current_infill_mass { 0. };
+    // Walls and interior infill of a resin part.
+    std::optional<Fea::ResinOptimizeResult> m_resin;
+    ObjectID                   m_resin_object;
     // Local reinforcement.
     std::optional<Fea::ReinforcementResult> m_reinf;
     ObjectID                   m_reinf_object;
@@ -189,6 +218,10 @@ private:
     // Render caches.
     struct RegionModel { GLModel model; Transform3d trafo; ColorRGBA color; };
     std::vector<RegionModel> m_region_models;
+    // Where the arrow of each load is drawn: the point (center of the faces) and the outer normal of the surface there,
+    // in the coordinates of the volume, and the force. Updated with the region models.
+    struct LoadMark { int volume; Vec3d point; Vec3d normal; Vec3d force; };
+    std::vector<LoadMark>    m_load_marks;
     bool                     m_regions_dirty { true };
     std::vector<GLModel>     m_result_models;     // one per color of the scale
     bool                     m_result_models_dirty { true };

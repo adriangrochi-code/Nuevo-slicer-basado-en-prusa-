@@ -1707,7 +1707,11 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_configbundle(
             }
 
             // Derive the profile logical name aka alias from the preset name if the alias was not stated explicitely.
-            if (alias_name.empty()) {
+            // Tisma Slicer: not for printers. The rest of the program takes the alias of a printer as its name (see
+            // get_preset_name_by_alias()), and the printers converted from OrcaSlicer are named "<name> @Orca <vendor>"
+            // so that they do not clash with the printers of the vendor bundles: with the alias, the plater showed
+            // "<name>" and selecting it selected another printer (of another technology too), which crashed.
+            if (alias_name.empty() && presets != &this->printers) {
                 size_t end_pos = preset_name.find_first_of("@");
 	            if (end_pos != std::string::npos) {
 	                alias_name = preset_name.substr(0, end_pos);

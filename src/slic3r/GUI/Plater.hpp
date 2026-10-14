@@ -224,7 +224,8 @@ public:
     void convert_unit(ConversionType conv_type);
     void toggle_layers_editing(bool enable);
 
-    void apply_cut_object_to_model(size_t init_obj_idx, const ModelObjectPtrs& cut_objects);
+    // Tisma: several_beds arranges the pieces on as many beds as needed (Split to fit the printer).
+    void apply_cut_object_to_model(size_t init_obj_idx, const ModelObjectPtrs& cut_objects, bool several_beds = false);
 
     void with_mocked_fff_background_process(
         Print &print,
@@ -340,6 +341,11 @@ public:
     void paste_from_clipboard();
     void mirror(Axis axis);
     void split_object();
+    // Tisma: cuts the selected object into pieces that fit the printer, joined by connectors (FragmentDialog).
+    void fragment_object();
+    bool can_fragment() const;
+    // Tisma: offers to split the objects that do not fit the printer.
+    void notify_too_large(const std::vector<size_t> &obj_idxs);
     void split_volume();
 
     bool can_delete() const;

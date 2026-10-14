@@ -6,6 +6,7 @@
 #define slic3r_GLGizmoRotate_hpp_
 
 #include "GLGizmoBase.hpp"
+#include "libslic3r/Config.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -181,6 +182,8 @@ private:
         struct State {
             float  accuracy  = 1.f;
             int    method_id = 0;
+            // Tisma: the methods depend on the technology of the printer.
+            PrinterTechnology technology = ptSLA;
         };
 
         struct Alignment { float x, y, bottom_limit; };
@@ -199,7 +202,7 @@ private:
 
     RotoptimzeWindow::State m_rotoptimizewin_state = {};
 
-    void load_rotoptimize_state();
+    void load_rotoptimize_state(PrinterTechnology technology = ptSLA);
 };
 
 } // namespace GUI

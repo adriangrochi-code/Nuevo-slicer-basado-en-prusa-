@@ -90,6 +90,34 @@ jobs:
         run: |
           cmake --build %APP_BUILD% --config Release --target TismaSlicer_app_gui TismaSlicer_app_console TismaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
 
+      # The Bambu Lab LAN client goes through Schannel on Windows (certificate revocation check, TLS session reuse of
+      # the FTPS data connection): test it against the fake printer, docs/BAMBU_LAN.md.
+      - name: Bambu LAN against the fake printer (Schannel)
+        shell: pwsh
+        run: |
+          cmake --build $env:APP_BUILD --config Release --target slic3rutils_tests -- /m /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw "slic3rutils_tests did not build" }
+          if (-not (Get-Command openssl -ErrorAction SilentlyContinue)) { $env:OPENSSL = "C:/Program Files/Git/usr/bin/openssl.exe" }
+          $fake = Join-Path $env:RUNNER_TEMP "bambu-fake"
+          $server = Start-Process python -ArgumentList "tools/bambu/fake_printer.py", "--dir", $fake -PassThru -NoNewWindow `
+            -RedirectStandardOutput "$fake.log" -RedirectStandardError "$fake.err"
+          $deadline = (Get-Date).AddSeconds(60)
+          while (-not ((Test-Path "$fake.log") -and (Select-String -Path "$fake.log" -Pattern "fake printer" -Quiet))) {
+            if ((Get-Date) -gt $deadline -or $server.HasExited) { Get-Content "$fake.err" -ErrorAction SilentlyContinue; throw "The fake printer did not start" }
+            Start-Sleep -Milliseconds 500
+          }
+          # For the record: Windows' own curl.exe (Schannel) with and without the revocation check.
+          Write-Output "curl.exe with the revocation check:"
+          curl.exe -sS --cacert "$fake/ca.pem" -u bblp:12345678 "ftps://127.0.0.1:18990/" -Q NOOP -o NUL 2>&1 | Write-Output
+          Write-Output "curl.exe without the revocation check:"
+          curl.exe -sS --ssl-no-revoke --cacert "$fake/ca.pem" -u bblp:12345678 "ftps://127.0.0.1:18990/" -Q NOOP -o NUL 2>&1 | Write-Output
+          $env:TISMA_BAMBU_FAKE = $fake
+          $env:PATH = "$env:APP_BUILD/src/Release;$env:PATH"
+          & "$env:APP_BUILD/tests/slic3rutils/Release/slic3rutils_tests.exe" "[BambuLan],[BambuLanFake]"
+          $code = $LASTEXITCODE
+          Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          if ($code -ne 0) { Get-Content "$fake.log", "$fake.err" -ErrorAction SilentlyContinue; throw "Bambu LAN tests failed" }
+
       - name: Package
         shell: pwsh
         run: |

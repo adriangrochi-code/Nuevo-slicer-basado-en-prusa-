@@ -13,6 +13,8 @@
 #include "tisma_fea/Optimize.hpp"
 #include "tisma_fea/Structures.hpp"
 #include "tisma_fea/Orientation.hpp"
+#include "tisma_fea/StressLayers.hpp"
+#include "tisma_fea/Ribs.hpp"
 
 #include <libslic3r/Format/3mf.hpp>
 #include <libslic3r/Model.hpp>
@@ -74,6 +76,44 @@ static double end_displacement(const Result &res, int axis, int component)
         }
     }
     return n ? sum / n : 0.;
+}
+
+TEST_CASE("Materials of the user", "[FEA]")
+{
+    const Result before = bar(40., 10., 10., Vec3d(500., 0., 0.), "PLA", 23., 1.);
+    REQUIRE(before.error.empty());
+
+    // Own values for PLA (twice as stiff) and an own material.
+    Material pla = *find_material("PLA");
+    pla.E_xy *= 2.;
+    pla.E_z  *= 2.;
+    Material mine = pla;
+    mine.key  = "my-pla";
+    mine.name = "";
+    set_user_materials({ pla, mine });
+    REQUIRE(find_material("PLA") != nullptr);
+    CHECK(find_material("PLA")->user);
+    CHECK(find_material("PLA")->E_xy == Approx(2. * builtin_materials().front().E_xy));
+    CHECK(material_for_filament_type("PLA")->E_xy == Approx(pla.E_xy));
+    REQUIRE(material_by_key("my-pla"));
+    CHECK(material_by_key("MY-PLA")->name == "MY-PLA");
+    CHECK(materials().size() == builtin_materials().size() + 1);
+
+    // The analysis takes the values of the user: a linear part twice as stiff moves half as much.
+    const Result after = bar(40., 10., 10., Vec3d(500., 0., 0.), "PLA", 23., 1.);
+    REQUIRE(after.error.empty());
+    CHECK(end_displacement(after, 0, 0) == Approx(0.5 * end_displacement(before, 0, 0)).epsilon(1e-6));
+
+    std::string error;
+    Material bad = pla;
+    bad.poisson = 0.5;
+    CHECK(! validate_material(bad, error));
+    CHECK(validate_material(pla, error));
+
+    set_user_materials({});
+    CHECK(! find_material("PLA")->user);
+    CHECK(find_material("MY-PLA") == nullptr);
+    CHECK(materials().size() == builtin_materials().size());
 }
 
 TEST_CASE("Material table", "[FEA]")
@@ -785,7 +825,7 @@ TEST_CASE("Reinforcement and lattice applied to an object", "[FEA]")
     Fea::ModelAnalysisInput rin;
     REQUIRE(build_analysis_input(*object, 0, "PLA", rin, error, &config));
     REQUIRE(rin.setup.infill.zones.size() == 1);
-    CHECK(rin.setup.infill.zones.front().wall_thickness == Approx(4 * rin.setup.infill.perimeter_width));
+    CHECK(rin.setup.infill.zones.front().wall_thickness == Approx(wall_thickness_of(rin.setup.infill, 4)));
     CHECK(rin.setup.infill.density == Approx(0.15));
 
     // Lattice: replaces the reinforcement and the infill.
@@ -1080,4 +1120,888 @@ TEST_CASE("Non-planar print settings reach the analysis", "[FEA][NonPlanar]")
     // Ridges of amplitude 1 mm and wavelength 20 mm: slope up to atan(2π / 20) ≈ 17°.
     CHECK(max_tilt * 180. / M_PI > 10.);
     CHECK(max_tilt * 180. / M_PI < 20.);
+}
+
+TEST_CASE("Curved layers follow the pull of an inclined bar", "[FEA][NonPlanar][StressLayers]")
+{
+    // A bar of 8 x 8 x 40 mm leaning 45° along X, held at its lower end and pulled along its axis: with flat layers
+    // the pull crosses the layers at 45°.
+    indexed_triangle_set its = its_make_cube(8., 8., 40.);
+    const std::vector<int> bottom = side(its, 2, false), top = side(its, 2, true);
+    const double angle = M_PI / 4.;
+    its_transform(its, Transform3d(Eigen::AngleAxisd(angle, Vec3d::UnitY())));
+    BoundingBoxf3 bbox;
+    for (const stl_vertex &v : its.vertices)
+        bbox.merge(v.cast<double>());
+    its_translate(its, (- bbox.min).cast<float>());
+    bbox = BoundingBoxf3();
+    for (const stl_vertex &v : its.vertices)
+        bbox.merge(v.cast<double>());
+    const Vec3d axis(std::sin(angle), 0., std::cos(angle));
+
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.5;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ bottom });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = top;
+    load.force     = 300. * axis;
+    setup.loads.push_back(load);
+    const Result flat = analyze(its, setup);
+    REQUIRE(flat.ok);
+    REQUIRE(flat.stress.size() == flat.voxels.size());
+
+    StressLayersParams params;
+    params.tan_x = params.tan_y = std::tan(25. * M_PI / 180.);
+    const StressLayersResult layers = stress_layers(its, flat, params);
+    REQUIRE(layers.ok);
+    CHECK(layers.tension_voxels > flat.voxels.size() / 2);
+    CHECK(layers.field.part_size.isApprox(bbox.size(), 1e-6));
+
+    // In the middle of the bar the layers rise along the pull (+X), about as steep as the head allows.
+    const auto normals = layer_field_normals(layers.field, bbox.min);
+    const Vec3d middle = 0.5 * (bbox.min + bbox.max);
+    const Vec3d n = normals(middle);
+    const double slope = - n.x() / n.z();
+    CHECK(slope > 0.6 * params.tan_x);
+    CHECK(slope < 1.2 * params.tan_x);
+    CHECK(std::abs(n.y()) < 0.05);
+
+    // The same pull crosses the curved layers less: the part holds more.
+    Setup curved_setup = setup;
+    curved_setup.layer_normal = normals;
+    const Result curved = analyze(its, curved_setup);
+    REQUIRE(curved.ok);
+    CHECK(curved.layer_orientations > 1);
+    WARN("Safety factor flat " << flat.safety_factor << ", curved " << curved.safety_factor);
+    CHECK(curved.safety_factor > 1.15 * flat.safety_factor);
+}
+
+TEST_CASE("Curved layers stay flat where the pull is along the layers", "[FEA][NonPlanar][StressLayers]")
+{
+    // A horizontal bar pulled along X: the pull already runs along flat layers.
+    const Result flat = bar(40., 8., 8., Vec3d(300., 0., 0.), "PLA", 23., 2.);
+    REQUIRE(flat.ok);
+    const indexed_triangle_set its = its_make_cube(40., 8., 8.);
+    const StressLayersResult layers = stress_layers(its, flat, StressLayersParams());
+    REQUIRE(layers.ok);
+    const auto normals = layer_field_normals(layers.field, Vec3d::Zero());
+    for (const Vec3d &p : { Vec3d(10., 4., 4.), Vec3d(20., 4., 4.), Vec3d(30., 4., 4.) })
+        CHECK(normals(p).z() > 0.995);
+}
+
+TEST_CASE("Curved layers of an object reach the slicing and the 3MF", "[FEA][NonPlanar][StressLayers]")
+{
+    // The inclined bar of the test above as an object of the model: a bar standing on Z, rotated 45° about Y.
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "strut";
+    ModelVolume *volume = object->add_volume(TriangleMesh(its_make_cube(8., 8., 40.)));
+    object->add_instance();
+    const double angle = M_PI / 4.;
+    object->instances.front()->set_rotation(Vec3d(0., angle, 0.));
+    object->ensure_on_bed();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(volume->mesh().its, 2, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type        = EngineeringLoad::Type::Faces;
+    load.name        = "pull";
+    load.faces.volume    = 0;
+    load.faces.triangles = side(volume->mesh().its, 2, true);
+    load.force       = 300. * Vec3d(std::sin(angle), 0., std::cos(angle));
+    object->engineering.loads.push_back(load);
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "nonplanar_max_slope",      25. },
+        { "use_relative_e_distances", true },
+        { "arc_fitting",              "disabled" },
+        { "skirts",                   0 },
+        { "fill_density",             "100%" },
+    });
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    input.setup.voxel_size = 1.5;
+    const CurvedLayersResult layers = curved_layers_for_strength(input, config);
+    INFO(layers.error);
+    REQUIRE(layers.ok);
+    WARN("Safety factor flat " << layers.flat.safety_factor << ", curved as sliced " << layers.curved.safety_factor);
+    CHECK(layers.curved.safety_factor > 1.05 * layers.flat.safety_factor);
+    CHECK(layers.field.safety_flat == Approx(layers.flat.safety_factor));
+    CHECK(layers.field.safety_curved == Approx(layers.curved.safety_factor));
+
+    // Sliced with the stresses mode: the layers fit the part (same bounding box in the object coordinates).
+    object->engineering.layer_field = layers.field;
+    config.set_deserialize_strict({ { "nonplanar_mode", "stress" } });
+    Print print;
+    print.apply(model, config);
+    CHECK(print.validate().empty());
+
+    // Kept in the 3MF.
+    const std::string path = (boost::filesystem::temp_directory_path() / "tisma_layer_field_test.3mf").string();
+    REQUIRE(store_3mf(path.c_str(), &model, nullptr, false));
+    Model                     loaded;
+    DynamicPrintConfig        loaded_config;
+    ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
+    boost::optional<Semver>   version;
+    REQUIRE(load_3mf(path.c_str(), loaded_config, ctxt, &loaded, false, version));
+    boost::filesystem::remove(path);
+    REQUIRE(loaded.objects.size() == 1);
+    const EngineeringLayerField &a = object->engineering.layer_field, &b = loaded.objects.front()->engineering.layer_field;
+    REQUIRE(b.offset.size() == a.offset.size());
+    CHECK(b.nx == a.nx);
+    CHECK(b.nz == a.nz);
+    CHECK((b.origin - a.origin).norm() < 1e-4);
+    CHECK((b.part_size - a.part_size).norm() < 1e-4);
+    double max_diff = 0.;
+    for (size_t i = 0; i < a.offset.size(); ++ i)
+        max_diff = std::max(max_diff, double(std::abs(a.offset[i] - b.offset[i])));
+    CHECK(max_diff < 1e-3);
+    CHECK(b.safety_curved == Approx(a.safety_curved).epsilon(1e-4));
+}
+
+// Length-weighted direction [°, 0..180) of the infill lines of a layer (the doubled angles are averaged, so that a
+// line and its reverse count alike).
+static double infill_direction(const Layer &layer)
+{
+    Vec2d sum = Vec2d::Zero();
+    for (const LayerRegion *region : layer.regions()) {
+        const ExtrusionEntityCollection fills = region->fills().flatten();
+        for (const ExtrusionEntity *entity : fills.entities) {
+            const Polyline pl = entity->as_polyline();
+            for (size_t i = 1; i < pl.points.size(); ++ i) {
+                const Vec2d  d = (pl.points[i] - pl.points[i - 1]).cast<double>();
+                const double a = std::atan2(d.y(), d.x());
+                sum += d.norm() * Vec2d(std::cos(2. * a), std::sin(2. * a));
+            }
+        }
+    }
+    double angle = 0.5 * std::atan2(sum.y(), sum.x()) * 180. / M_PI;
+    return angle < 0. ? angle + 180. : angle;
+}
+
+static double angle_difference(double a, double b)
+{
+    const double d = std::fmod(std::abs(a - b), 180.);
+    return std::min(d, 180. - d);
+}
+
+TEST_CASE("Infill ribs follow the pull of a bar", "[FEA][Ribs]")
+{
+    // A bar of 60 x 10 x 6 mm turned 30° on the bed, clamped at one end and pulled along its length.
+    const indexed_triangle_set bar_mesh = its_make_cube(60., 10., 6.);
+    const std::vector<int> clamped = side(bar_mesh, 0, false), pulled = side(bar_mesh, 0, true);
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(bar_mesh));
+    ModelInstance *instance = object->add_instance();
+    instance->set_rotation(Vec3d(0., 0., 30. * M_PI / 180.));
+    instance->set_offset(Vec3d(100., 100., 0.));
+    object->ensure_on_bed();
+    // The part as on the bed (the volume is centered on its own origin).
+    indexed_triangle_set its = object->volumes.front()->mesh().its;
+    its_transform(its, instance->get_matrix() * object->volumes.front()->get_matrix());
+
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ clamped });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = pulled;
+    load.force     = 500. * Vec3d(std::cos(30. * M_PI / 180.), std::sin(30. * M_PI / 180.), 0.);
+    setup.loads.push_back(load);
+    setup.infill.enabled = true;
+    setup.infill.density = 0.2;
+    const Result res = analyze(its, setup);
+    REQUIRE(res.ok);
+
+    // The ribs of almost all the bar run along it.
+    const std::vector<RibZone> zones = rib_zones(res);
+    REQUIRE(! zones.empty());
+    int cells = 0;
+    const RibZone *main = nullptr;
+    for (const RibZone &z : zones) {
+        cells += z.cells;
+        if (! main || z.cells > main->cells)
+            main = &z;
+    }
+    INFO("main zone " << main->angle_deg << "°, " << main->cells << " of " << cells << " cells");
+    CHECK(main->angle_deg == Approx(30.));
+    CHECK(main->cells > 0.8 * cells);
+    CHECK(main->directionality > 0.8);
+
+    // Applied, the modifiers lay the infill lines of the bar along the pull (also with the instance turned).
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("fill_density", new ConfigOptionPercent(20));
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipGrid));
+    Print print;
+    CHECK(apply_ribs(*object, 0, zones) == zones.size());
+    CHECK(apply_ribs(*object, 0, zones) == zones.size());
+    size_t ribs = 0;
+    for (const ModelVolume *v : object->volumes)
+        if (v->is_modifier() && v->name.rfind(RIB_ZONE_NAME, 0) == 0)
+            ++ ribs;
+    CHECK(ribs == zones.size());
+    print.apply(model, config);
+    print.process();
+    const Layer &layer = *print.objects().front()->layers()[8];
+    const double after = infill_direction(layer);
+    // The layers are sliced turned as on the bed (the infill angle is measured on the bed).
+    const BoundingBox slices_bbox = get_extents(layer.lslices);
+    CHECK(unscale<double>(slices_bbox.size().x()) == Approx(60. * std::cos(M_PI / 6.) + 10. * std::sin(M_PI / 6.)).epsilon(0.02));
+    CHECK(unscale<double>(slices_bbox.size().y()) == Approx(60. * std::sin(M_PI / 6.) + 10. * std::cos(M_PI / 6.)).epsilon(0.02));
+    INFO("infill direction with ribs " << after << "°");
+    CHECK(angle_difference(after, 30.) < 5.);
+    // All the lines of the layer are parallel (aligned rectilinear, no crossing lines).
+    Vec2d sum = Vec2d::Zero();
+    double length = 0.;
+    for (const LayerRegion *region : layer.regions()) {
+        const ExtrusionEntityCollection fills = region->fills().flatten();
+        for (const ExtrusionEntity *entity : fills.entities) {
+            const Polyline pl = entity->as_polyline();
+            for (size_t i = 1; i < pl.points.size(); ++ i) {
+                const Vec2d  d = (pl.points[i] - pl.points[i - 1]).cast<double>();
+                const double a = std::atan2(d.y(), d.x());
+                sum += d.norm() * Vec2d(std::cos(2. * a), std::sin(2. * a));
+                length += d.norm();
+            }
+        }
+    }
+    REQUIRE(length > 0.);
+    CHECK(sum.norm() / length > 0.8);
+
+    // With the infill zones of the lightest infill on top: the zones change the density, the ribs keep the direction.
+    InfillZone zone;
+    zone.mesh = its;
+    // The half of the bar next to the clamped end (in print coordinates).
+    for (stl_vertex &v : zone.mesh.vertices) {
+        const Vec3d local = (instance->get_matrix() * object->volumes.front()->get_matrix()).inverse() * v.cast<double>();
+        if (local.x() > 30.)
+            v = (instance->get_matrix() * object->volumes.front()->get_matrix() * Vec3d(30., local.y(), local.z())).cast<float>();
+    }
+    zone.density = 0.4;
+    CHECK(apply_infill(*object, 0, 0.2, { zone }) == 1);
+    print.apply(model, config);
+    print.process();
+    const Layer &zoned = *print.objects().front()->layers()[8];
+    double max_density = 0.;
+    for (const LayerRegion *region : zoned.regions())
+        if (! region->fills().entities.empty())
+            max_density = std::max(max_density, region->region().config().fill_density.value);
+    CHECK(max_density == Approx(40.));
+    INFO("infill direction with ribs and zones " << infill_direction(zoned) << "°");
+    CHECK(angle_difference(infill_direction(zoned), 30.) < 5.);
+}
+
+TEST_CASE("Infill ribs of a bent bar run along it", "[FEA][Ribs]")
+{
+    // Bent down: tension on top and compression below, both along the bar, so the ribs run along X on both sides.
+    // The ribs are laid in the infill: the analysis is that of a part with walls and infill.
+    const indexed_triangle_set its = its_make_cube(60., 10., 10.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -50.);
+    setup.loads.push_back(load);
+    setup.infill.enabled = true;
+    setup.infill.density = 0.2;
+    const Result res = analyze(its, setup);
+    REQUIRE(res.ok);
+    const std::vector<RibZone> zones = rib_zones(res);
+    REQUIRE(! zones.empty());
+    int cells = 0, along = 0;
+    for (const RibZone &z : zones) {
+        cells += z.cells;
+        if (angle_difference(z.angle_deg, 0.) < 1.)
+            along += z.cells;
+    }
+    INFO(along << " of " << cells << " cells along the bar");
+    CHECK(along > 0.8 * cells);
+}
+
+TEST_CASE("Aligned infill factors", "[FEA][Ribs]")
+{
+    // 25 % of lines: the rule of mixtures along them, a bending dominated structure across them.
+    const AlignedInfillFactors f = aligned_infill_factors(0.25, std::pow(0.25, 1.2), std::pow(0.25, 1.2));
+    CHECK(f.along == Approx(0.25));
+    CHECK(f.strength_along == Approx(0.25));
+    CHECK(f.across == Approx(0.0625));
+    CHECK(f.strength_across == Approx(0.3 * 0.125));
+    // Never stronger across than the isotropic infill of the same density.
+    const AlignedInfillFactors g = aligned_infill_factors(0.25, 0.01, 0.01);
+    CHECK(g.across == Approx(0.01));
+    CHECK(g.strength_across == Approx(0.01));
+}
+
+// Bar of 60 x 12 x 12 mm with thin walls, clamped at x = 0 and pulled along X; the infill carries a good part of
+// the load. As a tensile specimen, its ends (10 mm) are solid grips, so that the stresses of the clamp and of the
+// load (singular at the corners of the model) do not decide.
+static std::vector<InfillZone> grips()
+{
+    std::vector<InfillZone> out;
+    for (double x : { 0., 50. }) {
+        InfillZone grip;
+        grip.mesh = its_make_cube(10., 12., 12.);
+        its_translate(grip.mesh, Vec3f(float(x), 0.f, 0.f));
+        grip.density         = 1.;
+        grip.volume_fraction = true;
+        out.emplace_back(std::move(grip));
+    }
+    return out;
+}
+
+// Highest failure index of the infill in the middle of the bar (between the grips).
+static double gauge_failure_index(const Result &res)
+{
+    double fi = 0.;
+    for (size_t e = 0; e < res.voxels.size(); ++ e) {
+        const double x = res.origin.x() + res.h * (res.voxels[e] % res.size.x() + 0.5);
+        if (res.interior[e] && x > 15. && x < 45.)
+            fi = std::max(fi, double(res.failure_index[e]));
+    }
+    return fi;
+}
+
+static Setup pulled_bar(indexed_triangle_set &its, double density)
+{
+    its = its_make_cube(60., 12., 12.);
+    Setup setup;
+    setup.material   = "PLA";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(400., 0., 0.);
+    setup.loads.push_back(load);
+    setup.infill.enabled              = true;
+    setup.infill.density              = density;
+    setup.infill.wall_thickness       = 0.9;
+    setup.infill.top_bottom_thickness = 0.8;
+    std::tie(setup.infill.stiffness_exponent, setup.infill.strength_exponent) = infill_exponents("alignedrectilinear");
+    setup.infill.zones = grips();
+    return setup;
+}
+
+TEST_CASE("Aligned infill is stiffer and stronger along its lines", "[FEA][Ribs]")
+{
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.25);
+    const Result iso = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 0.;
+    const Result along = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 90.;
+    const Result across = analyze(its, setup);
+    REQUIRE(iso.ok);
+    REQUIRE(along.ok);
+    REQUIRE(across.ok);
+    CHECK(iso.aligned_voxels == 0);
+    CHECK(along.aligned_voxels > along.voxels.size() / 2);
+    const double d_iso = end_displacement(iso, 0, 0), d_along = end_displacement(along, 0, 0), d_across = end_displacement(across, 0, 0);
+    const double fi_iso = gauge_failure_index(iso), fi_along = gauge_failure_index(along), fi_across = gauge_failure_index(across);
+    WARN("End displacement: isotropic " << d_iso << ", lines along " << d_along << ", across " << d_across <<
+         "; failure index of the infill " << fi_iso << ", " << fi_along << ", " << fi_across <<
+         "; safety factor " << iso.safety_factor << ", " << along.safety_factor << ", " << across.safety_factor);
+    CHECK(d_along < d_iso);
+    CHECK(d_across > d_iso);
+    // Along the lines the infill works less loaded for its strength; across them it breaks first.
+    CHECK(fi_along < 0.9 * fi_iso);
+    CHECK(fi_across > 1.5 * fi_iso);
+    CHECK(along.safety_factor >= iso.safety_factor * 0.999);
+    // The same mass: only the direction of the lines changes.
+    CHECK(along.mass == Approx(iso.mass));
+
+    // A zone may turn the lines (only the direction, the density of the part stays).
+    InfillZone turn;
+    turn.mesh              = its;
+    turn.density           = -1.;
+    turn.aligned_angle_deg = 0.;
+    setup.infill.zones = grips();
+    setup.infill.zones.insert(setup.infill.zones.begin(), turn);
+    const Result turned = analyze(its, setup);
+    REQUIRE(turned.ok);
+    CHECK(end_displacement(turned, 0, 0) == Approx(d_along).epsilon(1e-6));
+    CHECK(turned.mass == Approx(iso.mass));
+}
+
+TEST_CASE("The lightest infill counts the ribs", "[FEA][Ribs]")
+{
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.2);
+    setup.voxel_size = 1.5;
+    setup.required_safety_factor = 2.;
+    // A load the bar holds with some infill: the safety factor with 30 % isotropic infill.
+    setup.infill.density = 0.3;
+    const Result at30 = analyze(its, setup);
+    REQUIRE(at30.ok);
+    setup.loads.front().force *= at30.safety_factor / setup.required_safety_factor;
+    OptimizeOptions options;
+    options.zones       = false;
+    options.ribs        = true;
+    options.fixed_zones = grips();
+    setup.infill.zones.clear();
+    const OptimizeResult opt = optimize_infill(its, setup, options);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    WARN("Lightest uniform infill without ribs " << opt.density_without_ribs << ", with ribs " << opt.uniform_density <<
+         " (" << opt.ribs.size() << " rib zones, " << opt.analyses << " analyses)");
+    CHECK(opt.density_without_ribs == Approx(0.3).margin(0.02));
+    REQUIRE(! opt.ribs.empty());
+    // At least 2 percent less infill (the uniform densities are whole percents; the solver differs a little between builds).
+    CHECK(opt.uniform_density <= opt.density_without_ribs - 0.02 + 1e-9);
+    CHECK(opt.uniform.aligned_voxels > 0);
+    CHECK(meets_requirements(opt.uniform));
+}
+
+TEST_CASE("Ribs and aligned infill of an object reach the analysis", "[FEA][Ribs]")
+{
+    Model model = bar_model();
+    ModelObject &object = *model.objects.front();
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipAlignedRectilinear));
+    config.set_key_value("fill_angle", new ConfigOptionFloat(30.));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.aligned_angle_deg == Approx(30.));
+    CHECK(input.setup.infill.zones.empty());
+
+    // A rib modifier: only the direction of the lines, in print coordinates.
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipGrid));
+    RibZone rib;
+    rib.mesh      = its_make_cube(20., 10., 10.);
+    rib.angle_deg = 60.;
+    rib.cells     = 1;
+    CHECK(apply_ribs(object, 0, { rib }) == 1);
+    REQUIRE(build_analysis_input(object, 0, "PLA", input, error, &config));
+    CHECK(input.setup.infill.aligned_angle_deg < 0.);
+    REQUIRE(input.setup.infill.zones.size() == 1);
+    CHECK(input.setup.infill.zones.front().density < 0.);
+    CHECK(input.setup.infill.zones.front().aligned_angle_deg == Approx(60.));
+    input.setup.voxel_size = 2.;
+    const Result res = analyze(input.mesh, input.setup);
+    REQUIRE(res.ok);
+    CHECK(res.aligned_voxels > 0);
+}
+
+
+TEST_CASE("Aligned infill on curved layers", "[FEA][Ribs][NonPlanar]")
+{
+    // The lines along X stay in the plane of each layer: with the layers tilted 20° about Y they rise with them.
+    indexed_triangle_set its;
+    Setup setup = pulled_bar(its, 0.25);
+    const double tilt = 20. * M_PI / 180.;
+    setup.layer_normal = [tilt](const Vec3d &) { return Vec3d(-std::sin(tilt), 0., std::cos(tilt)); };
+    const Result iso = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 0.;
+    const Result along = analyze(its, setup);
+    setup.infill.aligned_angle_deg = 90.;
+    const Result across = analyze(its, setup);
+    REQUIRE(iso.ok);
+    REQUIRE(along.ok);
+    REQUIRE(across.ok);
+    CHECK(along.aligned_voxels > along.voxels.size() / 2);
+    CHECK(end_displacement(along, 0, 0) < end_displacement(iso, 0, 0));
+    CHECK(end_displacement(across, 0, 0) > end_displacement(iso, 0, 0));
+}
+
+TEST_CASE("Skin and core: automatic non-planar layers and the lightest infill with ribs", "[FEA][Ribs][NonPlanar]")
+{
+    // A bar with a sloped top (the skin follows it) held at one end and pulled at the other.
+    Model model;
+    ModelObject *object = model.add_object();
+    indexed_triangle_set its = its_make_cube(60., 12., 12.);
+    for (stl_vertex &v : its.vertices)
+        if (v.z() > 6.f)
+            v.z() = 6.f + 6.f * v.x() / 60.f;
+    ModelVolume *volume = object->add_volume(TriangleMesh(its));
+    object->add_instance();
+    object->instances.front()->set_offset(Vec3d(100., 100., 0.));
+    object->ensure_on_bed();
+    EngineeringRegion fixed;
+    fixed.volume    = 0;
+    fixed.triangles = side(volume->mesh().its, 0, false);
+    object->engineering.fixtures.push_back(fixed);
+    EngineeringLoad load;
+    load.type   = EngineeringLoad::Type::Faces;
+    load.name   = "pull";
+    load.volume = 0;
+    load.faces.volume    = 0;
+    load.faces.triangles = side(volume->mesh().its, 0, true);
+    load.force  = Vec3d(300., 0., 0.);
+    object->engineering.loads.push_back(load);
+
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+    config.set_key_value("nonplanar_mode", new ConfigOptionEnum<NonPlanarMode>(NonPlanarMode::Automatic));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+    // The skin: the analysis follows the curved layers under the sloped top.
+    REQUIRE(input.setup.layer_normal);
+    input.setup.voxel_size = 1.5;
+    const Result curved = analyze(input.mesh, input.setup);
+    REQUIRE(curved.ok);
+    CHECK(curved.layer_orientations > 1);
+    // The core: the lightest infill with ribs on those layers.
+    OptimizeOptions options;
+    options.ribs = true;
+    const OptimizeResult opt = optimize_infill(input.mesh, input.setup, options);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.feasible);
+    WARN("Skin + core: uniform " << opt.uniform_density << " (without ribs " << opt.density_without_ribs << "), " <<
+         opt.ribs.size() << " rib zones, zones found " << opt.zones_found << ", " << opt.analyses << " analyses");
+    CHECK(opt.uniform_density <= opt.density_without_ribs);
+    CHECK(meets_requirements(opt.uniform));
+}
+
+// Triangles of the mesh lying on the plane coordinate[axis] = value.
+static std::vector<int> faces_on(const indexed_triangle_set &its, int axis, double value)
+{
+    std::vector<int> out;
+    for (size_t i = 0; i < its.indices.size(); ++ i) {
+        bool on = true;
+        for (int k = 0; k < 3; ++ k)
+            on &= std::abs(its.vertices[its.indices[i][k]][axis] - value) < 1e-5;
+        if (on)
+            out.push_back(int(i));
+    }
+    return out;
+}
+
+// Prism of the polygon (x, z) between y = 0 and y = depth, facing out; the caps are a fan from the vertex fan, which
+// must see all the others.
+static indexed_triangle_set extrude_xz(const std::vector<Vec2d> &polygon, double depth, int fan)
+{
+    indexed_triangle_set its;
+    const int n = int(polygon.size());
+    for (double y : { 0., depth })
+        for (const Vec2d &v : polygon)
+            its.vertices.emplace_back(float(v.x()), float(y), float(v.y()));
+    for (int i = 1; i + 1 < n; ++ i) {
+        const int a = fan, b = (fan + i) % n, c = (fan + i + 1) % n;
+        its.indices.emplace_back(a, c, b);
+        its.indices.emplace_back(n + a, n + b, n + c);
+    }
+    for (int i = 0; i < n; ++ i) {
+        const int j = (i + 1) % n;
+        its.indices.emplace_back(i, j, n + j);
+        its.indices.emplace_back(i, n + j, n + i);
+    }
+    if (its_volume(its) < 0.)
+        its_flip_triangles(its);
+    return its;
+}
+
+#include "calculix_reference.hpp"
+
+TEST_CASE("Agrees with CalculiX", "[FEA][CalculiX]")
+{
+    // The same parts, supports, loads and material as calculix/run_calculix.py, 1 mm voxels; the values at the voxel
+    // centers of the same places.
+    struct Case {
+        const char *name;
+        indexed_triangle_set mesh;
+        int fixed_axis; double fixed_value;
+        int load_axis; double load_value; Vec3d force;
+        int disp_comp, disp_axis; double disp_value;
+        int stress_comp; std::vector<std::pair<int, double>> stress_at;
+    };
+    const std::vector<Case> cases {
+        { "bar_tension", its_make_cube(60., 10., 10.), 0, 0., 0, 60., Vec3d(1000., 0., 0.), 0, 0, 59.5, 0, { { 0, 30.5 } } },
+        { "cantilever_x", its_make_cube(60., 10., 10.), 0, 0., 0, 60., Vec3d(0., 0., -100.), 2, 0, 59.5, 0, { { 0, 30.5 }, { 2, 9.5 } } },
+        { "cantilever_z", its_make_cube(10., 10., 60.), 2, 0., 2, 60., Vec3d(50., 0., 0.), 0, 2, 59.5, 2, { { 2, 30.5 }, { 0, 0.5 } } },
+        { "l_bracket", extrude_xz({ { 0., 0. }, { 40., 0. }, { 40., 40. }, { 30., 40. }, { 30., 10. }, { 0., 10. } }, 10., 4),
+          0, 0., 2, 40., Vec3d(50., 0., 0.), 0, 2, 39.5, 0, { { 0, 15.5 }, { 2, 9.5 } } },
+    };
+    for (const Case &c : cases) {
+        REQUIRE(its_num_open_edges(c.mesh) == 0);
+        const CalculixReference *ref = nullptr;
+        for (const CalculixReference &r : CALCULIX_REFERENCE)
+            if (std::string(r.name) == c.name)
+                ref = &r;
+        REQUIRE(ref);
+        Setup setup;
+        setup.material   = "PLA";
+        setup.voxel_size = 1.;
+        setup.tolerance  = 1e-9;
+        setup.fixtures.push_back({ faces_on(c.mesh, c.fixed_axis, c.fixed_value) });
+        Load load;
+        load.type      = Load::Type::Faces;
+        load.triangles = faces_on(c.mesh, c.load_axis, c.load_value);
+        load.force     = c.force;
+        setup.loads.push_back(load);
+        const Result res = analyze(c.mesh, setup);
+        REQUIRE(res.ok);
+        double d = 0., s = 0.;
+        int nd = 0, ns = 0;
+        for (size_t e = 0; e < res.voxels.size(); ++ e) {
+            const int idx = res.voxels[e];
+            const Vec3d center = res.origin + res.h * (Vec3d(idx % res.size.x(), (idx / res.size.x()) % res.size.y(),
+                                                             idx / (res.size.x() * res.size.y())) + Vec3d(0.5, 0.5, 0.5));
+            if (std::abs(center[c.disp_axis] - c.disp_value) < 1e-6) {
+                d += res.displacement[e][c.disp_comp];
+                ++ nd;
+            }
+            bool at = true;
+            for (const auto &[axis, value] : c.stress_at)
+                at &= std::abs(center[axis] - value) < 1e-6;
+            if (at) {
+                s += res.stress[e][c.stress_comp];
+                ++ ns;
+            }
+        }
+        REQUIRE(nd > 0);
+        REQUIRE(ns > 0);
+        d /= nd;
+        s /= ns;
+        WARN(c.name << ": displacement " << d << " mm (CalculiX " << ref->displacement << ", " <<
+             100. * (d / ref->displacement - 1.) << " %), stress " << s << " MPa (CalculiX " << ref->stress << ", " <<
+             100. * (s / ref->stress - 1.) << " %), " << res.voxels.size() << " voxels");
+        CHECK(d == Approx(ref->displacement).epsilon(0.03));
+        CHECK(s == Approx(ref->stress).epsilon(0.03));
+    }
+}
+
+TEST_CASE("Infill model matches the sliced toolpaths", "[FEA][Infill]")
+{
+    // A 30 x 30 x 20 mm block sliced with the pattern, density and perimeters, and the same block as the analysis sees
+    // it: the walls as thick as the material of the perimeters, the infill the material the pattern deposits, the total
+    // the volume extruded.
+    struct Cfg { const char *pattern; int density; int perimeters; };
+    for (const Cfg &c : { Cfg{ "rectilinear", 20, 2 }, Cfg{ "gyroid", 30, 3 }, Cfg{ "honeycomb", 20, 2 },
+                          Cfg{ "3dhoneycomb", 20, 2 }, Cfg{ "cubic", 25, 4 } }) {
+        Model model;
+        ModelObject *object = model.add_object();
+        object->add_volume(TriangleMesh(its_make_cube(30., 30., 20.)));
+        object->add_instance();
+        object->instances.front()->set_offset(Vec3d(100., 100., 0.));
+        object->ensure_on_bed();
+        DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
+        config.set_deserialize_strict({ { "fill_pattern", c.pattern }, { "fill_density", std::to_string(c.density) + "%" },
+                                        { "perimeters", c.perimeters }, { "skirts", 0 } });
+        Print print;
+        print.apply(model, config);
+        print.process();
+        double v_sparse = 0., a_sparse = 0., v_perim = 0., v_total = 0., height = 0.;
+        for (const Layer *layer : print.objects().front()->layers()) {
+            for (const LayerRegion *region : layer->regions()) {
+                for (const Surface &surface : region->fill_surfaces())
+                    if (surface.surface_type == stInternal)
+                        a_sparse += surface.expolygon.area() * SCALING_FACTOR * SCALING_FACTOR * layer->height;
+                const ExtrusionEntityCollection fills = region->fills().flatten();
+                for (const ExtrusionEntity *e : fills.entities) {
+                    v_total += e->total_volume();
+                    if (e->role() == ExtrusionRole::InternalInfill)
+                        v_sparse += e->total_volume();
+                }
+                v_perim += region->perimeters().total_volume();
+                v_total += region->perimeters().total_volume();
+            }
+            height += layer->height;
+        }
+        object->engineering.fixtures.push_back({ 0, side(object->volumes.front()->mesh().its, 0, false) });
+        EngineeringLoad load;
+        load.type  = EngineeringLoad::Type::Faces;
+        load.faces = { 0, side(object->volumes.front()->mesh().its, 0, true) };
+        load.force = Vec3d(0., 0., -10.);
+        object->engineering.loads.push_back(load);
+        Fea::ModelAnalysisInput input;
+        std::string error;
+        REQUIRE(build_analysis_input(*object, 0, "PLA", input, error, &config));
+        input.setup.voxel_size = 0.5;
+        const Result res = analyze(input.mesh, input.setup);
+        REQUIRE(res.ok);
+        // The perimeters fill a square ring of side 30 mm: area per unit of height 30^2 - (30 - 2 t)^2.
+        const double ring   = v_perim / height;
+        const double wall   = 0.5 * (30. - std::sqrt(30. * 30. - ring));
+        const double sparse = v_sparse / a_sparse;
+        const double v_model = res.mass / 1.24 * 1000.;
+        INFO(c.pattern << " " << c.density << " %, " << c.perimeters << " perimeters: wall " << wall << " mm (model " <<
+             input.setup.infill.wall_thickness << "), sparse infill " << sparse << " (model " <<
+             input.setup.infill.deposit_factor * c.density / 100. << "), extruded " << v_total << " mm3 (model " << v_model << ")");
+        CHECK(input.setup.infill.wall_thickness == Approx(wall).epsilon(0.02));
+        CHECK(input.setup.infill.deposit_factor * c.density / 100. == Approx(sparse).epsilon(0.08));
+        CHECK(v_model == Approx(v_total).epsilon(0.05));
+    }
+}
+
+// The multigrid preconditioner converges to the same solution as Jacobi, in fewer iterations on fine grids.
+TEST_CASE("Multigrid preconditioner", "[FEA][Multigrid]")
+{
+    auto run = [](Setup setup, const indexed_triangle_set &its, bool mg, double &seconds) {
+        setup.multigrid = mg;
+        const auto t0 = std::chrono::steady_clock::now();
+        Result res = analyze(its, setup);
+        seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        return res;
+    };
+    SECTION("solid cantilever") {
+        const indexed_triangle_set its = its_make_cube(60., 10., 10.);
+        Setup setup;
+        setup.material   = "PLA";
+        setup.voxel_size = 0.5;
+        setup.tolerance  = 1e-8;
+        setup.fixtures.push_back({ side(its, 0, false) });
+        Load load;
+        load.type      = Load::Type::Faces;
+        load.triangles = side(its, 0, true);
+        load.force     = Vec3d(0., 0., -100.);
+        setup.loads.push_back(load);
+        double tj = 0., tm = 0.;
+        const Result jacobi = run(setup, its, false, tj);
+        const Result mg     = run(setup, its, true, tm);
+        REQUIRE(jacobi.ok);
+        REQUIRE(mg.ok);
+        CHECK(jacobi.multigrid_levels == 0);
+        CHECK(mg.multigrid_levels >= 2);
+        CHECK(mg.max_displacement == Approx(jacobi.max_displacement).epsilon(1e-5));
+        CHECK(mg.max_von_mises == Approx(jacobi.max_von_mises).epsilon(1e-4));
+        CHECK(mg.iterations * 4 < jacobi.iterations);
+        WARN("solid cantilever, " << mg.voxels.size() << " voxels: Jacobi " << jacobi.iterations << " iterations "
+             << tj << " s, multigrid (" << mg.multigrid_levels << " levels) " << mg.iterations << " iterations " << tm << " s");
+    }
+    SECTION("printed cantilever (walls and infill)") {
+        indexed_triangle_set its;
+        Setup setup = printed_cantilever(its, 5., 0.);
+        setup.voxel_size = 0.5;
+        double tj = 0., tm = 0.;
+        const Result jacobi = run(setup, its, false, tj);
+        const Result mg     = run(setup, its, true, tm);
+        REQUIRE(jacobi.ok);
+        REQUIRE(mg.ok);
+        CHECK(mg.max_displacement == Approx(jacobi.max_displacement).epsilon(1e-5));
+        CHECK(mg.iterations * 2 < jacobi.iterations);
+        WARN("printed cantilever, " << mg.voxels.size() << " voxels: Jacobi " << jacobi.iterations << " iterations "
+             << tj << " s, multigrid (" << mg.multigrid_levels << " levels) " << mg.iterations << " iterations " << tm << " s");
+    }
+}
+
+// ---- Resin printers: the walls of the hollowing and the interior infill.
+
+static Setup resin_cantilever(indexed_triangle_set &its, double force)
+{
+    its = its_make_cube(80., 16., 16.);
+    Setup setup;
+    setup.material   = "RESIN-FL";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -force);
+    setup.loads.push_back(load);
+    return setup;
+}
+
+TEST_CASE("Resin materials", "[FEA][Resin]")
+{
+    // Data sheets: Formlabs Standard post-cured 65 MPa / 2.8 GPa, Tough 2000 40.4 MPa / 1.8 GPa, Elegoo Standard 33.8 MPa.
+    const Material *standard = find_material("RESIN-FL");
+    REQUIRE(standard != nullptr);
+    CHECK(standard->E_xy == Approx(2800.));
+    CHECK(standard->strength_xy == Approx(65.));
+    // Close to isotropic.
+    CHECK(standard->E_z == Approx(standard->E_xy));
+    CHECK(material_for_resin("Tough")->key == "RESIN-TOUGH");
+    CHECK(material_for_resin("ABS-like")->key == "RESIN-TOUGH");
+    CHECK(material_for_resin("Generic")->key == "RESIN");
+    // No nozzle: no layer adhesion factor.
+    CHECK(layer_adhesion_factor(*standard, 0.) == Approx(1.));
+}
+
+TEST_CASE("Hollowed resin part: walls and interior infill", "[FEA][Resin]")
+{
+    indexed_triangle_set its;
+    Setup setup = resin_cantilever(its, 20.);
+    const Result solid = analyze(its, setup);
+    auto hollow = [&](double wall, double infill) {
+        Setup s = setup;
+        s.infill.enabled              = true;
+        s.infill.wall_thickness       = wall;
+        s.infill.top_bottom_thickness = wall;
+        s.infill.density              = infill;
+        s.infill.stiffness_exponent   = LATTICE_EXPONENT;
+        s.infill.strength_exponent    = LATTICE_EXPONENT;
+        return analyze(its, s);
+    };
+    const Result empty2  = hollow(2., 0.);
+    const Result empty4  = hollow(4., 0.);
+    const Result struts2 = hollow(2., 0.3);
+    REQUIRE(solid.ok);
+    REQUIRE(empty2.ok);
+    REQUIRE(empty4.ok);
+    REQUIRE(struts2.ok);
+    INFO("mass solid " << solid.mass << " walls 2 " << empty2.mass << " walls 4 " << empty4.mass << " 2 + 30 % " << struts2.mass);
+    // Thinner walls: lighter and more flexible; the struts add stiffness and mass.
+    CHECK(empty2.mass < empty4.mass);
+    CHECK(empty4.mass < solid.mass);
+    CHECK(empty2.max_displacement > empty4.max_displacement);
+    CHECK(empty4.max_displacement > solid.max_displacement);
+    CHECK(struts2.mass > empty2.mass);
+    CHECK(struts2.max_displacement < empty2.max_displacement);
+    // 80 x 16 x 16 mm of resin of 1.15 g/cm³.
+    CHECK(solid.mass == Approx(80. * 16. * 16. * 1.15e-3).epsilon(0.03));
+}
+
+TEST_CASE("Lightest walls and interior infill of a resin part", "[FEA][Resin]")
+{
+    indexed_triangle_set its;
+    Setup setup = resin_cantilever(its, 20.);
+    // A displacement limit between the hollow part with 1.5 mm walls and the solid one.
+    const Result solid = analyze(its, setup);
+    REQUIRE(solid.ok);
+    setup.loads.front().max_displacement = 1.6 * solid.load_displacement.front();
+    const ResinOptimizeResult opt = optimize_resin(its, setup, { 1.5, 2., 3., 4. }, 0.05, 0.6);
+    INFO(opt.error);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.options.size() == 4);
+    REQUIRE(opt.best >= 0);
+    const ResinOption &best = opt.options[size_t(opt.best)];
+    INFO("best: walls " << best.wall_thickness << " infill " << best.infill_density << " mass " << best.result.mass
+                        << " (solid " << opt.solid.mass << ")");
+    CHECK(meets_requirements(best.result));
+    CHECK(best.result.mass < opt.solid.mass);
+    // Each feasible option is the lowest infill for its walls: thicker walls need less infill.
+    for (size_t i = 1; i < opt.options.size(); ++ i)
+        if (opt.options[i].feasible && opt.options[i - 1].feasible)
+            CHECK(opt.options[i].infill_density <= opt.options[i - 1].infill_density + 1e-9);
+}
+
+TEST_CASE("Resin print settings reach the analysis", "[FEA][Resin]")
+{
+    Model model = bar_model();
+    ModelObject &object = *model.objects.front();
+    DynamicPrintConfig config;
+    config.apply(SLAFullPrintConfig::defaults());
+    config.set_key_value("printer_technology", new ConfigOptionEnum<PrinterTechnology>(ptSLA));
+    REQUIRE(is_resin(config));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    // Solid by default; the material from the type of the resin.
+    REQUIRE(build_analysis_input(object, 0, "Tough", input, error, &config));
+    CHECK(input.material == "RESIN-TOUGH");
+    CHECK(! input.setup.infill.enabled);
+    // Hollowed with the infill, as applied by the optimizer.
+    apply_resin_structure(object, 2.5, 0.2);
+    REQUIRE(build_analysis_input(object, 0, "Generic", input, error, &config));
+    CHECK(input.material == "RESIN");
+    CHECK(input.setup.infill.enabled);
+    CHECK(input.setup.infill.wall_thickness == Approx(2.5));
+    CHECK(input.setup.infill.density == Approx(0.2));
+    apply_resin_structure(object, 0., 0.);
+    REQUIRE(build_analysis_input(object, 0, "Generic", input, error, &config));
+    CHECK(! input.setup.infill.enabled);
 }

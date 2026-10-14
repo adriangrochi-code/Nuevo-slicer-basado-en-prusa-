@@ -356,7 +356,7 @@ def main():
         out.append('[vendor]')
         out.append('repo_id = non-prusa-fff')
         out.append('name = ' + display)
-        out.append('config_version = 1.0.0')
+        out.append('config_version = 1.0.1')
         out.append('config_update_url = ')
         out.append('')
         models = {}
@@ -371,7 +371,8 @@ def main():
             if any(abs(p['filament'] - 2.85) < 0.2 for p in printers):
                 out.append('default_materials = ' + '; '.join('Generic %s 2.85 @%s' % (n, stem) for n, *_ in FILAMENTS_285))
             else:
-                out.append('default_materials = Generic ABS @Orca; Generic PETG @Orca; Generic PLA @Orca')
+                # Filaments of the OrcaSlicer library: a templates bundle, whose filaments are loaded with " @Template".
+                out.append('default_materials = Generic ABS @Orca @Template; Generic PETG @Orca @Template; Generic PLA @Orca @Template')
             out.append('')
         # Print profiles: three layer heights for each nozzle.
         out.append('[print:*common @%s*]' % stem)
@@ -438,13 +439,14 @@ def main():
             out.append('start_gcode = ' + p['start'])
             out.append('end_gcode = ' + p['end'])
             out.append('default_print_profile = %.2fmm Standard @%s %s' % (round(n * 0.5, 2), stem.replace('_', ' '), p['variant']))
-            out.append('default_filament_profile = ' + ('Generic PLA 2.85 @' + stem if abs(p['filament'] - 2.85) < 0.2 else 'Generic PLA @Orca'))
+            out.append('default_filament_profile = ' + ('Generic PLA 2.85 @' + stem if abs(p['filament'] - 2.85) < 0.2 else 'Generic PLA @Orca @Template'))
             out.append('')
         path = os.path.join(args.tisma_profiles, stem + '.ini')
         with open(path, 'w', encoding='utf-8', newline='\n') as f:
             f.write('\n'.join(out))
         with open(os.path.join(args.tisma_profiles, stem + '.idx'), 'w', encoding='utf-8', newline='\n') as f:
-            f.write('min_slic3r_version = 2.9.0\n1.0.0 Converted from UltiMaker Cura %s.\n' % args.commit[:10])
+            f.write('min_slic3r_version = 2.9.0\n1.0.1 Default filaments of the OrcaSlicer library named as loaded (@Template).\n'
+                    '1.0.0 Converted from UltiMaker Cura %s.\n' % args.commit[:10])
         written.append(stem)
 
     print('printers converted: %(converted)d, already in Tisma: %(existing)d, hidden or abstract: %(hidden)d, '

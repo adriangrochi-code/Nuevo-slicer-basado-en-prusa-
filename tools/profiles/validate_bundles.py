@@ -48,6 +48,9 @@ class Bundles:
 
     def flat(self, kind, name, depth=0):
         values = self.sections.get((kind, name))
+        if values is None and kind == 'filament' and name.endswith(' @Template'):
+            # The filaments of a templates bundle are loaded with " @Template" (PresetBundle::load_configbundle).
+            values = self.sections.get((kind, name[:-len(' @Template')]))
         if values is None:
             raise KeyError('%s "%s" not found' % (kind, name))
         out = {}

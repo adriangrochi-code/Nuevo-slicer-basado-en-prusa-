@@ -88,6 +88,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "nonplanar_segment_length",
         "zaa_enabled",
         "zaa_min_thickness",
+        "interlock_infill",
+        "interlock_infill_amplitude",
+        "interlock_infill_wavelength",
         "nonplanar_uniform_flow",
         "avoid_crossing_perimeters",
         "avoid_crossing_perimeters_max_detour",
@@ -99,6 +102,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         // Belt printers: the slicing changes through the transformation of the model in Print::apply().
         "belt_printer",
         "belt_angle",
+        "belt_axis_z",
         "bridge_acceleration",
         "bridge_fan_speed",
         "enable_dynamic_fan_speeds",
@@ -538,12 +542,17 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
         const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
-        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh);
+        if (m_config.nonplanar_mode.value == NonPlanarMode::Stress &&
+            ! NonPlanar::layer_field_matches(object.model_object()->engineering.layer_field, bbox))
+            return object.model_object()->engineering.layer_field.empty() ?
+                _u8L("Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength).") :
+                _u8L("Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again.");
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field);
         const NonPlanar::Deformation::Check check = deformation.check(bbox);
         if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
-                               "nominal one (allowed %3% %% to %4% %%). Increase the transition height or reduce the "
-                               "wave amplitude / cone angle."),
+                               "nominal one (allowed %3% %% to %4% %%). Check the free angle and the clearance height of "
+                               "the print head (Printer Settings > General > Print head)."),
                           int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
                           int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
         // The calibration of the maximum slope prints steeper layers on purpose.
@@ -552,8 +561,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         if (m_config.calib_mode.value != CalibMode::NonPlanarSlope &&
             deformation.head_slope_ratio(bbox, limits.tan_x, limits.tan_y) > 1. + 1e-3)
             return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the print head allows "
-                               "(%2%° along X, %3%° along Y). Enable \"Fit to the print head\", use a longer wavelength "
-                               "or a smaller amplitude / cone angle."),
+                               "(%2%° along X, %3%° along Y). Check the free angle of the print head (Printer Settings > "
+                               "General > Print head)."),
                           int(std::round(check.max_slope_deg)),
                           int(std::round(std::atan(limits.tan_x) * 180. / M_PI)),
                           int(std::round(std::atan(limits.tan_y) * 180. / M_PI)));
@@ -564,8 +573,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (collision.collides)
                 return format(_u8L("Non-planar layers: the print head would hit the part. At %1% mm of height, the part "
                                    "already printed rises %2% mm above the nozzle tip %3% mm away from it, more than the "
-                                   "%4% mm the print head allows there (Printer Settings > General > Print head). Reduce "
-                                   "the wave amplitude or the cone angle, or check the measurements of the print head."),
+                                   "%4% mm the print head allows there. Check the free angle and the clearance height of the "
+                                   "print head (Printer Settings > General > Print head)."),
                               float_to_string_decimal_point(collision.nozzle.z() - bbox.min.z(), 1),
                               float_to_string_decimal_point(collision.rise, 1),
                               float_to_string_decimal_point(collision.distance, 1),
@@ -574,14 +583,23 @@ std::string Print::validate(std::vector<std::string>* warnings) const
     }
 
     if (m_config.zaa_enabled) {
-        if (NonPlanar::enabled(m_config))
-            return _u8L("Z anti-aliasing cannot be combined with non-planar layers.");
         if (m_config.spiral_vase)
             return _u8L("Z anti-aliasing cannot be combined with the Spiral Vase mode.");
         if (m_config.belt_printer)
             return _u8L("Z anti-aliasing cannot be used with belt printers.");
         if (m_config.arc_fitting != ArcFittingType::Disabled)
             return _u8L("Z anti-aliasing requires Arc fitting to be disabled.");
+    }
+
+    if (m_config.interlock_infill) {
+        if (NonPlanar::enabled(m_config))
+            return _u8L("Interlocking infill cannot be combined with non-planar layers.");
+        if (m_config.spiral_vase)
+            return _u8L("Interlocking infill cannot be combined with the Spiral Vase mode.");
+        if (m_config.belt_printer)
+            return _u8L("Interlocking infill cannot be used with belt printers.");
+        if (m_config.arc_fitting != ArcFittingType::Disabled)
+            return _u8L("Interlocking infill requires Arc fitting to be disabled.");
     }
 
     if (m_config.avoid_crossing_perimeters && m_config.avoid_crossing_curled_overhangs) {

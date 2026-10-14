@@ -6,6 +6,7 @@
 #define tisma_fea_Optimize_hpp_
 
 #include "Analysis.hpp"
+#include "Ribs.hpp"
 
 namespace Slic3r {
 namespace Fea {
@@ -24,6 +25,9 @@ struct OptimizeOptions
     double zone_cell { 0. };
     // Zones always applied over the searched infill (local reinforcements).
     std::vector<InfillZone> fixed_zones;
+    // Infill ribs along the stresses of the uniform infill (aligned infill, see Ribs.hpp), kept when they let the
+    // infill be lighter.
+    bool   ribs { false };
 };
 
 struct OptimizeResult
@@ -36,6 +40,11 @@ struct OptimizeResult
     // 1) Uniform infill: the lowest density which meets the requirements, and its analysis.
     double      uniform_density { 0. };
     Result      uniform;
+
+    // Ribs used in the uniform infill and in the zones (empty when they did not make the infill lighter), and the
+    // lowest uniform density without them.
+    std::vector<RibZone> ribs;
+    double      density_without_ribs { 0. };
 
     // 2) Infill by zones: density of the part and zones with more infill where the stresses are higher.
     bool        zones_found { false };
@@ -53,6 +62,35 @@ inline bool meets_requirements(const Result &r) { return r.ok && r.verdict == Ve
 // pattern (it is enabled by the optimizer); its density and zones are replaced.
 OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &setup, const OptimizeOptions &options = {},
                                std::function<bool()> cancel = nullptr, std::function<void(int)> progress = nullptr);
+
+// ---- Resin printers: the walls of the hollowing and the interior infill (struts), see ModelSetup.hpp.
+struct ResinOption
+{
+    double wall_thickness { 0. };   // mm
+    double infill_density { 0. };   // 0..1, the lowest that meets the requirements with these walls
+    bool   feasible { false };
+    Result result;                  // analysis of the option (feasible or, if not, with the densest infill)
+};
+
+struct ResinOptimizeResult
+{
+    bool        ok { false };
+    std::string error;
+    // One option per wall thickness, thinnest first.
+    std::vector<ResinOption> options;
+    // The solid part (not hollowed).
+    Result      solid;
+    // Index of the lightest feasible option, -1 when none (then the part has to be solid, if that holds).
+    int         best { -1 };
+    int         analyses { 0 };
+};
+
+// Searches, for each wall thickness, the lowest interior infill which meets the requirements (an empty cavity, or
+// between min_density, the thinnest struts that print, and max_density), and the lightest of them. setup.infill is
+// replaced.
+ResinOptimizeResult optimize_resin(const indexed_triangle_set &mesh, const Setup &setup, const std::vector<double> &wall_thicknesses,
+                                   double min_density, double max_density,
+                                   std::function<bool()> cancel = nullptr, std::function<void(int)> progress = nullptr);
 
 } // namespace Fea
 } // namespace Slic3r

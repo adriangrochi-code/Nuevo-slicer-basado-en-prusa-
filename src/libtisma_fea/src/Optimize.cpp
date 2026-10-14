@@ -5,12 +5,15 @@
 // Method (see docs/FEA.md):
 // 1) Uniform infill: the requirements are monotonic with the density (more infill, stiffer and stronger), so the
 //    lowest density is found by bisection.
+//    With ribs: the directions of the ribs come from the stresses of the lightest uniform infill; the search is done
+//    again with them (the analysis models the aligned infill), and they are kept only if the infill is lighter.
 // 2) Infill by zones: from the analysis of the uniform infill, every point of the interior gets the density which
 //    would bring its stress to the allowed one (the strength of the infill scales with density^strength_exponent).
 //    The interior is divided in cells; the cells are grouped in a few density levels, and the levels are scaled
 //    together by bisection until the requirements are met. The zones are the meshes of the cells of each level,
 //    as they will be applied (infill modifiers), so the last analysis is the one of what is printed.
 #include "tisma_fea/Optimize.hpp"
+#include "tisma_fea/Structures.hpp"
 #include "CellsMesh.hpp"
 
 #include <algorithm>
@@ -48,11 +51,15 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         ++ out.analyses;
         return r;
     };
-    // The fixed zones never have less infill than the part around them.
+    // The ribs (only the direction of the infill), then the fixed zones, which never have less infill than the part
+    // around them.
+    std::vector<InfillZone> rib_zones_in;
     auto fixed_zones = [&](double base) {
-        std::vector<InfillZone> zones = options.fixed_zones;
-        for (InfillZone &z : zones)
+        std::vector<InfillZone> zones = rib_zones_in;
+        for (InfillZone z : options.fixed_zones) {
             z.density = std::max(z.density, base);
+            zones.emplace_back(std::move(z));
+        }
         return zones;
     };
     auto uniform = [&](double density) {
@@ -75,47 +82,81 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
         return out;
     }
     out.feasible = true;
-    double hi_density = hi_limit;
-    Result lo = uniform(lo_limit);
-    if (! lo.ok) {
-        out.error = lo.error;
+    // Lowest uniform density between lo_limit and hi_density (which meets the requirements, with its analysis hi).
+    auto search = [&](double hi_density, Result &hi) -> bool {
+        Result lo = uniform(lo_limit);
+        if (! lo.ok) {
+            out.error = lo.error;
+            return false;
+        }
+        if (meets_requirements(lo)) {
+            hi_density = lo_limit;
+            hi = std::move(lo);
+        } else {
+            double lo_density = lo_limit;
+            while (hi_density - lo_density > step) {
+                const double mid = 0.5 * (lo_density + hi_density);
+                Result r = uniform(mid);
+                if (! r.ok) {
+                    out.error = r.error;
+                    return false;
+                }
+                if (meets_requirements(r)) {
+                    hi_density = mid;
+                    hi = std::move(r);
+                } else
+                    lo_density = mid;
+            }
+            // Whole percents, as the print settings: the percent below if it still meets the requirements, else the one above.
+            const double below = std::floor(hi_density * 100. + 1e-9) / 100.;
+            bool done = false;
+            if (below > lo_density + 1e-9 && below < hi_density - 1e-9) {
+                Result r = uniform(below);
+                if (r.ok && meets_requirements(r)) {
+                    hi_density = below;
+                    hi = std::move(r);
+                    done = true;
+                }
+            }
+            const double above = std::min(hi_limit, round_up(hi_density, 0.01));
+            if (! done && above != hi_density) {
+                Result r = uniform(above);
+                if (r.ok && meets_requirements(r)) {
+                    hi_density = above;
+                    hi = std::move(r);
+                }
+            }
+        }
+        out.uniform_density = hi_density;
+        return true;
+    };
+    if (! search(hi_limit, hi))
         return out;
-    }
-    if (meets_requirements(lo)) {
-        hi_density = lo_limit;
-        hi = std::move(lo);
-    } else {
-        double lo_density = lo_limit;
-        while (hi_density - lo_density > step) {
-            const double mid = 0.5 * (lo_density + hi_density);
-            Result r = uniform(mid);
-            if (! r.ok) {
-                out.error = r.error;
-                return out;
-            }
-            if (meets_requirements(r)) {
-                hi_density = mid;
-                hi = std::move(r);
-            } else
-                lo_density = mid;
+    double hi_density = out.uniform_density;
+    out.density_without_ribs = hi_density;
+
+    // Ribs along the stresses of the lightest uniform infill, kept if they make it lighter.
+    if (options.ribs && hi_density > lo_limit + 1e-9 && ! (cancel && cancel())) {
+        std::vector<RibZone> ribs = rib_zones(hi);
+        for (const RibZone &rib : ribs) {
+            InfillZone z;
+            z.mesh              = rib.mesh;
+            z.density           = -1.;
+            z.aligned_angle_deg = rib.angle_deg;
+            rib_zones_in.emplace_back(std::move(z));
         }
-        // Whole percents, as the print settings: the percent below if it still meets the requirements, else the one above.
-        const double below = std::floor(hi_density * 100. + 1e-9) / 100.;
-        bool done = false;
-        if (below > lo_density + 1e-9 && below < hi_density - 1e-9) {
-            Result r = uniform(below);
-            if (r.ok && meets_requirements(r)) {
-                hi_density = below;
-                hi = std::move(r);
-                done = true;
-            }
-        }
-        const double above = std::min(hi_limit, round_up(hi_density, 0.01));
-        if (! done && above != hi_density) {
-            Result r = uniform(above);
-            if (r.ok && meets_requirements(r)) {
-                hi_density = above;
-                hi = std::move(r);
+        if (! rib_zones_in.empty()) {
+            Result with_ribs = uniform(hi_density);
+            if (with_ribs.ok && meets_requirements(with_ribs) && search(hi_density, with_ribs) &&
+                out.uniform_density < hi_density - 1e-9) {
+                hi_density = out.uniform_density;
+                hi         = std::move(with_ribs);
+                out.ribs   = std::move(ribs);
+            } else {
+                if (! out.error.empty())
+                    return out;
+                rib_zones_in.clear();
+                out.uniform_density = hi_density;
             }
         }
     }
@@ -242,6 +283,81 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
     }
     if (progress)
         progress(100);
+    return out;
+}
+
+ResinOptimizeResult optimize_resin(const indexed_triangle_set &mesh, const Setup &setup_in, const std::vector<double> &wall_thicknesses,
+                                   double min_density, double max_density,
+                                   std::function<bool()> cancel, std::function<void(int)> progress)
+{
+    ResinOptimizeResult out;
+    const int steps = int(wall_thicknesses.size()) + 1;
+    int       step  = 0;
+    auto sub_progress = [&](int p) {
+        if (progress)
+            progress(std::min(99, (100 * step + p) / steps));
+    };
+    // The solid part.
+    Setup solid = setup_in;
+    solid.infill = InfillModel();
+    out.solid = analyze(mesh, solid, cancel, sub_progress);
+    ++ out.analyses;
+    if (! out.solid.ok) {
+        out.error = out.solid.error;
+        return out;
+    }
+    for (double t : wall_thicknesses) {
+        ++ step;
+        if (cancel && cancel())
+            return out;
+        Setup setup = setup_in;
+        InfillModel &infill = setup.infill;
+        infill = InfillModel();
+        infill.enabled                    = true;
+        infill.wall_thickness             = t;
+        infill.top_bottom_thickness       = t;
+        infill.perimeters                 = 1;
+        infill.perimeter_width            = t;
+        infill.perimeter_spacing          = t;
+        infill.external_perimeter_spacing = t;
+        infill.stiffness_exponent         = LATTICE_EXPONENT;
+        infill.strength_exponent          = LATTICE_EXPONENT;
+        infill.deposit_factor             = 1.;
+        ResinOption option;
+        option.wall_thickness = t;
+        // An empty cavity first.
+        infill.density = 0.;
+        Result empty = analyze(mesh, setup, cancel, sub_progress);
+        ++ out.analyses;
+        if (! empty.ok) {
+            out.error = empty.error;
+            return out;
+        }
+        if (meets_requirements(empty)) {
+            option.feasible = true;
+            option.result   = std::move(empty);
+        } else {
+            OptimizeOptions opt;
+            opt.min_density = min_density;
+            opt.max_density = max_density;
+            opt.zones       = false;
+            opt.ribs        = false;
+            OptimizeResult r = optimize_infill(mesh, setup, opt, cancel, sub_progress);
+            out.analyses += r.analyses;
+            if (! r.ok) {
+                out.error = r.error;
+                return out;
+            }
+            option.feasible       = r.feasible;
+            option.infill_density = r.uniform_density;
+            option.result         = std::move(r.uniform);
+        }
+        out.options.emplace_back(std::move(option));
+    }
+    for (size_t i = 0; i < out.options.size(); ++ i)
+        if (out.options[i].feasible && (out.best < 0 || out.options[i].result.mass < out.options[size_t(out.best)].result.mass))
+            out.best = int(i);
+    out.ok = true;
     return out;
 }
 

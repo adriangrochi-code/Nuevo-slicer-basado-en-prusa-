@@ -1,23 +1,44 @@
 # Perfiles de impresoras: máxima compatibilidad
 
-Tisma trae los perfiles de PrusaSlicer (35 fabricantes en `resources/profiles` más los del repositorio en línea de
-Prusa) y, además, los de **OrcaSlicer** convertidos al formato de Tisma.
+Tisma trae los perfiles de PrusaSlicer (35 fabricantes en `resources/profiles`) y, además, los de **OrcaSlicer** y
+**UltiMaker Cura** convertidos al formato de Tisma. No descarga los del repositorio en línea de Prusa (ver abajo).
 
 ## Selección de impresoras en el asistente
 
-La página «Impresoras» del asistente de configuración (antes de las páginas de cada fabricante) reemplaza la lista
-de casillas de fabricantes:
+El asistente de configuración es una sola página, «Impresoras», que se abre directo (también la primera vez):
 
-- **Marcas**: todas las marcas de los perfiles que tiene Tisma, en orden alfabético. Los paquetes convertidos de
-  otros laminadores se muestran bajo la marca (por ejemplo, «Creality» junta los perfiles de Prusa y los de
-  OrcaSlicer). Entre paréntesis, cuántas impresoras de la marca están marcadas.
+- **Marcas**: todas las marcas de los perfiles que trae Tisma, en orden alfabético y en una sola lista. Los paquetes
+  de una misma marca van juntos: los convertidos de otros laminadores («Creality» junta los de Prusa, Cura y
+  OrcaSlicer), las impresoras de resina con las de filamento («Anycubic SLA» dentro de «Anycubic») y todos los
+  paquetes de Prusa (Prusa Research, sus SLA, Pro AFS y Pro HT) bajo «Prusa». Entre paréntesis, cuántas impresoras
+  de la marca están marcadas.
 - **Impresoras**: los modelos de la marca elegida, uno por boquilla, con casillas; al elegir uno se ve su foto.
 - **Buscador**: filtra por nombre en todas las marcas (todas las palabras deben coincidir, sin distinguir
   mayúsculas). Con una búsqueda, la primera entrada de «Marcas» es «Todos los resultados».
+- **Impresora personalizada**: la casilla «Mi impresora no está en la lista» agrega las páginas para definirla
+  (firmware, cama, volumen, diámetros, temperaturas).
 
-Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`ConfigWizard::priv::pick_printer`): la
-página del fabricante aparece en el índice para elegir más boquillas o ver las fotos, y desaparece al desmarcar todas
-sus impresoras. El resto del asistente (filamentos, perfiles instalados) no cambia.
+No hay páginas de bienvenida, inicio de sesión, fuentes de configuración, filamentos ni actualizaciones:
+
+- Los perfiles son los que trae Tisma (`resources/profiles`). El asistente y el inicio del programa no descargan
+  los repositorios de perfiles de Prusa: sus paquetes son más nuevos que la base 2.9.6 de Tisma (heredan presets que
+  no existen en ella) y no conocen los paquetes propios de Tisma (pedía las imágenes de Elegoo SLA a Prusa y daba
+  404). Con `tisma_online_profiles = 1` en `PrusaSlicer.ini` (carpeta de datos) vuelve el comportamiento de PrusaSlicer.
+- Los filamentos y resinas son los predeterminados de cada impresora (`default_materials`), instalados sin preguntar.
+- El resto (modo, actualizaciones, descargas) queda con sus valores por defecto y se cambia en Preferencias.
+
+Marcar una impresora es lo mismo que marcarla en la página de su fabricante (`ConfigWizard::priv::pick_printer`).
+
+### Cierre al cambiar de impresora (corregido)
+
+Las impresoras convertidas de OrcaSlicer que ya existen en un paquete de Prusa llevan el sufijo « @Orca Prusa» en el
+nombre. PrusaSlicer deriva de la «@» un alias para todos los presets, y la lista de impresoras de la ventana
+principal mostraba ese alias («Prusa CORE One 0.25 nozzle»). Al elegirla, el nombre no existía y se seleccionaba la
+primera impresora visible, a veces de resina, mientras las pestañas ya se preparaban para filamento: el perfil de
+impresión quedaba sin selección y el programa se cerraba (y las impresoras «no se abrían»). Ahora las impresoras no
+tienen alias (como ya suponía el resto del programa) y, si se selecciona otra impresora que la pedida, las pestañas
+siguen a la tecnología de la que quedó. Pruebas: «Printers converted from OrcaSlicer are selected by their name»
+(`fff_print_tests`) y «Resin printer profiles have compatible prints and materials» (`sla_print_tests`).
 
 ## Impresoras de UltiMaker Cura
 
@@ -43,6 +64,61 @@ sus impresoras. El resto del asistente (filamentos, perfiles instalados) no camb
 | Omitidas: varios extrusores / firmware o no FFF / G-code | 93 / 10 / 21 |
 | Laminan un cubo (`validate_bundles.py`) | 296 de 296 |
 
+## Impresoras de cinta
+
+`tools/profiles/make_belt_profiles.py` arma tres paquetes desde las fuentes de cada fabricante o comunidad:
+
+| Paquete | Impresoras | Origen | Licencia |
+|---|---|---|---|
+| `Belt_BLACKBELT_3D.ini` («BLACKBELT 3D») | BLACKBELT 3D Printer y varioDrive, a 15°, 25°, 35° y 45°, boquillas de 0,2 a 1,2 mm: 40 | [BlackBelt Cura](https://github.com/BlackBelt3D/Cura) (`blackbelt*.def.json` y sus variantes), commit 4e18b19 | LGPL-3.0 |
+| `Belt_IdeaFormer.ini` («IdeaFormer») | IR3 V2, 0,4 mm, con sus filamentos PLA (cama a 75 °C) | [VertexSlice](https://github.com/kdho77/VertexSlice), fork de OrcaSlicer para cintas, commit 1d6ad28 | AGPL-3.0 |
+| `Belt_Creality.ini` («Creality (Belt)», bajo Creality) | CR-30 PrintMill, 0,4 mm, con su proceso y su filamento Hyper PLA | [Creality Print](https://github.com/CrealityOfficial/CrealityPrint), el laminador de Creality (`resources/profiles/Creality`, «Creality CR-30»), commit 59ae8cb | AGPL-3.0 |
+
+- **Ejes**: en las tres la cinta es el eje **Z** del firmware y el pórtico inclinado el **Y** (BlackBelt: `G1 Z30 ; Move Belt`;
+  CR-30: `G92 Z0 ; Set Belt to zero` en Creality Print y `Z_MAX_POS 20000000` en su
+  [firmware](https://github.com/CrealityOfficial/cr-30); VertexSlice: «X=lateral, Y=gantry height, Z=belt»). Por eso Tisma tiene la opción
+  `belt_axis_z` («La cinta es el eje Z», activada por defecto); desactivada, la cinta es Y y el pórtico Z.
+- **BlackBelt**: el G-code de inicio y fin es el de BlackBelt Cura; su variable `{blackbelt_z_offset}` se reemplaza por
+  el valor que calcula su definición (`boquilla/2 − 0,25/sen(ángulo)`). Velocidades, paredes, relleno y capas de
+  BlackBelt Cura (capa de cada variante, primera capa a 5 mm/s). Altura útil: 455 mm (325 en varioDrive) por el seno
+  del ángulo, como en su definición. Filamentos genéricos de Orca.
+- **IR3 V2**: G-code de VertexSlice con las variables de Orca traducidas; proceso de 0,20 mm y dos filamentos PLA de
+  VertexSlice.
+- **CR-30**: impresora, proceso y filamento de Creality Print, con su G-code (sondeo del pórtico contra la cinta y
+  purga). Creality Print no dice el ángulo: 45°, el de la CR-30 (VertexSlice: «45° inclined-belt machines (CR-30 /
+  IdeaFormer IR3 V2 family)»). Ancho 170 mm y altura 200 mm como en Creality Print (el firmware tiene
+  `X_BED_SIZE 210`, con los márgenes).
+- Las tres usan E absoluta, porque su G-code de inicio ceba con E absoluta (`G92 E-4.5` en BlackBelt).
+- **Cinta desde la primera capa**: la cinta vale 0 en la primera capa (los G-code de inicio la ponen a 0 justo antes), sea
+  donde sea que esté la pieza sobre la «cama»; antes de este cambio arrancaba en la posición de la pieza (488 mm en la
+  validación). Además, antes del primer movimiento en el plano de la capa el pórtico no se mueve (iba a 345 mm, una
+  posición calculada sin conocer Y). Tests «Belt printer: the part is printed on the belt».
+- La cama de Tisma es la cinta: ancho del pórtico × 1 000 mm.
+- Validación: los paquetes cargan como perfiles del sistema (test «Vendor bundles of belt printers load») y las 42
+  impresoras laminan un cubo (`validate_bundles.py`). **No probadas en impresoras reales.**
+- Regenerar: `make_belt_profiles.py <BlackBelt Cura> <VertexSlice> <Creality Print> resources/profiles` con los commits.
+- Pendientes: Sainsmart INFI-20 / iFactory3D One (sin fuente de perfil abierta encontrada), los materiales propios de
+  BlackBelt.
+
+## Laminadores de los fabricantes basados en OrcaSlicer
+
+Creality Print, Elegoo Slicer, QIDI Studio, Snapmaker Orca y Bambu Studio son forks de OrcaSlicer o de Bambu Studio,
+AGPL-3.0, con el mismo formato de perfiles. `convert_orca_profiles.py` los convierte con `--prefix`, `--source` y
+`--url` (y `--maker` cuando el laminador nombra a sus fabricantes por serie, como QIDI Studio): solo los modelos que no
+están en ningún paquete de Tisma (también los convertidos de Orca), sin su biblioteca de filamentos (se usa la de Orca)
+y sin las impresoras de cinta (van en `Belt_*`). En el asistente aparecen bajo la marca («Creality (Creality Print)»).
+
+| Laminador (commit) | Modelos nuevos | Paquete |
+|---|---|---|
+| Creality Print (59ae8cb) | 11: Creality Z2, K3, K1C 2025 y K1 Max 2025 (CFS-C), GS-01 a GS-04, Sonic Ender-3 S1 y Ender-5 S1, Ender-3 V3 Mega | `CrealityPrint_Creality.ini` |
+| Elegoo Slicer (2d507e3) | 1: M3D Enabler D8500 MM | `ElegooSlicer_M3D.ini` |
+| QIDI Studio (83be9f6), Snapmaker Orca (4996d50), Bambu Studio (79df7ae) | 0: todos sus modelos ya estaban | — |
+
+- Variables propias de Creality Print traducidas: `position[2]` → `layer_z` (en el G-code de inicio de filamento, donde
+  Tisma no tiene `position`), `initial_layer_height` → `first_layer_height`.
+- Validación: cargan como perfiles del sistema (test «Vendor bundles converted from Creality Print and Elegoo Slicer
+  load») y las 17 impresoras laminan un cubo.
+
 ## Perfiles de OrcaSlicer
 
 - Origen: `resources/profiles` de [OrcaSlicer](https://github.com/SoftFever/OrcaSlicer) (commit indicado en la cabecera
@@ -50,7 +126,11 @@ sus impresoras. El resto del asistente (filamentos, perfiles instalados) no camb
   lugar.
 - Archivos: `resources/profiles/Orca_<fabricante>.ini` (+ `.idx` y la carpeta de imágenes). La biblioteca de
   filamentos genéricos de Orca es `Orca_OrcaFilamentLibrary.ini` (paquete de plantillas: compatible con todas las
-  impresoras, como «Templates»).
+  impresoras, como «Templates»). PrusaSlicer carga los filamentos de un paquete de plantillas con el sufijo
+  « @Template» (`PresetBundle::load_configbundle`), así que los perfiles de impresora los nombran así en
+  `default_materials` y `default_filament_profile` («Generic PLA @Orca @Template»). Sin el sufijo el asistente no
+  encuentra los filamentos por defecto y no deja terminar (versión 1.0.1 de los paquetes; test
+  `Default filaments of the converted printers exist as loaded`).
 - En el asistente de configuración aparecen en «Other FFF» con el nombre del fabricante, o «Fabricante (OrcaSlicer)»
   cuando Tisma ya tiene un paquete de ese fabricante.
 

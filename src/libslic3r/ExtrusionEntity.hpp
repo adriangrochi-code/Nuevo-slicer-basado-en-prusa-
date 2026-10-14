@@ -151,6 +151,8 @@ struct ExtrusionAttributes : ExtrusionFlow
     // What is the role / purpose of this extrusion?
     ExtrusionRole   role{ ExtrusionRole::None };
     bool maybe_self_crossing{false};
+    // Tisma: an arc of an arc overhang (printed at overhang_arcs_speed).
+    bool arc_overhang{false};
     // OVerhangAttributes are currently computed for perimeters if dynamic overhangs are enabled. 
     // They are used to control fan and print speed in export.
     std::optional<OverhangAttributes> overhang_attributes;
@@ -161,7 +163,8 @@ struct ExtrusionAttributes : ExtrusionFlow
 inline bool operator==(const ExtrusionAttributes &lhs, const ExtrusionAttributes &rhs)
 {
     return static_cast<const ExtrusionFlow&>(lhs) == static_cast<const ExtrusionFlow&>(rhs) &&
-           lhs.role == rhs.role && lhs.overhang_attributes == rhs.overhang_attributes;
+           lhs.role == rhs.role && lhs.overhang_attributes == rhs.overhang_attributes &&
+           lhs.arc_overhang == rhs.arc_overhang;
 }
 
 class ExtrusionPath : public ExtrusionEntity

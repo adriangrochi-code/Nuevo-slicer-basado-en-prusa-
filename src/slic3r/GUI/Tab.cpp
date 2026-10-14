@@ -911,6 +911,9 @@ void Tab::load_config(const DynamicPrintConfig& config)
         //# Initialize UI components with the config values.
         reload_config();
         update();
+        // Tisma: the supports, infill and brim of the sidebar and the quick settings follow the loaded values.
+        if (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_SLA_PRINT)
+            update_frequently_changed_parameters();
     }
 }
 
@@ -1492,6 +1495,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters", category_path + "extra-perimeters-if-needed");
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
+        optgroup->append_single_option_line("overhang_arcs_max_distance");
         optgroup->append_single_option_line("stagger_perimeters");
         optgroup->append_single_option_line("zaa_enabled");
         optgroup->append_single_option_line("zaa_min_thickness");
@@ -1564,6 +1568,9 @@ void TabPrint::build()
         optgroup->append_single_option_line("bridge_angle");
         optgroup->append_single_option_line("only_retract_when_crossing_perimeters");
         optgroup->append_single_option_line("infill_first");
+        optgroup->append_single_option_line("interlock_infill");
+        optgroup->append_single_option_line("interlock_infill_amplitude");
+        optgroup->append_single_option_line("interlock_infill_wavelength");
 
     page = add_options_page(L("Skirt and brim"), "skirt+brim");
         category_path = "skirt-and-brim_133969#";
@@ -1635,6 +1642,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("support_material_speed");
         optgroup->append_single_option_line("support_material_interface_speed");
         optgroup->append_single_option_line("bridge_speed");
+        optgroup->append_single_option_line("overhang_arcs_speed");
         optgroup->append_single_option_line("over_bridge_speed");
         optgroup->append_single_option_line("gap_fill_speed");
         optgroup->append_single_option_line("ironing_speed");
@@ -1678,31 +1686,11 @@ void TabPrint::build()
         optgroup->append_single_option_line("max_volumetric_extrusion_rate_slope_negative", "pressure-equlizer_331504");
 
     page = add_options_page(L("Non-planar"), "layers");
+        // Tisma: only the kind of layers here. How curved they are comes from the two measurements of the print head
+        // (Printer Settings > General > Print head): its free angle and its clearance height. The other non-planar
+        // options are kept for the command line and the calibrations, with their defaults.
         optgroup = page->new_optgroup(L("Non-planar layers"));
         optgroup->append_single_option_line("nonplanar_mode");
-        optgroup->append_single_option_line("nonplanar_fit_head");
-        optgroup->append_single_option_line("nonplanar_overhang_threshold");
-        optgroup->append_single_option_line("nonplanar_max_slope");
-
-        optgroup = page->new_optgroup(L("Wave"));
-        optgroup->append_single_option_line("nonplanar_pattern");
-        optgroup->append_single_option_line("nonplanar_amplitude");
-        optgroup->append_single_option_line("nonplanar_wavelength");
-        optgroup->append_single_option_line("nonplanar_angle");
-        optgroup->append_single_option_line("nonplanar_twist");
-
-        optgroup = page->new_optgroup(L("Conical"));
-        optgroup->append_single_option_line("nonplanar_cone_angle");
-
-        optgroup = page->new_optgroup(L("Transition"));
-        optgroup->append_single_option_line("nonplanar_flat_below");
-        optgroup->append_single_option_line("nonplanar_ramp_height");
-        optgroup->append_single_option_line("nonplanar_flat_top");
-
-        optgroup = page->new_optgroup(L("G-code"));
-        optgroup->append_single_option_line("nonplanar_flow_policy");
-        optgroup->append_single_option_line("nonplanar_uniform_flow");
-        optgroup->append_single_option_line("nonplanar_segment_length");
 
     page = add_options_page(L("Multiple Extruders"), "funnel");
         optgroup = page->new_optgroup(L("Extruders"));
@@ -2716,7 +2704,7 @@ void TabPrinter::build_print_host_upload_group(Page* page)
         "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
         "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "
         "also when clicking on the \"cog\" icon in the Printer settings tab. The Physical Printer profiles are being stored "
-        "into PrusaSlicer/physical_printer directory.");
+        "into TismaSlicer/physical_printer directory.");
 
     Line line = { "", "" };
     line.full_width = 1;
@@ -2856,14 +2844,15 @@ void TabPrinter::build_fff()
         optgroup = page->new_optgroup(L("Belt printer"));
         optgroup->append_single_option_line("belt_printer");
         optgroup->append_single_option_line("belt_angle");
+        optgroup->append_single_option_line("belt_axis_z");
 
         // Tisma: print head geometry for the collision check of non-planar layers.
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
-        optgroup->append_single_option_line("nonplanar_head_clearance_height");
-        optgroup->append_single_option_line("nonplanar_head_clearance_radius");
+        // The two variables of the non-planar layers; the radius and the measured profile are set by the non-planar
+        // calibration assistant.
         optgroup->append_single_option_line("nonplanar_head_free_angle_x");
         optgroup->append_single_option_line("nonplanar_head_free_angle_y");
-        optgroup->append_single_option_line("nonplanar_head_profile");
+        optgroup->append_single_option_line("nonplanar_head_clearance_height");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
@@ -4150,7 +4139,9 @@ bool Tab::select_preset(std::string preset_name, bool delete_current /*=false*/,
         if (printer_tab)
             static_cast<TabPrinter*>(this)->update_pages();
 
-        if (! is_selected && printer_tab)
+        // Tisma Slicer: also when another printer than the one asked for got selected (a name which is not found
+        // selects the first visible printer, maybe of the other technology).
+        if ((! is_selected || m_presets->get_edited_preset().name != preset_name) && printer_tab)
         {
             /* There is a case, when :
              * after Config Wizard applying we try to select previously selected preset, but
@@ -6179,6 +6170,8 @@ void TabSLAPrint::build()
     optgroup = page->new_optgroup(L("Hollowing"));
     optgroup->append_single_option_line("hollowing_enable");
     optgroup->append_single_option_line("hollowing_min_thickness");
+    optgroup->append_single_option_line("hollowing_infill_density");
+    optgroup->append_single_option_line("hollowing_infill_cell");
     optgroup->append_single_option_line("hollowing_quality");
     optgroup->append_single_option_line("hollowing_closing_distance");
 

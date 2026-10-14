@@ -1062,7 +1062,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Tisma calibration tests whose steps go along X: where they start (G-code coordinates of the first object).
     m_calib_x0.reset();
     if (const CalibMode mode = print.config().calib_mode.value;
-        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate || mode == CalibMode::Coasting) && ! print.objects().empty() &&
+        (mode == CalibMode::FirstLayerOffset || mode == CalibMode::FlowRate || mode == CalibMode::Coasting ||
+         mode == CalibMode::ArcOverhangSpeed) && ! print.objects().empty() &&
         ! print.objects().front()->instances().empty()) {
         const PrintObject &object = *print.objects().front();
         BoundingBoxf3 bbox;
@@ -1075,6 +1076,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
 
     m_nonplanar.reset();
     m_nonplanar_deformation.reset();
+    // Z anti-aliasing of non-planar layers: the surface in slice space (deformed), in G-code coordinates.
+    std::optional<indexed_triangle_set> zaa_slice_space_mesh;
     if (NonPlanar::enabled(print.config()) && ! print.objects().empty() && ! print.objects().front()->instances().empty()) {
         // Print::validate() allows a single object instance only.
         const PrintObject &object = *print.objects().front();
@@ -1083,7 +1086,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
         const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
-        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox, &mesh));
+        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox, &mesh, &object.model_object()->engineering.layer_field));
         NonPlanar::GCodeFilterParams params = NonPlanar::make_filter_params(print.config());
         // G-code coordinates of the object origin and of the object bottom.
         params.origin = unscaled<double>(object.instances().front().shift);
@@ -1092,17 +1095,44 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         params.top_slice_z = bbox.max.z() + margin + object.slicing_parameters().layer_height + EPSILON;
         params.top_lift    = margin;
         m_nonplanar = make_unique<NonPlanar::GCodeFilter>(*m_nonplanar_deformation, params);
+        if (print.config().zaa_enabled.value) {
+            // The anti-aliasing works on the planar G-code of the slice space, before the non-planar filter brings it
+            // back to the curved layers: against the deformed mesh, which the planar layers slice.
+            indexed_triangle_set deformed = mesh;
+            float z_min = std::numeric_limits<float>::max();
+            for (const stl_vertex &v : deformed.vertices)
+                z_min = std::min(z_min, v.z());
+            NonPlanar::deform_mesh(deformed, *m_nonplanar_deformation, NonPlanar::mesh_max_edge(print.config()));
+            for (stl_vertex &v : deformed.vertices)
+                v = stl_vertex(float(v.x() + params.origin.x()), float(v.y() + params.origin.y()), float(v.z() - z_min + params.z_base));
+            zaa_slice_space_mesh = std::move(deformed);
+        }
     }
 
     // Z anti-aliasing (Print::validate() rejects it with the other filters that change the Z of the moves).
     m_zaa.reset();
     m_zaa_surface.reset();
-    if (print.config().zaa_enabled.value && ! m_nonplanar) {
-        m_zaa_surface = make_unique<ZAA::Surface>(ZAA::print_mesh(print));
+    if (print.config().zaa_enabled.value) {
+        m_zaa_surface = make_unique<ZAA::Surface>(zaa_slice_space_mesh ? std::move(*zaa_slice_space_mesh) : ZAA::print_mesh(print));
         ZAA::FilterParams params;
         params.min_thickness = std::clamp(print.config().zaa_min_thickness.value / 100., 0.05, 1.);
         params.relative_e    = print.config().use_relative_e_distances.value;
         m_zaa = make_unique<ZAA::Filter>(*m_zaa_surface, params);
+    }
+
+    // Interlocking infill (Print::validate() rejects it with non-planar layers, spiral vase, belt printers and arcs).
+    m_interlock.reset();
+    m_interlock_field.reset();
+    if (print.config().interlock_infill.value && ! m_nonplanar) {
+        Interlock::Params field_params;
+        field_params.amplitude  = print.config().interlock_infill_amplitude.value / 100.;
+        field_params.wavelength = std::max(2., print.config().interlock_infill_wavelength.value);
+        m_interlock_field = make_unique<Interlock::Field>(print, field_params);
+        Interlock::FilterParams params;
+        params.seg_len    = std::clamp(field_params.wavelength / 16., 0.2, 1.);
+        params.relative_e = print.config().use_relative_e_distances.value;
+        params.z_offset   = print.config().z_offset.value;
+        m_interlock = make_unique<Interlock::Filter>(*m_interlock_field, params);
     }
 
     // Staggered perimeters change the Z of the moves: not with the G-code filters that also do (spiral vase,
@@ -1340,7 +1370,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Tisma, belt printers: from here to the end G-code, the moves are converted to the axes of the machine.
     std::optional<Belt::GCodeTransform> belt_transform;
     if (print.config().belt_printer.value) {
-        belt_transform.emplace(Belt::Frame(print.config().belt_angle.value, print.belt_c_offset()));
+        belt_transform.emplace(Belt::Frame(print.config().belt_angle.value, print.belt_c_offset(), print.config().belt_axis_z.value));
         file.set_belt_transform(&*belt_transform);
     }
 
@@ -1714,11 +1744,20 @@ void GCodeGenerator::process_layers(
             return zaa->process_layer(s);
         });
 
+    const auto interlock = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [interlock = this->m_interlock.get()](std::string s) -> std::string {
+            return interlock->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
-    if (m_nonplanar)
-        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Z anti-aliasing before the non-planar layers: it lowers the moves within the planar layers of the slice space.
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
+    if (m_interlock)
+        pipeline_to_string = pipeline_to_string & interlock;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 
@@ -1828,11 +1867,20 @@ void GCodeGenerator::process_layers(
             return zaa->process_layer(s);
         });
 
+    const auto interlock = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [interlock = this->m_interlock.get()](std::string s) -> std::string {
+            return interlock->process_layer(s);
+        });
+
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
-    if (m_nonplanar)
-        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Z anti-aliasing before the non-planar layers: it lowers the moves within the planar layers of the slice space.
     if (m_zaa)
         pipeline_to_string = pipeline_to_string & zaa;
+    if (m_nonplanar)
+        pipeline_to_string = pipeline_to_string & nonplanar;
+    // Last of the filters that change the Z: it keeps the Z they leave for everything but the sparse infill.
+    if (m_interlock)
+        pipeline_to_string = pipeline_to_string & interlock;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
 
@@ -3783,6 +3831,16 @@ std::string GCodeGenerator::_extrude(
 
     if (dynamic_print_and_fan_speeds.print_speed > -1) {
         speed = dynamic_print_and_fan_speeds.print_speed;
+    }
+
+    // Tisma: the arcs of the arc overhangs, slow (0: the bridge speed); the calibration test sets it by patch.
+    if (path_attr.arc_overhang) {
+        double arc_speed = m_config.overhang_arcs_speed.value;
+        if (m_calib_x0 && m_config.calib_mode.value == CalibMode::ArcOverhangSpeed)
+            if (const std::optional<double> value = this->calib_value_along_x(path); value)
+                arc_speed = *value;
+        if (arc_speed > 0.)
+            speed = arc_speed;
     }
 
     // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)

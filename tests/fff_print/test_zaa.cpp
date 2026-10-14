@@ -103,7 +103,7 @@ TEST_CASE("Z anti-aliasing keeps absolute extruder distances consistent", "[ZAA]
 TEST_CASE("Z anti-aliasing is rejected with incompatible settings", "[ZAA]")
 {
     for (const auto &[key, value] : std::vector<std::pair<std::string, std::string>>{
-             { "arc_fitting", "emit_center" }, { "spiral_vase", "1" }, { "nonplanar_mode", "wave" } }) {
+             { "arc_fitting", "emit_center" }, { "spiral_vase", "1" }, { "belt_printer", "1" } }) {
         DynamicPrintConfig config = zaa_config(true);
         config.set_deserialize_strict(key, value);
         Print print;
@@ -123,4 +123,27 @@ TEST_CASE("Z anti-aliasing finds the top surface inside a layer", "[ZAA]")
     REQUIRE(! surface.top_in_slab(10., 10., 5.0, 5.2).has_value());
     // Outside of the block.
     REQUIRE(! surface.top_in_slab(30., 10., 5.4, 5.6).has_value());
+}
+
+TEST_CASE("Z anti-aliasing works within non-planar layers", "[ZAA][NonPlanar]")
+{
+    // Waves across the sloped top of the wedge: the anti-aliasing lowers the top moves within the curved layers.
+    auto config = [](bool zaa) {
+        DynamicPrintConfig c = zaa_config(zaa);
+        c.set_deserialize_strict({ { "nonplanar_mode", "wave" }, { "nonplanar_pattern", "ridges" },
+                                   { "nonplanar_fit_head", "0" }, { "nonplanar_amplitude", "0.3" },
+                                   { "nonplanar_wavelength", "20" }, { "nonplanar_angle", "90" },
+                                   { "nonplanar_flat_below", "0.4" }, { "nonplanar_ramp_height", "3" } });
+        return c;
+    };
+    Print print;
+    Model model;
+    Test::init_print({ wedge() }, print, model, config(true));
+    REQUIRE(print.validate().empty());
+    const TopMoves curved_zaa = analyse(Test::gcode(print), config(true));
+    const TopMoves curved     = analyse(Test::slice({ wedge() }, config(false)), config(false));
+    // The top infill is printed in both, with less material where the anti-aliasing lowers it.
+    REQUIRE(! curved_zaa.z_by_layer.empty());
+    REQUIRE(curved_zaa.filament < curved.filament);
+    REQUIRE(curved_zaa.filament > 0.9 * curved.filament);
 }

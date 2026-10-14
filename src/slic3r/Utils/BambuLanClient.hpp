@@ -84,6 +84,12 @@ struct BambuLanClient
                const ProgressFn &progress, std::string &error) const;
     // Name on the SD card for an upload name ("my part.gcode" -> "my_part.gcode.3mf").
     static std::string job_name(const std::string &upload_name);
+
+private:
+    // Uploads to the server named <serial> (checked against its certificate) at the address of the printer, or without
+    // checking the name when serial is empty. code: the libcurl result.
+    bool upload_file(const boost::filesystem::path &file, const std::string &name, const std::string &serial,
+                     const ProgressFn &progress, std::string &error, int &code) const;
 };
 
 } // namespace Slic3r

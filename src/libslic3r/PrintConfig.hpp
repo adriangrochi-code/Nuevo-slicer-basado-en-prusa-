@@ -181,11 +181,13 @@ enum class LabelObjectsStyle {
 };
 
 // Non-planar layers (see NonPlanar.hpp).
-enum class NonPlanarMode { Disabled, Wave, Conical, Overhangs };
+enum class NonPlanarMode { Disabled, Wave, Conical, Overhangs, Stress, Surface, Automatic };
 
 // Tisma calibration tests: a value changed every calib_band_height millimeters of the print.
 enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, VolumetricSpeed, PerimeterSpeed, Acceleration, Cornering, InputShaping,
                        NonPlanarSlope, NonPlanarZSpeed, FirstLayerOffset, FlowRate, Coasting,
+                       // Arc overhangs: speed of the arcs, length of the overhang (by patches along X).
+                       ArcOverhangSpeed, ArcOverhangDistance,
                        // Resin: exposure time per band of layers (archives with a per layer exposure, GOO).
                        ResinExposure };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
@@ -773,6 +775,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 extra_perimeters))
     ((ConfigOptionBool,                 extra_perimeters_on_overhangs))
     ((ConfigOptionBool,                 overhang_arcs))
+    ((ConfigOptionFloat,                overhang_arcs_speed))
+    ((ConfigOptionFloat,                overhang_arcs_max_distance))
     ((ConfigOptionBool,                 stagger_perimeters))
     ((ConfigOptionFloat,                fill_angle))
     ((ConfigOptionPercent,              fill_density))
@@ -875,6 +879,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                binary_gcode))
     ((ConfigOptionBool,                belt_printer))
     ((ConfigOptionFloat,               belt_angle))
+    ((ConfigOptionBool,                belt_axis_z))
     ((ConfigOptionFloat,               nonplanar_head_clearance_height))
     ((ConfigOptionFloat,               nonplanar_head_clearance_radius))
     ((ConfigOptionString,              nonplanar_head_profile))
@@ -1072,6 +1077,9 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloat,              nonplanar_overhang_threshold))
     ((ConfigOptionBool,               zaa_enabled))
     ((ConfigOptionPercent,            zaa_min_thickness))
+    ((ConfigOptionBool,               interlock_infill))
+    ((ConfigOptionPercent,            interlock_infill_amplitude))
+    ((ConfigOptionFloat,              interlock_infill_wavelength))
     ((ConfigOptionFloat,              nonplanar_max_slope))
     ((ConfigOptionFloat,              nonplanar_segment_length))
     ((ConfigOptionEnum<NonPlanarFlowPolicy>, nonplanar_flow_policy))
@@ -1314,6 +1322,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     // resulting walls may be thicker due to smoothing out fine cavities where
     // resin could stuck.
     ((ConfigOptionFloat, hollowing_min_thickness))
+
+    // Tisma: struts inside the cavity (fraction of the cavity, spacing of the struts).
+    ((ConfigOptionPercent, hollowing_infill_density))
+    ((ConfigOptionFloat, hollowing_infill_cell))
 
     // Indirectly controls the voxel size (resolution) used by openvdb
     ((ConfigOptionFloat, hollowing_quality))

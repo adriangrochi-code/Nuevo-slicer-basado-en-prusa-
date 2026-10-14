@@ -17,6 +17,7 @@
 #include "libslic3r/I18N.hpp"
 
 #include "3mf.hpp"
+#include "BambuProject.hpp"
 
 #include <limits>
 #include <stdexcept>
@@ -1422,6 +1423,25 @@ namespace Slic3r {
                         load.max_displacement_percent = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.max_displacement_percent", "0"));
                         load.faces  = read_region(l);
                         setup.loads.emplace_back(std::move(load));
+                    } else if (child.first == "layer_field") {
+                        // Curved layers computed from the stresses (non-planar mode "stress").
+                        const pt::ptree& l = child.second;
+                        EngineeringLayerField &field = setup.layer_field;
+                        field.origin        = tisma_vec_from_string(l.get<std::string>("<xmlattr>.origin", "0 0 0"));
+                        field.cell          = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.cell", "1"));
+                        const Vec3d counts  = tisma_vec_from_string(l.get<std::string>("<xmlattr>.nodes", "0 0 0"));
+                        field.nx            = int(counts.x());
+                        field.ny            = int(counts.y());
+                        field.nz            = int(counts.z());
+                        field.part_size     = tisma_vec_from_string(l.get<std::string>("<xmlattr>.part_size", "0 0 0"));
+                        field.safety_flat   = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.safety_flat", "0"));
+                        field.safety_curved = string_to_double_decimal_point(l.get<std::string>("<xmlattr>.safety_curved", "0"));
+                        std::istringstream values(l.get_value<std::string>());
+                        values.imbue(std::locale::classic());
+                        for (float v; values >> v;)
+                            field.offset.push_back(v);
+                        if (field.offset.size() != size_t(field.nx) * size_t(field.ny) * size_t(field.nz) || field.cell <= 0.)
+                            setup.layer_field = EngineeringLayerField();
                     } else if (child.first == "limit") {
                         const pt::ptree& l = child.second;
                         EngineeringLimit limit;
@@ -2514,19 +2534,19 @@ namespace Slic3r {
         } else if (m_curr_metadata_name == SLIC3RPE_FDM_SUPPORTS_PAINTING_VERSION) {
             m_fdm_supports_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_fdm_supports_painting_version, FDM_SUPPORTS_PAINTING_VERSION,
-                _u8L("The selected 3MF contains FDM supports painted object using a newer version of PrusaSlicer and is not compatible."));
+                _u8L("The selected 3MF contains FDM supports painted object using a newer version of Tisma Slicer or PrusaSlicer and is not compatible."));
         } else if (m_curr_metadata_name == SLIC3RPE_SEAM_PAINTING_VERSION) {
             m_seam_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_seam_painting_version, SEAM_PAINTING_VERSION,
-                _u8L("The selected 3MF contains seam painted object using a newer version of PrusaSlicer and is not compatible."));
+                _u8L("The selected 3MF contains seam painted object using a newer version of Tisma Slicer or PrusaSlicer and is not compatible."));
         } else if (m_curr_metadata_name == SLIC3RPE_FUZZY_SKIN_PAINTING_VERSION) {
             m_fuzzy_skin_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_fuzzy_skin_painting_version, FUZZY_SKIN_PAINTING_VERSION,
-                _u8L("The selected 3MF contains fuzzy skin painted object using a newer version of PrusaSlicer and is not compatible."));
+                _u8L("The selected 3MF contains fuzzy skin painted object using a newer version of Tisma Slicer or PrusaSlicer and is not compatible."));
         } else if (m_curr_metadata_name == SLIC3RPE_MM_PAINTING_VERSION) {
             m_mm_painting_version = (unsigned int) atoi(m_curr_characters.c_str());
             check_painting_version(m_mm_painting_version, MM_PAINTING_VERSION,
-                _u8L("The selected 3MF contains multi-material painted object using a newer version of PrusaSlicer and is not compatible."));
+                _u8L("The selected 3MF contains multi-material painted object using a newer version of Tisma Slicer or PrusaSlicer and is not compatible."));
         }
 
         return true;
@@ -3801,6 +3821,20 @@ namespace Slic3r {
                 l.put("<xmlattr>.max_displacement_percent", float_to_string_decimal_point(limit.max_displacement_percent));
                 put_region(l, limit.faces);
             }
+            if (const EngineeringLayerField& field = setup.layer_field; ! field.empty()) {
+                std::ostringstream values;
+                values.imbue(std::locale::classic());
+                values.precision(5);
+                for (size_t i = 0; i < field.offset.size(); ++ i)
+                    values << (i ? " " : "") << field.offset[i];
+                pt::ptree& l = o.add("layer_field", values.str());
+                l.put("<xmlattr>.origin", tisma_vec_to_string(field.origin));
+                l.put("<xmlattr>.cell", float_to_string_decimal_point(field.cell));
+                l.put("<xmlattr>.nodes", tisma_vec_to_string(Vec3d(field.nx, field.ny, field.nz)));
+                l.put("<xmlattr>.part_size", tisma_vec_to_string(field.part_size));
+                l.put("<xmlattr>.safety_flat", float_to_string_decimal_point(field.safety_flat));
+                l.put("<xmlattr>.safety_curved", float_to_string_decimal_point(field.safety_curved));
+            }
         }
         if (! any)
             return true;
@@ -4452,6 +4486,9 @@ std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filenam
             std::replace(name.begin(), name.end(), '\\', '/');
             if (boost::algorithm::iequals(name, PRINT_CONFIG_FILE))
                 out.first = true;
+            // Tisma: the settings of a Bambu Studio / OrcaSlicer project.
+            if (boost::algorithm::iequals(name, "Metadata/project_settings.config"))
+                out.first = true;
             if (boost::algorithm::iequals(name, MODEL_FILE)) {
                 if (auto* iter = mz_zip_reader_extract_iter_new(&archive, i, 0)) {
                     ScopeGuard g([&iter]() { mz_zip_reader_extract_iter_free(iter); });
@@ -4487,6 +4524,21 @@ bool load_3mf(
 {
     if (path == nullptr || model == nullptr)
         return false;
+
+    // Tisma: projects of Bambu Studio and OrcaSlicer have their own layout (parts, plates, settings).
+    if (is_bambu_project_3mf(path)) {
+        BambuProjectInfo info;
+        std::string      error;
+        if (load_bambu_project_3mf(path, *model, config, info, error)) {
+            if (! info.skipped_settings.empty())
+                BOOST_LOG_TRIVIAL(info) << "Bambu project " << path << ": " << info.skipped_settings.size()
+                                        << " settings without equivalent were not loaded";
+            return true;
+        }
+        BOOST_LOG_TRIVIAL(error) << "Bambu project " << path << ": " << error << "; loaded as a plain 3MF";
+        model->clear_objects();
+        config.clear();
+    }
 
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;

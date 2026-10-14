@@ -97,7 +97,7 @@ public:
         if(wxGetApp().app_config->get("single_instance") == "0") {
             // Only allow opening a new PrusaSlicer instance on OSX if "single_instance" is disabled, 
             // as starting new instances would interfere with the locking mechanism of "single_instance" support.
-            append_menu_item(menu, wxID_ANY, _L("Open new instance"), _L("Open a new PrusaSlicer instance"),
+            append_menu_item(menu, wxID_ANY, _L("Open new instance"), _L("Open a new window"),
             [](wxCommandEvent&) { start_new_slicer(); }, "", nullptr);
         }
         append_menu_item(menu, wxID_ANY, _L("G-code preview") + dots, _L("Open G-code viewer"),
@@ -111,7 +111,7 @@ public:
     GCodeViewerTaskBarIcon(wxTaskBarIconType iconType = wxTBI_DEFAULT_TYPE) : wxTaskBarIcon(iconType) {}
     wxMenu *CreatePopupMenu() override {
         wxMenu *menu = new wxMenu;
-        append_menu_item(menu, wxID_ANY, _L("Open PrusaSlicer"), _L("Open a new PrusaSlicer instance"),
+        append_menu_item(menu, wxID_ANY, format_wxstr(_L("Open %1%"), SLIC3R_APP_NAME), _L("Open a new window"),
             [](wxCommandEvent&) { start_new_slicer(nullptr, true); }, "", nullptr);
         append_menu_item(menu, wxID_ANY, _L("G-code preview") + dots, _L("Open new G-code viewer"),
             [](wxCommandEvent&) { start_new_gcodeviewer_open_file(); }, "", nullptr);
@@ -255,14 +255,14 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         }
 
         if (m_plater != nullptr) {
-            int saved_project = m_plater->save_project_if_dirty(_L("Closing PrusaSlicer. Current project is modified."));
+            int saved_project = m_plater->save_project_if_dirty(_L("Closing Tisma Slicer. Current project is modified."));
             if (saved_project == wxID_CANCEL) {
                 event.Veto();
                 return;
             }
             // check unsaved changes only if project wasn't saved
             else if (plater()->is_project_dirty() && saved_project == wxID_NO && event.CanVeto() &&
-                     (plater()->is_presets_dirty() && !wxGetApp().check_and_save_current_preset_changes(_L("PrusaSlicer is closing"), _L("Closing PrusaSlicer while some presets are modified.")))) {
+                     (plater()->is_presets_dirty() && !wxGetApp().check_and_save_current_preset_changes(_L("Tisma Slicer is closing"), _L("Closing Tisma Slicer while some presets are modified.")))) {
                 event.Veto();
                 return;
             }
@@ -668,10 +668,10 @@ void MainFrame::set_callbacks_for_topbar_menus()
         [this]() -> void {
             wxString preferences_item = _L("Show Log in button in application top bar");
             wxString msg =
-                _L("PrusaSlicer will remember your choice.") + "\n\n" +
+                _L("Tisma Slicer will remember your choice.") + "\n\n" +
                 format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
 
-            MessageDialog msg_dlg(this, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
+            MessageDialog msg_dlg(this, msg, _L("Tisma Slicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
             if (msg_dlg.ShowModal() == wxID_OK) {
                 wxGetApp().app_config->set("show_login_button", "0");
 
@@ -872,8 +872,8 @@ void MainFrame::create_nav_rail()
     engineering.icon        = "wrench";
     engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
     engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    // In every mode (it is a main function of Tisma); the analyses are for FFF printers: hidden with an SLA printer.
-    engineering.is_visible  = [is_fff]() { return is_fff(); };
+    // In every mode (it is a main function of Tisma) and with every printer technology: with a resin printer it
+    // analyzes the solid or hollowed part and searches its walls and interior infill.
     m_nav_rail->add_item(engineering);
 
     NavRail::Item calib;
@@ -966,10 +966,6 @@ void MainFrame::update_nav_rail(bool visibility)
     if (m_nav_rail == nullptr)
         return;
     if (visibility) {
-        wxWindow* page = m_tabpanel->GetCurrentPage();
-        // Switching to an SLA printer while Engineering is shown: back to Prepare.
-        if (m_plater && m_plater->printer_technology() != ptFFF && m_plater->is_engineering_open())
-            m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
     } else
         m_nav_rail->update_selection();
@@ -1912,7 +1908,7 @@ void MainFrame::init_menubar_as_editor()
             [this](wxCommandEvent&) { m_printhost_queue_dlg->Show(); }, "upload_queue", nullptr, []() {return true; }, this);
         
         windowMenu->AppendSeparator();
-        append_menu_item(windowMenu, wxID_ANY, _L("Open New Instance") + "\tCtrl+Shift+I", _L("Open a new PrusaSlicer instance"),
+        append_menu_item(windowMenu, wxID_ANY, _L("Open New Instance") + "\tCtrl+Shift+I", _L("Open a new window"),
             [](wxCommandEvent&) { start_new_slicer(); }, "", nullptr, [this]() {return m_plater != nullptr && !wxGetApp().app_config->get_bool("single_instance"); }, this);
 
         windowMenu->AppendSeparator();
@@ -2054,7 +2050,7 @@ void MainFrame::init_menubar_as_gcodeviewer()
         append_menu_item(fileMenu, wxID_ANY, _L("Export &Toolpaths as OBJ") + dots, _L("Export toolpaths as OBJ"),
             [this](wxCommandEvent&) { if (m_plater != nullptr) m_plater->export_toolpaths_to_obj(); }, "export_plater", nullptr,
             [this]() {return can_export_toolpaths(); }, this);
-        append_menu_item(fileMenu, wxID_ANY, _L("Open &PrusaSlicer") + dots, _L("Open PrusaSlicer"),
+        append_menu_item(fileMenu, wxID_ANY, format_wxstr(_L("Open &%1%"), SLIC3R_APP_NAME) + dots, format_wxstr(_L("Open %1%"), SLIC3R_APP_NAME),
             [](wxCommandEvent&) { start_new_slicer(); }, "", nullptr,
             []() { return true; }, this);
         fileMenu->AppendSeparator();
@@ -2518,8 +2514,7 @@ MainFrame::~MainFrame()
             delete menu;
 }
 
-// Tisma Slicer: Engineering (with Structures) only works with FFF printers (hidden with an SLA printer), and the
-// Calibration menu has the tests of the printer technology.
+// Tisma Slicer: the Calibration menu has the tests of the printer technology.
 void MainFrame::update_technology_ui()
 {
     const bool fff = m_plater != nullptr && m_plater->printer_technology() == ptFFF;

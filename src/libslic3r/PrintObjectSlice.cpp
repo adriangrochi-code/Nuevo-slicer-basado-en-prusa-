@@ -73,7 +73,8 @@ LayerPtrs new_layers(
 
 // Non-planar layers: deformation of this object (in object coordinates), if enabled.
 static std::optional<NonPlanar::Deformation> nonplanar_deformation(
-    const PrintConfig &print_config, const Transform3d &object_trafo, const ModelVolumePtrs &model_volumes)
+    const PrintConfig &print_config, const Transform3d &object_trafo, const ModelVolumePtrs &model_volumes,
+    const EngineeringLayerField *layer_field)
 {
     if (! NonPlanar::enabled(print_config))
         return std::nullopt;
@@ -82,7 +83,7 @@ static std::optional<NonPlanar::Deformation> nonplanar_deformation(
         if (model_volume->is_model_part())
             bbox.merge(model_volume->mesh().transformed_bounding_box(object_trafo * model_volume->get_matrix()));
     const indexed_triangle_set mesh = NonPlanar::object_mesh(model_volumes, object_trafo);
-    return NonPlanar::make_deformation(print_config, bbox, &mesh);
+    return NonPlanar::make_deformation(print_config, bbox, &mesh, layer_field);
 }
 
 // Slice single triangle mesh.
@@ -181,6 +182,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     ModelVolumePtrs                                           model_volumes,
     const std::vector<PrintObjectRegions::LayerRangeRegions> &layer_ranges,
     const std::vector<float>                                 &zs,
+    const EngineeringLayerField                              *layer_field,
     const std::function<void()>                              &throw_on_cancel_callback)
 {
     model_volumes_sort_by_id(model_volumes);
@@ -206,7 +208,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
 
     params_base.mode_below     = params_base.mode;
 
-    const std::optional<NonPlanar::Deformation> deformation = nonplanar_deformation(print_config, object_trafo, model_volumes);
+    const std::optional<NonPlanar::Deformation> deformation = nonplanar_deformation(print_config, object_trafo, model_volumes, layer_field);
     const NonPlanar::Deformation *deformation_ptr = deformation ? &*deformation : nullptr;
     const double nonplanar_max_edge = NonPlanar::mesh_max_edge(print_config);
 
@@ -566,7 +568,8 @@ void PrintObject::slice()
     this->clear_layers();
     SlicingParameters slicing_params = m_slicing_params;
     if (const std::optional<NonPlanar::Deformation> deformation =
-            nonplanar_deformation(m_print->config(), this->trafo_centered(), this->model_object()->volumes)) {
+            nonplanar_deformation(m_print->config(), this->trafo_centered(), this->model_object()->volumes,
+                                  &this->model_object()->engineering.layer_field)) {
         // The deformed mesh may reach above the object height in slice space: slice up to there,
         // the empty layers on top are removed after slicing.
         BoundingBoxf3 bbox;
@@ -926,7 +929,8 @@ void PrintObject::slice_volumes()
     std::vector<std::vector<ExPolygons>> region_slices = slices_to_regions(this->model_object()->volumes, *m_shared_regions, slice_zs,
         slice_volumes_inner(
             print->config(), this->config(), this->trafo_centered(),
-            this->model_object()->volumes, m_shared_regions->layer_ranges, slice_zs, throw_on_cancel_callback),
+            this->model_object()->volumes, m_shared_regions->layer_ranges, slice_zs,
+            &this->model_object()->engineering.layer_field, throw_on_cancel_callback),
         throw_on_cancel_callback);
 
     for (size_t region_id = 0; region_id < region_slices.size(); ++ region_id) {

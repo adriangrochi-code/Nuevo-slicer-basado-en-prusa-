@@ -10,6 +10,9 @@ add_executable(${_TEST_NAME}_tests ${_TEST_NAME}_tests_main.cpp
     sla_vectorUtils_tests.cpp
     sla_lineUtils_tests.cpp
     sla_supptreeutils_tests.cpp
+    sla_suction_cups_tests.cpp
+    sla_interior_infill_tests.cpp
+    sla_rotfinder_tests.cpp
     sla_archive_readwrite_tests.cpp
     sla_goo_tests.cpp
     sla_zcorrection_tests.cpp

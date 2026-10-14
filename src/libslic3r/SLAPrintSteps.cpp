@@ -12,6 +12,8 @@
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include "libslic3r/SLA/SupportTreeSlicer.hpp"
 #include <libslic3r/SLA/ZCorrection.hpp>
+#include <libslic3r/SLA/InteriorInfill.hpp>
+#include <libslic3r/SLA/SuctionCups.hpp>
 #include <libslic3r/ElephantFootCompensation.hpp>
 #include <libslic3r/CSGMesh/ModelToCSGMesh.hpp>
 #include <libslic3r/CSGMesh/SliceCSGMesh.hpp>
@@ -425,6 +427,19 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
 
             its_compactify_vertices(m);
             its_merge_vertices(m);
+
+            // Tisma: struts inside the cavity (the cavity less the struts is what the slicing subtracts).
+            const double infill = po.m_config.hollowing_infill_density.getFloat() * 0.01;
+            if (infill > 0.) {
+                const double cell  = po.m_config.hollowing_infill_cell.getFloat();
+                const double width = sla::infill_strut_width(infill, cell);
+                if (width < sla::INFILL_MIN_STRUT)
+                    BOOST_LOG_TRIVIAL(warning) << "Interior infill: struts of " << width << " mm, thinner than "
+                                               << sla::INFILL_MIN_STRUT << " mm";
+                if (! sla::subtract_infill(m, infill, cell, get_voxel_scale(sla::get_grid(*po.m_hollowing_data->interior))))
+                    BOOST_LOG_TRIVIAL(warning) << "Interior infill could not be made";
+                throw_if_canceled();
+            }
         }
 
         // Put the interior into the target mesh as a negative
@@ -607,6 +622,22 @@ void SLAPrint::Steps::slice_model(SLAPrintObject &po)
     // Also apply Z-compensation. That is only done for model (not supports).
     po.m_model_slices = sla::apply_zcorrection(po.m_model_slices,
                                         m_print->m_material_config.zcorrection_layers.getInt());
+
+    // Tisma: hollows closed at the bottom and open towards the film (suction cups) can tear the print off.
+    if (const std::vector<sla::SuctionCup> cups = sla::find_suction_cups(po.m_model_slices, po.get_elevation() <= EPSILON);
+        ! cups.empty()) {
+        const sla::SuctionCup &c = cups.front();
+        const double bottom = po.m_model_height_levels.front();
+        auto height = [&](size_t layer) { return float_to_string_decimal_point(po.m_model_height_levels[layer] - bottom, 1); };
+        po.active_step_add_warning(PrintStateBase::WarningLevel::NON_CRITICAL,
+            format(_u8L("Suction cup in %1%: a hollow closed at the bottom and open towards the film, from %2% mm to %3% mm "
+                        "above the bottom of the part (up to %4% mm²). The vacuum while peeling can tear the print off or "
+                        "deform it. Drill a drain hole of 3 to 5 mm in its floor (Hollow and drill) or rotate the part so "
+                        "that the hollow opens towards the build plate.%5%"),
+                   po.model_object()->name, height(c.first_layer), height(c.last_layer),
+                   int(std::round(c.max_area)),
+                   cups.size() > 1 ? " " + format(_u8L("%1% suction cups in total."), cups.size()) : std::string()));
+    }
 
     // Prepare data for the support point generator only when supports are enabled
     if (po.m_config.supports_enable.getBool())

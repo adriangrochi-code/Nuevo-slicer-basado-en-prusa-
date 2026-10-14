@@ -13,6 +13,7 @@
 #include <libslic3r/NonPlanar.hpp>
 
 #include "tisma_fea/Structures.hpp"
+#include "tisma_fea/Ribs.hpp"
 
 namespace Slic3r {
 namespace Fea {
@@ -26,7 +27,7 @@ static bool starts_with(const std::string &s, const char *prefix) { return s.rfi
 // Width of the perimeters [mm] of a print configuration (with the overrides of the object applied). As in
 // PrusaSlicer (Flow::extrusion_width), a width in percent is relative to the layer height, 0 = automatic
 // (1.125 x nozzle).
-static double perimeter_width(const DynamicPrintConfig &cfg)
+static double perimeter_width(const DynamicPrintConfig &cfg, const char *key = "perimeter_extrusion_width")
 {
     double nozzle = 0.4;
     if (const ConfigOptionFloats *n = cfg.option<ConfigOptionFloats>("nozzle_diameter"); n && ! n->values.empty())
@@ -40,7 +41,7 @@ static double perimeter_width(const DynamicPrintConfig &cfg)
             return 0.;
         return opt->percent ? opt->value * 0.01 * layer_height : opt->value;
     };
-    double w = width("perimeter_extrusion_width");
+    double w = width(key);
     if (w <= 0.)
         w = width("extrusion_width");
     if (w <= 0.)
@@ -66,17 +67,57 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
     };
     const double layer_height = number("layer_height", 0.2);
     const double w = perimeter_width(cfg);
+    // The material of a bead of width w and height h: w - h (1 - pi / 4) per unit of height (Flow::
+    // rounded_rectangle_extrusion_spacing()).
+    auto spacing = [layer_height](double width) { return std::max(0.1 * width, width - layer_height * (1. - 0.25 * M_PI)); };
     const ConfigOption *perimeters = cfg.option("perimeters");
     const ConfigOption *top        = cfg.option("top_solid_layers");
     const ConfigOption *bottom     = cfg.option("bottom_solid_layers");
     infill.enabled              = true;
     infill.perimeters           = perimeters ? perimeters->getInt() : 2;
     infill.perimeter_width      = w;
-    infill.wall_thickness       = infill.perimeters * w;
+    infill.perimeter_spacing    = spacing(w);
+    infill.external_perimeter_spacing = spacing(perimeter_width(cfg, "external_perimeter_extrusion_width"));
+    infill.wall_thickness       = wall_thickness_of(infill, infill.perimeters);
     infill.top_bottom_thickness = std::max(top ? top->getInt() : 3, bottom ? bottom->getInt() : 3) * layer_height;
     const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density");
     infill.density = density ? std::clamp(density->value * 0.01, 0., 1.) : 0.2;
     std::tie(infill.stiffness_exponent, infill.strength_exponent) = infill_exponents(cfg.opt_serialize("fill_pattern"));
+    infill.deposit_factor = infill_deposit_factor(cfg.opt_serialize("fill_pattern"));
+    // Aligned rectilinear: the lines of every layer at fill_angle (measured on the bed, as the setup).
+    if (cfg.opt_serialize("fill_pattern") == "alignedrectilinear")
+        infill.aligned_angle_deg = std::fmod(number("fill_angle", 45.) + 360., 180.);
+}
+
+bool is_resin(const DynamicPrintConfig &print_config)
+{
+    return print_config.has("printer_technology") && print_config.opt_serialize("printer_technology") == "SLA";
+}
+
+// Resin printers: a solid part, or a hollowed one (hollowing_enable): walls of hollowing_min_thickness and the struts
+// of the interior infill (hollowing_infill_density, src/libslic3r/SLA/InteriorInfill.hpp) homogenized as a lattice.
+static void resin_infill_from_config(const ModelObject &object, const DynamicPrintConfig &print_config, InfillModel &infill)
+{
+    DynamicPrintConfig cfg = print_config;
+    cfg.apply(object.config.get(), true);
+    infill = InfillModel();
+    const ConfigOptionBool *hollow = cfg.option<ConfigOptionBool>("hollowing_enable");
+    if (hollow == nullptr || ! hollow->value)
+        return;
+    const ConfigOption *t = cfg.option("hollowing_min_thickness");
+    const double thickness = t ? t->getFloat() : 3.;
+    infill.enabled                    = true;
+    infill.wall_thickness             = thickness;
+    infill.top_bottom_thickness       = thickness;
+    infill.perimeters                 = 1;
+    infill.perimeter_width            = thickness;
+    infill.perimeter_spacing          = thickness;
+    infill.external_perimeter_spacing = thickness;
+    const ConfigOptionPercent *d = cfg.option<ConfigOptionPercent>("hollowing_infill_density");
+    infill.density            = d ? std::clamp(d->value * 0.01, 0., 1.) : 0.;
+    infill.stiffness_exponent = LATTICE_EXPONENT;
+    infill.strength_exponent  = LATTICE_EXPONENT;
+    infill.deposit_factor     = 1.;
 }
 
 bool build_analysis_input(const ModelObject &object, size_t instance_idx, const std::string &filament_type,
@@ -90,13 +131,14 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
 
     out.material = eng.material.empty() ? std::string() : eng.material;
     if (out.material.empty()) {
-        const Material *m = material_for_filament_type(filament_type);
+        const Material *m = print_config && is_resin(*print_config) ? material_for_resin(filament_type) :
+                                                                      material_for_filament_type(filament_type);
         if (! m) {
             error = "There is no material of the table for the filament type " + filament_type + ": choose one";
             return false;
         }
         out.material = m->key;
-    } else if (! find_material(out.material)) {
+    } else if (! material_by_key(out.material)) {
         error = "Unknown material " + out.material;
         return false;
     }
@@ -126,7 +168,9 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
 
     // Walls, infill and infill modifiers.
     InfillModel infill;
-    if (print_config) {
+    if (print_config && is_resin(*print_config))
+        resin_infill_from_config(object, *print_config, infill);
+    else if (print_config) {
         infill_from_config(object, *print_config, infill);
         for (size_t v = 0; v < object.volumes.size(); ++ v) {
             const ModelVolume &volume = *object.volumes[v];
@@ -134,16 +178,34 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
                 continue;
             const ConfigOptionPercent *d = volume.config.get().option<ConfigOptionPercent>("fill_density");
             const ConfigOption        *p = volume.config.get().option("perimeters");
-            if (d == nullptr && p == nullptr)
+            const ConfigOption        *pattern = volume.config.get().option("fill_pattern");
+            const ConfigOption        *angle   = volume.config.get().option("fill_angle");
+            if (d == nullptr && p == nullptr && pattern == nullptr && angle == nullptr)
                 continue;
             InfillZone zone;
             zone.mesh = volume.mesh().its;
             its_transform(zone.mesh, instance_trafo * volume.get_matrix());
             if (zone.mesh.indices.empty())
                 continue;
-            zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : infill.density;
+            // Without fill_density the density stays the one below, as the slicing does with the modifier (a zone
+            // which only changes the perimeters keeps the density of the part, as before).
+            zone.density = d ? std::clamp(d->value * 0.01, 0., 1.) : p ? infill.density : -1.;
             if (p)
-                zone.wall_thickness = p->getInt() * infill.perimeter_width;
+                zone.wall_thickness = wall_thickness_of(infill, p->getInt());
+            if (pattern) {
+                const std::string name = volume.config.get().opt_serialize("fill_pattern");
+                std::tie(zone.stiffness_exponent, zone.strength_exponent) = infill_exponents(name);
+                zone.deposit_factor = infill_deposit_factor(name);
+                if (name == "alignedrectilinear") {
+                    DynamicPrintConfig cfg = *print_config;
+                    cfg.apply(object.config.get(), true);
+                    const double a = angle ? angle->getFloat() : cfg.has("fill_angle") ? cfg.option("fill_angle")->getFloat() : 45.;
+                    zone.aligned_angle_deg = std::fmod(a + 360., 180.);
+                } else
+                    zone.aligned_angle_deg = -1.;
+            } else if (angle && infill.aligned_angle_deg >= 0.)
+                // Only the angle: the aligned infill of the part in another direction.
+                zone.aligned_angle_deg = std::fmod(angle->getFloat() + 360., 180.);
             if (starts_with(volume.name, LATTICE_NAME)) {
                 // Struts of a lattice: homogenized over its cells (edge in the name, "Tisma lattice 8 mm").
                 double cell = 8.;
@@ -201,7 +263,7 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
                 for (stl_vertex &v : part_mesh.vertices)
                     v.z() -= float(z0);
                 auto deformation = std::make_shared<NonPlanar::Deformation>(
-                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh));
+                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh, &object.engineering.layer_field));
                 setup.layer_normal = [deformation, z0](const Vec3d &p) {
                     return deformation->layer_normal(p.x(), p.y(), p.z() - z0);
                 };
@@ -328,6 +390,18 @@ void apply_reinforcement(ModelObject &object, size_t instance_idx, double densit
     object.invalidate_bounding_box();
 }
 
+void apply_resin_structure(ModelObject &object, double wall_thickness, double infill_density)
+{
+    if (wall_thickness <= 0.) {
+        // Solid.
+        object.config.set_key_value("hollowing_enable", new ConfigOptionBool(false));
+        return;
+    }
+    object.config.set_key_value("hollowing_enable", new ConfigOptionBool(true));
+    object.config.set_key_value("hollowing_min_thickness", new ConfigOptionFloat(std::round(wall_thickness * 100.) / 100.));
+    object.config.set_key_value("hollowing_infill_density", new ConfigOptionPercent(std::round(std::clamp(infill_density, 0., 1.) * 100.)));
+}
+
 void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_triangle_set &struts, double cell)
 {
     remove_modifiers(object, { LATTICE_NAME, INFILL_ZONE_NAME, REINFORCEMENT_NAME });
@@ -337,6 +411,33 @@ void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_trian
     if (ModelVolume *v = add_modifier(object, instance_idx, struts, name))
         v->config.set_key_value("fill_density", new ConfigOptionPercent(100));
     object.invalidate_bounding_box();
+}
+
+size_t apply_ribs(ModelObject &object, size_t instance_idx, const std::vector<RibZone> &zones)
+{
+    remove_modifiers(object, { RIB_ZONE_NAME });
+    if (object.instances.empty())
+        return 0;
+    const Transform3d to_object = object.instances[std::min(instance_idx, object.instances.size() - 1)]->get_matrix().inverse();
+    size_t added = 0;
+    for (const RibZone &zone : zones) {
+        indexed_triangle_set its = zone.mesh;
+        its_transform(its, to_object);
+        if (to_object.matrix().block<3, 3>(0, 0).determinant() < 0.)
+            its_flip_triangles(its);
+        if (its.indices.empty())
+            continue;
+        // The infill angle is measured on the bed (the layers are sliced with the rotation of the instance), as the
+        // directions of the analysis: no conversion.
+        const double angle = std::fmod(zone.angle_deg + 360., 180.);
+        ModelVolume *volume = object.add_volume(TriangleMesh(std::move(its)), ModelVolumeType::PARAMETER_MODIFIER);
+        volume->name = std::string(RIB_ZONE_NAME) + " " + std::to_string(int(std::round(angle))) + "°";
+        volume->config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipAlignedRectilinear));
+        volume->config.set_key_value("fill_angle", new ConfigOptionFloat(std::round(angle * 10.) / 10.));
+        ++ added;
+    }
+    object.invalidate_bounding_box();
+    return added;
 }
 
 size_t apply_infill(ModelObject &object, size_t instance_idx, double density, const std::vector<InfillZone> &zones)
