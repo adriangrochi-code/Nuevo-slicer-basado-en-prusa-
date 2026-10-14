@@ -5379,6 +5379,29 @@ void PrintConfigDef::init_sla_params()
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(3.));
     
+    // Tisma: struts inside the cavity of a hollowed part (src/libslic3r/SLA/InteriorInfill.hpp).
+    def = this->add("hollowing_infill_density", coPercent);
+    def->label = L("Interior infill");
+    def->category = L("Hollowing");
+    def->tooltip  = L("Struts inside the cavity of a hollowed model, vertical and at 45 degrees so that they need no supports: "
+                      "the part of the cavity they fill. 0 = empty cavity.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 60;
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionPercent(0));
+
+    def = this->add("hollowing_infill_cell", coFloat);
+    def->label = L("Interior infill cell");
+    def->category = L("Hollowing");
+    def->tooltip  = L("Distance between the struts of the interior infill. The struts are thinner for a smaller cell "
+                      "at the same infill.");
+    def->sidetext = L("mm");
+    def->min = 3;
+    def->max = 50;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(8.));
+
     def = this->add("hollowing_quality", coFloat);
     def->label = L("Accuracy");
     def->category = L("Hollowing");

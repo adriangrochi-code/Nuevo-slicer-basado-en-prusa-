@@ -33,6 +33,15 @@ static const std::vector<Material> s_materials = {
     { "PSU",    "PSU",                      2400., 2100., 0.37, 60.,  35.,  185.,  170.,  true,  "", 1.24, 340., 380. },
     { "PVDF",   "PVDF",                     1800., 1500., 0.38, 40.,  25.,  -35.,  120.,  true,  "Semi-crystalline.", 1.78, 240., 260. },
     { "FLEX",   "TPU (flexible)",           30.,   25.,   0.45, 30.,  20.,  -40.,  60.,   false, "Elastomer: the linear analysis does not describe it.", 1.21, 210., 240. },
+    // Resins (SLA / MSLA), from the data sheets of the makers; resin prints are close to isotropic (the same values
+    // across the layers). Glass transition: the heat deflection temperature at 1.82 MPa; maximum service: at 0.45 MPa.
+    // The data sheets give no density: 1.15, typical of cured photopolymers. No nozzle: no print temperatures.
+    { "RESIN",  "Standard resin",           709.,  709.,  0.35, 33.8, 33.8, 50.,   50.,   true,  "Elegoo Standard resin data sheet, post-cured: tensile strength 33.8 MPa, flexural modulus 709 MPa "
+                                                                                              "(no tensile modulus nor heat deflection: 50 °C assumed). Density not in the sheet.", 1.15, 0., 0. },
+    { "RESIN-FL", "Formlabs Standard resin", 2800., 2800., 0.35, 65., 65.,  58.4,  73.1,  true,  "Formlabs Clear / White / Grey / Black (FLGPCL03), post-cured 60 min at 60 °C: 65 MPa, 2.8 GPa, "
+                                                                                              "heat deflection 58.4 °C at 1.82 MPa. Not post-cured: 38 MPa, 1.6 GPa. Density not in the sheet.", 1.15, 0., 0. },
+    { "RESIN-TOUGH", "Tough resin (Formlabs Tough 2000)", 1800., 1800., 0.35, 40.4, 40.4, 57., 70., true, "Formlabs Tough 2000 V2, post-cured: 40.4 MPa, 1.8 GPa, elongation 79 %, heat deflection "
+                                                                                              "57 °C at 1.8 MPa, 70 °C at 0.45 MPa. Density not in the sheet.", 1.15, 0., 0. },
 };
 
 static std::string upper(std::string s)
@@ -146,6 +155,12 @@ const Material* material_for_filament_type(const std::string &filament_type)
             return find_material(base);
         }
     return nullptr;
+}
+
+const Material* material_for_resin(const std::string &resin_name)
+{
+    const std::string t = upper(resin_name);
+    return find_material(t.find("TOUGH") != std::string::npos || t.find("ABS") != std::string::npos ? "RESIN-TOUGH" : "RESIN");
 }
 
 double temperature_factor(const Material &material, double temperature)

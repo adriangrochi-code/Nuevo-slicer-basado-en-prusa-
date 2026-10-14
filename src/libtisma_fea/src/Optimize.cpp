@@ -13,6 +13,7 @@
 //    together by bisection until the requirements are met. The zones are the meshes of the cells of each level,
 //    as they will be applied (infill modifiers), so the last analysis is the one of what is printed.
 #include "tisma_fea/Optimize.hpp"
+#include "tisma_fea/Structures.hpp"
 #include "CellsMesh.hpp"
 
 #include <algorithm>
@@ -282,6 +283,81 @@ OptimizeResult optimize_infill(const indexed_triangle_set &mesh, const Setup &se
     }
     if (progress)
         progress(100);
+    return out;
+}
+
+ResinOptimizeResult optimize_resin(const indexed_triangle_set &mesh, const Setup &setup_in, const std::vector<double> &wall_thicknesses,
+                                   double min_density, double max_density,
+                                   std::function<bool()> cancel, std::function<void(int)> progress)
+{
+    ResinOptimizeResult out;
+    const int steps = int(wall_thicknesses.size()) + 1;
+    int       step  = 0;
+    auto sub_progress = [&](int p) {
+        if (progress)
+            progress(std::min(99, (100 * step + p) / steps));
+    };
+    // The solid part.
+    Setup solid = setup_in;
+    solid.infill = InfillModel();
+    out.solid = analyze(mesh, solid, cancel, sub_progress);
+    ++ out.analyses;
+    if (! out.solid.ok) {
+        out.error = out.solid.error;
+        return out;
+    }
+    for (double t : wall_thicknesses) {
+        ++ step;
+        if (cancel && cancel())
+            return out;
+        Setup setup = setup_in;
+        InfillModel &infill = setup.infill;
+        infill = InfillModel();
+        infill.enabled                    = true;
+        infill.wall_thickness             = t;
+        infill.top_bottom_thickness       = t;
+        infill.perimeters                 = 1;
+        infill.perimeter_width            = t;
+        infill.perimeter_spacing          = t;
+        infill.external_perimeter_spacing = t;
+        infill.stiffness_exponent         = LATTICE_EXPONENT;
+        infill.strength_exponent          = LATTICE_EXPONENT;
+        infill.deposit_factor             = 1.;
+        ResinOption option;
+        option.wall_thickness = t;
+        // An empty cavity first.
+        infill.density = 0.;
+        Result empty = analyze(mesh, setup, cancel, sub_progress);
+        ++ out.analyses;
+        if (! empty.ok) {
+            out.error = empty.error;
+            return out;
+        }
+        if (meets_requirements(empty)) {
+            option.feasible = true;
+            option.result   = std::move(empty);
+        } else {
+            OptimizeOptions opt;
+            opt.min_density = min_density;
+            opt.max_density = max_density;
+            opt.zones       = false;
+            opt.ribs        = false;
+            OptimizeResult r = optimize_infill(mesh, setup, opt, cancel, sub_progress);
+            out.analyses += r.analyses;
+            if (! r.ok) {
+                out.error = r.error;
+                return out;
+            }
+            option.feasible       = r.feasible;
+            option.infill_density = r.uniform_density;
+            option.result         = std::move(r.uniform);
+        }
+        out.options.emplace_back(std::move(option));
+    }
+    for (size_t i = 0; i < out.options.size(); ++ i)
+        if (out.options[i].feasible && (out.best < 0 || out.options[i].result.mass < out.options[size_t(out.best)].result.mass))
+            out.best = int(i);
+    out.ok = true;
     return out;
 }
 

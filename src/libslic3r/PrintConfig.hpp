@@ -1323,6 +1323,10 @@ PRINT_CONFIG_CLASS_DEFINE(
     // resin could stuck.
     ((ConfigOptionFloat, hollowing_min_thickness))
 
+    // Tisma: struts inside the cavity (fraction of the cavity, spacing of the struts).
+    ((ConfigOptionPercent, hollowing_infill_density))
+    ((ConfigOptionFloat, hollowing_infill_cell))
+
     // Indirectly controls the voxel size (resolution) used by openvdb
     ((ConfigOptionFloat, hollowing_quality))
 

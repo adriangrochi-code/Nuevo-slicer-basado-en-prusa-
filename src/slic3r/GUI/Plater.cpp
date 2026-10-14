@@ -6825,11 +6825,6 @@ void Plater::open_engineering()
             NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("Load a part to analyze it in Engineering."));
         return;
     }
-    if (printer_technology() != ptFFF) {
-        get_notification_manager()->push_notification(NotificationType::CustomNotification,
-            NotificationManager::NotificationLevel::PrintInfoNotificationLevel, _u8L("The structural analysis is available for FFF printers."));
-        return;
-    }
     GLCanvas3D* canvas = p->view3D->get_canvas3d();
     Selection& selection = canvas->get_selection();
     if (! selection.is_single_full_instance()) {

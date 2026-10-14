@@ -70,7 +70,10 @@ private:
     // The face of the triangle: the B-Rep face for STEP parts, the flat region around it otherwise.
     void         pick_face(const ModelVolume &volume, int volume_idx, int facet, EngineeringRegion &region) const;
     void         add_at_mouse(const Vec2d &mouse);
+    // The material of the part: the filament type (FFF) or the material type of the resin (SLA).
     std::string  filament_type(const ModelObject &object) const;
+    // A resin printer is selected: the part is solid or hollowed, only its walls and interior infill are optimized.
+    static bool  resin();
 
     void start_analysis();
     void start_optimization();
@@ -96,6 +99,10 @@ private:
     void start_reinforcement();
     void apply_reinforcement();
     void start_lattice();
+    // Resin printers: the lightest walls and interior infill (hollowing) and applying them to the object.
+    void start_resin_structure();
+    void apply_resin_structure(bool solid);
+    void render_resin_optimize(const ModelObject &object, float width);
     void apply_lattice();
     void render_lattice();
     void cancel_analysis();
@@ -145,6 +152,7 @@ private:
     std::optional<Fea::LatticeResult>       m_pending_lattice;
     std::optional<Fea::OrientationResult>   m_pending_orient;
     std::optional<Fea::CurvedLayersResult>  m_pending_layers;
+    std::optional<Fea::ResinOptimizeResult> m_pending_resin;
     bool              m_job_optimize { false };
 
     std::optional<Fea::Result> m_result;
@@ -186,6 +194,9 @@ private:
     std::string                m_skin_core_note;
     bool                       m_open_infill_section { false };
     std::atomic<double>        m_current_infill_mass { 0. };
+    // Walls and interior infill of a resin part.
+    std::optional<Fea::ResinOptimizeResult> m_resin;
+    ObjectID                   m_resin_object;
     // Local reinforcement.
     std::optional<Fea::ReinforcementResult> m_reinf;
     ObjectID                   m_reinf_object;

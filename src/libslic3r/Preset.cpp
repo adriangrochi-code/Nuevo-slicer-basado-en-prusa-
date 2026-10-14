@@ -624,6 +624,8 @@ static std::vector<std::string> s_Preset_sla_print_options {
     "pad_object_connector_penetration",
     "hollowing_enable",
     "hollowing_min_thickness",
+    "hollowing_infill_density",
+    "hollowing_infill_cell",
     "hollowing_quality",
     "hollowing_closing_distance",
     "output_filename_format",

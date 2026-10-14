@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Ingeniería con impresoras de resina**: el análisis estructural de la pieza maciza o ahuecada y la búsqueda del
+  espesor de pared y el relleno interior más livianos que aguantan las cargas. Nuevo **relleno interior** de las piezas
+  ahuecadas (Print Settings > Hollowing): barras a 45° y verticales que se imprimen sin soportes. Materiales de resina
+  de las hojas de datos de Elegoo y Formlabs.
 - **Impresoras de cinta**: perfiles de la BLACKBELT 3D (y varioDrive, 15° a 45°, de BlackBelt Cura), la Creality CR-30
   (de Creality Print) y la IdeaFormer IR3 V2 (de VertexSlice): 42 impresoras. Nueva opción «La cinta es el eje Z»
   (activada: así son estas tres); la cinta arranca en 0 en la primera capa.

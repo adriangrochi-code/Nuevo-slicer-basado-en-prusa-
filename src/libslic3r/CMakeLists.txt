@@ -471,6 +471,8 @@ set(SLIC3R_SOURCES
     SLA/ConcaveHull.cpp
     SLA/Hollowing.hpp
     SLA/Hollowing.cpp
+    SLA/InteriorInfill.cpp
+    SLA/InteriorInfill.hpp
     SLA/JobController.hpp
     SLA/SupportPoint.hpp
     SLA/SupportPointGenerator.hpp

@@ -56,6 +56,9 @@ const std::vector<Material>& materials();
 const Material*              find_material(const std::string &key);
 // The material for a filament_type of a filament profile (PLA, PET, ABS, FLEX, ...), or nullptr.
 const Material*              material_for_filament_type(const std::string &filament_type);
+// The material for a resin profile, from its name: the tough resin for tough and ABS-like resins, otherwise the standard
+// resin. (Not from its material_type: "Tough" is the default of PrusaSlicer, set by most profiles of standard resins.)
+const Material*              material_for_resin(const std::string &resin_name);
 // Copy of the material with the key (case insensitive); safe from any thread.
 std::optional<Material>      material_by_key(const std::string &key);
 

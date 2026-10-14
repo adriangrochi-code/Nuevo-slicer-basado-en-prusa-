@@ -1064,6 +1064,8 @@ bool SLAPrintObject::invalidate_state_by_config_options(const std::vector<t_conf
     for (const t_config_option_key &opt_key : opt_keys) {
         if (   opt_key == "hollowing_enable"
             || opt_key == "hollowing_min_thickness"
+            || opt_key == "hollowing_infill_density"
+            || opt_key == "hollowing_infill_cell"
             || opt_key == "hollowing_quality"
             || opt_key == "hollowing_closing_distance"
             ) {

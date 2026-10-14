@@ -6170,6 +6170,8 @@ void TabSLAPrint::build()
     optgroup = page->new_optgroup(L("Hollowing"));
     optgroup->append_single_option_line("hollowing_enable");
     optgroup->append_single_option_line("hollowing_min_thickness");
+    optgroup->append_single_option_line("hollowing_infill_density");
+    optgroup->append_single_option_line("hollowing_infill_cell");
     optgroup->append_single_option_line("hollowing_quality");
     optgroup->append_single_option_line("hollowing_closing_distance");
 

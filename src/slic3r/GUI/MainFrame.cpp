@@ -872,8 +872,8 @@ void MainFrame::create_nav_rail()
     engineering.icon        = "wrench";
     engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
     engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    // In every mode (it is a main function of Tisma); the analyses are for FFF printers: hidden with an SLA printer.
-    engineering.is_visible  = [is_fff]() { return is_fff(); };
+    // In every mode (it is a main function of Tisma) and with every printer technology: with a resin printer it
+    // analyzes the solid or hollowed part and searches its walls and interior infill.
     m_nav_rail->add_item(engineering);
 
     NavRail::Item calib;
@@ -966,10 +966,6 @@ void MainFrame::update_nav_rail(bool visibility)
     if (m_nav_rail == nullptr)
         return;
     if (visibility) {
-        wxWindow* page = m_tabpanel->GetCurrentPage();
-        // Switching to an SLA printer while Engineering is shown: back to Prepare.
-        if (m_plater && m_plater->printer_technology() != ptFFF && m_plater->is_engineering_open())
-            m_plater->canvas3D()->get_gizmos_manager().reset_all_states();
         m_nav_rail->update_visibility();
     } else
         m_nav_rail->update_selection();
@@ -2518,8 +2514,7 @@ MainFrame::~MainFrame()
             delete menu;
 }
 
-// Tisma Slicer: Engineering (with Structures) only works with FFF printers (hidden with an SLA printer), and the
-// Calibration menu has the tests of the printer technology.
+// Tisma Slicer: the Calibration menu has the tests of the printer technology.
 void MainFrame::update_technology_ui()
 {
     const bool fff = m_plater != nullptr && m_plater->printer_technology() == ptFFF;

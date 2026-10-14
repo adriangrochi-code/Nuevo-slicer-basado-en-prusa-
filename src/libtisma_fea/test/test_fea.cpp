@@ -1887,3 +1887,121 @@ TEST_CASE("Multigrid preconditioner", "[FEA][Multigrid]")
              << tj << " s, multigrid (" << mg.multigrid_levels << " levels) " << mg.iterations << " iterations " << tm << " s");
     }
 }
+
+// ---- Resin printers: the walls of the hollowing and the interior infill.
+
+static Setup resin_cantilever(indexed_triangle_set &its, double force)
+{
+    its = its_make_cube(80., 16., 16.);
+    Setup setup;
+    setup.material   = "RESIN-FL";
+    setup.voxel_size = 1.;
+    setup.tolerance  = 1e-8;
+    setup.fixtures.push_back({ side(its, 0, false) });
+    Load load;
+    load.type      = Load::Type::Faces;
+    load.triangles = side(its, 0, true);
+    load.force     = Vec3d(0., 0., -force);
+    setup.loads.push_back(load);
+    return setup;
+}
+
+TEST_CASE("Resin materials", "[FEA][Resin]")
+{
+    // Data sheets: Formlabs Standard post-cured 65 MPa / 2.8 GPa, Tough 2000 40.4 MPa / 1.8 GPa, Elegoo Standard 33.8 MPa.
+    const Material *standard = find_material("RESIN-FL");
+    REQUIRE(standard != nullptr);
+    CHECK(standard->E_xy == Approx(2800.));
+    CHECK(standard->strength_xy == Approx(65.));
+    // Close to isotropic.
+    CHECK(standard->E_z == Approx(standard->E_xy));
+    CHECK(material_for_resin("Tough")->key == "RESIN-TOUGH");
+    CHECK(material_for_resin("ABS-like")->key == "RESIN-TOUGH");
+    CHECK(material_for_resin("Generic")->key == "RESIN");
+    // No nozzle: no layer adhesion factor.
+    CHECK(layer_adhesion_factor(*standard, 0.) == Approx(1.));
+}
+
+TEST_CASE("Hollowed resin part: walls and interior infill", "[FEA][Resin]")
+{
+    indexed_triangle_set its;
+    Setup setup = resin_cantilever(its, 20.);
+    const Result solid = analyze(its, setup);
+    auto hollow = [&](double wall, double infill) {
+        Setup s = setup;
+        s.infill.enabled              = true;
+        s.infill.wall_thickness       = wall;
+        s.infill.top_bottom_thickness = wall;
+        s.infill.density              = infill;
+        s.infill.stiffness_exponent   = LATTICE_EXPONENT;
+        s.infill.strength_exponent    = LATTICE_EXPONENT;
+        return analyze(its, s);
+    };
+    const Result empty2  = hollow(2., 0.);
+    const Result empty4  = hollow(4., 0.);
+    const Result struts2 = hollow(2., 0.3);
+    REQUIRE(solid.ok);
+    REQUIRE(empty2.ok);
+    REQUIRE(empty4.ok);
+    REQUIRE(struts2.ok);
+    INFO("mass solid " << solid.mass << " walls 2 " << empty2.mass << " walls 4 " << empty4.mass << " 2 + 30 % " << struts2.mass);
+    // Thinner walls: lighter and more flexible; the struts add stiffness and mass.
+    CHECK(empty2.mass < empty4.mass);
+    CHECK(empty4.mass < solid.mass);
+    CHECK(empty2.max_displacement > empty4.max_displacement);
+    CHECK(empty4.max_displacement > solid.max_displacement);
+    CHECK(struts2.mass > empty2.mass);
+    CHECK(struts2.max_displacement < empty2.max_displacement);
+    // 80 x 16 x 16 mm of resin of 1.15 g/cm³.
+    CHECK(solid.mass == Approx(80. * 16. * 16. * 1.15e-3).epsilon(0.03));
+}
+
+TEST_CASE("Lightest walls and interior infill of a resin part", "[FEA][Resin]")
+{
+    indexed_triangle_set its;
+    Setup setup = resin_cantilever(its, 20.);
+    // A displacement limit between the hollow part with 1.5 mm walls and the solid one.
+    const Result solid = analyze(its, setup);
+    REQUIRE(solid.ok);
+    setup.loads.front().max_displacement = 1.6 * solid.load_displacement.front();
+    const ResinOptimizeResult opt = optimize_resin(its, setup, { 1.5, 2., 3., 4. }, 0.05, 0.6);
+    INFO(opt.error);
+    REQUIRE(opt.ok);
+    REQUIRE(opt.options.size() == 4);
+    REQUIRE(opt.best >= 0);
+    const ResinOption &best = opt.options[size_t(opt.best)];
+    INFO("best: walls " << best.wall_thickness << " infill " << best.infill_density << " mass " << best.result.mass
+                        << " (solid " << opt.solid.mass << ")");
+    CHECK(meets_requirements(best.result));
+    CHECK(best.result.mass < opt.solid.mass);
+    // Each feasible option is the lowest infill for its walls: thicker walls need less infill.
+    for (size_t i = 1; i < opt.options.size(); ++ i)
+        if (opt.options[i].feasible && opt.options[i - 1].feasible)
+            CHECK(opt.options[i].infill_density <= opt.options[i - 1].infill_density + 1e-9);
+}
+
+TEST_CASE("Resin print settings reach the analysis", "[FEA][Resin]")
+{
+    Model model = bar_model();
+    ModelObject &object = *model.objects.front();
+    DynamicPrintConfig config;
+    config.apply(SLAFullPrintConfig::defaults());
+    config.set_key_value("printer_technology", new ConfigOptionEnum<PrinterTechnology>(ptSLA));
+    REQUIRE(is_resin(config));
+    Fea::ModelAnalysisInput input;
+    std::string error;
+    // Solid by default; the material from the type of the resin.
+    REQUIRE(build_analysis_input(object, 0, "Tough", input, error, &config));
+    CHECK(input.material == "RESIN-TOUGH");
+    CHECK(! input.setup.infill.enabled);
+    // Hollowed with the infill, as applied by the optimizer.
+    apply_resin_structure(object, 2.5, 0.2);
+    REQUIRE(build_analysis_input(object, 0, "Generic", input, error, &config));
+    CHECK(input.material == "RESIN");
+    CHECK(input.setup.infill.enabled);
+    CHECK(input.setup.infill.wall_thickness == Approx(2.5));
+    CHECK(input.setup.infill.density == Approx(0.2));
+    apply_resin_structure(object, 0., 0.);
+    REQUIRE(build_analysis_input(object, 0, "Generic", input, error, &config));
+    CHECK(! input.setup.infill.enabled);
+}

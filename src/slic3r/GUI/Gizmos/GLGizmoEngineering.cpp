@@ -15,6 +15,7 @@
 #include <libslic3r/Model.hpp>
 #include <libslic3r/PresetBundle.hpp>
 #include <libslic3r/BeltPrinter.hpp>
+#include <libslic3r/SLA/InteriorInfill.hpp>
 #include <tisma_fea/Materials.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Optimize.hpp>
@@ -275,8 +276,13 @@ std::string GLGizmoEngineering::on_get_name() const
 bool GLGizmoEngineering::on_is_activable() const
 {
     const Selection &selection = m_parent.get_selection();
-    return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF &&
-           selection.is_single_full_instance();
+    const PrinterTechnology pt = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
+    return (pt == ptFFF || pt == ptSLA) && selection.is_single_full_instance();
+}
+
+bool GLGizmoEngineering::resin()
+{
+    return wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA;
 }
 
 CommonGizmosDataID GLGizmoEngineering::on_get_requirements() const
@@ -498,6 +504,11 @@ std::string GLGizmoEngineering::filament_type(const ModelObject &object) const
             break;
         }
     const DynamicPrintConfig &config = wxGetApp().preset_bundle->full_config();
+    if (resin()) {
+        // The name of the resin profile (Fea::material_for_resin() picks the tough resin for tough and ABS-like ones).
+        const std::string name = wxGetApp().preset_bundle->sla_materials.get_selected_preset_name();
+        return name.empty() ? std::string("Resin") : name;
+    }
     if (const ConfigOptionStrings *types = config.option<ConfigOptionStrings>("filament_type"); types && ! types->values.empty())
         return types->get_at(size_t(extruder - 1));
     return "PLA";
@@ -772,6 +783,126 @@ void GLGizmoEngineering::start_lattice()
     }, &m_pending_lattice);
 }
 
+namespace {
+// Wall thicknesses compared for a resin part [mm] (hollowing_min_thickness is 1 to 10 mm).
+const std::vector<double> RESIN_WALLS = { 1., 1.5, 2., 3., 4., 5. };
+// Densest interior infill searched (the setting goes up to 60 %).
+constexpr double RESIN_MAX_INFILL = 0.6;
+
+// Cell of the interior infill of the object [mm] (the print settings with the overrides of the object).
+double resin_infill_cell(const ModelObject &object)
+{
+    DynamicPrintConfig cfg = wxGetApp().preset_bundle->full_config();
+    cfg.apply(object.config.get(), true);
+    const ConfigOption *cell = cfg.option("hollowing_infill_cell");
+    return cell ? std::max(1., cell->getFloat()) : 8.;
+}
+
+// Lowest interior infill searched: the thinnest struts that print (sla::INFILL_MIN_STRUT) in the cell, at least 5 %.
+double resin_min_infill(double cell)
+{
+    const double w = sla::INFILL_MIN_STRUT / cell;
+    return std::min(RESIN_MAX_INFILL, std::max(0.05, double(sla::INFILL_DIRECTIONS) * w * w));
+}
+}
+
+void GLGizmoEngineering::start_resin_structure()
+{
+    const ModelObject *mo = model_object();
+    Fea::ModelAnalysisInput input;
+    if (mo == nullptr || ! prepare_input(input))
+        return;
+    const double min_density = resin_min_infill(resin_infill_cell(*mo));
+    launch<Fea::ResinOptimizeResult>([this, input = std::move(input), min_density]() {
+        return Fea::optimize_resin(input.mesh, input.setup, RESIN_WALLS, min_density, RESIN_MAX_INFILL,
+                                   [this]() { return m_cancel.load(); }, [this](int p) { m_progress = p; });
+    }, &m_pending_resin);
+}
+
+void GLGizmoEngineering::apply_resin_structure(bool solid)
+{
+    ModelObject *mo = model_object();
+    if (mo == nullptr || ! m_resin || mo->id() != m_resin_object || (! solid && m_resin->best < 0))
+        return;
+    Plater::TakeSnapshot snapshot(wxGetApp().plater(), _u8L("Apply walls and interior infill"));
+    if (solid) {
+        Fea::apply_resin_structure(*mo, 0., 0.);
+        m_applied_note = GUI::format(_u8L("Applied: \"%1%\" is printed solid. Slice again to see it in the preview."), mo->name);
+    } else {
+        const Fea::ResinOption &o = m_resin->options[size_t(m_resin->best)];
+        Fea::apply_resin_structure(*mo, o.wall_thickness, o.infill_density);
+        m_applied_note = GUI::format(_u8L("Applied: \"%1%\" hollowed with walls of %2$.1f mm and %3% %% interior infill. "
+                                          "Slice again to see it in the preview."),
+                                     mo->name, o.wall_thickness, int(std::round(o.infill_density * 100.)));
+    }
+    changed_object(*mo);
+    m_applied_object = mo->id();
+    notify(m_applied_note);
+    m_resin_object = mo->id();
+}
+
+void GLGizmoEngineering::render_resin_optimize(const ModelObject &object, float width)
+{
+    const EngineeringSetup &eng = object.engineering;
+    ui::section(_u8L("Walls and interior infill"), width);
+    ImGuiPureWrap::text_wrapped(_u8L("Searches the thinnest walls and the lowest interior infill of the hollowed part which meet the "
+                                     "safety factor and the deformation limits, and compares them with the solid part."), width);
+    const double cell = resin_infill_cell(object);
+    ui::muted(GUI::format(_u8L("Interior infill: self-supporting struts in cells of %1$.1f mm (Print Settings > Hollowing)."), cell), width);
+    const bool can_run = ! m_running && ! eng.fixtures.empty() && ! eng.loads.empty();
+    if (ImGuiPureWrap::button(_u8L("Find walls and infill")) && can_run)
+        start_resin_structure();
+    if (! can_run && ! m_running)
+        ui::muted(_u8L("Add the fixed faces and the loads of the part first."), width);
+    if (m_resin && m_resin_object == object.id()) {
+        const Fea::ResinOptimizeResult &r = *m_resin;
+        const ImVec4 green = to_imvec(verdict_color(Fea::Verdict::Holds));
+        const bool solid_holds = Fea::meets_requirements(r.solid);
+        const std::string solid = GUI::format(_u8L("Solid: %1$.1f g, safety factor %2$.2f"), r.solid.mass, r.solid.safety_factor);
+        if (solid_holds && r.best < 0)
+            ImGuiPureWrap::text_colored(green, "> " + solid);
+        else
+            ImGuiPureWrap::text("  " + solid);
+        for (size_t i = 0; i < r.options.size(); ++ i) {
+            const Fea::ResinOption &o = r.options[i];
+            // Walls as thick as the part leave no cavity: the part stays solid.
+            const bool no_cavity = o.result.mass >= 0.995 * r.solid.mass;
+            const std::string text = ! o.feasible ?
+                GUI::format(_u8L("Walls %1$.1f mm: does not hold"), o.wall_thickness) :
+                no_cavity ?
+                GUI::format(_u8L("Walls %1$.1f mm: no room for a cavity (solid)"), o.wall_thickness) :
+                o.infill_density <= 0. ?
+                GUI::format(_u8L("Walls %1$.1f mm, empty: %2$.1f g, safety factor %3$.2f"), o.wall_thickness, o.result.mass, o.result.safety_factor) :
+                GUI::format(_u8L("Walls %1$.1f mm, infill %2% %%: %3$.1f g, safety factor %4$.2f"), o.wall_thickness,
+                            int(std::round(o.infill_density * 100.)), o.result.mass, o.result.safety_factor);
+            if (int(i) == r.best)
+                ImGuiPureWrap::text_colored(green, "> " + text);
+            else
+                ImGuiPureWrap::text("  " + text);
+        }
+        if (r.best >= 0) {
+            const Fea::ResinOption &o = r.options[size_t(r.best)];
+            ImGuiPureWrap::text_wrapped(GUI::format(_u8L("Lightest: %1$.0f %% of the resin of the solid part."),
+                                                    100. * o.result.mass / std::max(r.solid.mass, 1e-9)), width);
+            if (ImGuiPureWrap::button(_u8L("Apply walls and infill")))
+                apply_resin_structure(false);
+            ui::muted(_u8L("A hollowed part needs drain holes (Hollow and drill tool) to let the resin out of the cavity."), width);
+        } else if (solid_holds) {
+            ImGuiPureWrap::text_wrapped(_u8L("No hollowed part meets the requirements: print it solid."), width);
+            if (ImGuiPureWrap::button(_u8L("Apply solid")))
+                apply_resin_structure(true);
+        } else
+            ImGuiPureWrap::text_colored(to_imvec(verdict_color(Fea::Verdict::OutOfLoad)),
+                _u8L("Not even the solid part meets the requirements: choose another resin or reinforce the shape."));
+        ui::muted(GUI::format(_u8L("%1% analyses. Homogenized infill model: check the result with a printed test part."), r.analyses), width);
+    }
+    if (! m_applied_note.empty() && m_applied_object == object.id()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, to_imvec(verdict_color(Fea::Verdict::Holds)));
+        ImGuiPureWrap::text_wrapped(m_applied_note, width);
+        ImGui::PopStyleColor();
+    }
+}
+
 void GLGizmoEngineering::apply_reinforcement()
 {
     ModelObject *mo = model_object();
@@ -899,6 +1030,7 @@ void GLGizmoEngineering::cancel_analysis()
     m_pending_lattice.reset();
     m_pending_orient.reset();
     m_pending_layers.reset();
+    m_pending_resin.reset();
     m_pending_aero.reset();
 }
 
@@ -910,14 +1042,33 @@ void GLGizmoEngineering::fetch_result()
     std::optional<Fea::LatticeResult> lattice;
     std::optional<Fea::OrientationResult> orient;
     std::optional<Fea::CurvedLayersResult> layers;
+    std::optional<Fea::ResinOptimizeResult> resin_opt;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
+        resin_opt.swap(m_pending_resin);
         orient.swap(m_pending_orient);
         layers.swap(m_pending_layers);
         res.swap(m_pending);
         opt.swap(m_pending_opt);
         reinf.swap(m_pending_reinf);
         lattice.swap(m_pending_lattice);
+    }
+    if (resin_opt) {
+        if (m_thread.joinable())
+            m_thread.join();
+        if (! resin_opt->ok) {
+            m_error = resin_opt->error == "Cancelled" ? std::string() : resin_opt->error;
+            return;
+        }
+        m_resin        = std::move(*resin_opt);
+        m_resin_object = m_result_object;
+        // Show the lightest option (or the solid part) on the part.
+        m_result = m_resin->best >= 0 ? m_resin->options[size_t(m_resin->best)].result : m_resin->solid;
+        m_result_is_lattice = false;
+        m_result_stale = false;
+        m_field = Field::Safety;
+        m_result_models_dirty = true;
+        return;
     }
     if (layers) {
         if (m_thread.joinable())
@@ -1412,8 +1563,12 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
 
     ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, mo->name);
 
-    // Two tabs: each shows only its own controls.
-    if (ImGui::BeginTabBar("##engineering_mode")) {
+    // Two tabs: each shows only its own controls. Resin printers: only the structural analysis (walls and interior
+    // infill of the hollowed part).
+    const bool is_resin = resin();
+    if (is_resin)
+        m_mode = Mode::Structural;
+    else if (ImGui::BeginTabBar("##engineering_mode")) {
         if (ImGui::BeginTabItem(_u8L("Structural").c_str())) {
             m_mode = Mode::Structural;
             ImGui::EndTabItem();
@@ -1434,9 +1589,9 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     // ---- Conditions: material, temperature, safety factor, model of the part.
     ui::section(_u8L("Conditions"), width);
     const std::string filament = filament_type(*mo);
-    const Fea::Material *from_filament = Fea::material_for_filament_type(filament);
+    const Fea::Material *from_filament = is_resin ? Fea::material_for_resin(filament) : Fea::material_for_filament_type(filament);
     std::vector<std::string> options;
-    options.push_back(GUI::format(_u8L("Filament (%1%)"), from_filament ? from_filament->name : filament));
+    options.push_back(GUI::format(is_resin ? _u8L("Resin (%1%)") : _u8L("Filament (%1%)"), from_filament ? from_filament->name : filament));
     int selection = 0;
     for (size_t i = 0; i < Fea::materials().size(); ++ i) {
         // Materials of the user and values changed by the user are marked.
@@ -1505,7 +1660,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             ui::muted(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
                                   size_t(MAX_VOXELS_MANY)), width);
     }
-    if (ImGuiPureWrap::checkbox(_u8L("Printed part (walls and infill of the profile)"), m_as_printed))
+    if (ImGuiPureWrap::checkbox(is_resin ? _u8L("Printed part (hollowing and interior infill of the profile)") :
+                                           _u8L("Printed part (walls and infill of the profile)"), m_as_printed))
         m_result_stale = true;
 
     // ---- Supports, loads and displacement limits: what a click on the part adds.
@@ -1694,7 +1850,9 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         ui::row(_u8L("Max. stress (von Mises)"), GUI::format("%1$.2f MPa", r.max_von_mises), width);
         ui::row(_u8L("Estimated mass"), GUI::format(_u8L("%1$.1f g (solid %2$.1f g)"), r.mass, r.solid_mass), width);
         ui::row(_u8L("Material"), GUI::format(_u8L("%1% at %2% °C (x %3$.2f)"), m_result_material, m_result_temperature, r.temperature_factor), width);
-        if (m_result_print_temperature > 0.)
+        if (is_resin)
+            ;   // The resin layers cure into one material (isotropic resin, no layer adhesion factor).
+        else if (m_result_print_temperature > 0.)
             ui::row(_u8L("Layer adhesion"), GUI::format(_u8L("x %1$.2f (nozzle at %2% °C)"), r.layer_adhesion_factor,
                                                         int(std::round(m_result_print_temperature))), width);
         else
@@ -1726,6 +1884,12 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
     }
 
     // ---- Optimize: the lightest structure for these loads.
+    if (is_resin) {
+        render_resin_optimize(*mo, width);
+        ImGui::PopItemWidth();
+        ImGuiPureWrap::end();
+        return;
+    }
     ui::section(_u8L("Optimize"), width);
     // Skin + core in one click.
     if (ImGuiPureWrap::button(_u8L("Skin + core")) && ! m_running)

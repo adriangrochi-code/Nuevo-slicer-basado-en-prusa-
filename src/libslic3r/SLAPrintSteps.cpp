@@ -12,6 +12,7 @@
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include "libslic3r/SLA/SupportTreeSlicer.hpp"
 #include <libslic3r/SLA/ZCorrection.hpp>
+#include <libslic3r/SLA/InteriorInfill.hpp>
 #include <libslic3r/SLA/SuctionCups.hpp>
 #include <libslic3r/ElephantFootCompensation.hpp>
 #include <libslic3r/CSGMesh/ModelToCSGMesh.hpp>
@@ -426,6 +427,19 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
 
             its_compactify_vertices(m);
             its_merge_vertices(m);
+
+            // Tisma: struts inside the cavity (the cavity less the struts is what the slicing subtracts).
+            const double infill = po.m_config.hollowing_infill_density.getFloat() * 0.01;
+            if (infill > 0.) {
+                const double cell  = po.m_config.hollowing_infill_cell.getFloat();
+                const double width = sla::infill_strut_width(infill, cell);
+                if (width < sla::INFILL_MIN_STRUT)
+                    BOOST_LOG_TRIVIAL(warning) << "Interior infill: struts of " << width << " mm, thinner than "
+                                               << sla::INFILL_MIN_STRUT << " mm";
+                if (! sla::subtract_infill(m, infill, cell, get_voxel_scale(sla::get_grid(*po.m_hollowing_data->interior))))
+                    BOOST_LOG_TRIVIAL(warning) << "Interior infill could not be made";
+                throw_if_canceled();
+            }
         }
 
         // Put the interior into the target mesh as a negative

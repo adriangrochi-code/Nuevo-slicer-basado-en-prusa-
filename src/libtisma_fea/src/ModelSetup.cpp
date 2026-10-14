@@ -89,6 +89,37 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
         infill.aligned_angle_deg = std::fmod(number("fill_angle", 45.) + 360., 180.);
 }
 
+bool is_resin(const DynamicPrintConfig &print_config)
+{
+    return print_config.has("printer_technology") && print_config.opt_serialize("printer_technology") == "SLA";
+}
+
+// Resin printers: a solid part, or a hollowed one (hollowing_enable): walls of hollowing_min_thickness and the struts
+// of the interior infill (hollowing_infill_density, src/libslic3r/SLA/InteriorInfill.hpp) homogenized as a lattice.
+static void resin_infill_from_config(const ModelObject &object, const DynamicPrintConfig &print_config, InfillModel &infill)
+{
+    DynamicPrintConfig cfg = print_config;
+    cfg.apply(object.config.get(), true);
+    infill = InfillModel();
+    const ConfigOptionBool *hollow = cfg.option<ConfigOptionBool>("hollowing_enable");
+    if (hollow == nullptr || ! hollow->value)
+        return;
+    const ConfigOption *t = cfg.option("hollowing_min_thickness");
+    const double thickness = t ? t->getFloat() : 3.;
+    infill.enabled                    = true;
+    infill.wall_thickness             = thickness;
+    infill.top_bottom_thickness       = thickness;
+    infill.perimeters                 = 1;
+    infill.perimeter_width            = thickness;
+    infill.perimeter_spacing          = thickness;
+    infill.external_perimeter_spacing = thickness;
+    const ConfigOptionPercent *d = cfg.option<ConfigOptionPercent>("hollowing_infill_density");
+    infill.density            = d ? std::clamp(d->value * 0.01, 0., 1.) : 0.;
+    infill.stiffness_exponent = LATTICE_EXPONENT;
+    infill.strength_exponent  = LATTICE_EXPONENT;
+    infill.deposit_factor     = 1.;
+}
+
 bool build_analysis_input(const ModelObject &object, size_t instance_idx, const std::string &filament_type,
                           ModelAnalysisInput &out, std::string &error, const DynamicPrintConfig *print_config)
 {
@@ -100,7 +131,8 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
 
     out.material = eng.material.empty() ? std::string() : eng.material;
     if (out.material.empty()) {
-        const Material *m = material_for_filament_type(filament_type);
+        const Material *m = print_config && is_resin(*print_config) ? material_for_resin(filament_type) :
+                                                                      material_for_filament_type(filament_type);
         if (! m) {
             error = "There is no material of the table for the filament type " + filament_type + ": choose one";
             return false;
@@ -136,7 +168,9 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
 
     // Walls, infill and infill modifiers.
     InfillModel infill;
-    if (print_config) {
+    if (print_config && is_resin(*print_config))
+        resin_infill_from_config(object, *print_config, infill);
+    else if (print_config) {
         infill_from_config(object, *print_config, infill);
         for (size_t v = 0; v < object.volumes.size(); ++ v) {
             const ModelVolume &volume = *object.volumes[v];
@@ -354,6 +388,18 @@ void apply_reinforcement(ModelObject &object, size_t instance_idx, double densit
         v->config.set_key_value("perimeters", new ConfigOptionInt(perimeters));
     }
     object.invalidate_bounding_box();
+}
+
+void apply_resin_structure(ModelObject &object, double wall_thickness, double infill_density)
+{
+    if (wall_thickness <= 0.) {
+        // Solid.
+        object.config.set_key_value("hollowing_enable", new ConfigOptionBool(false));
+        return;
+    }
+    object.config.set_key_value("hollowing_enable", new ConfigOptionBool(true));
+    object.config.set_key_value("hollowing_min_thickness", new ConfigOptionFloat(std::round(wall_thickness * 100.) / 100.));
+    object.config.set_key_value("hollowing_infill_density", new ConfigOptionPercent(std::round(std::clamp(infill_density, 0., 1.) * 100.)));
 }
 
 void apply_lattice(ModelObject &object, size_t instance_idx, const indexed_triangle_set &struts, double cell)

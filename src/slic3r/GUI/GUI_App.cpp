@@ -2711,7 +2711,7 @@ void GUI_App::update_mode()
 
     mainframe->m_tmp_top_bar->UpdateMode();
     mainframe->m_tabpanel->UpdateMode();
-    // The workspaces depend on the printer technology (Engineering only for FFF printers).
+    // The workspaces depend on the printer technology.
     mainframe->update_nav_rail(true);
 
     for (auto tab : tabs_list)

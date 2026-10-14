@@ -294,6 +294,45 @@ No se modela el encastre mecánico entre capas onduladas (la grieta que tiene qu
 mejora calculada es la de girar el plano débil, y la real puede ser mayor. Prueba: una barra tirada hacia arriba con
 capas inclinadas ±25° pasa de un factor de seguridad de 4,7 a 5,2 (PLA).
 
+## Resina (paredes y relleno interior)
+
+Con una impresora de resina, Ingeniería muestra solo el análisis estructural (sin Aerodinámica) y una sola
+optimización, **Paredes y relleno interior**. El resto (relleno por zonas, nervios, refuerzos, lattice, orientación,
+capas curvas) es de FDM y no aparece.
+
+- **La pieza de resina**: maciza, o ahuecada (`Print Settings > Hollowing`: `hollowing_enable`) con paredes de
+  `hollowing_min_thickness` y, nuevo en Tisma, un **relleno interior** (`hollowing_infill_density`, 0–60 %, celda
+  `hollowing_infill_cell`, 8 mm). El relleno son barras de sección cuadrada en cinco direcciones (vertical y a 45° en
+  XZ e YZ), así que cada barra se apoya en las capas de abajo y la cavidad no necesita soportes. Densidad =
+  5 · (ancho / celda)²; las barras de menos de 0,8 mm se avisan porque no se imprimen bien
+  (`src/libslic3r/SLA/InteriorInfill.cpp`). Se agregan restando las barras de la malla de la cavidad (con OpenVDB,
+  la misma biblioteca del ahuecado de PrusaSlicer), porque el ahuecado quita todo lo que queda dentro de la cavidad.
+- **Análisis**: paredes del espesor del perfil y el relleno homogeneizado como un lattice (exponente 1,5, como el
+  lattice 3D de FDM). La resina curada es casi isótropa: las propiedades son las mismas a través de las capas y no hay
+  factor de adherencia (no hay boquilla).
+- **Materiales de resina** (`Materials.cpp`), de las hojas de datos de los fabricantes, postcurados: resina estándar
+  Elegoo (33,8 MPa; la hoja solo da el módulo a flexión, 709 MPa), resina estándar Formlabs (FLGPCL03: 65 MPa,
+  2,8 GPa, HDT 58,4 °C a 1,82 MPa) y Tough 2000 de Formlabs (40,4 MPa, 1,8 GPa, HDT 57 °C a 1,8 MPa y 70 °C a
+  0,45 MPa). Las hojas no dan densidad (se usa 1,15 g/cm³, típica de fotopolímeros curados) ni coeficiente de Poisson
+  (0,35). El material se elige por el nombre del perfil de resina: las «Tough» y las «ABS-like» usan la Tough; el
+  resto, la estándar (no por `material_type`, que es «Tough» por defecto en PrusaSlicer y en la mayoría de los perfiles
+  de resinas estándar). Se puede elegir otro en la tabla.
+- **Paredes y relleno interior** (`Fea::optimize_resin`): analiza la pieza maciza y, para paredes de 1, 1,5, 2, 3, 4 y
+  5 mm, la cavidad vacía y, si no alcanza, el relleno más bajo que cumple el factor de seguridad y los límites de
+  desplazamiento (entre las barras más finas que se imprimen en la celda del perfil, mínimo 5 %, y 60 %). Muestra la
+  tabla y la opción más liviana; «Aplicar» pone el ahuecado, el espesor y el relleno en el objeto (se ven en la lista
+  de objetos y se deshacen con Ctrl+Z). Si ninguna ahuecada aguanta, propone imprimirla maciza.
+- Una pieza ahuecada necesita agujeros de drenaje (herramienta «Hollow and drill») para que salga la resina; el
+  detector de ventosas avisa si la cavidad queda cerrada hacia el film.
+- En piezas finas la cavidad real puede ser más chica que la del análisis: el ahuecado de PrusaSlicer cierra los
+  huecos angostos (`hollowing_closing_distance`, 2 mm por defecto). Queda más resina que la calculada, así que el
+  resultado está del lado seguro (prueba en la GUI: una barra de 6 mm con paredes de 1 mm y 51 % lamina 3,60 ml
+  frente a 3,74 ml maciza y los 2,9 ml del análisis).
+
+Pruebas: `[Resin]` en `libtisma_fea_tests` (materiales, pieza ahuecada con y sin relleno, la búsqueda de paredes y
+relleno de una viga en voladizo, y que los ajustes de resina llegan al análisis) y `[InteriorInfill]` en
+`sla_print_tests` (barras autoportantes, densidad del relleno y una impresión SLA laminada con relleno interior).
+
 ## Validación (pruebas automáticas)
 
 | Caso | Resultado | Referencia |

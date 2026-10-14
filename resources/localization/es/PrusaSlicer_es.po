@@ -33679,3 +33679,78 @@ msgstr "Impresora de cinta: la cinta es el eje Z"
 
 msgid "The belt moves with the Z axis of the firmware and the inclined gantry with the Y axis, as in the BlackBelt, Creality CR-30 and IdeaFormer IR3 V2 printers. Off: the belt is the Y axis and the gantry the Z axis."
 msgstr "La cinta se mueve con el eje Z del firmware y el cabezal inclinado con el eje Y, como en las impresoras BlackBelt, Creality CR-30 e IdeaFormer IR3 V2. Desactivado: la cinta es el eje Y y el cabezal el eje Z."
+
+msgid "Interior infill"
+msgstr "Relleno interior"
+
+msgid "Struts inside the cavity of a hollowed model, vertical and at 45 degrees so that they need no supports: the part of the cavity they fill. 0 = empty cavity."
+msgstr "Barras dentro de la cavidad de un modelo ahuecado, verticales y a 45 grados para que no necesiten soportes: la parte de la cavidad que llenan. 0 = cavidad vacía."
+
+msgid "Interior infill cell"
+msgstr "Celda del relleno interior"
+
+msgid "Distance between the struts of the interior infill. The struts are thinner for a smaller cell at the same infill."
+msgstr "Distancia entre las barras del relleno interior. Con una celda más chica y el mismo relleno, las barras son más finas."
+
+msgid "Apply walls and interior infill"
+msgstr "Aplicar paredes y relleno interior"
+
+msgid "Applied: \"%1%\" is printed solid. Slice again to see it in the preview."
+msgstr "Aplicado: «%1%» se imprime maciza. Laminá de nuevo para verlo en la vista previa."
+
+msgid "Applied: \"%1%\" hollowed with walls of %2$.1f mm and %3% %% interior infill. Slice again to see it in the preview."
+msgstr "Aplicado: «%1%» ahuecada con paredes de %2$.1f mm y %3% %% de relleno interior. Laminá de nuevo para verlo en la vista previa."
+
+msgid "Walls and interior infill"
+msgstr "Paredes y relleno interior"
+
+msgid "Searches the thinnest walls and the lowest interior infill of the hollowed part which meet the safety factor and the deformation limits, and compares them with the solid part."
+msgstr "Busca las paredes más finas y el relleno interior más bajo de la pieza ahuecada que cumplen el factor de seguridad y los límites de deformación, y los compara con la pieza maciza."
+
+msgid "Interior infill: self-supporting struts in cells of %1$.1f mm (Print Settings > Hollowing)."
+msgstr "Relleno interior: barras autoportantes en celdas de %1$.1f mm (Configuración de Impresión > Vaciando el interior)."
+
+msgid "Find walls and infill"
+msgstr "Buscar paredes y relleno"
+
+msgid "Add the fixed faces and the loads of the part first."
+msgstr "Primero agregá las caras fijas y las cargas de la pieza."
+
+msgid "Solid: %1$.1f g, safety factor %2$.2f"
+msgstr "Maciza: %1$.1f g, factor de seguridad %2$.2f"
+
+msgid "Walls %1$.1f mm: does not hold"
+msgstr "Paredes de %1$.1f mm: no aguanta"
+
+msgid "Walls %1$.1f mm, empty: %2$.1f g, safety factor %3$.2f"
+msgstr "Paredes de %1$.1f mm, vacía: %2$.1f g, factor de seguridad %3$.2f"
+
+msgid "Walls %1$.1f mm, infill %2% %%: %3$.1f g, safety factor %4$.2f"
+msgstr "Paredes de %1$.1f mm, relleno %2% %%: %3$.1f g, factor de seguridad %4$.2f"
+
+msgid "Lightest: %1$.0f %% of the resin of the solid part."
+msgstr "La más liviana: %1$.0f %% de la resina de la pieza maciza."
+
+msgid "Apply walls and infill"
+msgstr "Aplicar paredes y relleno"
+
+msgid "A hollowed part needs drain holes (Hollow and drill tool) to let the resin out of the cavity."
+msgstr "Una pieza ahuecada necesita agujeros de drenaje (herramienta Vaciado y taladrado) para que salga la resina de la cavidad."
+
+msgid "No hollowed part meets the requirements: print it solid."
+msgstr "Ninguna pieza ahuecada cumple los requisitos: imprimila maciza."
+
+msgid "Apply solid"
+msgstr "Aplicar maciza"
+
+msgid "Not even the solid part meets the requirements: choose another resin or reinforce the shape."
+msgstr "Ni siquiera la pieza maciza cumple los requisitos: elegí otra resina o reforzá la forma."
+
+msgid "Resin (%1%)"
+msgstr "Resina (%1%)"
+
+msgid "Printed part (hollowing and interior infill of the profile)"
+msgstr "Pieza impresa (vaciado y relleno interior del perfil)"
+
+msgid "Walls %1$.1f mm: no room for a cavity (solid)"
+msgstr "Paredes de %1$.1f mm: no queda lugar para una cavidad (maciza)"

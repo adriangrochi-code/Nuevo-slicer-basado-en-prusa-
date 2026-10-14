@@ -63,8 +63,9 @@ BOTTOM_LIGHT_PWM=255
 
 Con una impresora de resina se ocultan las funciones que solo sirven para FDM:
 
-- las pestañas **Ingeniería** y **Estructuras** (el análisis estructural y el relleno son de FDM); si estaban
-  abiertas al cambiar de impresora, se vuelve a Preparar;
+- en **Ingeniería**, la pestaña Aerodinámica y las optimizaciones de FDM (relleno por zonas, nervios, refuerzos,
+  lattice, orientación, capas curvas): queda el análisis estructural y **Paredes y relleno interior**, que busca el
+  espesor de pared y el relleno interior más livianos de la pieza ahuecada (ver `docs/FEA.md`, «Resina»);
 - las calibraciones de FDM: el menú y la pestaña **Calibración** pasan a mostrar las de resina.
 
 Ya estaban limitadas a FDM: las capas no planares, los voladizos en arco y el resto de los ajustes de impresión

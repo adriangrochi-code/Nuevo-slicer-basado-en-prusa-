@@ -83,6 +83,19 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | Eje de la cinta de la Creality CR-30 en su firmware (`Marlin/Configuration.h`, `Z_MAX_POS 20000000`) | commit `a916aa2` | GPL-3.0 (solo un dato de referencia; no se copia nada) | Documentación. |
 | Definiciones de impresoras de UltiMaker Cura (`resources/definitions`, `resources/extruders`) | commit `5bea2f8` | LGPL-3.0 (compatible con AGPL-3.0; texto en `resources/licenses/Cura-LGPL-3.0.txt`) | Solo los datos de la máquina, convertidos con `tools/profiles/convert_cura_profiles.py` a `resources/profiles/Cura_*.ini`. Ver `docs/PRINTER_PROFILES.md`. |
 
+### Datos de materiales de resina (`src/libtisma_fea/src/Materials.cpp`)
+
+Solo valores numéricos de las hojas de datos técnicas de los fabricantes (no se copia texto ni código):
+
+| Material | Fuente |
+|---|---|
+| Resina estándar Elegoo | Elegoo Standard Resin TDS (copia de un distribuidor: https://www.123-3d.co.uk/pdf/Elegoo_Standaard_Resin_TDS_EN.pdf) |
+| Resina estándar Formlabs (FLGPCL03) | Formlabs Clear Resin V4 TDS (https://cdn.goengineer.com/formlabs-clear-resin-v4-resin-technical-data-sheet.pdf) |
+| Formlabs Tough 2000 | Formlabs Tough 2000 TDS (https://cdn.goengineer.com/formlabs-tough-2000-resin-technical-data-sheet.pdf) |
+
+Las hojas no dan densidad ni coeficiente de Poisson: se usan 1,15 g/cm³ y 0,35, valores típicos de fotopolímeros
+curados (marcados así en la nota de cada material).
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |

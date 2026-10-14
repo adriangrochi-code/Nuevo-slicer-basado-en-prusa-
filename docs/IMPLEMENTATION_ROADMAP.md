@@ -269,7 +269,7 @@ los datos del usuario.
 Hecho desde la última revisión de este documento: capas curvas guiadas por el FEA (9c) y relleno entrelazado (9d);
 capas que siguen las caras superiores; modo no planar Automático (acabado y menos soportes); no planar con solo dos
 medidas del cabezal; Z anti-aliasing con no planar; arc overhangs con velocidad, distancia máxima y calibraciones;
-orientación automática FFF y SLA; proyectos de Bambu Studio / OrcaSlicer.
+orientación automática FFF y SLA; proyectos de Bambu Studio / OrcaSlicer; Ingeniería con impresoras de resina (paredes y relleno interior de la pieza ahuecada).
 
 ## 10. Decisiones pendientes (para el usuario)
 
