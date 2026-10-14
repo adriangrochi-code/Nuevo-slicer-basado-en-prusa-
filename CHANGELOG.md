@@ -12,6 +12,11 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Impresoras de cinta**: perfiles de la BLACKBELT 3D (y varioDrive, 15° a 45°, de BlackBelt Cura), la Creality CR-30
+  (de Creality Print) y la IdeaFormer IR3 V2 (de VertexSlice): 42 impresoras. Nueva opción «La cinta es el eje Z»
+  (activada: así son estas tres); la cinta arranca en 0 en la primera capa.
+- **Más impresoras de los laminadores de los fabricantes**: 11 modelos nuevos de Creality Print (K3, Z2, K1C y K1 Max
+  2025, serie GS, Sonic, Ender-3 V3 Mega) y uno de Elegoo Slicer.
 - **Dividir para que entre en la impresora** (clic derecho en el objeto, o el aviso que aparece al cargar un objeto
   más grande que la impresora): corta el objeto en las piezas justas para el volumen de impresión, donde su sección
   es más chica, y pone encastres en cada corte (pernos aparte o espigas), más finos donde las paredes no dan para el

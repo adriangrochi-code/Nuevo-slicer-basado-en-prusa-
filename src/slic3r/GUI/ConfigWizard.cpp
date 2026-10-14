@@ -1991,9 +1991,11 @@ PageBrands::PageBrands(ConfigWizard *parent)
     auto *p = wizard_p();
 
     // Brands: the bundles of the repositories shown by the wizard. The bundles converted from OrcaSlicer and from
-    // UltiMaker Cura, named "<brand> (OrcaSlicer)" / "<brand> (Cura)" when there is another bundle of the brand, are
-    // listed under the brand.
-    static const std::vector<std::string> CONVERTED_SUFFIXES { " (OrcaSlicer)", " (Cura)" };
+    // UltiMaker Cura, named "<brand> (OrcaSlicer)" / "<brand> (Cura)" when there is another bundle of the brand, and
+    // the belt printers of a brand ("Creality (Belt)") and the printers taken from the slicers of the makers
+    // ("Creality (Creality Print)") are listed under the brand.
+    static const std::vector<std::string> CONVERTED_SUFFIXES { " (OrcaSlicer)", " (Cura)", " (Belt)", " (Creality Print)",
+                                                               " (Elegoo Slicer)" };
     std::map<std::wstring, size_t> brand_by_name;
     for (const auto &repo : p->repositories)
         for (const auto &[id, bundle] : p->bundles) {

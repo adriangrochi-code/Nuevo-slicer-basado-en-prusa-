@@ -76,6 +76,11 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
 | Origen | Versión | Licencia | Notas |
 |---|---|---|---|
 | Perfiles de impresoras, procesos y filamentos de OrcaSlicer (con imágenes y camas) | commit `1d577ea` | AGPL-3.0 | Convertidos con `tools/profiles/convert_orca_profiles.py`. Ver `docs/PRINTER_PROFILES.md`. |
+| Impresoras de cinta de BlackBelt Cura (`resources/definitions/blackbelt*.def.json`, `resources/variants/blackbelt*`) | commit `4e18b19` | LGPL-3.0 (el mismo texto, `resources/licenses/Cura-LGPL-3.0.txt`) | Datos de la máquina y G-code de inicio y fin, convertidos con `tools/profiles/make_belt_profiles.py` a `resources/profiles/Belt_BLACKBELT_3D.ini`. |
+| Perfil de la IdeaFormer IR3 V2 de VertexSlice (`resources/profiles/IdeaFormer`) | commit `1d6ad28` | AGPL-3.0 | Impresora, proceso y filamentos, convertidos con `tools/profiles/make_belt_profiles.py` a `resources/profiles/Belt_IdeaFormer.ini`. |
+| Perfiles de Creality Print (`resources/profiles/Creality`: CR-30 y los modelos que faltaban) | commit `59ae8cb` | AGPL-3.0 | `make_belt_profiles.py` (CR-30, `Belt_Creality.ini`) y `convert_orca_profiles.py --prefix CrealityPrint_` (`CrealityPrint_Creality.ini`). |
+| Perfil de la M3D Enabler D8500 MM de Elegoo Slicer | commit `2d507e3` | AGPL-3.0 | `convert_orca_profiles.py --prefix ElegooSlicer_` (`ElegooSlicer_M3D.ini`). |
+| Eje de la cinta de la Creality CR-30 en su firmware (`Marlin/Configuration.h`, `Z_MAX_POS 20000000`) | commit `a916aa2` | GPL-3.0 (solo un dato de referencia; no se copia nada) | Documentación. |
 | Definiciones de impresoras de UltiMaker Cura (`resources/definitions`, `resources/extruders`) | commit `5bea2f8` | LGPL-3.0 (compatible con AGPL-3.0; texto en `resources/licenses/Cura-LGPL-3.0.txt`) | Solo los datos de la máquina, convertidos con `tools/profiles/convert_cura_profiles.py` a `resources/profiles/Cura_*.ini`. Ver `docs/PRINTER_PROFILES.md`. |
 
 ## 3. Dependencias incluidas (`bundled_deps/`)

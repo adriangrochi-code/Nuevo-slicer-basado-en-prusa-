@@ -55,6 +55,17 @@ TEST_CASE("Vendor bundles converted from UltiMaker Cura load", "[VendorBundles]"
     CHECK(load_bundles("Cura_", 100) > 600);
 }
 
+TEST_CASE("Vendor bundles of belt printers load", "[VendorBundles]")
+{
+    CHECK(load_bundles("Belt_", 2) > 40);
+}
+
+TEST_CASE("Vendor bundles converted from Creality Print and Elegoo Slicer load", "[VendorBundles]")
+{
+    CHECK(load_bundles("CrealityPrint_", 0) > 30);
+    CHECK(load_bundles("ElegooSlicer_", 0) > 0);
+}
+
 // Names of the filaments of a bundle as they are loaded (the filaments of a templates bundle get " @Template").
 static std::set<std::string> loaded_filaments(const fs::path &path, PresetBundle &bundle)
 {
@@ -89,7 +100,8 @@ TEST_CASE("Default filaments of the converted printers exist as loaded", "[Vendo
     for (const fs::directory_entry &entry : fs::directory_iterator(profiles)) {
         const std::string file = entry.path().filename().string();
         if (entry.path().extension() != ".ini" || file == "Orca_OrcaFilamentLibrary.ini" ||
-            (file.rfind("Orca_", 0) != 0 && file.rfind("Cura_", 0) != 0))
+            (file.rfind("Orca_", 0) != 0 && file.rfind("Cura_", 0) != 0 && file.rfind("Belt_", 0) != 0 &&
+             file.rfind("CrealityPrint_", 0) != 0 && file.rfind("ElegooSlicer_", 0) != 0))
             continue;
         INFO(file);
         PresetBundle bundle;

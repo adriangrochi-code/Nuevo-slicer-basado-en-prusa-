@@ -32309,8 +32309,8 @@ msgstr "Impresora"
 msgid "Belt printer"
 msgstr "Impresora de cinta"
 
-msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
-msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, Y la cinta (avanza entre capas) y Z a lo largo del cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
+msgid "The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, the belt (it moves between layers) and the gantry. Supports, raft, brim, skirt, wipe tower, sequential printing, spiral vase and arc fitting are not available on a belt."
+msgstr "La impresora imprime sobre una cinta con el cabezal inclinado (Z infinito). La pieza se coloca sobre la cinta como sobre una cama; se lamina en planos paralelos al cabezal y el G-code usa los ejes de la máquina: X a lo ancho de la cinta, la cinta (avanza entre capas) y el cabezal. En la cinta no están disponibles los soportes, la balsa, el borde, la falda, la torre de purga, la impresión secuencial, el modo vaso ni los arcos."
 
 msgid "Gantry angle"
 msgstr "Ángulo del cabezal"
@@ -33670,3 +33670,12 @@ msgstr "El tamaño de impresión es más chico que el margen"
 
 msgid "More pieces than the %1% beds of a project: some may be left outside the beds, to be printed in another project."
 msgstr "Más piezas que las %1% camas de un proyecto: algunas pueden quedar fuera de las camas, para imprimirlas en otro proyecto."
+
+msgid "The belt is the Z axis"
+msgstr "La cinta es el eje Z"
+
+msgid "Belt printer: the belt is the Z axis"
+msgstr "Impresora de cinta: la cinta es el eje Z"
+
+msgid "The belt moves with the Z axis of the firmware and the inclined gantry with the Y axis, as in the BlackBelt, Creality CR-30 and IdeaFormer IR3 V2 printers. Off: the belt is the Y axis and the gantry the Z axis."
+msgstr "La cinta se mueve con el eje Z del firmware y el cabezal inclinado con el eje Y, como en las impresoras BlackBelt, Creality CR-30 e IdeaFormer IR3 V2. Desactivado: la cinta es el eje Y y el cabezal el eje Z."
