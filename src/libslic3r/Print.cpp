@@ -102,6 +102,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         // Belt printers: the slicing changes through the transformation of the model in Print::apply().
         "belt_printer",
         "belt_angle",
+        "belt_axis_z",
         "bridge_acceleration",
         "bridge_fan_speed",
         "enable_dynamic_fan_speeds",

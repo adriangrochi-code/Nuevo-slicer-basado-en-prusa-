@@ -1370,7 +1370,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // Tisma, belt printers: from here to the end G-code, the moves are converted to the axes of the machine.
     std::optional<Belt::GCodeTransform> belt_transform;
     if (print.config().belt_printer.value) {
-        belt_transform.emplace(Belt::Frame(print.config().belt_angle.value, print.belt_c_offset()));
+        belt_transform.emplace(Belt::Frame(print.config().belt_angle.value, print.belt_c_offset(), print.config().belt_axis_z.value));
         file.set_belt_transform(&*belt_transform);
     }
 

@@ -25,18 +25,20 @@ namespace Belt {
 //  * world: the part placed on the belt as on a bed: X across the belt, Y along the belt, Z up from the belt.
 //  * slicing: world rotated about X by the angle of the gantry, so that the printing planes are horizontal; the
 //    slicer works in it (a = X, b = in the printing plane, c = across the layers).
-//  * machine: the axes of the firmware: X across the belt, Y the belt, Z along the inclined gantry. A layer is
-//    printed with Y fixed; the belt moves between layers.
+//  * machine: the axes of the firmware: X across the belt, Z the belt and Y along the inclined gantry, as in the
+//    BlackBelt, Creality CR-30 and IdeaFormer IR3 V2 printers (belt_axis_z); or Y the belt and Z the gantry. A layer
+//    is printed with the belt fixed; the belt moves between layers.
 // The angle is the one between the printing plane (the gantry) and the belt, in degrees (usually 45).
 struct Frame
 {
-    explicit Frame(double angle_deg, double c_offset = 0.);
+    explicit Frame(double angle_deg, double c_offset = 0., bool belt_on_z = false);
 
     // Rotation from world to slicing (proper rotation, no mirroring).
     Transform3d world_to_slicing() const;
-    // From the slicing frame (as written by the slicer, after the shift c_offset) to the machine axes.
+    // From the slicing frame (as written by the slicer, after the shift c_offset) to the machine axes. The belt is 0 at
+    // the first layer.
     Vec3d       slicing_to_machine(const Vec3d &p) const;
-    // From the machine axes to the world (preview of the G-code).
+    // From the machine axes to the world (preview of the G-code): the part is shown from the start of the belt.
     Vec3d       machine_to_world(const Vec3d &m) const;
     // Normal of the printing planes in the world (the direction in which the layers are stacked).
     Vec3d       layer_normal_world() const;
@@ -46,11 +48,14 @@ struct Frame
     double cos_a;
     // The slicing frame is shifted along c so that the part starts at c = 0 (the first layer): c_world = c + c_offset.
     double c_offset;
+    // The belt is the Z axis of the machine and the gantry the Y axis (otherwise the other way round).
+    bool   belt_on_z;
 };
 
 // Belt printing enabled in a print configuration, and its angle.
 bool   enabled(const DynamicPrintConfig &config);
 double angle(const DynamicPrintConfig &config);
+bool   belt_on_z(const DynamicPrintConfig &config);
 
 // Prepares a copy of the model for slicing on a belt printer: the instances are rotated into the slicing frame and
 // shifted so that the lowest point of the parts is at c = 0 (returned in c_offset). The settings which do not apply to
@@ -71,6 +76,8 @@ private:
     Frame m_frame;
     // Current position in the slicing frame (as written by the slicer).
     Vec3d m_pos { Vec3d::Zero() };
+    // Coordinates of m_pos given by the G-code so far.
+    bool  m_known[3] { false, false, false };
     // Last position emitted in machine axes (to emit only the axes which change).
     Vec3d m_last_machine { Vec3d::Zero() };
     bool  m_emitted[3] { false, false, false };

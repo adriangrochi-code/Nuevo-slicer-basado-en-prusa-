@@ -2844,6 +2844,7 @@ void TabPrinter::build_fff()
         optgroup = page->new_optgroup(L("Belt printer"));
         optgroup->append_single_option_line("belt_printer");
         optgroup->append_single_option_line("belt_angle");
+        optgroup->append_single_option_line("belt_axis_z");
 
         // Tisma: print head geometry for the collision check of non-planar layers.
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));

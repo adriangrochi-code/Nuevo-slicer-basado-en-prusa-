@@ -2353,7 +2353,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Belt printer");
     def->tooltip = L("The printer prints on a belt with an inclined gantry (infinite Z). The part is placed on the belt as on a bed; "
                      "it is sliced in planes parallel to the gantry and the G-code uses the axes of the machine: X across the belt, "
-                     "Y the belt (it moves between layers) and Z along the gantry. Supports, raft, brim, skirt, wipe tower, "
+                     "the belt (it moves between layers) and the gantry. Supports, raft, brim, skirt, wipe tower, "
                      "sequential printing, spiral vase and arc fitting are not available on a belt.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
@@ -2367,6 +2367,14 @@ void PrintConfigDef::init_fff_params()
     def->max = 80;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(45.));
+
+    def = this->add("belt_axis_z", coBool);
+    def->label = L("The belt is the Z axis");
+    def->full_label = L("Belt printer: the belt is the Z axis");
+    def->tooltip = L("The belt moves with the Z axis of the firmware and the inclined gantry with the Y axis, as in the BlackBelt, "
+                     "Creality CR-30 and IdeaFormer IR3 V2 printers. Off: the belt is the Y axis and the gantry the Z axis.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(true));
 
     // Tisma: geometry of the print head for the collision check of non-planar layers.
     def = this->add("nonplanar_head_clearance_height", coFloat);

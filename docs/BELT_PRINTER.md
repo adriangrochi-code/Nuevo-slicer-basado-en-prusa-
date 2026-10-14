@@ -10,6 +10,9 @@ Configuración de impresora → General → **Impresora de cinta**:
 |---|---|---|
 | Impresora de cinta | `belt_printer` | sí / no |
 | Ángulo del cabezal | `belt_angle` | 10–80°, por defecto 45° |
+| La cinta es el eje Z | `belt_axis_z` | sí (por defecto): cinta = Z, pórtico = Y, como BlackBelt, CR-30 e IR3 V2; no: cinta = Y, pórtico = Z |
+
+Hay perfiles de la BLACKBELT 3D, la Creality CR-30 y la IdeaFormer IR3 V2 (`docs/PRINTER_PROFILES.md`).
 
 La pieza se coloca sobre la cinta como sobre una cama (X a lo ancho, Y a lo largo de la cinta, Z hacia arriba). Conviene
 definir la cama larga en Y (la cinta es infinita).
@@ -24,8 +27,9 @@ El de Cura BlackBelt (LGPLv3), reimplementado en C++ (`src/libslic3r/BeltPrinter
 2. **G-code** (`GCodeGenerator::_do_export`): entre el G-code inicial y el final, cada movimiento G0/G1 se convierte a
    los ejes de la máquina:
    - X: a lo ancho de la cinta.
-   - Y: la cinta. Queda fija durante cada capa y avanza `altura de capa / sen(ángulo)` entre capas.
-   - Z: a lo largo del cabezal inclinado (Z = 0 es la superficie de la cinta).
+   - La cinta (Z, o Y con `belt_axis_z` desactivado): queda fija durante cada capa y avanza
+     `altura de capa / sen(ángulo)` entre capas.
+   - El pórtico (Y, o Z): a lo largo del cabezal inclinado (0 es la superficie de la cinta).
    El G-code inicial y final se escriben tal cual, en los ejes de la máquina. El G-code personalizado de capa y de
    cambio de herramienta se interpreta en el sistema de laminado y se convierte.
 3. **Vista previa** (`GCodeProcessor::finalize`): los tiempos se calculan con los ejes de la máquina; las trayectorias se

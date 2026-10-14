@@ -56,12 +56,13 @@ std::vector<Extrusion> extrusions(const std::string &gcode)
     return out;
 }
 
-DynamicPrintConfig belt_config(double angle)
+DynamicPrintConfig belt_config(double angle, bool belt_on_z = false)
 {
     DynamicPrintConfig config = DynamicPrintConfig::full_print_config();
     config.set_deserialize_strict({
         { "belt_printer", 1 },
         { "belt_angle", angle },
+        { "belt_axis_z", belt_on_z },
         { "layer_height", 0.3 },
         { "first_layer_height", 0.3 },
         { "skirts", 1 },             // disabled by the belt mode
@@ -89,8 +90,18 @@ TEST_CASE("Belt frame round trip", "[Belt]")
             const Vec3d back = frame.machine_to_world(machine);
             CHECK((back - world).norm() < 1e-9);
             // With the slicing frame shifted to start at c = 0.
+            // The belt starts at 0 at the first layer: it is shifted, the gantry is the same.
             const Belt::Frame shifted(angle, 12.5);
-            CHECK((shifted.slicing_to_machine(slicing - Vec3d(0., 0., 12.5)) - machine).norm() < 1e-9);
+            const Vec3d machine_shifted = shifted.slicing_to_machine(slicing - Vec3d(0., 0., 12.5));
+            CHECK(machine_shifted.x() == Approx(machine.x()));
+            CHECK(machine_shifted.y() == Approx(machine.y() - 12.5 / frame.sin_a));
+            CHECK(machine_shifted.z() == Approx(machine.z()));
+            // The belt on Z, the gantry on Y (BlackBelt, CR-30, IR3 V2): the same axes swapped.
+            const Belt::Frame on_z(angle, 0., true);
+            const Vec3d machine_z = on_z.slicing_to_machine(slicing);
+            CHECK(machine_z.y() == Approx(machine.z()));
+            CHECK(machine_z.z() == Approx(machine.y()));
+            CHECK((on_z.machine_to_world(machine_z) - world).norm() < 1e-9);
         }
     }
 }
@@ -102,17 +113,18 @@ TEST_CASE("Belt G-code transform", "[Belt]")
     const double s = std::sqrt(0.5);
     std::ostringstream expected;
     char buf[200];
-    std::snprintf(buf, sizeof(buf), "M104 S200\nG1 X0.000 Y%.3f Z%.3f F600\nG1 X10.000 Z%.3f E0.5 ; perimeter\nG1 X20.000 E1\nG10\n",
-                  0.3 / s, 0.3, -5. + 0.3);
+    // The first move gives only the layer: the belt moves, X and the gantry wait for their coordinates.
+    std::snprintf(buf, sizeof(buf), "M104 S200\nG1 Y%.3f F600\nG1 X10.000 Z%.3f E0.5 ; perimeter\nG1 X20.000 E1\nG10\n",
+                  0.3 / s, -5. + 0.3);
     CHECK(out == std::string(buf));
 }
 
 TEST_CASE("Belt printer: the part is printed on the belt", "[Belt]")
 {
-    for (double angle : { 45., 30. }) {
+    for (const auto [angle, belt_on_z] : { std::pair{ 45., false }, std::pair{ 30., false }, std::pair{ 45., true } }) {
         Print print;
         Model model;
-        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, belt_config(angle));
+        Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, belt_config(angle, belt_on_z));
         print.process();
         const std::string gcode = Test::gcode(print);
         // Supports and skirt are disabled on a belt.
@@ -120,7 +132,9 @@ TEST_CASE("Belt printer: the part is printed on the belt", "[Belt]")
 
         const std::vector<Extrusion> moves = extrusions(gcode);
         REQUIRE(moves.size() > 100);
-        const Belt::Frame frame(angle);
+        const Belt::Frame frame(angle, 0., belt_on_z);
+        // The machine axis of the belt.
+        const int belt = belt_on_z ? 2 : 1;
         BoundingBoxf3 world;
         int    layer = -1;
         double layer_y = 0.;
@@ -130,18 +144,28 @@ TEST_CASE("Belt printer: the part is printed on the belt", "[Belt]")
             world.merge(frame.machine_to_world(e.machine));
             if (e.layer != layer) {
                 // The belt moves between layers, forward.
-                y_grows = y_grows && e.machine.y() > last_y - 1e-6;
+                y_grows = y_grows && e.machine[belt] > last_y - 1e-6;
                 layer   = e.layer;
-                layer_y = e.machine.y();
+                layer_y = e.machine[belt];
                 last_y  = layer_y;
             } else
-                y_fixed_in_layers = y_fixed_in_layers && std::abs(e.machine.y() - layer_y) < 1e-3;
+                y_fixed_in_layers = y_fixed_in_layers && std::abs(e.machine[belt] - layer_y) < 1e-3;
         }
         CHECK(y_fixed_in_layers);
         CHECK(y_grows);
+        // The belt starts at the first layer (the start G-code sets it to 0), wherever the part is on the bed.
+        CHECK(moves.front().machine[belt] == Approx(0.3 / frame.sin_a).margin(0.01));
+        // No move of the gantry far from the part: the highest point of the cube is 20 mm above the belt.
+        double gantry_max = 0.;
+        std::istringstream lines(gcode);
+        for (std::string line; std::getline(lines, line);)
+            if (line.rfind("G1 ", 0) == 0)
+                if (const size_t pos = line.find(belt_on_z ? " Y" : " Z"); pos != std::string::npos)
+                    gantry_max = std::max(gantry_max, std::atof(line.c_str() + pos + 2));
+        CHECK(gantry_max < 20. / frame.sin_a + 5.);
         // The extrusions fill the cube as placed on the belt (within half a line width), nothing below the belt.
         const Vec3d size = world.size();
-        INFO("angle " << angle << ", size " << size.transpose() << ", min " << world.min.transpose());
+        INFO("angle " << angle << ", belt on Z " << belt_on_z << ", size " << size.transpose() << ", min " << world.min.transpose());
         CHECK(size.x() == Approx(20.).margin(1.));
         CHECK(size.y() == Approx(20.).margin(1.));
         CHECK(size.z() == Approx(20.).margin(1.));

@@ -551,6 +551,7 @@ namespace Slic3r {
         // Tisma, belt printers: angle of the gantry [deg], 0 = not a belt printer. The moves are shown in the world
         // (the part on the belt) instead of the axes of the machine.
         double m_belt_angle { 0. };
+        bool   m_belt_on_z { true };
         GCodeExtrusionRole m_extrusion_role;
         unsigned char m_extruder_id;
         ExtruderColors m_extruder_colors;
