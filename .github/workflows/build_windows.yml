@@ -116,7 +116,7 @@ jobs:
           & "$env:APP_BUILD/tests/slic3rutils/Release/slic3rutils_tests.exe" "[BambuLan],[BambuLanFake]"
           $code = $LASTEXITCODE
           Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
-          if ($code -ne 0) { Get-Content "$fake.err" -ErrorAction SilentlyContinue; throw "Bambu LAN tests failed" }
+          if ($code -ne 0) { Get-Content "$fake.log", "$fake.err" -ErrorAction SilentlyContinue; throw "Bambu LAN tests failed" }
 
       - name: Package
         shell: pwsh

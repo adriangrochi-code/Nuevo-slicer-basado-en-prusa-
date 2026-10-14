@@ -600,7 +600,32 @@ bool BambuLanClient::send_command(const std::string &json, std::string &error) c
     return ok;
 }
 
+// Serial number of the printer, the common name of the certificate of its FTPS server; empty when unknown.
+static std::string ftps_certificate_name(const std::string &host, int port, const std::string &cafile)
+{
+    TlsStream   tls;
+    std::string error;
+    return tls.open(host, port, cafile, error) ? tls.peer_common_name() : std::string();
+}
+
 bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, const ProgressFn &progress, std::string &error) const
+{
+    // libcurl resumes the TLS session of the control connection on the data connection (the printers require it, see
+    // below) only when the name of the server was verified, at least since curl 8.1x. The name in the certificate is
+    // the serial number, so connect to "<serial>" and route it to the address of the printer.
+    const std::string serial = ftps_certificate_name(host, ftps_port, cafile);
+    int  code = 0;
+    bool ok   = upload_file(file, name, serial, progress, error, code);
+    if (!ok && !serial.empty() && code == CURLE_PEER_FAILED_VERIFICATION) {
+        // A certificate whose name does not match its serial number: upload without checking the name.
+        BOOST_LOG_TRIVIAL(warning) << "Bambu Lab: " << error << "; uploading without checking the name";
+        ok = upload_file(file, name, std::string(), progress, error, code);
+    }
+    return ok;
+}
+
+bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, const std::string &serial,
+                                 const ProgressFn &progress, std::string &error, int &code) const
 {
     FILE *f = boost::nowide::fopen(file.string().c_str(), "rb");
     if (f == nullptr) {
@@ -608,7 +633,14 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
         return false;
     }
     CURL *curl = curl_easy_init();
-    const std::string url = "ftps://" + host + ":" + std::to_string(ftps_port) + "/" + name;
+    const std::string port = std::to_string(ftps_port);
+    const std::string url  = "ftps://" + (serial.empty() ? host : serial) + ":" + port + "/" + name;
+    curl_slist *connect_to = nullptr;
+    if (!serial.empty()) {
+        const std::string address = host.find(':') != std::string::npos && host.front() != '[' ? "[" + host + "]" : host;
+        connect_to = curl_slist_append(connect_to, (serial + ":" + port + ":" + address + ":" + port).c_str());
+        curl_easy_setopt(curl, CURLOPT_CONNECT_TO, connect_to);
+    }
     char errbuf[CURL_ERROR_SIZE] = "";
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_USERNAME, "bblp");
@@ -619,7 +651,7 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, curl_off_t(fs::file_size(file)));
     curl_easy_setopt(curl, CURLOPT_FTP_USE_EPSV, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, serial.empty() ? 0L : 2L);
     if (!cafile.empty())
         curl_easy_setopt(curl, CURLOPT_CAINFO, cafile.c_str());
     set_no_revoke(curl);
@@ -636,7 +668,9 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
     const CURLcode res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
+    curl_slist_free_all(connect_to);
     fclose(f);
+    code = int(res);
     if (res == CURLE_OK)
         return true;
     if (res == CURLE_ABORTED_BY_CALLBACK)

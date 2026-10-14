@@ -44,7 +44,12 @@ convertidos de OrcaSlicer ya lo traen).
   datos reanude la sesión TLS de la de control («SSL connection failed: session reuse required», informado en el
   [foro de Bambu Lab](https://forum.bambulab.com/t/issues-with-ftp-connection/11518)). Con TLS 1.3 el ticket de
   sesión llega después del saludo y libcurl con GnuTLS no la reanuda (comprobado contra la impresora simulada: 522);
-  por eso la subida usa TLS 1.2, donde basta el ID de sesión del saludo. MQTT no cambia.
+  por eso la subida usa TLS 1.2, donde basta el ID de sesión del saludo. MQTT no cambia. Además, curl 8.21 (el
+  de las dependencias, con OpenSSL o Schannel) solo reanuda la sesión si se verificó el nombre del servidor:
+  la subida lee primero el número de serie del certificado del FTPS (su CN), se conecta al nombre `<serie>`
+  dirigido a la IP de la impresora (`CURLOPT_CONNECT_TO`) y verifica el nombre. Si el certificado no lleva la serie
+  como nombre, repite la subida sin verificar el nombre (comprobado con curl 8.21 + OpenSSL 4.0.1: sin verificar
+  el nombre, 522; verificándolo, la subida termina).
 - La respuesta a `PASV` trae la dirección 0.0.0.0 ([foro](https://forum.bambulab.com/t/we-can-now-connect-to-ftp-on-the-p1-and-a1-series/6464?page=3));
   libcurl usa la dirección de la conexión de control (`CURLOPT_FTP_SKIP_PASV_IP`, activo por defecto).
 - Código: `src/slic3r/Utils/BambuLanClient.*` (protocolo, sin GUI) y `BambuLan.*` (host de impresión).

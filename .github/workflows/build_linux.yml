@@ -115,7 +115,7 @@ jobs:
           fake="$RUNNER_TEMP/bambu-fake"
           python3 tools/bambu/fake_printer.py --dir "$fake" > "$fake.log" 2>&1 &
           timeout 60 bash -c "until grep -q 'fake printer' '$fake.log'; do sleep 0.5; done" || { cat "$fake.log"; exit 1; }
-          TISMA_BAMBU_FAKE="$fake" build/tests/slic3rutils/slic3rutils_tests "[BambuLanFake]"
+          TISMA_BAMBU_FAKE="$fake" build/tests/slic3rutils/slic3rutils_tests "[BambuLanFake]" || { cat "$fake.log"; exit 1; }
 
       - name: AppImage
         run: |

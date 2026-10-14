@@ -189,6 +189,7 @@ class FtpsHandler(socketserver.StreamRequestHandler):
                         passive.close()
                         passive = None
                         self.reply("522 SSL connection failed: session reuse required")
+                        print("FTPS data connection without TLS session reuse: 522", flush=True)
                         continue
                     path = os.path.join(sdcard, os.path.basename(arg))
                     with open(path, "wb") as f:

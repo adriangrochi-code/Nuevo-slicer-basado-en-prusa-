@@ -165,8 +165,10 @@ TEST_CASE("Bambu LAN against the fake printer", "[.][BambuLanFake]")
                 out << "G1 X" << i % 200 << " Y10 E0.1\n";
         }
         size_t last_progress = 0;
-        REQUIRE(client.print(gcode, "tisma bambu.gcode", true, false,
-                             [&last_progress](size_t sent, size_t) { last_progress = sent; return true; }, error));
+        const bool printed = client.print(gcode, "tisma bambu.gcode", true, false,
+                                          [&last_progress](size_t sent, size_t) { last_progress = sent; return true; }, error);
+        INFO(error);
+        REQUIRE(printed);
         CHECK(last_progress > 0);
         const fs::path uploaded = fs::path(dir) / "sdcard" / "tisma_bambu.gcode.3mf";
         REQUIRE(fs::exists(uploaded));
