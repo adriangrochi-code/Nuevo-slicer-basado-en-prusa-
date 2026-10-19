@@ -96,6 +96,12 @@ Solo valores numéricos de las hojas de datos técnicas de los fabricantes (no s
 Las hojas no dan densidad ni coeficiente de Poisson: se usan 1,15 g/cm³ y 0,35, valores típicos de fotopolímeros
 curados (marcados así en la nota de cada material).
 
+### Código adaptado de PrusaSlicer 3.0
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| Shaders y parámetros del render de PrusaSlicer 3.0 (`resources/shaders/140/ao_*.fs`, `gbuffer_ao.fs`, `Scene.cpp`, `LightingHelper.hpp`, `GraphicsSettings.hpp`) | 3.0.0-alpha12 | AGPL-3.0, Copyright (c) Prusa Research (la misma que Tisma) | Sombras, oclusión ambiental, codificación de normales y PBR adaptados en `resources/shaders/140/tisma_*.fs` y `src/slic3r/GUI/TismaShading.cpp`, con la cita en cada archivo. Ver `docs/RENDER.md`. |
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |

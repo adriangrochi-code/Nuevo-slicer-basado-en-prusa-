@@ -68,6 +68,8 @@ namespace Slic3r {
 		{"classic",     TismaRenderClassic},
 		{"per_pixel",   TismaRenderPerPixel},
 		{"shadows",     TismaRenderShadows},
+		{"ambient_occlusion", TismaRenderAmbientOcclusion},
+		{"pbr",         TismaRenderPBR},
 	};
 
 	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaRenderQualityMode)
@@ -502,13 +504,18 @@ void PreferencesDialog::build()
 		append_enum_option<TismaRenderQualityMode>(m_optgroup_camera, GUI::TismaShading::CONFIG_KEY,
 			L("Rendering quality"),
 			L("Quality of the 3D view of the objects, of the bed and of the G-code preview. "
-			  "Classic: lighting per vertex, as Tisma Slicer 2.9. "
+			  "Classic: lighting per vertex, as PrusaSlicer 2.9. "
 			  "Per pixel: smooth lighting and highlights, rounded toolpaths. "
-			  "Shadows: per pixel lighting and shadows of the main light (needs a faster graphics card)."),
+			  "Shadows: per pixel lighting and shadows of the main light. "
+			  "Ambient occlusion: shadows and darker corners, joints and contacts with the bed. "
+			  "Realistic materials: ambient occlusion and physically based lighting, glossier \"Silk\" and rougher \"Matte\" filaments. "
+			  "The last modes need a faster graphics card."),
 			new ConfigOptionEnum<TismaRenderQualityMode>(TismaRenderQualityMode(int(GUI::TismaShading::configured_quality()))),
 			{ { "classic",   L("Classic") },
 			  { "per_pixel", L("Per pixel") },
-			  { "shadows",   L("Shadows") }
+			  { "shadows",   L("Shadows") },
+			  { "ambient_occlusion", L("Ambient occlusion") },
+			  { "pbr",       L("Realistic materials") }
 			});
 	}
 

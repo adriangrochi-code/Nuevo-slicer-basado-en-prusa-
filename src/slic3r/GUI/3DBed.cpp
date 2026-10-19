@@ -212,6 +212,66 @@ void Bed3D::render_for_picking(GLCanvas3D& canvas, const Transform3d& view_matri
     render_internal(canvas, view_matrix, projection_matrix, bottom, scale_factor, false, true, false);
 }
 
+void Bed3D::render_gbuffer(const Transform3d& view_matrix, const Transform3d& projection_matrix)
+{
+    end_gbuffer_frame();
+    TismaShading* tisma_shading = TismaShading::current();
+    if (tisma_shading == nullptr || !tisma_shading->in_gbuffer())
+        return;
+    // Beds drawn by render_default() (no model nor texture, or overlapping models) stay in the forward rendering: they
+    // are transparent.
+    if ((m_texture_filename.empty() && m_model_filename.empty()) ||
+        (m_models_overlap && s_multiple_beds.get_number_of_beds() + int(s_multiple_beds.should_show_next_bed()) > 1))
+        return;
+    if (!m_model_filename.empty())
+        init_internal_model_from_file();
+    const bool model = !m_model.model.get_filename().empty();
+    // The texture once loaded (the forward rendering loads it).
+    const GLuint tex_id = (GLuint)(m_temp_texture.get_id() != 0 ? m_temp_texture.get_id() : m_texture.get_id());
+    const bool texture = !m_texture_filename.empty() && tex_id != 0 && m_texture.get_source() == m_texture_filename &&
+                         !m_texture.unsent_compressed_data_available();
+    if (!model && !texture)
+        return;
+    GLShaderProgram* texture_shader = texture ? wxGetApp().get_shader("printbed") : nullptr;
+    if (texture)
+        init_triangles();
+
+    const bool is_preview = wxGetApp().plater()->is_preview_shown();
+    const int  active_bed = s_multiple_beds.get_active_bed();
+    std::vector<int> beds;
+    if (is_preview)
+        beds.push_back(active_bed);
+    else
+        for (int i = 0; i < s_multiple_beds.get_number_of_beds() + int(s_multiple_beds.should_show_next_bed()); ++i)
+            beds.push_back(i);
+
+    glsafe(::glEnable(GL_DEPTH_TEST));
+    for (int i : beds) {
+        Transform3d mat = view_matrix;
+        mat.translate(s_multiple_beds.get_bed_translation(i));
+        const bool is_active = i == active_bed;
+        if (model) {
+            m_model.model.set_color(is_active ? DEFAULT_MODEL_COLOR : DISABLED_MODEL_COLOR);
+            render_model(mat, projection_matrix);
+        }
+        if (texture_shader != nullptr) {
+            texture_shader->start_using();
+            texture_shader->set_uniform("view_model_matrix", mat);
+            texture_shader->set_uniform("projection_matrix", projection_matrix);
+            texture_shader->set_uniform("transparent_background", !is_active);
+            texture_shader->set_uniform("svg_source", boost::algorithm::iends_with(m_texture.get_source(), ".svg"));
+            tisma_shading->apply(*texture_shader, true, TismaShading::Material::BedPlate);
+            glsafe(::glBindTexture(GL_TEXTURE_2D, tex_id));
+            m_triangles.render();
+            glsafe(::glBindTexture(GL_TEXTURE_2D, 0));
+            texture_shader->stop_using();
+        }
+    }
+    m_model.model.set_color(DEFAULT_MODEL_COLOR);
+    m_gbuffer_model   = model;
+    m_gbuffer_texture = texture_shader != nullptr;
+}
+
 void Bed3D::render_internal(GLCanvas3D& canvas, const Transform3d& view_matrix, const Transform3d& projection_matrix, bool bottom, float scale_factor,
     bool show_texture, bool picking, bool active)
 {
@@ -419,12 +479,13 @@ void Bed3D::render_system(GLCanvas3D& canvas, const Transform3d& view_matrix, co
         return;
     }
 
-    if (!bottom)
+    if (!bottom && !m_gbuffer_model)
         render_model(view_matrix, projection_matrix);
 
-    if (show_texture)
-        render_texture(bottom, canvas, view_matrix, projection_matrix, is_active);
-    else if (bottom)
+    if (show_texture) {
+        if (bottom || !m_gbuffer_texture)
+            render_texture(bottom, canvas, view_matrix, projection_matrix, is_active);
+    } else if (bottom)
         render_contour(view_matrix, projection_matrix);
 }
 
@@ -582,7 +643,7 @@ void Bed3D::render_model(const Transform3d& view_matrix, const Transform3d& proj
             shader->set_uniform("view_normal_matrix", view_normal_matrix);
             TismaShading* tisma_shading = TismaShading::current();
             if (tisma_shading != nullptr)
-                tisma_shading->apply(*shader, true);
+                tisma_shading->apply(*shader, true, TismaShading::Material::BedModel);
             m_model.model.render();
             if (tisma_shading != nullptr)
                 tisma_shading->stop_shadows(*shader);
@@ -599,12 +660,13 @@ void Bed3D::render_custom(GLCanvas3D& canvas, const Transform3d& view_matrix, co
         return;
     }
 
-    if (!bottom)
+    if (!bottom && !m_gbuffer_model)
         render_model(view_matrix, projection_matrix);
 
-    if (show_texture)
-        render_texture(bottom, canvas, view_matrix, projection_matrix, is_active);
-    else if (bottom)
+    if (show_texture) {
+        if (bottom || !m_gbuffer_texture)
+            render_texture(bottom, canvas, view_matrix, projection_matrix, is_active);
+    } else if (bottom)
         render_contour(view_matrix, projection_matrix);
 }
 

@@ -842,6 +842,8 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
             shader->set_uniform("view_model_matrix", view_matrix * world_matrix);
             shader->set_uniform("projection_matrix", projection_matrix);
             shader->set_uniform("view_normal_matrix", view_normal_matrix);
+            if (tisma_set_material)
+                tisma_set_material(*shader, *volume.first);
 
             if (is_left_handed)
                 glsafe(::glFrontFace(GL_CW));
@@ -907,6 +909,8 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
             shader->set_uniform("view_model_matrix", view_matrix * world_matrix);
             shader->set_uniform("projection_matrix", projection_matrix);
             shader->set_uniform("view_normal_matrix", view_normal_matrix);
+            if (tisma_set_material)
+                tisma_set_material(*shader, *volume.first);
             volume.first->render();
 
 #if ENABLE_ENVIRONMENT_MAP

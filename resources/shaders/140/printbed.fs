@@ -42,6 +42,23 @@ float tisma_bed_shadow(vec3 eye_pos)
 
 in vec3 tisma_eye_pos;
 
+// Tisma Slicer (phase 7c): output to the G-buffer of the deferred shading (see src/slic3r/GUI/TismaShading.cpp), disabled
+// by default: the color before lighting, the material in the alpha and the eye normal. Octahedral normal encoding of
+// PrusaSlicer 3.0 (gbuffer_ao.fs, Copyright (c) Prusa Research, AGPLv3).
+uniform bool tisma_gbuffer;
+uniform float tisma_material;
+out vec2 tisma_out_normal;
+
+vec2 tisma_encode_normal(vec3 n)
+{
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);
+}
+
+// Color of the bed model under the texture (DEFAULT_MODEL_COLOR of src/slic3r/GUI/3DBed.cpp): in the G-buffer the
+// texture is composed over it, without blending.
+const vec3 TISMA_BED_MODEL_COLOR = vec3(0.169, 0.169, 0.192);
+
 const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
 const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
 
@@ -75,6 +92,14 @@ vec4 non_svg_color()
 void main()
 {
 	vec4 color = svg_source ? svg_color() : non_svg_color();
+    if (tisma_gbuffer) {
+        vec3 n = normalize(cross(dFdx(tisma_eye_pos), dFdy(tisma_eye_pos)));
+        if (dot(n, tisma_eye_pos) > 0.0)
+            n = -n;
+        out_color = vec4(mix(TISMA_BED_MODEL_COLOR, color.rgb, color.a), tisma_material);
+        tisma_out_normal = tisma_encode_normal(n);
+        return;
+    }
 	color.a = transparent_background ? color.a * 0.5 : color.a;
 	color.rgb *= tisma_bed_shadow(tisma_eye_pos);
 	out_color = color;

@@ -302,6 +302,9 @@ public:
     // Tisma (phase 7): the viewer of the toolpaths (shading) and the toolpaths rendered into the shadow map.
     libvgcode::Viewer& get_libvgcode_viewer() { return m_viewer; }
     void render_toolpaths_for_shadows(const Transform3d& light_view, const Transform3d& light_projection);
+    // Tisma (phase 7c): the toolpaths alone, to the G-buffer of the deferred shading; the next render() does not
+    // render them again.
+    void render_toolpaths_to_gbuffer() { if (has_data()) { render_toolpaths(); m_toolpaths_in_gbuffer = true; } }
 
     bool can_export_toolpaths() const;
 
@@ -380,6 +383,7 @@ public:
 private:
     void load_wipetower_shell(const Print& print);
     void render_toolpaths();
+    bool m_toolpaths_in_gbuffer{ false };
     void render_shells();
     void render_legend(float& legend_height);
 };

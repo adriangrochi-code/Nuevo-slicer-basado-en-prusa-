@@ -32140,12 +32140,8 @@ msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en 
 msgid "Rendering quality"
 msgstr "Calidad de render"
 
-msgid ""
-"Quality of the 3D view of the objects, of the bed and of the G-code preview. "
-"Classic: lighting per vertex, as Tisma Slicer 2.9. Per pixel: smooth "
-"lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and "
-"shadows of the main light (needs a faster graphics card)."
-msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como Tisma Slicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
+msgid "Quality of the 3D view of the objects, of the bed and of the G-code preview. Classic: lighting per vertex, as PrusaSlicer 2.9. Per pixel: smooth lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and shadows of the main light. Ambient occlusion: shadows and darker corners, joints and contacts with the bed. Realistic materials: ambient occlusion and physically based lighting, glossier \"Silk\" and rougher \"Matte\" filaments. The last modes need a faster graphics card."
+msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como PrusaSlicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal. Oclusión ambiental: sombras y rincones, uniones y contactos con la cama más oscuros. Materiales realistas: oclusión ambiental e iluminación física, filamentos «Silk» más brillantes y «Matte» más ásperos. Los últimos modos necesitan una tarjeta gráfica más rápida."
 
 msgid "Per pixel"
 msgstr "Por píxel"
@@ -33754,3 +33750,9 @@ msgstr "Pieza impresa (vaciado y relleno interior del perfil)"
 
 msgid "Walls %1$.1f mm: no room for a cavity (solid)"
 msgstr "Paredes de %1$.1f mm: no queda lugar para una cavidad (maciza)"
+
+msgid "Ambient occlusion"
+msgstr "Oclusión ambiental"
+
+msgid "Realistic materials"
+msgstr "Materiales realistas"

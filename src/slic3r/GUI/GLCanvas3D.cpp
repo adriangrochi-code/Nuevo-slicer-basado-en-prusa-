@@ -2173,13 +2173,28 @@ void GLCanvas3D::render()
     _render_background();
 
     if (! s_multiple_beds.is_autoslicing()) {
-        _render_objects(GLVolumeCollection::ERenderType::Opaque);
+        const bool render_toolpaths = !m_main_toolbar.is_enabled() && current_printer_technology() != ptSLA;
+        // Tisma (phase 7c): deferred shading, the opaque objects, the bed seen from above and the toolpaths go to the
+        // G-buffer and are lit with the ambient occlusion; the rest of the scene is rendered over them.
+        if (m_tisma_shading.begin_gbuffer(camera)) {
+            _render_objects(GLVolumeCollection::ERenderType::Opaque);
+            if (is_looking_downward)
+                m_bed.render_gbuffer(camera.get_view_matrix(), camera.get_projection_matrix());
+            if (render_toolpaths) {
+                m_tisma_shading.apply(m_gcode_viewer.get_libvgcode_viewer());
+                m_gcode_viewer.render_toolpaths_to_gbuffer();
+            }
+            m_tisma_shading.end_gbuffer();
+            m_tisma_shading.render_deferred(camera);
+        } else
+            _render_objects(GLVolumeCollection::ERenderType::Opaque);
         _render_sla_slices();
         _render_selection();
         _render_bed_axes();
         if (is_looking_downward)
             _render_bed(camera.get_view_matrix(), camera.get_projection_matrix(), false);
-        if (!m_main_toolbar.is_enabled() && current_printer_technology() != ptSLA)
+        m_bed.end_gbuffer_frame();
+        if (render_toolpaths)
             _render_gcode();
         _render_objects(GLVolumeCollection::ERenderType::Transparent);
 
@@ -6247,6 +6262,24 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
         }
         shader->start_using();
         m_tisma_shading.apply(*shader, true);
+        // Tisma (phase 7c): material of each volume in the G-buffer: SLA supports and pad, "Silk" and "Matte" filaments.
+        if (m_tisma_shading.in_gbuffer()) {
+            std::vector<TismaShading::Material> extruder_materials;
+            for (const ExtruderFilaments& filaments : wxGetApp().preset_bundle->extruders_filaments)
+                extruder_materials.push_back(TismaShading::part_material(filaments.get_selected_preset_name()));
+            const bool sla = current_printer_technology() == ptSLA;
+            m_volumes.tisma_set_material = [this, extruder_materials, sla](GLShaderProgram& volume_shader, const GLVolume& volume) {
+                TismaShading::Material material = TismaShading::Material::Part;
+                if (volume.is_sla_support() || volume.is_sla_pad())
+                    material = TismaShading::Material::SlaSupport;
+                else if (!sla && volume.extruder_id >= 1 && size_t(volume.extruder_id) <= extruder_materials.size())
+                    material = extruder_materials[size_t(volume.extruder_id) - 1];
+                else if (!sla && volume.extruder_id == 0 && !extruder_materials.empty())
+                    material = extruder_materials.front();
+                m_tisma_shading.set_material(volume_shader, material);
+            };
+        } else
+            m_volumes.tisma_set_material = nullptr;
 
         switch (type)
         {
@@ -6300,7 +6333,7 @@ void GLCanvas3D::_render_objects(GLVolumeCollection::ERenderType type)
 
 void GLCanvas3D::_render_tisma_shadow_map()
 {
-    if (m_tisma_shading.quality() != TismaShading::Quality::Shadows)
+    if (m_tisma_shading.quality() < TismaShading::Quality::Shadows)
         return;
 
     // Casters: the opaque volumes and the toolpaths.

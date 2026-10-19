@@ -52,6 +52,19 @@ uniform bool volume_mirrored;
 uniform mat4 view_model_matrix;
 uniform mat3 view_normal_matrix;
 
+// Tisma Slicer (phase 7c): output to the G-buffer of the deferred shading (see src/slic3r/GUI/TismaShading.cpp), disabled
+// by default: the color before lighting, the material in the alpha and the eye normal. Octahedral normal encoding of
+// PrusaSlicer 3.0 (gbuffer_ao.fs, Copyright (c) Prusa Research, AGPLv3).
+uniform bool tisma_gbuffer;
+uniform float tisma_material;
+out vec2 tisma_out_normal;
+
+vec2 tisma_encode_normal(vec3 n)
+{
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);
+}
+
 in vec3 clipping_planes_dots;
 in vec4 model_pos;
 
@@ -74,6 +87,12 @@ void main()
 
     // First transform the normal into camera space and normalize the result.
     vec3 eye_normal = normalize(view_normal_matrix * triangle_normal);
+
+    if (tisma_gbuffer) {
+        out_color = vec4(color, tisma_material);
+        tisma_out_normal = tisma_encode_normal(eye_normal);
+        return;
+    }
 
     // Compute the cos of the angle between the normal and lights direction. The light is directional so the direction is constant for every vertex.
     // Since these two are normalized the cosine is the dot product. We also need to clamp the result to the [0,1] range.

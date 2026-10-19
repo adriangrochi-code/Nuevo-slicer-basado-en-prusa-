@@ -100,6 +100,15 @@ std::pair<bool, std::string> GLShadersManager::init()
     else
         valid &= append_shader("mm_gouraud", { prefix + "mm_gouraud.vs", prefix + "mm_gouraud.fs" });
 
+#if !SLIC3R_OPENGL_ES
+    // Tisma Slicer (phase 7c): passes of the deferred shading (ambient occlusion, blur, lighting), OpenGL 3.2 or later.
+    if (GUI::wxGetApp().is_gl_version_greater_or_equal_to(3, 2)) {
+        valid &= append_shader("tisma_ssao", { prefix + "tisma_screen.vs", prefix + "tisma_ssao.fs" });
+        valid &= append_shader("tisma_blur", { prefix + "tisma_screen.vs", prefix + "tisma_blur.fs" });
+        valid &= append_shader("tisma_deferred", { prefix + "tisma_screen.vs", prefix + "tisma_deferred.fs" });
+    }
+#endif // !SLIC3R_OPENGL_ES
+
     return { valid, error };
 }
 
