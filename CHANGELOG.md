@@ -12,6 +12,10 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Render con oclusión ambiental y materiales realistas** (Preferencias > Cámara > Calidad de render): dos modos
+  nuevos como los de PrusaSlicer 3.0. «Oclusión ambiental» (el predeterminado) oscurece rincones, uniones y el
+  contacto de las piezas con la cama; «Materiales realistas» agrega iluminación física, con filamentos «Silk» más
+  brillantes y «Matte» más ásperos.
 - **Ingeniería con impresoras de resina**: el análisis estructural de la pieza maciza o ahuecada y la búsqueda del
   espesor de pared y el relleno interior más livianos que aguantan las cargas. Nuevo **relleno interior** de las piezas
   ahuecadas (Print Settings > Hollowing): barras a 45° y verticales que se imprimen sin soportes. Materiales de resina

@@ -57,6 +57,10 @@ private:
     std::vector<std::unique_ptr<GLModel>> m_digits_models;
     std::unique_ptr<GLTexture> m_digits_texture;
 
+    // The model and the texture were rendered to the G-buffer in this frame.
+    bool m_gbuffer_model{ false };
+    bool m_gbuffer_texture{ false };
+
 public:
     Bed3D() = default;
     ~Bed3D() = default;
@@ -81,6 +85,10 @@ public:
     void render(GLCanvas3D& canvas, const Transform3d& view_matrix, const Transform3d& projection_matrix, bool bottom, float scale_factor, bool show_texture);
     void render_axes();
     void render_for_picking(GLCanvas3D& canvas, const Transform3d& view_matrix, const Transform3d& projection_matrix, bool bottom, float scale_factor);
+    // Tisma Slicer (phase 7c): renders the model and the texture of the beds (seen from above) to the G-buffer of the
+    // deferred shading, when they are ready; the next render() does not render them again, until end_gbuffer_frame().
+    void render_gbuffer(const Transform3d& view_matrix, const Transform3d& projection_matrix);
+    void end_gbuffer_frame() { m_gbuffer_model = false; m_gbuffer_texture = false; }
 
 private:
     // Calculate an extended bounding box from axes and current model for visualization purposes.

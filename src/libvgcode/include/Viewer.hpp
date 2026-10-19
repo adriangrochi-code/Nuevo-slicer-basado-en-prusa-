@@ -65,6 +65,8 @@ public:
     // Tisma Slicer (phase 7): per-pixel lighting and shadows of the toolpaths.
     // shadow_map_tex_id: depth texture rendered from the light; eye_to_shadow_matrix: from the eye space of the
     // view matrix given to render() to the clip space of the light. Not used with OpenGL ES.
+    // gbuffer (phase 7c): the toolpaths are rendered to the G-buffer of the deferred shading (the color before
+    // lighting, the material, normalized as id / 255, in the alpha and the eye normal in the second color attachment).
     //
     struct Shading
     {
@@ -72,6 +74,9 @@ public:
         unsigned int shadow_map_tex_id{ 0 };
         Mat4x4 eye_to_shadow_matrix{};
         float shadow_intensity{ 0.75f };
+        bool gbuffer{ false };
+        float segments_material{ 0.0f };
+        float options_material{ 0.0f };
     };
     void set_shading(const Shading& shading);
 

@@ -333,11 +333,13 @@ private:
         int eye_to_shadow_matrix{ -1 };
         int shadow_map{ -1 };
         int shadow_intensity{ -1 };
+        int gbuffer{ -1 };
+        int gbuffer_material{ -1 };
     };
     std::array<ShadingUniforms, 2> m_uni_shading;
     void init_shading_uniforms(ShadingUniforms& uniforms, unsigned int shader_id);
     // Sets the uniforms of the current shader and binds the shadow map, returns the texture to restore.
-    int apply_shading(const ShadingUniforms& uniforms);
+    int apply_shading(const ShadingUniforms& uniforms, float gbuffer_material);
     void restore_shading(int prev_texture);
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //

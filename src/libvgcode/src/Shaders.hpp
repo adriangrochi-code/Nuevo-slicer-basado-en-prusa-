@@ -11,7 +11,8 @@
 namespace libvgcode {
 
 // Tisma Slicer (phase 7): per-pixel lighting and shadows of the toolpaths, enabled by uniforms (see Viewer::set_shading()).
-// Without them the color lit in the vertex shader is used, as in PrusaSlicer.
+// Without them the color lit in the vertex shader is used, as in PrusaSlicer. With gbuffer (phase 7c) the color before
+// lighting, the material and the encoded eye normal are written to the G-buffer of the deferred shading.
 #define TISMA_TOOLPATHS_FRAGMENT_SHADER(EMISSION) \
 "#version 150\n" \
 "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n" \
@@ -32,6 +33,13 @@ namespace libvgcode {
 "in vec3 eye_pos;\n" \
 "in vec3 eye_nrm;\n" \
 "out vec4 fragment_color;\n" \
+"uniform bool gbuffer;\n" \
+"uniform float gbuffer_material;\n" \
+"out vec2 tisma_out_normal;\n" \
+"vec2 encode_normal(vec3 n) {\n" \
+"  n /= (abs(n.x) + abs(n.y) + abs(n.z));\n" \
+"  return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);\n" \
+"}\n" \
 "float shadow_factor(float NdotL) {\n" \
 "  vec4 p = eye_to_shadow_matrix * vec4(eye_pos, 1.0);\n" \
 "  vec3 c = p.xyz / p.w * 0.5 + 0.5;\n" \
@@ -45,6 +53,11 @@ namespace libvgcode {
 "  return 1.0 - shadow_intensity * shadow / 9.0;\n" \
 "}\n" \
 "void main() {\n" \
+"  if (gbuffer) {\n" \
+"    fragment_color = vec4(base_color, gbuffer_material);\n" \
+"    tisma_out_normal = encode_normal(normalize(eye_nrm));\n" \
+"    return;\n" \
+"  }\n" \
 "  if (!per_pixel && !shadows_enabled) {\n" \
 "    fragment_color = vec4(color, 1.0);\n" \
 "    return;\n" \

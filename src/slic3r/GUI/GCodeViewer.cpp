@@ -1278,7 +1278,10 @@ void GCodeViewer::render()
     if (m_viewer.get_extrusion_roles().empty())
         return;
 
-    render_toolpaths();
+    if (m_toolpaths_in_gbuffer)
+        m_toolpaths_in_gbuffer = false;
+    else
+        render_toolpaths();
 
     float legend_height = 0.0f;
     if (m_viewer.get_layers_count() > 0) {

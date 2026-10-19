@@ -175,6 +175,14 @@ bool GLShaderProgram::init_from_texts(const std::string& name, const ShaderSourc
             glsafe(::glAttachShader(m_id, shader_ids[i]));
     }
 
+#if !SLIC3R_OPENGL_ES
+    // Tisma Slicer (phase 7c): outputs of the shaders that can render to the G-buffer of the deferred shading (color,
+    // encoded eye normal), see src/slic3r/GUI/TismaShading.cpp. OpenGL 3.0 or later.
+    if (glBindFragDataLocation != nullptr) {
+        glsafe(::glBindFragDataLocation(m_id, 0, "out_color"));
+        glsafe(::glBindFragDataLocation(m_id, 1, "tisma_out_normal"));
+    }
+#endif // !SLIC3R_OPENGL_ES
     glsafe(::glLinkProgram(m_id));
     GLint params;
     glsafe(::glGetProgramiv(m_id, GL_LINK_STATUS, &params));
