@@ -6,6 +6,7 @@
 #define tisma_fea_ModelSetup_hpp_
 
 #include <string>
+#include <vector>
 
 #include "Analysis.hpp"
 
@@ -39,6 +40,15 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
 // The print configuration is the one of a resin printer (SLA): the part is solid or hollowed (hollowing_enable, with
 // walls of hollowing_min_thickness and the interior infill hollowing_infill_density).
 bool is_resin(const DynamicPrintConfig &print_config);
+
+// Search of the walls and the interior infill of a resin part (optimize_resin()): the wall thicknesses compared [mm]
+// (hollowing_min_thickness is 1 to 10 mm) and the densest interior infill searched (the setting goes up to 60 %).
+extern const std::vector<double> RESIN_WALLS;
+constexpr double RESIN_MAX_INFILL = 0.6;
+// Cell of the interior infill of the object [mm] (the print settings with the overrides of the object).
+double resin_infill_cell(const ModelObject &object, const DynamicPrintConfig &print_config);
+// Lowest interior infill searched: the thinnest struts that print (sla::INFILL_MIN_STRUT) in the cell, at least 5 %.
+double resin_min_infill(double cell);
 
 // Width of the perimeter lines [mm] of the object with the print configuration (a percent is of the layer height, as
 // in PrusaSlicer).
