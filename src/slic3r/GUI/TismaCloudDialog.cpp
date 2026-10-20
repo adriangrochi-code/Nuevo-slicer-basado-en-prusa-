@@ -349,6 +349,8 @@ wxString cloud_error_text(const std::string &error)
         return _L("The session ended: log in again (Configuration > Tisma Cloud account).");
     if (error == "Cancelled")
         return _L("Cancelled.");
+    if (error.find("not verified") != std::string::npos)
+        return _L("Confirm your e-mail first with the code we sent to it (the link below opens the account page).");
     if (error.find("not paid") != std::string::npos)
         return _L("The plan is not paid: pay it on the web site (Configuration > Tisma Cloud account has the link).");
     return wxString::FromUTF8(error);
