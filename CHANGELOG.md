@@ -12,6 +12,13 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Tisma Cloud: laminar y calcular en servidores** (Configuración > Cuenta de Tisma Cloud): con usuario y contraseña
+  de la página web, «Archivo > Exportar > Laminar en la nube y exportar G-code» lamina la placa activa en los
+  servidores, y en Ingeniería «Calcular en la nube» corre el análisis, el relleno mínimo y las paredes de resina allí,
+  con el mismo resultado que en la PC. Nueva herramienta de línea de comandos `tisma-fea` (el análisis de un objeto de
+  un proyecto 3MF) y formato de resultados `.tfea`. El servidor (`server/`) es aparte y no forma parte de Tisma.
+- El laminado por línea de comandos ya no puede seguir con un script de post-procesado sin que alguien lo confirme
+  (sin respuesta es «no»).
 - **Análisis estructural en la tarjeta gráfica** (Vulkan): el multigrid del análisis corre en la GPU cuando hay una
   (Preferencias > General); sin driver de Vulkan sigue en el procesador, con los mismos resultados.
 - **Render con oclusión ambiental y materiales realistas** (Preferencias > Cámara > Calidad de render): dos modos

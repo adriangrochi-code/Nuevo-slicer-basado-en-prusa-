@@ -127,6 +127,12 @@ curados (marcados así en la nota de cada material).
 | vulkan (Khronos Vulkan-Headers `vulkan-sdk-1.3.275.0`, commit `217e93c`: solo las cabeceras C `vulkan.h`, `vk_platform.h`, `vulkan_core.h` y `vk_video/`) | Apache-2.0 OR MIT (`bundled_deps/vulkan/LICENSE.md`); compatible con AGPL-3.0. Para el análisis estructural en la GPU. |
 | volk (`vulkan-sdk-1.3.275.0`, commit `f2a16e3`) | MIT (`bundled_deps/volk/LICENSE.md`). Carga Vulkan al ejecutar: no hace falta el SDK ni el driver para compilar o usar Tisma. |
 
+**Servidor de Tisma Cloud (`server/`).** No forma parte de Tisma: es software propietario aparte (`server/LICENSE`),
+escrito en Python, que no incluye código de PrusaSlicer ni de Tisma y ejecuta `tisma-slicer` y `tisma-fea` como
+programas separados. Sus dependencias (FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx…) y sus licencias están en
+`server/THIRD_PARTY_LICENSES.md`. Tisma no agrega dependencias para el cliente de la nube: usa `Http` (libcurl),
+`nlohmann/json` y `wxSecretStore`, que ya estaban.
+
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 
 Ninguna se ha añadido. Antes de usar cualquiera hay que verificar la licencia de la versión concreta.
