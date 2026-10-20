@@ -81,6 +81,27 @@ Http& TismaCloud::authorize(Http &http) const
     return http.header("Authorization", "Bearer " + m_token).timeout_connect(10);
 }
 
+bool TismaCloud::health(std::string &billing_url, std::string &error)
+{
+    bool ok = false;
+    Http::get(m_url + "/v1/health")
+        .timeout_connect(10)
+        .timeout_max(20)
+        .on_complete([&](std::string body, unsigned) {
+            try {
+                const nlohmann::json j = nlohmann::json::parse(body);
+                billing_url = j.value("billing_url", std::string());
+                ok = j.value("ok", false);
+            } catch (const std::exception &) {
+            }
+            if (! ok)
+                error = "Unexpected answer of the server";
+        })
+        .on_error([&](std::string body, std::string err, unsigned status) { error = api_error(body, err, status); })
+        .perform_sync();
+    return ok;
+}
+
 bool TismaCloud::login(const std::string &email, const std::string &password, const std::string &device,
                        std::string &token, std::string &error)
 {

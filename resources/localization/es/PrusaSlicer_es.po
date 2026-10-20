@@ -33879,3 +33879,9 @@ msgstr "En los servidores de Tisma Cloud (%1%): el análisis, el relleno mínimo
 
 msgid "Log in first: Configuration > Tisma Cloud account."
 msgstr "Primero iniciá sesión: Configuración > Cuenta de Tisma Cloud."
+
+msgid "Create an account or pay the plan on the web site"
+msgstr "Crear una cuenta o pagar el plan en la página web"
+
+msgid "The plan is not paid: pay it on the web site (Configuration > Tisma Cloud account has the link)."
+msgstr "El plan no está pagado: pagalo en la página web (el enlace está en Configuración > Cuenta de Tisma Cloud)."
