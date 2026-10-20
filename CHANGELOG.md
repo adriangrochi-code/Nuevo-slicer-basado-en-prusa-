@@ -17,6 +17,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
   servidores, y en Ingeniería «Calcular en la nube» corre el análisis, el relleno mínimo y las paredes de resina allí,
   con el mismo resultado que en la PC. Nueva herramienta de línea de comandos `tisma-fea` (el análisis de un objeto de
   un proyecto 3MF) y formato de resultados `.tfea`. El servidor (`server/`) es aparte y no forma parte de Tisma.
+- Tisma Cloud: las descargas de G-code y resultados viajan comprimidas (un G-code baja unas 8 veces más rápido) y la
+  ventana de la cuenta enlaza a la página donde se crea la cuenta y se paga el plan.
 - El laminado por línea de comandos ya no puede seguir con un script de post-procesado sin que alguien lo confirme
   (sin respuesta es «no»).
 - **Análisis estructural en la tarjeta gráfica** (Vulkan): el multigrid del análisis corre en la GPU cuando hay una
