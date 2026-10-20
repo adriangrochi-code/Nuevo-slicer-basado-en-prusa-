@@ -119,6 +119,12 @@ curados (marcados así en la nota de cada material).
 | stb_dxt / stb_image | dominio público / MIT |
 | tcbspan | BSL-1.0 |
 
+**Servidor de Tisma Cloud (`server/`).** No forma parte de Tisma: es software propietario aparte (`server/LICENSE`),
+escrito en Python, que no incluye código de PrusaSlicer ni de Tisma y ejecuta `tisma-slicer` y `tisma-fea` como
+programas separados. Sus dependencias (FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx…) y sus licencias están en
+`server/THIRD_PARTY_LICENSES.md`. Tisma no agrega dependencias para el cliente de la nube: usa `Http` (libcurl),
+`nlohmann/json` y `wxSecretStore`, que ya estaban.
+
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 
 Ninguna se ha añadido. Antes de usar cualquiera hay que verificar la licencia de la versión concreta.

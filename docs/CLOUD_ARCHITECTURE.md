@@ -1,15 +1,34 @@
-# Arquitectura de la nube (fases 10 y 11) — propuesta
+# Arquitectura de la nube (fases 10 y 11)
 
-Estado: **propuesta para decidir, no implementada.** Recoge lo hablado con el usuario el 06-10-2026. Los tiempos y
-capacidades son estimaciones hasta medirlos en los equipos reales (ver «Medición»).
+Estado: **v1 implementada el 20-10-2026** (maestro, nodos y cliente en Tisma); el pago en la página web y las mediciones
+en los equipos reales están pendientes. Los tiempos y capacidades son estimaciones hasta medirlos (ver «Medición»).
+
+## Implementación (v1)
+
+- **`server/`** (propietario, aparte de Tisma; ver `server/README.md`): el **maestro** (FastAPI + PostgreSQL) recibe
+  todo lo que llega de internet, controla las cuentas y guarda los trabajos en una cola en la base de datos; los
+  **nodos** se instalan aparte y piden trabajos al maestro. Cada nodo tiene una **lista de prioridades** de clases de
+  trabajo (`slice`, `slice_large`, `fea`, `fea_optimize`) que el administrador cambia desde el maestro: toma la primera
+  clase con trabajos esperando y nunca una que no esté en su lista.
+- **Cuentas**: la página web crea los usuarios (correo y contraseña), elige el plan y registra los pagos («pagado
+  hasta») con la API `/v1/site`. Un plan da horas de cómputo por mes, trabajos simultáneos por usuario, peticiones por
+  minuto y prioridad en la cola. Se cobra el tiempo real que corrió cada trabajo.
+- **Protección**: límite de trabajos simultáneos por usuario, de peticiones por minuto (usuario, nodo, inicio de
+  sesión), de tamaño de los proyectos; los nodos quitan los scripts de post-procesado de los proyectos y corren sin
+  privilegios.
+- **Tisma (AGPL)**: `tisma-fea` (el análisis de un objeto de un 3MF por línea de comandos, con las mismas calidades
+  que la GUI) y el formato de resultados `.tfea` (`src/libtisma_fea/include/tisma_fea/Serialize.hpp`); en la GUI,
+  Configuración > Cuenta de Tisma Cloud, Archivo > Exportar > Laminar en la nube, e Ingeniería > Calcular en la nube.
+- **Cola**: PostgreSQL con `SELECT … FOR UPDATE SKIP LOCKED` en lugar de Valkey: un componente menos y los trabajos
+  no se pierden si el maestro se reinicia.
 
 ## Equipos
 
 | Equipo | Procesador | RAM | GPU | Rol |
 |---|---|---|---|---|
-| **Central** | i5-9400F (6 núcleos / 6 hilos, AVX2) | 8 GB DDR4 (ampliar a 16–32 GB) | GTX 1060 | Entrada, reparto de trabajos y trabajos pesados |
-| **Liviano 1** | i7 móvil 3.ª gen. (2 núcleos / 4 hilos, AVX) | 32 GB DDR3 | — | Trabajos livianos; base de datos y archivos |
-| **Liviano 2** | i7 móvil 3.ª gen. (2 núcleos / 4 hilos, AVX) | 32 GB DDR3 | — | Trabajos livianos; copia de la base y de los archivos |
+| **Central** | i5-9400F (6 núcleos / 6 hilos, AVX2) | 16 GB DDR4 | GTX 1060 6 GB | Entrada, reparto de trabajos y trabajos pesados |
+| **Liviano 1** | i7-3520M (2 núcleos / 4 hilos, AVX) | 16 GB DDR3 | — | Trabajos livianos; copia de la base y de los archivos |
+| **Liviano 2** | i7-3520M (2 núcleos / 4 hilos, AVX) | 16 GB DDR3 | — | Trabajos livianos |
 
 Cada i7 móvil rinde aproximadamente un 30–40 % del i5 en multinúcleo, con mucho menos consumo. Los tres juntos: unas
 1,6–1,8 veces el i5 solo. La RAM no es intercambiable (DDR3 de notebook frente a DDR4 de escritorio).
@@ -42,7 +61,7 @@ El planificador del central estima el costo de cada trabajo **antes** de encolar
 | FEA (cualquier resolución), relleno mínimo, refuerzo, lattice, orientación | Siempre pesado | Pesada (i5) |
 | Detección de fallas (cámaras, tipo Obico) | GPU | Pesada (i5, en la 1060) |
 | Laminado | Triángulos × volumen de la pieza × opciones caras (soportes en árbol, relleno gyroid, alta resolución): costo estimado en segundos del i5 | Liviana si el estimado es < ~15 s en el i5 (~45 s en un i7); pesada si no |
-| Piezas que necesitan más RAM que la libre del i5 | Por tamaño de malla | Liviana (los i7 tienen 32 GB), aunque tarde más |
+| Piezas que necesitan más RAM que la libre del i5 | Por tamaño de malla | Liviana (los i7 tienen 16 GB cada uno), aunque tarde más |
 
 Desborde, para no dejar equipos quietos:
 - Si la cola pesada tiene espera y un trabajo pesado **no necesita GPU** (laminado grande), lo puede tomar un i7 libre.
@@ -81,7 +100,7 @@ con más RAM, puede correr un FEA y un laminado a la vez.
 |---|---|---|
 | Tisma sin interfaz (línea de comandos) | Laminado y FEA | AGPL-3.0 (el código del servicio se publica) |
 | Caddy | Proxy HTTPS | Apache 2.0 |
-| Valkey | Cola | BSD-3 (Redis cambió de licencia; Valkey es la versión libre) |
+| FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx | API del maestro y nodos | MIT / BSD-3 / LGPL-3.0 (psycopg), ver `server/THIRD_PARTY_LICENSES.md` |
 | PostgreSQL | Usuarios, planes, trabajos | PostgreSQL (permisiva) |
 | keepalived | IP de entrada de respaldo | GPL-2.0 (programa aparte) |
 | Docker Compose | Instalación en cada equipo | Apache 2.0 |
@@ -93,8 +112,10 @@ publican con sus cambios (también las optimizaciones para el servidor, como opc
 
 ## Planes (propuesta, sin decidir)
 
-Cobro por créditos de cómputo (1 crédito ≈ 20 s del i5): laminar 1 (placas grandes 3), FEA Rápida/Normal 1, Alta 3,
-Ultra 10, orientación 5, relleno mínimo / refuerzo / lattice 15.
+Mensualidad con horas de cómputo por mes (decidido el 20-10-2026, en lugar de créditos): cada trabajo descuenta el
+tiempo real que corrió en un nodo. Las horas de cada plan se fijan después de medir cuántos trabajos hace cada equipo
+por hora. (Referencia anterior en créditos, 1 crédito ≈ 20 s del i5: laminar 1, placas grandes 3, FEA Rápida/Normal 1,
+Alta 3, Ultra 10, relleno mínimo 15.)
 
 | Plan | Precio (USD/mes) | Créditos | Notas |
 |---|---|---|---|
@@ -102,6 +123,27 @@ Ultra 10, orientación 5, relleno mínimo / refuerzo / lattice 15.
 | Prueba | Gratis | 20 | |
 | Básico | 10 (anual 96) | 1.000 | Precio regional en LATAM; paquetes sueltos de 3–5 USD |
 | Business | 49 con 3 usuarios + 12 por usuario extra | 5.000 + 1.000 por usuario extra, compartidos | Biblioteca de perfiles y materiales del equipo, proyectos compartidos con historial, roles, prioridad, factura, panel de granja con detección de fallas |
+
+## Capacidad estimada (20-10-2026, a confirmar midiendo)
+
+Supuestos, no medidos todavía en los equipos: un i7-3520M rinde ~40 % de un i5-9400F en multinúcleo (estimación;
+confirmar con `build-utils/benchmark_slicing.sh` en cada equipo); los equipos están prendidos todo el mes; se vende
+la mitad de la capacidad para que los picos (noches, fines de semana) no armen cola; en promedio cada usuario usa un
+30 % de las horas de su plan (dato a corregir con el uso real).
+
+- Cómputo por mes: i5 720 h + 2 × 720 h × 0,4 ≈ **1 300 horas-i5**; vendibles (50 %) ≈ **650 horas-i5**.
+- A la vez: 4 trabajos (i5 con 2 ranuras, cada i7 con 1).
+
+| Plan de 10 USD | Usuarios si usan el 30 % | Usuarios si usan todo |
+|---|---|---|
+| 2 h/mes | ~1 080 | ~325 |
+| 3 h/mes | ~720 | ~215 |
+| 5 h/mes | ~430 | ~130 |
+| 10 h/mes | ~215 | ~65 |
+
+La subida de 32 Mbps (~4 MB/s) alcanza para ~1 400 G-codes de 10 MB por hora: no es el límite. El límite es el
+cómputo en las horas pico. El tiempo de un i7 hoy se cobra igual que el del i5: conviene un factor de velocidad por
+nodo para cobrar lo mismo por el mismo trabajo.
 
 ## Aceleración del FEA (fase propuesta)
 
@@ -114,4 +156,4 @@ Ultra 10, orientación 5, relleno mínimo / refuerzo / lattice 15.
 ## Medición (antes de fijar precios)
 
 En cada equipo: `build-utils/benchmark_slicing.sh` (laminado) y `libtisma_fea_tests "[.FEA-bench]"` (FEA con 60 000,
-250 000 y 1,2 M de vóxeles). Con eso se ajustan la tabla de créditos y el umbral entre colas.
+250 000 y 1,2 M de vóxeles). Con eso se ajustan las horas de los planes y el umbral entre colas.
