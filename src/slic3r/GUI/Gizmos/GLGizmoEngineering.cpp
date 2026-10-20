@@ -20,8 +20,11 @@
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Optimize.hpp>
 #include <tisma_fea/Ribs.hpp>
+#include <tisma_fea/Serialize.hpp>
 
+#include <boost/filesystem/operations.hpp>
 #include <boost/log/trivial.hpp>
+#include <nlohmann/json.hpp>
 
 #include "slic3r/GUI/Camera.hpp"
 #include "slic3r/GUI/FeaMaterialsDialog.hpp"
@@ -36,6 +39,7 @@
 #include "slic3r/GUI/NotificationManager.hpp"
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/Tab.hpp"
+#include "slic3r/GUI/TismaCloudDialog.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/Gizmos/GLGizmosCommon.hpp"
 
@@ -297,6 +301,7 @@ void GLGizmoEngineering::on_set_state()
         m_result_models_dirty = true;
         if (const std::string q = wxGetApp().app_config->get("tisma_fea_quality"); ! q.empty())
             m_quality = Quality(std::clamp(std::atoi(q.c_str()), 0, 3));
+        m_cloud = wxGetApp().app_config->get("tisma_fea_cloud") == "1";
         if (const ModelObject *mo = model_object()) {
             m_edit_temperature = float(mo->engineering.temperature);
             m_edit_safety      = float(mo->engineering.safety_factor);
@@ -523,6 +528,10 @@ void GLGizmoEngineering::start_analysis()
     if (! m_as_printed)
         input.setup.infill = Fea::InfillModel();
     m_job_optimize = false;
+    if (m_cloud) {
+        start_cloud("analyze", ! m_as_printed, true, false);
+        return;
+    }
     m_cancel   = false;
     m_running  = true;
     m_progress = 0;
@@ -551,6 +560,11 @@ void GLGizmoEngineering::start_optimization()
     // The current infill of the object, to compare.
     m_current_infill_mass = 0.;
     m_job_optimize = true;
+    if (m_cloud) {
+        m_opt_ribs_tried = m_opt_ribs;
+        start_cloud("lightest-infill", false, m_opt_zones, m_opt_ribs);
+        return;
+    }
     m_cancel   = false;
     m_running  = true;
     m_progress = 0;
@@ -684,18 +698,6 @@ bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input, JobSize s
     return true;
 }
 
-namespace {
-// Voxels of the qualities Fast and Normal.
-constexpr size_t FAST_VOXELS   = 20000;
-constexpr size_t NORMAL_VOXELS = 60000;
-// Limits of the number of voxels: one analysis (about a minute with a million voxels on 8 cores) and the jobs of many
-// analyses (the lightest infill runs about 20).
-constexpr double MAX_VOXELS_SINGLE = 1.2e6;
-constexpr double MAX_VOXELS_MANY   = 2.5e5;
-// Voxel of the qualities High and Ultra in line widths.
-double quality_line_widths(int quality) { return quality == 3 ? 1. : 2.; }
-}
-
 void GLGizmoEngineering::estimate_quality(const ModelObject &object, double &h, double &voxels) const
 {
     const int idx = std::clamp(instance_idx(), 0, int(object.instances.size()) - 1);
@@ -706,10 +708,10 @@ void GLGizmoEngineering::estimate_quality(const ModelObject &object, double &h, 
                                (object.instances[idx]->get_matrix() * v->get_matrix()).matrix().block<3, 3>(0, 0).determinant());
     volume = std::max(volume, 1e-9);
     if (m_quality == Quality::Fast || m_quality == Quality::Normal) {
-        voxels = double(m_quality == Quality::Fast ? FAST_VOXELS : NORMAL_VOXELS);
+        voxels = double(m_quality == Quality::Fast ? Fea::FAST_VOXELS : Fea::NORMAL_VOXELS);
         h = std::cbrt(volume / voxels);
     } else {
-        h = quality_line_widths(int(m_quality)) * Fea::line_width(object, wxGetApp().preset_bundle->full_config());
+        h = Fea::quality_line_widths(m_quality) * Fea::line_width(object, wxGetApp().preset_bundle->full_config());
         voxels = volume / (h * h * h);
     }
 }
@@ -717,19 +719,12 @@ void GLGizmoEngineering::estimate_quality(const ModelObject &object, double &h, 
 void GLGizmoEngineering::apply_quality(Fea::ModelAnalysisInput &input, JobSize size)
 {
     m_quality_note.clear();
-    const double max_voxels = size == JobSize::Single ? MAX_VOXELS_SINGLE : MAX_VOXELS_MANY;
-    const double volume = std::max(std::abs(double(its_volume(input.mesh))), 1e-9);
-    double h = 0.;
-    switch (m_quality) {
-    case Quality::Fast:   h = std::cbrt(volume / double(FAST_VOXELS)); break;
-    case Quality::Normal: h = std::cbrt(volume / double(NORMAL_VOXELS)); break;
-    default:              h = quality_line_widths(int(m_quality)) * input.line_width; break;
-    }
-    if (volume / (h * h * h) > max_voxels) {
-        h = std::cbrt(volume / max_voxels);
+    const double max_voxels = size == JobSize::Single ? Fea::MAX_VOXELS_SINGLE : Fea::MAX_VOXELS_MANY;
+    bool limited = false;
+    const double h = Fea::quality_voxel_size(m_quality, its_volume(input.mesh), input.line_width, max_voxels, &limited);
+    if (limited)
         m_quality_note = GUI::format(_u8L("Limited to %1% voxels of %2$.2f mm (%3$.1f line widths)."),
                                      size_t(max_voxels), h, h / std::max(input.line_width, 1e-3));
-    }
     input.setup.voxel_size = h;
 }
 
@@ -752,6 +747,85 @@ template<class T> void GLGizmoEngineering::launch(std::function<T()> job, std::o
             }
         });
     });
+}
+
+bool GLGizmoEngineering::start_cloud(const std::string &mode, bool solid, bool zones, bool ribs)
+{
+    const ModelObject *mo = model_object();
+    if (mo == nullptr)
+        return false;
+    const CloudAccess access = cloud_access();
+    if (! access.logged_in()) {
+        m_error = _u8L("Log in to Tisma Cloud first (Configuration > Tisma Cloud account), or compute on this computer.");
+        wxGetApp().CallAfter([]() { show_cloud_account_dialog(wxGetApp().mainframe); });
+        return false;
+    }
+    // The materials of the user are not on the servers.
+    if (const std::optional<Fea::Material> material = Fea::material_by_key(m_result_material); material && material->user) {
+        m_error = GUI::format(_u8L("%1% is one of your own materials: it is computed on this computer."), material->name);
+        return false;
+    }
+    // The object alone, with its supports and loads and the print settings, as a project for the servers.
+    const std::string project = cloud_temp_path(".3mf");
+    std::string error;
+    {
+        Model model;
+        model.add_object(*mo);
+        if (! export_cloud_project(model, wxGetApp().preset_bundle->full_config(), project, error)) {
+            m_error = error;
+            return false;
+        }
+    }
+    const nlohmann::json params = { { "mode", mode }, { "quality", Fea::quality_name(m_quality) }, { "object", 0 },
+                                    { "instance", std::max(0, instance_idx()) }, { "solid", solid }, { "zones", zones },
+                                    { "ribs", ribs } };
+    m_cancel   = false;
+    m_running  = true;
+    m_progress = 0;
+    m_thread = std::thread([this, access, mode, project, params = params.dump()]() {
+        const std::string result = cloud_temp_path(".tfea");
+        TismaCloud::Job job;
+        std::string error;
+        Fea::ResultFile file;
+        bool ok = access.client().run("fea", params, project, result, job, error,
+                                      [this](const TismaCloud::Job &j) { m_progress = j.status == "running" ? j.progress : 0; }, m_cancel);
+        if (ok)
+            ok = Fea::load_result_file(result, file, error);
+        boost::system::error_code ec;
+        boost::filesystem::remove(project, ec);
+        boost::filesystem::remove(result, ec);
+        if (! ok)
+            error = error == "Cancelled" ? error : into_u8(GUI::format_wxstr(_L("Tisma Cloud: %1%"), cloud_error_text(error)));
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (mode == "lightest-infill") {
+                Fea::OptimizeResult res = ok ? std::move(file.infill) : Fea::OptimizeResult();
+                if (! ok)
+                    res.error = error;
+                if (auto it = file.info.find("current_mass"); it != file.info.end())
+                    m_current_infill_mass = std::atof(it->second.c_str());
+                m_pending_opt = std::move(res);
+            } else if (mode == "resin-structure") {
+                Fea::ResinOptimizeResult res = ok ? std::move(file.resin) : Fea::ResinOptimizeResult();
+                if (! ok)
+                    res.error = error;
+                m_pending_resin = std::move(res);
+            } else {
+                Fea::Result res = ok ? std::move(file.analysis) : Fea::Result();
+                if (! ok)
+                    res.error = error;
+                m_pending = std::move(res);
+            }
+        }
+        m_running = false;
+        wxGetApp().CallAfter([]() {
+            if (GLCanvas3D *canvas = wxGetApp().plater() ? wxGetApp().plater()->get_current_canvas3D() : nullptr) {
+                canvas->set_as_dirty();
+                canvas->request_extra_frame();
+            }
+        });
+    });
+    return true;
 }
 
 void GLGizmoEngineering::start_reinforcement()
@@ -786,25 +860,10 @@ void GLGizmoEngineering::start_lattice()
 }
 
 namespace {
-// Wall thicknesses compared for a resin part [mm] (hollowing_min_thickness is 1 to 10 mm).
-const std::vector<double> RESIN_WALLS = { 1., 1.5, 2., 3., 4., 5. };
-// Densest interior infill searched (the setting goes up to 60 %).
-constexpr double RESIN_MAX_INFILL = 0.6;
-
 // Cell of the interior infill of the object [mm] (the print settings with the overrides of the object).
 double resin_infill_cell(const ModelObject &object)
 {
-    DynamicPrintConfig cfg = wxGetApp().preset_bundle->full_config();
-    cfg.apply(object.config.get(), true);
-    const ConfigOption *cell = cfg.option("hollowing_infill_cell");
-    return cell ? std::max(1., cell->getFloat()) : 8.;
-}
-
-// Lowest interior infill searched: the thinnest struts that print (sla::INFILL_MIN_STRUT) in the cell, at least 5 %.
-double resin_min_infill(double cell)
-{
-    const double w = sla::INFILL_MIN_STRUT / cell;
-    return std::min(RESIN_MAX_INFILL, std::max(0.05, double(sla::INFILL_DIRECTIONS) * w * w));
+    return Fea::resin_infill_cell(object, wxGetApp().preset_bundle->full_config());
 }
 }
 
@@ -814,9 +873,13 @@ void GLGizmoEngineering::start_resin_structure()
     Fea::ModelAnalysisInput input;
     if (mo == nullptr || ! prepare_input(input))
         return;
-    const double min_density = resin_min_infill(resin_infill_cell(*mo));
+    if (m_cloud) {
+        start_cloud("resin-structure", false, true, false);
+        return;
+    }
+    const double min_density = Fea::resin_min_infill(resin_infill_cell(*mo));
     launch<Fea::ResinOptimizeResult>([this, input = std::move(input), min_density]() {
-        return Fea::optimize_resin(input.mesh, input.setup, RESIN_WALLS, min_density, RESIN_MAX_INFILL,
+        return Fea::optimize_resin(input.mesh, input.setup, Fea::RESIN_WALLS, min_density, Fea::RESIN_MAX_INFILL,
                                    [this]() { return m_cancel.load(); }, [this](int p) { m_progress = p; });
     }, &m_pending_resin);
 }
@@ -1653,18 +1716,25 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         }
         double h = 0., voxels = 0.;
         estimate_quality(*mo, h, voxels);
-        if (voxels > MAX_VOXELS_SINGLE)
+        if (voxels > Fea::MAX_VOXELS_SINGLE)
             ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT,
-                GUI::format(_u8L("About %1% voxels of %2$.2f mm: too many, limited to %3%."), size_t(voxels), h, size_t(MAX_VOXELS_SINGLE)));
+                GUI::format(_u8L("About %1% voxels of %2$.2f mm: too many, limited to %3%."), size_t(voxels), h, size_t(Fea::MAX_VOXELS_SINGLE)));
         else
             ui::muted(GUI::format(_u8L("About %1% voxels of %2$.2f mm."), size_t(voxels), h));
-        if (voxels > MAX_VOXELS_MANY)
+        if (voxels > Fea::MAX_VOXELS_MANY)
             ui::muted(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
-                                  size_t(MAX_VOXELS_MANY)), width);
+                                  size_t(Fea::MAX_VOXELS_MANY)), width);
     }
     if (ImGuiPureWrap::checkbox(is_resin ? _u8L("Printed part (hollowing and interior infill of the profile)") :
                                            _u8L("Printed part (walls and infill of the profile)"), m_as_printed))
         m_result_stale = true;
+    if (ImGuiPureWrap::checkbox(_u8L("Compute in the cloud"), m_cloud))
+        wxGetApp().app_config->set("tisma_fea_cloud", m_cloud ? "1" : "0");
+    if (m_cloud) {
+        const CloudAccess access = cloud_access();
+        ui::muted(access.logged_in() ? GUI::format(_u8L("On the Tisma Cloud servers (%1%): the analysis, the lightest infill and the walls of resin parts."), access.email) :
+                                       _u8L("Log in first: Configuration > Tisma Cloud account."), width);
+    }
 
     // ---- Supports, loads and displacement limits: what a click on the part adds.
     ui::section(_u8L("Supports, loads and limits"), width);

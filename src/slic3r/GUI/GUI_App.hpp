@@ -107,6 +107,7 @@ enum ConfigMenuIDs {
     ConfigMenuLanguage,
     ConfigMenuFlashFirmware,
     ConfigMenuUSBPrint,
+    ConfigMenuTismaCloud,
     ConfigMenuCnt,
     ConfigMenuWifiConfigFile
 };

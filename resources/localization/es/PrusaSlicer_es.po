@@ -33765,3 +33765,117 @@ msgstr "Si está marcado, el análisis estructural (Ingeniería) usa la tarjeta 
 
 msgid "Computed on the graphics card (%1%)."
 msgstr "Calculado en la tarjeta gráfica (%1%)."
+
+msgid "%1% min"
+msgstr "%1% min"
+
+msgid "%1$.1f h"
+msgstr "%1$.1f h"
+
+msgid "Tisma Cloud account"
+msgstr "Cuenta de Tisma Cloud"
+
+msgid "Slice and run the structural analyses on the Tisma Cloud servers. The account and the plan are managed on the web site."
+msgstr "Laminá y hacé los análisis estructurales en los servidores de Tisma Cloud. La cuenta y el plan se administran en la página web."
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "E-mail"
+msgstr "Correo electrónico"
+
+msgid "Not logged in."
+msgstr "No iniciaste sesión."
+
+msgid "Logged in as %1%, but the server does not answer: %2%"
+msgstr "Sesión iniciada como %1%, pero el servidor no responde: %2%"
+
+msgid "Logged in as %1%. Plan %2%: %3% of %4% used this month."
+msgstr "Sesión iniciada como %1%. Plan %2%: usaste %3% de %4% este mes."
+
+msgid "Paid until %1%."
+msgstr "Pagado hasta el %1%."
+
+msgid "The plan is not paid: renew it on the web site to use the servers."
+msgstr "El plan no está pagado: renovalo en la página web para usar los servidores."
+
+msgid "Enter the server, the e-mail and the password."
+msgstr "Ingresá el servidor, el correo y la contraseña."
+
+msgid "Could not log in: %1%"
+msgstr "No se pudo iniciar sesión: %1%"
+
+msgid "Sending the project to the servers..."
+msgstr "Enviando el proyecto a los servidores..."
+
+msgid "Waiting for a free computing server..."
+msgstr "Esperando un servidor de cálculo libre..."
+
+msgid "Computing on the servers: %1% %%"
+msgstr "Calculando en los servidores: %1% %%"
+
+msgid "Downloading the result..."
+msgstr "Descargando el resultado..."
+
+msgid "The project could not be saved for the servers."
+msgstr "No se pudo guardar el proyecto para los servidores."
+
+msgid "The session ended: log in again (Configuration > Tisma Cloud account)."
+msgstr "La sesión terminó: iniciá sesión de nuevo (Configuración > Cuenta de Tisma Cloud)."
+
+msgid "Cancelled."
+msgstr "Cancelado."
+
+msgid "Slicing in the cloud is available for filament printers. Resin printers are sliced on this computer."
+msgstr "El laminado en la nube es para impresoras de filamento. Las de resina se laminan en esta computadora."
+
+msgid "There is nothing to slice."
+msgstr "No hay nada para laminar."
+
+msgid "Slice in the cloud"
+msgstr "Laminar en la nube"
+
+msgid "Slicing in the cloud failed: %1%"
+msgstr "El laminado en la nube falló: %1%"
+
+msgid "Save the G-code as:"
+msgstr "Guardar el G-code como:"
+
+msgid "Could not save %1%: %2%"
+msgstr "No se pudo guardar %1%: %2%"
+
+msgid "Sliced in the cloud in %1$.1f s: %2%."
+msgstr "Laminado en la nube en %1$.1f s: %2%."
+
+msgid "Print time %1%."
+msgstr "Tiempo de impresión %1%."
+
+msgid "Slice in the &Cloud and Export G-code"
+msgstr "Laminar en la &nube y exportar G-code"
+
+msgid "Slice the current plate on the Tisma Cloud servers and save the G-code"
+msgstr "Lamina la placa actual en los servidores de Tisma Cloud y guarda el G-code"
+
+msgid "Tisma &Cloud Account"
+msgstr "Cuenta de Tisma &Cloud"
+
+msgid "Log in to slice and analyze on the Tisma Cloud servers"
+msgstr "Iniciá sesión para laminar y analizar en los servidores de Tisma Cloud"
+
+msgid "Log in to Tisma Cloud first (Configuration > Tisma Cloud account), or compute on this computer."
+msgstr "Primero iniciá sesión en Tisma Cloud (Configuración > Cuenta de Tisma Cloud), o calculá en esta computadora."
+
+msgid "%1% is one of your own materials: it is computed on this computer."
+msgstr "%1% es uno de tus materiales propios: se calcula en esta computadora."
+
+msgid "Tisma Cloud: %1%"
+msgstr "Tisma Cloud: %1%"
+
+msgid "Compute in the cloud"
+msgstr "Calcular en la nube"
+
+msgid "On the Tisma Cloud servers (%1%): the analysis, the lightest infill and the walls of resin parts."
+msgstr "En los servidores de Tisma Cloud (%1%): el análisis, el relleno mínimo y las paredes de las piezas de resina."
+
+msgid "Log in first: Configuration > Tisma Cloud account."
+msgstr "Primero iniciá sesión: Configuración > Cuenta de Tisma Cloud."

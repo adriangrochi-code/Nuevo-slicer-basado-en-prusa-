@@ -18,6 +18,7 @@
 #include <tisma_fea/Aero.hpp>
 #include <tisma_fea/Analysis.hpp>
 #include <tisma_fea/Optimize.hpp>
+#include <tisma_fea/Quality.hpp>
 #include <tisma_fea/Structures.hpp>
 #include <tisma_fea/ModelSetup.hpp>
 #include <tisma_fea/Orientation.hpp>
@@ -59,7 +60,7 @@ private:
     enum class Field { Safety, Stress, Displacement, Density };
     // Resolution of the analysis (saved in the application config as "tisma_fea_quality"): Fast and Normal give a
     // number of voxels, High and Ultra a voxel of twice and once the line width of the print.
-    enum class Quality : int { Fast = 0, Normal = 1, High = 2, Ultra = 3 };
+    using Quality = Fea::Quality;
     // Jobs of one analysis or of many (optimizers, orientation): the latter have a lower limit of voxels.
     enum class JobSize { Single, Many };
 
@@ -96,6 +97,10 @@ private:
     void remove_curved_layers();
     // Runs a job in the background; its result is stored in *pending under the mutex.
     template<class T> void launch(std::function<T()> job, std::optional<T> *pending);
+    // Runs the analysis (mode of tisma-fea: analyze, lightest-infill, resin-structure) of the object on the Tisma Cloud
+    // servers instead of this computer; the result arrives as the one of a local job. False when it could not start
+    // (m_error tells why).
+    bool start_cloud(const std::string &mode, bool solid, bool zones, bool ribs);
     void start_reinforcement();
     void apply_reinforcement();
     void start_lattice();
@@ -163,6 +168,8 @@ private:
     std::string                m_error;
     bool                       m_result_stale { false };
     bool                       m_as_printed { true };
+    // Compute on the Tisma Cloud servers (analysis, lightest infill, walls of resin parts).
+    bool                       m_cloud { false };
     Quality                    m_quality { Quality::Normal };
     // Set when the quality was limited by the number of voxels.
     std::string                m_quality_note;
