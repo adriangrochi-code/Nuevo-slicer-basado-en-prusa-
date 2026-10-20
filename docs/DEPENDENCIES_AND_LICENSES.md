@@ -96,6 +96,17 @@ Solo valores numéricos de las hojas de datos técnicas de los fabricantes (no s
 Las hojas no dan densidad ni coeficiente de Poisson: se usan 1,15 g/cm³ y 0,35, valores típicos de fotopolímeros
 curados (marcados así en la nota de cada material).
 
+### App de Android (`android/`)
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| AndroidX (core-ktx, activity-compose, lifecycle) y Jetpack Compose (BOM) | las de `android/app/build.gradle.kts` | Apache-2.0 (developer.android.com/jetpack/androidx) | Se distribuyen dentro del APK. |
+| Kotlin (biblioteca estándar) | 2.0.21 | Apache-2.0 | Dentro del APK. |
+| Gradle wrapper (`android/gradle/wrapper/gradle-wrapper.jar`) | 8.10.2 | Apache-2.0 | Solo para compilar. |
+| Android NDK (libc++_shared.so) | r27d | Apache-2.0 con excepciones de LLVM | Dentro del APK. |
+
+La app es código propio (AGPL-3.0 como el resto de Tisma); no se usa código de Slice Beam ni de otras apps.
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |

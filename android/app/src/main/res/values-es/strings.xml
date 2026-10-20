@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_missing">Esta compilación no incluye el núcleo de laminado (se compiló sin las dependencias de Android).</string>
+    <string name="core_version">Núcleo: %1$s</string>
+    <string name="open_model">Abrir modelo (STL, 3MF, OBJ)</string>
+    <string name="model_size">Tamaño: %1$s × %2$s × %3$s mm</string>
+    <string name="model_objects">%1$d objeto(s), %2$d triángulos</string>
+    <string name="slice">Laminar</string>
+    <string name="slice_done">Laminado</string>
+    <string name="slice_time">Tiempo de impresión: %1$s</string>
+    <string name="slice_filament">Filamento: %1$s m (%2$s g)</string>
+    <string name="save_gcode">Guardar G-code</string>
+</resources>

@@ -1,0 +1,102 @@
+name: Build Android
+
+# The Android app (android/): Tisma's deps/ built for 64-bit ARM (cached), then the APK with the slicing core.
+# Runs from ci.yml, by hand, and on pushes that change the app or what it is built from.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (default the ref of the calling event)
+        type: string
+        default: ''
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]  # main builds it through ci.yml
+    paths:
+      - 'android/**'
+      - 'deps/**'
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/build_android.yml'
+
+concurrency:
+  group: android-${{ github.ref }}-${{ inputs.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build_android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      NDK_VERSION: "27.3.13750724"
+      CMAKE_VERSION: "3.31.6"
+      DEPS_BUILD: ${{ github.workspace }}/android-deps/build
+      DEPS_DEST: ${{ github.workspace }}/android-deps/dest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake libtool m4 texinfo make
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # The NDK and CMake versions the app is built with (android/app/build.gradle.kts).
+      - name: Android NDK and CMake
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "cmake;$CMAKE_VERSION" > /dev/null
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/cmake/$CMAKE_VERSION/bin" >> "$GITHUB_PATH"
+
+      - name: Restore dependencies
+        id: deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: android-deps/dest
+          key: deps-android-arm64-${{ env.NDK_VERSION }}-${{ hashFiles('deps/**', 'android/tools/**') }}
+
+      - name: Build dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: android/tools/build-deps.sh "$DEPS_BUILD" "$DEPS_DEST"
+
+      - name: Save dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: android-deps/dest
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+      - name: Remove the dependency build tree
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: rm -rf "$DEPS_BUILD"
+
+      - name: APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug -PtismaDepsDir="$DEPS_DEST/usr/local"
+
+      # The core must be inside: an APK without it would only show "core not included".
+      - name: Check the core is in the APK
+        working-directory: android
+        run: |
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -E "lib/arm64-v8a/(libtisma|libc\+\+_shared)\.so"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tisma-android
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
