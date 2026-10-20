@@ -16,6 +16,13 @@ BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
 export CC="$BIN/aarch64-linux-android$API-clang" CXX="$BIN/aarch64-linux-android$API-clang++"
 export AR="$BIN/llvm-ar" RANLIB="$BIN/llvm-ranlib" STRIP="$BIN/llvm-strip" NM="$BIN/llvm-nm"
 
+# oneTBB 2021.5 copies libc++_shared.so from where NDKs before r23 had it: point that old place to the current one.
+OLD_STL="$ANDROID_NDK_ROOT/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_shared.so"
+if [ ! -e "$OLD_STL" ]; then
+    mkdir -p "$(dirname "$OLD_STL")"
+    ln -s "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "$OLD_STL"
+fi
+
 # Not needed by the app: the desktop GUI (wxWidgets, GLEW, OpenCSG), network (CURL, OpenSSL: the app uses Android's),
 # tests (Catch2), STEP import (OCCT, later) and sequential arrangement (z3). ZLIB comes with the NDK.
 cmake -S "$ROOT/deps" -B "$BUILD_DIR" -G Ninja \
