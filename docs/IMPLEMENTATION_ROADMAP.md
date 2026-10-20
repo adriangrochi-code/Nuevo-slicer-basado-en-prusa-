@@ -259,7 +259,7 @@ los datos del usuario.
 | 14 | Panel de Ingeniería: alto en pantallas bajas, flechas de cargas, tabla de materiales editable | Hecho: el panel ya tenía alto máximo con barra de desplazamiento; las flechas de tracción quedaban dentro de la pieza (ahora salen de la cara); tabla de materiales editable con valores propios guardados en `fea_materials.json` (`docs/FEA.md`) |
 | 15 | Proyectos reales de MakerWorld / Printables | Decisión (archivos de prueba) |
 | 16 | Render: oclusión ambiental y PBR | Hecho: G-buffer, oclusión ambiental y luz diferida Phong o PBR como en PrusaSlicer 3.0, dos modos nuevos en Preferencias (`docs/RENDER.md`). Falta medir el rendimiento en gráficos integrados |
-| 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución (`docs/FEA.md`). GPU pendiente (dependencia nueva) |
+| 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución. GPU hecha con Vulkan (volk): el ciclo V del multigrid en la tarjeta gráfica, misma solución (`docs/FEA.md`). Falta medir en placas reales, MoltenVK en macOS y la aerodinámica |
 | 18 | Fragmentación de piezas con encastres | Hecho: «Dividir para que entre en la impresora» corta en las piezas justas por la sección más chica, con pernos o espigas de la herramienta de corte (más finos en paredes finas), desde el menú del objeto o el aviso de objeto demasiado grande (`docs/FRAGMENT.md`). Falta imprimir y pegar una pieza real; colas de milano no |
 | 19 | Trackhead | Decisión (referencias) |
 | 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |

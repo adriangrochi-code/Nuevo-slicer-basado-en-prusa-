@@ -1,0 +1,72 @@
+#version 450
+// Tisma Slicer: one sweep of the V-cycle of the multigrid of the structural analysis on the GPU (src/libtisma_fea/src/
+// GpuMultigrid.cpp). For every node, the product of its rows of the stiffness matrix with x (gathered from the elements
+// around the node, so no atomics are needed), then
+//   out = free * (c0 * x + c1 * (b - A x) * (use_dinv ? 1 / diag : 1))
+// which is a damped Jacobi sweep (c0 = 1, c1 = damping, use_dinv) or the residual (c0 = 0, c1 = 1).
+// The matrix of an element is sa * T[ma] + sb * T[mb] (level 0: a table of matrices of the layer orientations and of
+// the aligned infill) or its own matrix (coarse levels: Galerkin products), row major 24 x 24.
+layout(local_size_x = 64) in;
+
+layout(push_constant) uniform Params {
+    uint  nodes;
+    uint  per_element;     // 0: table matrices (level 0), 1: one matrix per element
+    float c0;
+    float c1;
+    uint  use_dinv;
+} params;
+
+struct ElementMatrix { int ma; int mb; float sa; float sb; };
+
+layout(std430, binding = 0) readonly buffer ElemNodes { int elem_nodes[]; };
+layout(std430, binding = 1) readonly buffer ElemMat   { ElementMatrix elem_mat[]; };
+layout(std430, binding = 2) readonly buffer Matrices  { float matrices[]; };
+layout(std430, binding = 3) readonly buffer NodeAdj   { int node_adj[]; };
+layout(std430, binding = 4) readonly buffer Free      { float free_dof[]; };
+layout(std430, binding = 5) readonly buffer DInv      { float dinv[]; };
+layout(std430, binding = 6) readonly buffer X         { float x[]; };
+layout(std430, binding = 7) readonly buffer B         { float b[]; };
+layout(std430, binding = 8) writeonly buffer Out      { float outv[]; };
+
+void main()
+{
+    uint n = gl_GlobalInvocationID.x;
+    if (n >= params.nodes)
+        return;
+    vec3 ax = vec3(0.0);
+    for (int i = 0; i < 8; ++i) {
+        int entry = node_adj[8 * n + i];
+        if (entry < 0)
+            continue;
+        int e = entry >> 3;
+        int a = entry & 7;
+        uint base_a = 0u, base_b = 0u;
+        float sa = 1.0, sb = 0.0;
+        if (params.per_element == 0u) {
+            ElementMatrix em = elem_mat[e];
+            base_a = uint(em.ma) * 576u;
+            sa = em.sa;
+            if (em.mb >= 0) {
+                base_b = uint(em.mb) * 576u;
+                sb = em.sb;
+            }
+        } else
+            base_a = uint(e) * 576u;
+        for (int bn = 0; bn < 8; ++bn) {
+            uint nb = uint(elem_nodes[8 * e + bn]);
+            vec3 xb = vec3(x[3u * nb], x[3u * nb + 1u], x[3u * nb + 2u]);
+            for (int k = 0; k < 3; ++k) {
+                uint r = uint(3 * a + k) * 24u + uint(3 * bn);
+                vec3 row = sa * vec3(matrices[base_a + r], matrices[base_a + r + 1u], matrices[base_a + r + 2u]);
+                if (sb != 0.0)
+                    row += sb * vec3(matrices[base_b + r], matrices[base_b + r + 1u], matrices[base_b + r + 2u]);
+                ax[k] += dot(row, xb);
+            }
+        }
+    }
+    for (uint k = 0u; k < 3u; ++k) {
+        uint d = 3u * n + k;
+        float s = params.use_dinv != 0u ? dinv[d] : 1.0;
+        outv[d] = free_dof[d] * (params.c0 * x[d] + params.c1 * (b[d] - ax[k]) * s);
+    }
+}

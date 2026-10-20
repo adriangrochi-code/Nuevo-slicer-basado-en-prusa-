@@ -658,6 +658,8 @@ bool GLGizmoEngineering::prepare_input(Fea::ModelAnalysisInput &input, JobSize s
     if (m_thread.joinable())
         m_thread.join();
     std::string error;
+    // The graphics card for the multigrid (Preferences > General).
+    Fea::set_gpu_enabled(wxGetApp().app_config->get("tisma_fea_gpu") != "0");
     const DynamicPrintConfig config = wxGetApp().preset_bundle->full_config();
     if (! Fea::build_analysis_input(*mo, size_t(instance_idx()), filament_type(*mo), input, error, &config)) {
         m_error = error;
@@ -1881,6 +1883,8 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
             GUI::format(_u8L("Walls and homogenized infill, %1$.2f mm voxels."), r.h), width);
         if (! m_quality_note.empty())
             ui::muted(m_quality_note, width);
+        if (! r.gpu_device.empty())
+            ui::muted(GUI::format(_u8L("Computed on the graphics card (%1%)."), r.gpu_device), width);
     }
 
     // ---- Optimize: the lightest structure for these loads.

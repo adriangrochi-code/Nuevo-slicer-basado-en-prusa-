@@ -48,6 +48,16 @@ target_include_directories(tcbspan INTERFACE tcbspan)
 
 add_subdirectory(prusa_fdm_mixer)
 
+# Tisma Slicer: Vulkan loaded at run time (volk, MIT) with the Khronos headers (Apache-2.0 OR MIT), for the structural
+# analysis on the GPU (src/libtisma_fea). No Vulkan SDK nor driver is needed to build or to run.
+add_library(volk STATIC
+    volk/volk.c
+    volk/volk.h
+)
+target_include_directories(volk PUBLIC volk vulkan/include)
+target_compile_definitions(volk PUBLIC VK_NO_PROTOTYPES)
+target_link_libraries(volk PRIVATE ${CMAKE_DL_LIBS})
+
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(hidapi)
