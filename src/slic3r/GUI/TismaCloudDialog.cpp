@@ -15,6 +15,7 @@
 #include <wx/button.h>
 #include <wx/dialog.h>
 #include <wx/filedlg.h>
+#include <wx/hyperlink.h>
 #include <wx/msgdlg.h>
 #include <wx/progdlg.h>
 #include <wx/sizer.h>
@@ -133,6 +134,9 @@ public:
         grid->Add(m_password, 1, wxEXPAND);
 
         m_state = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        // The page of the web site to create an account and pay the plan, given by the server.
+        m_billing = new wxHyperlinkCtrl(this, wxID_ANY, _L("Create an account or pay the plan on the web site"), "https://");
+        m_billing->Hide();
         m_login  = new wxButton(this, wxID_ANY, _L("Log in"));
         m_logout = new wxButton(this, wxID_ANY, _L("Log out"));
         auto *close = new wxButton(this, wxID_CLOSE, _L("Close"));
@@ -146,6 +150,7 @@ public:
         top->Add(intro, 0, wxALL, em);
         top->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
         top->Add(m_state, 0, wxEXPAND | wxALL, em);
+        top->Add(m_billing, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
         top->Add(buttons, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, em);
         SetSizerAndFit(top);
         SetEscapeId(wxID_CLOSE);
@@ -163,6 +168,7 @@ private:
     void refresh()
     {
         const CloudAccess access = cloud_access();
+        show_billing(access.url);
         m_logout->Enable(access.logged_in());
         if (! access.logged_in()) {
             set_state(_L("Not logged in."));
@@ -180,6 +186,22 @@ private:
         text += "\n" + (account.paid ? format_wxstr(_L("Paid until %1%."), account.paid_until.substr(0, 10)) :
                                        _L("The plan is not paid: renew it on the web site to use the servers."));
         set_state(text);
+    }
+
+    // Only an https page of the web site is offered.
+    void show_billing(const std::string &url)
+    {
+        std::string billing, error;
+        if (! url.empty()) {
+            wxBusyCursor wait;
+            TismaCloud(url, std::string()).health(billing, error);
+        }
+        const bool show = billing.rfind("https://", 0) == 0;
+        if (show)
+            m_billing->SetURL(wxString::FromUTF8(billing));
+        m_billing->Show(show);
+        Layout();
+        Fit();
     }
 
     void set_state(const wxString &text)
@@ -205,6 +227,7 @@ private:
         std::string token, error;
         TismaCloud client(url, std::string());
         if (! client.login(email, password, into_u8(wxGetHostName()), token, error)) {
+            show_billing(url);
             set_state(format_wxstr(_L("Could not log in: %1%"), cloud_error_text(error)));
             return;
         }
@@ -231,6 +254,7 @@ private:
     wxTextCtrl   *m_email;
     wxTextCtrl   *m_password;
     wxStaticText *m_state;
+    wxHyperlinkCtrl *m_billing;
     wxButton     *m_login;
     wxButton     *m_logout;
 };
@@ -325,6 +349,8 @@ wxString cloud_error_text(const std::string &error)
         return _L("The session ended: log in again (Configuration > Tisma Cloud account).");
     if (error == "Cancelled")
         return _L("Cancelled.");
+    if (error.find("not paid") != std::string::npos)
+        return _L("The plan is not paid: pay it on the web site (Configuration > Tisma Cloud account has the link).");
     return wxString::FromUTF8(error);
 }
 

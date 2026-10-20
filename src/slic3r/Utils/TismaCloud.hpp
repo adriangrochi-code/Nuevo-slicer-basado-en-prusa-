@@ -50,6 +50,9 @@ public:
 
     const std::string& url() const { return m_url; }
 
+    // GET /v1/health: the server answers; billing_url is the page of the web site to create an account and pay the plan
+    // (empty when the server has none).
+    bool health(std::string &billing_url, std::string &error);
     // POST /v1/auth/login: the token of this device.
     bool login(const std::string &email, const std::string &password, const std::string &device, std::string &token,
                std::string &error);
