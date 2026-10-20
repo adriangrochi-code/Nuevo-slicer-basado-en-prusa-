@@ -8,6 +8,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.layout.layout
+import uy.com.tisma.app.ui.AccountScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,14 +61,41 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { TismaTheme { SliceScreen() } }
+        setContent { TismaTheme { TismaApp() } }
+    }
+}
+
+private enum class Tab { SLICE, ACCOUNT }
+
+/** The two tabs of the app: slicing on the phone and the Tisma Cloud account. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TismaApp() {
+    var tab by rememberSaveable { mutableStateOf(Tab.SLICE) }
+    Scaffold(
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(selected = tab == Tab.SLICE, onClick = { tab = Tab.SLICE },
+                    icon = { Icon(Icons.Filled.Build, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_slice)) })
+                NavigationBarItem(selected = tab == Tab.ACCOUNT, onClick = { tab = Tab.ACCOUNT },
+                    icon = { Icon(Icons.Filled.AccountCircle, contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_account)) })
+            }
+        },
+    ) { padding ->
+        // The slice screen stays composed, so switching tabs keeps the model and the slice result (and a slice running).
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            SliceScreen(Modifier.hiddenIf(tab != Tab.SLICE))
+            if (tab == Tab.ACCOUNT) AccountScreen()
+        }
     }
 }
 
 /** First screen: open a model, slice it with the core on the phone and save the G-code. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SliceScreen() {
+fun SliceScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var model by remember { mutableStateOf<File?>(null) }
@@ -91,84 +128,89 @@ fun SliceScreen() {
         }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (!TismaCore.available) {
-                Text(stringResource(R.string.core_missing), color = MaterialTheme.colorScheme.error)
-            } else {
-                Text(stringResource(R.string.core_version, TismaCore.version()), style = MaterialTheme.typography.bodySmall)
-            }
-
-            Button(onClick = { openModel.launch(arrayOf("*/*")) }, enabled = TismaCore.available && progress == null,
-                modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.open_model))
-            }
-
-            val currentInfo = info
-            val currentModel = model
-            if (currentModel != null && currentInfo != null) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(currentModel.name, style = MaterialTheme.typography.titleMedium)
-                        Text(stringResource(R.string.model_size,
-                            mm(currentInfo.sizeMm[0]), mm(currentInfo.sizeMm[1]), mm(currentInfo.sizeMm[2])))
-                        Text(stringResource(R.string.model_objects, currentInfo.objects, currentInfo.triangles))
-                    }
-                }
-                Button(
-                    onClick = {
-                        error = null
-                        result = null
-                        progress = 0 to ""
-                        scope.launch {
-                            try {
-                                val out = File(context.cacheDir, currentModel.nameWithoutExtension + ".gcode")
-                                result = withContext(Dispatchers.Default) {
-                                    TismaCore.slice(currentModel.absolutePath, "", out.absolutePath) { percent, text ->
-                                        scope.launch(Dispatchers.Main) { progress = percent to text }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                error = e.message ?: e.toString()
-                            } finally {
-                                progress = null
-                            }
-                        }
-                    },
-                    enabled = progress == null,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.slice)) }
-            }
-
-            progress?.let { (percent, text) ->
-                LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth())
-                Text(text, style = MaterialTheme.typography.bodySmall)
-            }
-
-            result?.let { r ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.slice_done), style = MaterialTheme.typography.titleMedium)
-                        Text(stringResource(R.string.slice_time, r.printTime))
-                        Text(stringResource(R.string.slice_filament, String.format(Locale.ROOT, "%.2f", r.filamentMm / 1000),
-                            String.format(Locale.ROOT, "%.1f", r.filamentGrams)))
-                        Spacer(Modifier.height(8.dp))
-                        Row {
-                            OutlinedButton(onClick = { saveGcode.launch(File(r.gcodePath).name) }) {
-                                Text(stringResource(R.string.save_gcode))
-                            }
-                        }
-                    }
-                }
-            }
-
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (!TismaCore.available) {
+            Text(stringResource(R.string.core_missing), color = MaterialTheme.colorScheme.error)
+        } else {
+            Text(stringResource(R.string.core_version, TismaCore.version()), style = MaterialTheme.typography.bodySmall)
         }
+
+        Button(onClick = { openModel.launch(arrayOf("*/*")) }, enabled = TismaCore.available && progress == null,
+            modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.open_model))
+        }
+
+        val currentInfo = info
+        val currentModel = model
+        if (currentModel != null && currentInfo != null) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(currentModel.name, style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.model_size,
+                        mm(currentInfo.sizeMm[0]), mm(currentInfo.sizeMm[1]), mm(currentInfo.sizeMm[2])))
+                    Text(stringResource(R.string.model_objects, currentInfo.objects, currentInfo.triangles))
+                }
+            }
+            Button(
+                onClick = {
+                    error = null
+                    result = null
+                    progress = 0 to ""
+                    scope.launch {
+                        try {
+                            val out = File(context.cacheDir, currentModel.nameWithoutExtension + ".gcode")
+                            result = withContext(Dispatchers.Default) {
+                                TismaCore.slice(currentModel.absolutePath, "", out.absolutePath) { percent, text ->
+                                    scope.launch(Dispatchers.Main) { progress = percent to text }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            error = e.message ?: e.toString()
+                        } finally {
+                            progress = null
+                        }
+                    }
+                },
+                enabled = progress == null,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.slice)) }
+        }
+
+        progress?.let { (percent, text) ->
+            LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth())
+            Text(text, style = MaterialTheme.typography.bodySmall)
+        }
+
+        result?.let { r ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(stringResource(R.string.slice_done), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.slice_time, r.printTime))
+                    Text(stringResource(R.string.slice_filament, String.format(Locale.ROOT, "%.2f", r.filamentMm / 1000),
+                        String.format(Locale.ROOT, "%.1f", r.filamentGrams)))
+                    Spacer(Modifier.height(8.dp))
+                    Row {
+                        OutlinedButton(onClick = { saveGcode.launch(File(r.gcodePath).name) }) {
+                            Text(stringResource(R.string.save_gcode))
+                        }
+                    }
+                }
+            }
+        }
+
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
+
+/** Keeps a screen composed (its state survives) but neither drawn nor touchable. */
+private fun Modifier.hiddenIf(hidden: Boolean) =
+    if (!hidden) this else layout { measurable, constraints ->
+        measurable.measure(constraints)
+        layout(0, 0) {}
+    }
 
 private fun mm(v: Double) = String.format(Locale.ROOT, "%.1f", v)
 
