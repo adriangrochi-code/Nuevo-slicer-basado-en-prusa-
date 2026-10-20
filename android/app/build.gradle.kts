@@ -32,6 +32,8 @@ android {
                         "-DANDROID_STL=c++_shared",
                         "-DTISMA_DEPS_DIR=$tismaDepsDir",
                     )
+                    // Only the library of the app, not the desktop programs of Tisma's tree.
+                    targets += "tisma"
                 }
             }
         }

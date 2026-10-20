@@ -38,7 +38,9 @@
 #include "Utils.hpp"
 #include "BuildVolume.hpp"
 #include "format.hpp"
+#ifndef __ANDROID__
 #include "ArrangeHelper.hpp"
+#endif
 #include "CustomParametersHandling.hpp"
 #include "Feature/FullSpectrum/VirtualExtruder.hpp"
 
@@ -1115,7 +1117,12 @@ void Print::process()
     if (conflictRes.has_value())
         BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->_objName1 % conflictRes->_objName2;
 
+#ifndef __ANDROID__
     m_sequential_collision_detected =  config().complete_objects ? check_seq_conflict(model(), config()) : std::nullopt;
+#else
+    // No libseqarrange on Android: the app does not print object by object yet.
+    m_sequential_collision_detected = std::nullopt;
+#endif
 
     BOOST_LOG_TRIVIAL(info) << "Slicing process finished." << log_memory_info();
 }
