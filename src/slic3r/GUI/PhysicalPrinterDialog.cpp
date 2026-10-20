@@ -39,6 +39,7 @@
 #include "../Utils/FixModelByWin10.hpp"
 #include "../Utils/UndoRedo.hpp"
 #include "../Utils/ServiceConfig.hpp"
+#include "../Utils/Flashforge.hpp"
 #include "RemovableDriveManager.hpp"
 #include "BitmapCache.hpp"
 #include "BonjourDialog.hpp"
@@ -396,6 +397,11 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
     {
         auto sizer = create_sizer_with_btn(parent, &m_printhost_browse_btn, "browse", _L("Browse") + " " + dots);
         m_printhost_browse_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) {
+            const auto host_type = m_config->option<ConfigOptionEnum<PrintHostType>>("host_type");
+            if (host_type && host_type->value == htFlashforge) {
+                browse_flashforge();
+                return;
+            }
             BonjourDialog dialog(this, Preset::printer_technology(m_printer.config));
             if (dialog.show_and_lookup()) {
                 m_optgroup->set_value("print_host", dialog.get_selected(), true);
@@ -570,6 +576,24 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
     }
 
     m_optgroup->append_single_option_line("bambu_use_ams");
+    option = m_optgroup->get_option("flashforge_serial_number");
+    option.opt.width = Field::def_width_wider();
+    m_optgroup->append_single_option_line(option);
+    {
+        Line line{ "", "" };
+        line.full_width = 1;
+        line.widget = [this](wxWindow* parent) {
+            m_flashforge_hint = new wxStaticText(parent, wxID_ANY,
+                _L("Flashforge: Browse finds the printers of the network. Adventurer 5M, 5M Pro and AD5X: turn on LAN mode "
+                   "on the printer (Settings > Network); API key = its access code, and the serial number. Older printers "
+                   "need only the IP address."));
+            m_flashforge_hint->Wrap(50 * wxGetApp().em_unit());
+            auto sizer = new wxBoxSizer(wxHORIZONTAL);
+            sizer->Add(m_flashforge_hint, 1, wxEXPAND);
+            return sizer;
+        };
+        m_optgroup->append_line(line);
+    }
     {
         Line line{ "", "" };
         line.full_width = 1;
@@ -693,6 +717,10 @@ void PhysicalPrinterDialog::update(bool printer_change)
             m_bambu_hint->Show(bambu);
         if (bambu)
             m_printhost_browse_btn->Hide();
+        const bool flashforge = opt->value == htFlashforge;
+        m_optgroup->show_field("flashforge_serial_number", flashforge);
+        if (m_flashforge_hint)
+            m_flashforge_hint->Show(flashforge);
 
         m_last_host_type = opt->value;
     }
@@ -700,6 +728,9 @@ void PhysicalPrinterDialog::update(bool printer_change)
         m_optgroup->hide_field("bambu_use_ams");
         if (m_bambu_hint)
             m_bambu_hint->Hide();
+        m_optgroup->hide_field("flashforge_serial_number");
+        if (m_flashforge_hint)
+            m_flashforge_hint->Hide();
         m_optgroup->set_value("host_type", int(PrintHostType::htOctoPrint), false);
         m_optgroup->hide_field("host_type");
 
@@ -722,6 +753,35 @@ void PhysicalPrinterDialog::update(bool printer_change)
 #ifdef __WXMSW__
     this->Refresh();
 #endif
+}
+
+// Flashforge printers answer a broadcast of their own instead of Bonjour: the one chosen fills the address and serial.
+void PhysicalPrinterDialog::browse_flashforge()
+{
+    std::vector<FlashforgeDiscoveredPrinter> printers;
+    wxString msg;
+    bool found;
+    {
+        wxBusyCursor wait;
+        found = Flashforge::discover(printers, msg);
+    }
+    if (!found) {
+        show_error(this, msg);
+        return;
+    }
+    wxArrayString choices;
+    for (const FlashforgeDiscoveredPrinter& printer : printers)
+        choices.Add(from_u8((boost::format("%1%  (%2%, %3%)") % printer.name % printer.ip_address % printer.serial_number).str()));
+    const int selected = printers.size() == 1 ? 0 :
+        wxGetSingleChoiceIndex(_L("Choose the printer:"), _L("Flashforge printers"), choices, this);
+    if (selected < 0)
+        return;
+    m_optgroup->set_value("print_host", from_u8(printers[selected].ip_address), true);
+    m_optgroup->get_field("print_host")->field_changed();
+    if (!printers[selected].serial_number.empty()) {
+        m_optgroup->set_value("flashforge_serial_number", from_u8(printers[selected].serial_number), true);
+        m_optgroup->get_field("flashforge_serial_number")->field_changed();
+    }
 }
 
 void PhysicalPrinterDialog::update_host_type(bool printer_change)

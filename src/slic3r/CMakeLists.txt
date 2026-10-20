@@ -388,6 +388,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/BambuLan.hpp
     Utils/BambuLanClient.cpp
     Utils/BambuLanClient.hpp
+    Utils/Flashforge.cpp
+    Utils/Flashforge.hpp
     Utils/OctoPrint.cpp
     Utils/OctoPrint.hpp
     Utils/Duet.cpp

@@ -30,6 +30,7 @@
 #include "MKS.hpp"
 #include "Moonraker.hpp"
 #include "BambuLan.hpp"
+#include "Flashforge.hpp"
 #include "PrusaConnect.hpp"
 #include "../GUI/PrintHostDialogs.hpp"
 
@@ -69,6 +70,7 @@ PrintHost* PrintHost::get_print_host(DynamicPrintConfig *config)
             case htMKS:       return new MKS(config);
             case htMoonraker: return new Moonraker(config);
             case htBambuLan:  return new BambuLan(config);
+            case htFlashforge: return new Flashforge(config);
             default:          return nullptr;
         }
     } else {

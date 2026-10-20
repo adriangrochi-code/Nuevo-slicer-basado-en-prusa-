@@ -24,6 +24,9 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
   `PrusaSlicer*.po` / `PrusaSlicer.mo` porque los busca por `SLIC3R_APP_KEY`.
 - Código de **OrcaSlicer** (AGPL-3.0): se puede portar con atribución. El suite de calibraciones actual está
   inspirado en Orca, pero el código y los modelos son propios; no se copió código de Orca.
+  El host de impresoras **Flashforge** (`src/slic3r/Utils/Flashforge.cpp`) sí está basado en el de OrcaSlicer
+  (`src/slic3r/Utils/Flashforge.cpp`, rama `main` del 20-10-2026), con atribución en el encabezado; ver
+  `docs/FLASHFORGE.md`.
 
 ### Compatibilidad de licencias con AGPL-3.0
 

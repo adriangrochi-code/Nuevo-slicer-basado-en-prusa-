@@ -111,6 +111,7 @@ static const t_config_enum_values s_keys_map_PrintHostType {
     { "mks",            htMKS },
     { "prusaconnectnew", htPrusaConnectNew },
     { "bambulab",       htBambuLan },
+    { "flashforge",     htFlashforge },
 
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrintHostType)
@@ -573,6 +574,15 @@ void PrintConfigDef::init_common_params()
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionBool(false));
     
+    def = this->add("flashforge_serial_number", coString);
+    def->label = L("Serial number");
+    def->tooltip = L("Flashforge printers: the serial number shown on the printer (Settings > About). With the access "
+                     "code of the LAN mode in the API key field, Tisma uses the local API of the printer (Adventurer 5M, "
+                     "5M Pro, AD5X); without them, the older G-code console.");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("preset_names", coStrings);
     def->label = L("Printer preset names");
     def->tooltip = L("Names of presets related to the physical printer");
@@ -2728,7 +2738,8 @@ void PrintConfigDef::init_fff_params()
         { "astrobox",       "AstroBox" },
         { "repetier",       "Repetier" },
         { "mks",            "MKS" },
-        { "bambulab",       "Bambu Lab (LAN)" }
+        { "bambulab",       "Bambu Lab (LAN)" },
+        { "flashforge",     "Flashforge" }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;

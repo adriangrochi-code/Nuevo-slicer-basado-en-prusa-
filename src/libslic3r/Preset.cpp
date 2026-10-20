@@ -1772,8 +1772,9 @@ static std::vector<std::string> s_PhysicalPrinter_opts {
     "printhost_user",
     "printhost_password",
     "printhost_ssl_ignore_revoke",
-    // Tisma: Bambu Lab printers in LAN mode.
-    "bambu_use_ams"
+    // Tisma: Bambu Lab printers in LAN mode, Flashforge printers.
+    "bambu_use_ams",
+    "flashforge_serial_number"
 };
 
 const std::vector<std::string>& PhysicalPrinter::printer_options()
