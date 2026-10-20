@@ -33885,3 +33885,6 @@ msgstr "Crear una cuenta o pagar el plan en la página web"
 
 msgid "The plan is not paid: pay it on the web site (Configuration > Tisma Cloud account has the link)."
 msgstr "El plan no está pagado: pagalo en la página web (el enlace está en Configuración > Cuenta de Tisma Cloud)."
+
+msgid "Confirm your e-mail first with the code we sent to it (the link below opens the account page)."
+msgstr "Primero confirmá tu correo con el código que te mandamos (el enlace de abajo abre la página de la cuenta)."
