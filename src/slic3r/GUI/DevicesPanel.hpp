@@ -46,6 +46,8 @@ private:
     void on_select();
     void add_network_printer();
     void edit_printer();
+    // Asks for the new access code / API key of the selected printer, tests it and saves it.
+    void change_access_code();
     void send_sliced();
     void open_in_browser();
     // URL of the web interface of a physical printer.
@@ -56,6 +58,7 @@ private:
     wxStaticText        *m_title      { nullptr };
     wxStaticText        *m_hint       { nullptr };
     wxButton            *m_btn_edit   { nullptr };
+    wxButton            *m_btn_code   { nullptr };
     wxButton            *m_btn_send   { nullptr };
     wxButton            *m_btn_browser{ nullptr };
     wxCheckBox          *m_start      { nullptr };
