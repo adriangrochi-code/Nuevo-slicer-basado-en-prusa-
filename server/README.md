@@ -196,6 +196,20 @@ docker compose --env-file .env -f deploy/compose.master.yaml exec api python -m 
 Sin Docker: `pip install ".[master]"`, `TISMA_DATABASE_URL=postgresql+psycopg://...` y
 `uvicorn tisma_cloud.main:app --host 0.0.0.0 --port 8000`.
 
+## Avisos de problemas
+
+El central revisa cada minuto y avisa por correo a los administradores (las cuentas con `--admin`, o las direcciones
+de `TISMA_ALERT_EMAILS`) cuando:
+
+- un nodo que ya estuvo conectado no responde hace más de `TISMA_ALERT_NODE_MINUTES` (5);
+- un trabajo espera en la cola más de `TISMA_ALERT_QUEUE_MINUTES` (30): ningún nodo hace ese tipo de trabajo, o están
+  todos ocupados o caídos;
+- quedan menos de `TISMA_ALERT_DISK_FREE_GB` (5) GB libres en el disco del central.
+
+Cada problema manda un correo cuando empieza, un recordatorio cada `TISMA_ALERT_REPEAT_H` horas (12) mientras sigue, y
+otro cuando se resuelve. Los activos aparecen en rojo arriba del panel `/admin` (y los resueltos de la semana). Los
+correos usan el mismo servidor SMTP que los códigos de las cuentas.
+
 ## Copias de seguridad
 
 El servicio `backup` de `compose.master.yaml` copia la base de datos (cuentas, pagos, planes, trabajos) todos los días a

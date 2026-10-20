@@ -6,6 +6,7 @@ import ipaddress
 import json
 import logging
 import re
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -18,12 +19,12 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
-from . import __version__, billing, codes, google_play, scheduler
+from . import __version__, alerts, billing, codes, google_play, scheduler
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, mailer_for
 from .db import Database
 from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles, plan_job
-from .models import ApiToken, Job, Node, Payment, Plan, User, utcnow
+from .models import Alert, ApiToken, Job, Node, Payment, Plan, User, utcnow
 from .guard import Guard
 from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, hash_password, hash_token, new_token, verify_password
@@ -47,6 +48,8 @@ class Services:
         self.play = google_play.store_for(settings.play_package, settings.play_credentials, settings.play_products)
         self.play_push = (google_play.PushVerifier(settings.play_push_audience, settings.play_push_account)
                           if settings.play_push_audience and settings.play_push_account else None)
+        self._alerts_checked = 0.
+        self._alerts_lock = threading.Lock()
 
     def sweep(self) -> None:
         """Requeues the jobs of lost nodes and removes the files of old jobs."""
@@ -65,6 +68,15 @@ class Services:
             for job in old:
                 self.storage.remove_job(job.id)
                 job.files_removed = True
+        # The alerts of the administrators, once a minute.
+        if time.monotonic() - self._alerts_checked >= 60:
+            self._alerts_checked = time.monotonic()
+            self.check_alerts()
+
+    def check_alerts(self, now: datetime | None = None) -> list[Alert]:
+        """Opens, repeats and closes the alerts (one check at a time, so that an alert is never opened twice)."""
+        with self._alerts_lock, self.db.session() as s:
+            return alerts.update(s, self.settings, self.storage.root, self.mailer, now)
 
 
 def job_view(job: Job) -> dict[str, Any]:
@@ -1034,6 +1046,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if user is None:
                 raise HTTPException(404, "No such user")
             return {"user": user_view(user), "account": scheduler.account(s, user, cfg.grace_days).as_dict()}
+
+    @app.get("/v1/admin/alerts")
+    def admin_alerts(_admin: AdminDep) -> dict:
+        """The open alerts and the ones solved in the last week."""
+        with db.session() as s:
+            rows = s.execute(select(Alert).where((Alert.resolved_at.is_(None)) |
+                                                 (Alert.resolved_at > utcnow() - timedelta(days=7)))
+                             .order_by(Alert.started_at.desc()).limit(50)).scalars().all()
+            return {"alerts": [{"key": a.key, "message": a.message, "started_at": a.started_at.isoformat() + "Z",
+                                "resolved_at": a.resolved_at.isoformat() + "Z" if a.resolved_at else None}
+                               for a in rows]}
 
     @app.get("/v1/admin/queue")
     def admin_queue(_admin: AdminDep) -> dict:

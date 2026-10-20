@@ -75,6 +75,13 @@ class Settings:
     # subscription and its service account. Empty: notifications refused.
     play_push_audience: str = field(default_factory=lambda: os.environ.get("TISMA_PLAY_PUSH_AUDIENCE", ""))
     play_push_account: str = field(default_factory=lambda: os.environ.get("TISMA_PLAY_PUSH_ACCOUNT", ""))
+    # Alerts for the administrators (alerts.py): e-mails (comma separated; empty: the administrator accounts), minutes
+    # a node may be silent and a job may wait in the queue, free disk [GB], hours between reminders.
+    alert_emails: str = field(default_factory=lambda: os.environ.get("TISMA_ALERT_EMAILS", ""))
+    alert_node_minutes: int = field(default_factory=lambda: _int("TISMA_ALERT_NODE_MINUTES", 5))
+    alert_queue_minutes: int = field(default_factory=lambda: _int("TISMA_ALERT_QUEUE_MINUTES", 30))
+    alert_disk_free_gb: int = field(default_factory=lambda: _int("TISMA_ALERT_DISK_FREE_GB", 5))
+    alert_repeat_h: int = field(default_factory=lambda: _int("TISMA_ALERT_REPEAT_H", 12))
     # Key of the web site for /v1/site (it creates the users and records their payments). Empty: disabled.
     site_key: str = field(default_factory=lambda: os.environ.get("TISMA_SITE_KEY", ""))
     # Days a user may keep computing after paid_until (a payment that arrives late).

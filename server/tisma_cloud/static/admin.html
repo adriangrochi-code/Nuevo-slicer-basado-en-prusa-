@@ -29,6 +29,7 @@
   .muted { color: var(--muted); }
   .error { color: var(--bad); min-height: 1.4em; }
   #app-error:empty { display: none; }
+  .alert { color: var(--bad); font-weight: 600; border: 1px solid var(--bad); border-radius: 8px; padding: 8px 12px; }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
   .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
   .stat b { display: block; font-size: 24px; }
@@ -84,6 +85,7 @@
   </header>
   <main>
     <p class="error" id="app-error"></p>
+    <div id="alerts"></div>
     <div class="stats">
       <div class="stat"><span class="muted">Servidores en línea</span><b id="s-online">–</b></div>
       <div class="stat"><span class="muted">Trabajos esperando</span><b id="s-queued">–</b></div>
@@ -308,8 +310,13 @@ function renderUsers(users, pays) {
 
 async function refresh() {
   try {
-    const [nodes, queue, jobs, users, pays] = await Promise.all([api("/v1/admin/nodes"), api("/v1/admin/queue"),
-      api("/v1/admin/jobs?limit=20"), api("/v1/admin/users"), api("/v1/admin/payments?limit=20")]);
+    const [nodes, queue, jobs, users, pays, alerts] = await Promise.all([api("/v1/admin/nodes"), api("/v1/admin/queue"),
+      api("/v1/admin/jobs?limit=20"), api("/v1/admin/users"), api("/v1/admin/payments?limit=20"), api("/v1/admin/alerts")]);
+    // Open problems on top (also sent by e-mail); the solved ones of the week, smaller.
+    const open = alerts.alerts.filter((a) => !a.resolved_at);
+    $("alerts").replaceChildren(...open.map((a) => el("p", { class: "alert" }, `⚠ ${a.message} (empezó ${ago(a.started_at)})`)),
+      ...alerts.alerts.filter((a) => a.resolved_at).slice(0, 3).map((a) =>
+        el("p", { class: "muted" }, `Resuelto ${ago(a.resolved_at)}: ${a.message}`)));
     renderUsers(users.users, pays.payments);
     classes = nodes.classes;
     last = { nodes: nodes.nodes, jobs };

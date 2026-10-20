@@ -121,6 +121,20 @@ class PlaySubscription(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class Alert(Base):
+    """A problem of the service for its administrators (alerts.py): open while resolved_at is empty."""
+
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # node:<id>, queue, disk
+    key: Mapped[str] = mapped_column(String(50), index=True)
+    message: Mapped[str] = mapped_column(String(300))
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+
+
 class EmailCode(Base):
     """A one-time code sent by e-mail: to confirm the address (verify) or to choose a new password (reset)."""
 
