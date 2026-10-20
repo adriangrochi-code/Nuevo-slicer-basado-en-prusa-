@@ -196,6 +196,29 @@ docker compose --env-file .env -f deploy/compose.master.yaml exec api python -m 
 Sin Docker: `pip install ".[master]"`, `TISMA_DATABASE_URL=postgresql+psycopg://...` y
 `uvicorn tisma_cloud.main:app --host 0.0.0.0 --port 8000`.
 
+## Copias de seguridad
+
+El servicio `backup` de `compose.master.yaml` copia la base de datos (cuentas, pagos, planes, trabajos) todos los días a
+las `BACKUP_HOUR` (UTC, por defecto 3) en `BACKUP_DIR` (por defecto `deploy/backups`), con `pg_dump`. Cada copia se
+verifica antes de darla por buena (`pg_restore --list`); se guardan las últimas `BACKUP_DAYS` diarias (14) y una por
+semana durante `BACKUP_WEEKS` semanas (8). Los proyectos y resultados de los trabajos no se copian: se borran solos a
+los pocos días.
+
+- **Fuera del central:** una copia en el mismo disco no sirve si el disco se rompe. Poner `BACKUP_DIR` en otro disco o
+  copiarla a otra máquina, por ejemplo desde un nodo, todas las noches:
+  `rsync -a usuario@central:/ruta/de/backups/ /srv/tisma-backups/` (cron).
+- **Copia ahora:** `docker compose --env-file .env -f deploy/compose.master.yaml exec backup backup.sh now`
+- **Restaurar** (reemplaza el contenido de la base de datos, en una sola transacción):
+
+```
+docker compose --env-file .env -f deploy/compose.master.yaml stop api
+docker compose --env-file .env -f deploy/compose.master.yaml exec backup restore.sh /backups/daily/tisma-AAAAMMDD-HHMM.dump
+docker compose --env-file .env -f deploy/compose.master.yaml start api
+```
+
+- **También guardar aparte** el archivo `.env` y la clave de la cuenta de servicio de Google Play: no están en la base de
+  datos.
+
 ## Instalar un nodo
 
 En el maestro: `python -m tisma_cloud.admin node-add i7-1 --priorities slice,slice_large,fea` (muestra el token una

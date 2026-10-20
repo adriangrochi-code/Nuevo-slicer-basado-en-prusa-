@@ -28,6 +28,25 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: tisma
     volumes: ["db:/var/lib/postgresql/data"]
+  # Daily copy of the database (accounts, payments) with rotation: backup.sh. BACKUP_DIR on the host should be another
+  # disk, or be copied to another machine (README, "Copias de seguridad").
+  backup:
+    image: postgres:16
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/backup.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: tisma
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: tisma
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_DAYS: ${BACKUP_DAYS:-14}
+      BACKUP_WEEKS: ${BACKUP_WEEKS:-8}
+    volumes:
+      - ./backup.sh:/usr/local/bin/backup.sh:ro
+      - ./restore.sh:/usr/local/bin/restore.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on: [db]
 volumes:
   caddy-data:
   storage:

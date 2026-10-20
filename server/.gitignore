@@ -8,3 +8,4 @@ storage/
 node-work/
 deploy/tisma/
 deploy/node.toml
+deploy/backups/
