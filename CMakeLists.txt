@@ -84,6 +84,11 @@ if (APPLE)
     endif ()
 endif ()
 
+if (CMAKE_CROSSCOMPILING)
+    # E.g. the Android app (android/): nothing built here can run on the build machine.
+    set(IS_CROSS_COMPILE TRUE)
+endif ()
+
 option(SLIC3R_BUILD_SANDBOXES   "Build development sandboxes" OFF)
 option(SLIC3R_BUILD_TESTS       "Build unit tests" ON)
 
@@ -252,6 +257,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(Threads REQUIRED)
 
     find_package(DBus1 REQUIRED)
+elseif (ANDROID)
+    find_package(Threads REQUIRED)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUXX)
@@ -445,6 +452,9 @@ slic3r_remap_configs(TBB::tbbmalloc RelWithDebInfo Release)
 # The Intel TBB library will use the std::exception_ptr feature of C++11.
 # add_definitions(-DTBB_USE_CAPTURED_EXCEPTION=0)
 
+# The Android app (android/) builds only the slicing core: no libcurl, OpenGL or GLEW there (the app has its own
+# network code and renders with OpenGL ES).
+if (NOT ANDROID)
 find_package(CURL REQUIRED)
 
 add_library(libcurl INTERFACE)
@@ -458,6 +468,7 @@ if (NOT WIN32)
 else()
     target_link_libraries(libcurl INTERFACE crypt32)
 endif()
+endif () # NOT ANDROID
 
 ## OPTIONAL packages
 
@@ -477,6 +488,7 @@ endif ()
 
 find_package(PNG REQUIRED)
 
+if (NOT ANDROID)
 set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
 
@@ -487,6 +499,7 @@ if (SLIC3R_STATIC AND NOT SLIC3R_STATIC_EXCLUDE_GLEW)
 endif()
 
 find_package(GLEW REQUIRED)
+endif () # NOT ANDROID
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)
