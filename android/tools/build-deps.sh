@@ -15,6 +15,9 @@ BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
 # The autotools packages (GMP, MPFR) take the compilers from the environment.
 export CC="$BIN/aarch64-linux-android$API-clang" CXX="$BIN/aarch64-linux-android$API-clang++"
 export AR="$BIN/llvm-ar" RANLIB="$BIN/llvm-ranlib" STRIP="$BIN/llvm-strip" NM="$BIN/llvm-nm"
+# No Fortran: a host Fortran compiler (gfortran on the CI runners) cannot build for Android, and Eigen's tests turn
+# it on when they find one.
+export FC=/bin/false
 
 # oneTBB 2021.5 copies libc++_shared.so from where NDKs before r23 had it: point that old place to the current one.
 OLD_STL="$ANDROID_NDK_ROOT/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_shared.so"
