@@ -19,7 +19,8 @@ if (MSVC)
 else ()
     string(TOUPPER "${CMAKE_BUILD_TYPE}" _buildtype_upper)
 
-    if (APPLE)
+    if (APPLE OR ANDROID)
+        # clang++ refuses a C standard in CXXFLAGS (the flags are passed to both compilers).
         set(_stdlib "")
     else()
         set(_stdlib "-std=gnu11")
