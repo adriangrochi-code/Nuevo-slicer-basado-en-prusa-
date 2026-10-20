@@ -12,6 +12,8 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Análisis estructural en la tarjeta gráfica** (Vulkan): el multigrid del análisis corre en la GPU cuando hay una
+  (Preferencias > General); sin driver de Vulkan sigue en el procesador, con los mismos resultados.
 - **Render con oclusión ambiental y materiales realistas** (Preferencias > Cámara > Calidad de render): dos modos
   nuevos como los de PrusaSlicer 3.0. «Oclusión ambiental» (el predeterminado) oscurece rincones, uniones y el
   contacto de las piezas con la cama; «Materiales realistas» agrega iluminación física, con filamentos «Silk» más

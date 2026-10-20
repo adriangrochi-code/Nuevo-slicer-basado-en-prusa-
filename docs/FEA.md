@@ -116,9 +116,34 @@ y el análisis fino tardaba decenas de segundos. El multigrid las deja en 15–3
 | Barra traccionada a 30° (proyecto de prueba) | 63 000 | 1 127 it., 4,4 s | 21 it., 0,83 s |
 | La misma barra, vóxel de 0,25 mm | 230 000 | 1 925 it., 25,2 s | 25 it., 3,1 s |
 
-Mismo desplazamiento y tensiones (test «Multigrid preconditioner»). La GPU (Vulkan) queda para un paso aparte: hace
-falta una dependencia nueva y su compilación en los tres sistemas, y con el multigrid el análisis más fino ya tarda
-segundos.
+Mismo desplazamiento y tensiones (test «Multigrid preconditioner»).
+
+### GPU (paso 17)
+
+El ciclo V del multigrid corre en la tarjeta gráfica con Vulkan (`Gpu.cpp`, `Multigrid.cpp`, shaders en
+`src/libtisma_fea/src/gpu`):
+
+- Vulkan se carga al ejecutar (volk): Tisma funciona sin driver de Vulkan, y entonces todo corre en la CPU como antes.
+  Se elige una GPU dedicada, si no una integrada; los dispositivos que emulan la GPU en la CPU (lavapipe,
+  SwiftShader) no se usan porque son más lentos que la CPU.
+- Todo el ciclo en precisión simple: barridos de Jacobi y residuo (`fea_apply.comp`, un hilo por nodo que junta las
+  filas de los elementos que lo rodean, sin operaciones atómicas), restricción (`fea_restrict.comp`) y prolongación
+  (`fea_prolong.comp`). La matriz de un elemento del nivel 0 es una combinación de la tabla de matrices de las
+  orientaciones de capa y del relleno alineado; la de los niveles gruesos, su producto de Galerkin.
+- El nivel más grueso (≤ 15 000 grados de libertad) se sigue resolviendo en la CPU (Cholesky): se lee su lado
+  derecho, se resuelve y se sube la solución, entre dos tandas de comandos grabadas una sola vez.
+- El gradiente conjugado sigue en la CPU en doble precisión, con el beta flexible (Polak-Ribière) porque el
+  precondicionador en precisión simple no es exactamente el mismo operador en cada iteración. La solución es la
+  misma que en la CPU (test «Multigrid on the GPU»: mismas iteraciones, desplazamiento dentro de 10⁻⁵).
+- Si un búfer no entra en el máximo de la placa (`maxStorageBufferRange`) o algo falla, el análisis sigue en la CPU.
+- Preferencias > General > «Análisis estructural en la tarjeta gráfica» (activado). El panel de Ingeniería indica la
+  placa usada. Variables de entorno: `TISMA_FEA_GPU=0` la desactiva; `TISMA_FEA_GPU_ALLOW_CPU=1` permite los
+  dispositivos emulados (lo usan las pruebas).
+- macOS: hace falta MoltenVK (Vulkan sobre Metal), que todavía no se incluye en el paquete: ahí corre en la CPU.
+
+Pendiente: medir la aceleración en placas reales (el entorno de desarrollo solo tiene lavapipe, que emula la GPU en
+la CPU y es unas 2–3 veces más lento que el multigrid en la CPU); llevar también el producto del gradiente conjugado
+a la GPU si el traspaso del vector por iteración pesa; la aerodinámica (LBM).
 - **Condiciones**: los nodos a menos de 0,9 vóxeles de las caras fijas se bloquean; la fuerza de una carga sobre
   caras se reparte entre los nodos cercanos a ellas; la de una carga puntual entre los nodos a menos de 1,5 vóxeles
   (o el radio indicado) del punto.

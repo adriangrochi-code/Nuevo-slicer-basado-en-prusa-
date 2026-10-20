@@ -381,6 +381,14 @@ void PreferencesDialog::build()
 			  "shows a dialog asking to select the action to take on the file to load."),
 			app_config->get_bool("show_drop_project_dialog"));
 
+		// Tisma Slicer: the multigrid of the structural analysis on the GPU (Vulkan), on by default.
+		append_bool_option(m_optgroup_general, "tisma_fea_gpu",
+			L("Structural analysis on the graphics card"),
+			L("When checked, the structural analysis (Engineering) uses the graphics card through Vulkan when there is one, "
+			  "which makes the fine analyses and the searches of infill and walls faster. Uncheck it if the graphics "
+			  "driver gives problems: the analysis then runs on the processor, with the same results."),
+			app_config->get("tisma_fea_gpu") != "0");
+
 		append_bool_option(m_optgroup_general, "single_instance",
 #if __APPLE__
 			L("Allow just a single Tisma Slicer instance"),

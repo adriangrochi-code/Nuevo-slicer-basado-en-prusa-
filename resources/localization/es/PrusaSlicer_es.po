@@ -33756,3 +33756,12 @@ msgstr "Oclusión ambiental"
 
 msgid "Realistic materials"
 msgstr "Materiales realistas"
+
+msgid "Structural analysis on the graphics card"
+msgstr "Análisis estructural en la tarjeta gráfica"
+
+msgid "When checked, the structural analysis (Engineering) uses the graphics card through Vulkan when there is one, which makes the fine analyses and the searches of infill and walls faster. Uncheck it if the graphics driver gives problems: the analysis then runs on the processor, with the same results."
+msgstr "Si está marcado, el análisis estructural (Ingeniería) usa la tarjeta gráfica mediante Vulkan cuando hay una, lo que acelera los análisis finos y las búsquedas de relleno y paredes. Desmarcalo si el driver de video da problemas: el análisis se hace entonces en el procesador, con los mismos resultados."
+
+msgid "Computed on the graphics card (%1%)."
+msgstr "Calculado en la tarjeta gráfica (%1%)."

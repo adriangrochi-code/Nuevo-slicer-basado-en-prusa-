@@ -16,6 +16,9 @@ add_library(libtisma_fea STATIC
     src/Analysis.cpp
     src/Multigrid.hpp
     src/Multigrid.cpp
+    src/Gpu.hpp
+    src/Gpu.cpp
+    src/gpu/FeaShaders.hpp
     src/ModelSetup.cpp
     src/Optimize.cpp
     src/Structures.cpp
@@ -25,7 +28,7 @@ add_library(libtisma_fea STATIC
     src/Ribs.cpp
 )
 target_include_directories(libtisma_fea PUBLIC include)
-target_link_libraries(libtisma_fea PUBLIC libslic3r)
+target_link_libraries(libtisma_fea PUBLIC libslic3r PRIVATE volk)
 
 if (SLIC3R_BUILD_TESTS)
     find_package(Catch2 3.4 REQUIRED)
