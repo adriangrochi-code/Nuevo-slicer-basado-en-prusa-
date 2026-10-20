@@ -14,8 +14,9 @@ en los equipos reales están pendientes. Los tiempos y capacidades son estimacio
   hasta») con la API `/v1/site`. Un plan da horas de cómputo por mes, trabajos simultáneos por usuario, peticiones por
   minuto y prioridad en la cola. Se cobra el tiempo real que corrió cada trabajo.
 - **Acceso**: los usuarios entran por internet (`tismaservidores.net`); el panel de administración (`/admin`) solo
-  desde la red interna del rack. Los pagos se hacen en tisma.com.uy, cuyo servidor avisa al maestro con `/v1/site`
-  (ver «Pagos con la página web» en `server/README.md`).
+  desde la red interna del rack. Los pagos quedan en el maestro: «Mi cuenta» (`/cuenta`), pagos registrados por el
+  administrador y suscripciones de Google Play desde la app de Android, que valen en todos lados (ver «Cobro en el
+  central» y «Suscripciones con Google Play» en `server/README.md`).
 - **Protección**: límite de trabajos simultáneos por usuario, de peticiones por minuto (usuario, nodo, inicio de
   sesión), de tamaño de los proyectos; los nodos quitan los scripts de post-procesado de los proyectos y corren sin
   privilegios.
