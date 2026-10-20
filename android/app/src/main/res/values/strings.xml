@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tisma</string>
+    <string name="core_missing">This build does not include the slicing core (built without the Android dependencies).</string>
+    <string name="core_version">Core: %1$s</string>
+    <string name="open_model">Open model (STL, 3MF, OBJ)</string>
+    <string name="model_size">Size: %1$s × %2$s × %3$s mm</string>
+    <string name="model_objects">%1$d object(s), %2$d triangles</string>
+    <string name="slice">Slice</string>
+    <string name="slice_done">Sliced</string>
+    <string name="slice_time">Print time: %1$s</string>
+    <string name="slice_filament">Filament: %1$s m (%2$s g)</string>
+    <string name="save_gcode">Save G-code</string>
+</resources>

@@ -102,6 +102,17 @@ curados (marcados así en la nota de cada material).
 |---|---|---|---|
 | Shaders y parámetros del render de PrusaSlicer 3.0 (`resources/shaders/140/ao_*.fs`, `gbuffer_ao.fs`, `Scene.cpp`, `LightingHelper.hpp`, `GraphicsSettings.hpp`) | 3.0.0-alpha12 | AGPL-3.0, Copyright (c) Prusa Research (la misma que Tisma) | Sombras, oclusión ambiental, codificación de normales y PBR adaptados en `resources/shaders/140/tisma_*.fs` y `src/slic3r/GUI/TismaShading.cpp`, con la cita en cada archivo. Ver `docs/RENDER.md`. |
 
+### App de Android (`android/`)
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| AndroidX (core-ktx, activity-compose, lifecycle) y Jetpack Compose (BOM) | las de `android/app/build.gradle.kts` | Apache-2.0 (developer.android.com/jetpack/androidx) | Se distribuyen dentro del APK. |
+| Kotlin (biblioteca estándar) | 2.0.21 | Apache-2.0 | Dentro del APK. |
+| Gradle wrapper (`android/gradle/wrapper/gradle-wrapper.jar`) | 8.10.2 | Apache-2.0 | Solo para compilar. |
+| Android NDK (libc++_shared.so) | r27d | Apache-2.0 con excepciones de LLVM | Dentro del APK. |
+
+La app es código propio (AGPL-3.0 como el resto de Tisma); no se usa código de Slice Beam ni de otras apps.
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |
