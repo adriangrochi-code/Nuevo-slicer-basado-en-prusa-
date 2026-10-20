@@ -246,7 +246,8 @@ bool is_needed_post_processing(const DynamicPrintConfig& print_config)
                 boost::nowide::cout << "> " << s << "\n";
             }
             boost::nowide::cout << "\nContinue(Y/N) ? ";
-            char in;
+            // Tisma: no answer (no input, as on a computing server) is a no.
+            char in = 'N';
             boost::nowide::cin >> in;
             if (in != 'Y' && in != 'y')
                 return true;

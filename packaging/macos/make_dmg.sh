@@ -28,6 +28,8 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$binary" "$app/Contents/MacOS/TismaSlicer"
 # The G-code viewer is the same binary started with --gcodeviewer (src/slic3r/Utils/Process.cpp).
 ln -s TismaSlicer "$app/Contents/MacOS/tisma-gcodeviewer"
+# The structural analysis from the command line (computing servers).
+[ -x "$build_dir/src/tisma-fea" ] && cp "$build_dir/src/tisma-fea" "$app/Contents/MacOS/tisma-fea"
 cp "$build_dir/src/Info.plist" "$app/Contents/Info.plist"
 # The binary finds its data in ../Resources (src/CLI/Setup.cpp).
 cp -R "$src_dir/resources/" "$app/Contents/Resources/"
