@@ -192,6 +192,24 @@ python3 tools/profiles/validate_bundles.py build/src/tisma-slicer resources/shap
 El convertidor lee los tipos de opciones de `src/libslic3r/PrintConfig.cpp` y `Preset.cpp` de Tisma, y los valores
 por defecto de Orca de su `src/libslic3r/PrintConfig.cpp` (junto a `resources/profiles`).
 
+## Revisión de los filamentos
+
+`tools/profiles/check_filaments.py <bundles> --library resources/profiles/Templates.ini` revisa cada filamento (con
+la herencia resuelta) y avisa de valores con los que no se puede imprimir: sin tipo, temperaturas fuera del rango de
+su familia de material, cama, diámetro o densidad. `tools/profiles/validate_bundles.py` lamina un cubo con cada
+impresora.
+
+Valores rotos que vienen así de OrcaSlicer se corrigen en la conversión (`DATA_FIXES` de
+`convert_orca_profiles.py`), tomando el valor del mismo filamento o del mismo fabricante:
+
+| Filamento | En OrcaSlicer | En Tisma | De dónde |
+|---|---|---|---|
+| Anycubic ABS, ASA @Kobra S1 Max 0.8 | 220 °C | 250 °C | El mismo filamento con boquilla de 0.4 |
+| Anycubic PA, PA6-CF, PAHT-CF, PC, PC-CF, PC-GF @Kobra S1 Max 0.6 / 0.8 | 220 °C | 260 °C (primera capa 250-270) | Ídem |
+| Anycubic PET-CF @Kobra S1 Max 0.6 / 0.8 | 220 °C | 280 °C | Ídem |
+| re3D PC @0.4 | primera capa 20 °C | 260 °C | Su temperatura de boquilla |
+| re3D rPETG @0.8 | 0 °C | 250 °C | re3D PETG @0.4 |
+
 ## Próximos laminadores (pendiente)
 
 | Laminador | Formato | Licencia | Plan |

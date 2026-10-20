@@ -28,6 +28,28 @@ import re
 import shutil
 import sys
 
+# Values of the OrcaSlicer data that are plainly wrong, replaced when converting: (vendor, filament) -> options.
+# Kobra S1 Max 0.6 / 0.8 mm nozzles: engineering filaments left at a placeholder 220 C; the values of the same filament
+# for the 0.4 mm nozzle are used. re3D PC 0.4: first layer at 20 C (its nozzle temperature is 260); re3D rPETG 0.8:
+# 0 C (the re3D PETG value). Found by tools/profiles/check_filaments.py.
+DATA_FIXES = {
+    ('Anycubic', 'Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '270'},
+    ('Anycubic', 'Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '270'},
+    ('Anycubic', 'Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '280', 'first_layer_temperature': '280'},
+    ('Anycubic', 'Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '280', 'first_layer_temperature': '280'},
+    ('re3D', 're3D PC @0.4 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('re3D', 're3D rPETG @0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+}
+
 # --------------------------------------------------------------------------------------------------------------------
 # Option names: Orca -> Tisma. Options with the same name in both programs are copied as they are.
 RENAMED = {
@@ -994,6 +1016,8 @@ def main():
                 emit(kind, parent, presets[(kind, parent)])
             emitted.add((kind, name))
             values = get_converted(kind, name, data)
+            if (vendor, name) in DATA_FIXES and kind == 'filament':
+                values = dict(values, **DATA_FIXES[(vendor, name)])
             if parent_in_bundle:
                 pvals = get_converted(kind, parent, presets[(kind, parent)])
                 own = {k: v for k, v in values.items() if pvals.get(k) != v}
