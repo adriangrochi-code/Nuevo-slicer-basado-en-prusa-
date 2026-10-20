@@ -15,6 +15,8 @@ BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
 # The autotools packages (GMP, MPFR) take the compilers from the environment.
 export CC="$BIN/aarch64-linux-android$API-clang" CXX="$BIN/aarch64-linux-android$API-clang++"
 export AR="$BIN/llvm-ar" RANLIB="$BIN/llvm-ranlib" STRIP="$BIN/llvm-strip" NM="$BIN/llvm-nm"
+# Where the deps are installed: the toolchain file lets each package find the ones built before it.
+export TISMA_ANDROID_DEPS="$DEST_DIR/usr/local"
 # No Fortran: a host Fortran compiler (gfortran on the CI runners) cannot build for Android, and Eigen's tests turn
 # it on when they find one.
 export FC=/bin/false
