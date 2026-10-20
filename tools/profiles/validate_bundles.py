@@ -96,7 +96,7 @@ def main():
                 continue
             try:
                 printer = b.flat('printer', name)
-                print_name = printer.get('default_print_profile', '')
+                print_name = printer.get('default_print_profile', '').strip().strip('"')
                 filament_name = printer.get('default_filament_profile', '').split(';')[0].strip().strip('"')
                 if not filament_name:
                     model = b.sections.get(('printer_model', printer.get('printer_model', '')), {})
