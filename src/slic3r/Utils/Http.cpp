@@ -526,6 +526,13 @@ Http& Http::size_limit(size_t sizeLimit)
 	return *this;
 }
 
+Http& Http::accept_compressed()
+{
+	// An empty string: all the encodings libcurl was built with, decoded automatically.
+	if (p) { ::curl_easy_setopt(p->curl, CURLOPT_ACCEPT_ENCODING, ""); }
+	return *this;
+}
+
 Http& Http::set_range(const std::string& range)
 {
 	if (p) { p->set_range(range); }

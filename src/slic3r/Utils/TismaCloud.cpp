@@ -229,6 +229,8 @@ bool TismaCloud::download(const std::string &job_id, const std::string &path, st
     authorize(http)
         .timeout_max(1800)
         .size_limit(MAX_RESULT_BYTES)
+        // G-code travels compressed (several times smaller) when the server compresses it.
+        .accept_compressed()
         .on_complete([&](std::string body, unsigned) {
             boost::nowide::ofstream out(path, std::ios::binary | std::ios::trunc);
             out.write(body.data(), std::streamsize(body.size()));
