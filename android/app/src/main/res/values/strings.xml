@@ -42,4 +42,27 @@
     <string name="cloud_invalid">Check the e-mail and the password (at least 8 characters).</string>
     <string name="cloud_network">Cannot reach the server. Check the connection and the server address.</string>
     <string name="cloud_server_error">Server error: %1$s</string>
+    <string name="empty_bed">Open a model to place it on the bed.</string>
+    <string name="no_preview">No preview for this format (STL and OBJ only); it slices the same.</string>
+    <string name="drag_to_turn">Drag to turn the view</string>
+    <string name="change_model">Change model</string>
+    <string name="settings_problem">Check the settings: bed size, nozzle and a layer height up to 3/4 of the nozzle.</string>
+    <string name="section_printer">Printer</string>
+    <string name="printer_summary">%1$s × %2$s × %3$s mm · nozzle %4$s mm · %5$s</string>
+    <string name="nozzle">Nozzle</string>
+    <string name="firmware">Firmware</string>
+    <string name="section_filament">Filament</string>
+    <string name="filament_summary">%1$s · nozzle %2$d °C · bed %3$d °C</string>
+    <string name="material">Material</string>
+    <string name="nozzle_temp">Nozzle</string>
+    <string name="bed_temp">Bed</string>
+    <string name="filament_hint">Values of Tisma\'s generic filaments; use those of your spool if they differ.</string>
+    <string name="section_quality">Quality</string>
+    <string name="quality_summary">Layer %1$s mm · infill %2$d %% · %3$d walls</string>
+    <string name="layer_height">Layer height</string>
+    <string name="infill">Infill: %1$d %%</string>
+    <string name="walls">Walls</string>
+    <string name="supports">Supports where needed</string>
+    <string name="brim">Brim (better adhesion)</string>
+    <string name="share_gcode">Share</string>
 </resources>

@@ -40,4 +40,27 @@
     <string name="cloud_invalid">Revisá el correo y la contraseña (al menos 8 caracteres).</string>
     <string name="cloud_network">No se puede llegar al servidor. Revisá la conexión y la dirección del servidor.</string>
     <string name="cloud_server_error">Error del servidor: %1$s</string>
+    <string name="empty_bed">Abrí un modelo para ponerlo en la cama.</string>
+    <string name="no_preview">Sin vista previa para este formato (solo STL y OBJ); se lamina igual.</string>
+    <string name="drag_to_turn">Arrastrá para girar la vista</string>
+    <string name="change_model">Cambiar modelo</string>
+    <string name="settings_problem">Revisá los ajustes: tamaño de la cama, boquilla y una altura de capa de hasta 3/4 de la boquilla.</string>
+    <string name="section_printer">Impresora</string>
+    <string name="printer_summary">%1$s × %2$s × %3$s mm · boquilla %4$s mm · %5$s</string>
+    <string name="nozzle">Boquilla</string>
+    <string name="firmware">Firmware</string>
+    <string name="section_filament">Filamento</string>
+    <string name="filament_summary">%1$s · boquilla %2$d °C · cama %3$d °C</string>
+    <string name="material">Material</string>
+    <string name="nozzle_temp">Boquilla</string>
+    <string name="bed_temp">Cama</string>
+    <string name="filament_hint">Valores de los filamentos genéricos de Tisma; usá los de tu bobina si son otros.</string>
+    <string name="section_quality">Calidad</string>
+    <string name="quality_summary">Capa %1$s mm · relleno %2$d %% · %3$d paredes</string>
+    <string name="layer_height">Altura de capa</string>
+    <string name="infill">Relleno: %1$d %%</string>
+    <string name="walls">Paredes</string>
+    <string name="supports">Soportes donde hagan falta</string>
+    <string name="brim">Borde (mejor adherencia)</string>
+    <string name="share_gcode">Compartir</string>
 </resources>
