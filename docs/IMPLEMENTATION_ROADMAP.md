@@ -262,8 +262,8 @@ los datos del usuario.
 | 17 | FEA: multigrid y GPU (Vulkan) | Multigrid hecho: 15–30 iteraciones en vez de 600–2 900, de 4 a 10 veces más rápido, misma solución. GPU hecha con Vulkan (volk): el ciclo V del multigrid en la tarjeta gráfica, misma solución (`docs/FEA.md`). Falta medir en placas reales, MoltenVK en macOS y la aerodinámica |
 | 18 | Fragmentación de piezas con encastres | Hecho: «Dividir para que entre en la impresora» corta en las piezas justas por la sección más chica, con pernos o espigas de la herramienta de corte (más finos en paredes finas), desde el menú del objeto o el aviso de objeto demasiado grande (`docs/FRAGMENT.md`). Falta imprimir y pegar una pieza real; colas de milano no |
 | 19 | Trackhead | Decisión (referencias) |
-| 20 | Fase 10: laminado en la nube | Decisión (precio, cuentas, privacidad) |
-| 21 | Fase 11: app de teléfono y FEA en la nube | Decisión |
+| 20 | Fase 10: laminado en la nube | Hecho v1: maestro (FastAPI, cola en PostgreSQL, cuentas con planes mensuales por horas, límites por usuario, API para la página web) y nodos con prioridades en `server/` (propietario); en Tisma «Laminar en la nube» (`docs/CLOUD_ARCHITECTURE.md`). Falta medir en los equipos, el pago en la página web, el laminado de resina y la imagen Docker probada |
+| 21 | Fase 11: app de teléfono y FEA en la nube | FEA en la nube hecho: `tisma-fea` y resultados `.tfea`, «Calcular en la nube» en Ingeniería (análisis, relleno mínimo, paredes de resina). Falta la app y los materiales propios del usuario en la nube |
 | 22 | Versión pública (con las obligaciones de la AGPL) | Pendiente |
 
 Hecho desde la última revisión de este documento: capas curvas guiadas por el FEA (9c) y relleno entrelazado (9d);
