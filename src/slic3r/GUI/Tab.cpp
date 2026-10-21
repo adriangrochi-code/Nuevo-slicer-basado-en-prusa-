@@ -24,6 +24,7 @@
 #include "QuickSettings.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/BedType.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLAPrint.hpp"
@@ -2293,6 +2294,15 @@ void TabFilament::build()
         line.append_option(optgroup->get_option("chamber_minimal_temperature"));
         optgroup->append_line(line);
 
+        // Tisma: the bed temperatures on each bed type, for the printers which let choose the bed (BedType.hpp).
+        optgroup = page->new_optgroup(L("Bed temperature by bed type"));
+        for (const BedType &bed : bed_types()) {
+            line = { wxString::FromUTF8(bed.label), "" };
+            line.append_option(optgroup->get_option(bed.first_layer_temp_key));
+            line.append_option(optgroup->get_option(bed.temp_key));
+            optgroup->append_line(line);
+        }
+
     page = add_options_page(L("Cooling"), "cooling");
         std::string category_path = "cooling_127569#";
         optgroup = page->new_optgroup(L("Enable"));
@@ -2500,6 +2510,15 @@ void TabFilament::toggle_options()
 {
     if (!m_active_page)
         return;
+
+    if (m_active_page->title() == "Filament") {
+        // The bed temperatures by bed type are used by the printers which let choose the bed.
+        const bool beds = supports_bed_types(m_preset_bundle->printers.get_edited_preset().config);
+        for (const BedType &bed : bed_types()) {
+            toggle_option(bed.first_layer_temp_key, beds);
+            toggle_option(bed.temp_key, beds);
+        }
+    }
 
     if (m_active_page->title() == "Cooling")
     {
@@ -2780,6 +2799,9 @@ void TabPrinter::build_fff()
 
         optgroup->append_single_option_line("max_print_height");
         optgroup->append_single_option_line("z_offset");
+        // Tisma: interchangeable beds (build plates), chosen in the sidebar.
+        optgroup->append_single_option_line("support_multi_bed_types");
+        optgroup->append_single_option_line("default_bed_type");
 
         optgroup = page->new_optgroup(L("Capabilities"));
         ConfigOptionDef def;

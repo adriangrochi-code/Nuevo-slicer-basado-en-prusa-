@@ -37,6 +37,7 @@
 #include <wx/statbmp.h>
 #include <wx/wupdlock.h> // IWYU pragma: keep
 #include "libslic3r/MultipleBeds.hpp"
+#include "libslic3r/BedType.hpp"
 #include "wx/generic/stattextg.h"
 #ifdef _WIN32
 #include <wx/richtooltip.h>
@@ -67,6 +68,7 @@
 
 #include "NotificationManager.hpp"
 #include "PresetComboBoxes.hpp"
+#include "Field.hpp"
 #include "MsgDialog.hpp"
 #include "FullSpectrumDialog.hpp"
 #include "MainFrame.hpp"
@@ -333,24 +335,25 @@ void Sidebar::show_preset_comboboxes()
 {
     const bool showSLA = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA;
 
-    for (size_t i = 0; i < 4; ++i)
-        m_presets_sizer->Show(i, !showSLA);
+    for (wxSizerItem *row : m_fff_rows)
+        row->Show(!showSLA);
 
-    if (m_btn_full_spectrum) {
+    if (m_full_spectrum_row) {
         const bool show_btn = !showSLA && int(m_combos_filament.size()) >= 2;
-        m_presets_sizer->Show(size_t(4), show_btn);
+        m_full_spectrum_row->Show(show_btn);
     }
 
-    for (size_t i = 5; i < 9; ++i)
-        m_presets_sizer->Show(i, showSLA);
+    for (wxSizerItem *row : m_sla_rows)
+        row->Show(showSLA);
+    update_printer_parts();
 
     m_frequently_changed_parameters->Show(!showSLA);
     m_quick_settings->Show(!showSLA);
 
     const Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
     bool is_prusa_slx = showSLA && tab->is_prusa_printer() && tab->printer_model() == "SLX";
-    for (size_t i = 12; i < 14; ++i)
-        m_presets_sizer->Show(i, is_prusa_slx);
+    for (wxSizerItem *row : m_slx_rows)
+        row->Show(is_prusa_slx);
 
     m_scrolled_panel->GetParent()->Layout();
     m_scrolled_panel->Refresh();
@@ -449,7 +452,7 @@ Sidebar::Sidebar(Plater *parent)
     m_scrolled_panel->SetSizer(scrolled_sizer);
 
     // The preset chooser
-    m_presets_sizer = new wxFlexGridSizer(12, 1, 1, 2);
+    m_presets_sizer = new wxFlexGridSizer(0, 1, 1, 2);
     m_presets_sizer->AddGrowableCol(0, 1);
     m_presets_sizer->SetFlexibleDirection(wxBOTH);
 
@@ -485,18 +488,25 @@ Sidebar::Sidebar(Plater *parent)
 
         auto *sizer_presets = this->m_presets_sizer;
         auto *sizer_filaments = this->m_filaments_sizer;
+        // The rows shown for the filament or the resin printers only.
+        std::vector<wxSizerItem*> *rows = preset_type == Preset::TYPE_PRINT || filament ? &m_fff_rows :
+            preset_type == Preset::TYPE_SLA_PRINT || preset_type == Preset::TYPE_SLA_MATERIAL ? &m_sla_rows : nullptr;
         // Hide controls, which will be shown/hidden in respect to the printer technology
         text->Show(preset_type == Preset::TYPE_PRINTER);
-        sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
+        wxSizerItem *caption_row = sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
+        if (rows)
+            rows->push_back(caption_row);
         if (! filament) {
             combo_and_btn_sizer->ShowItems(preset_type == Preset::TYPE_PRINTER);
-            sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND | 
+            wxSizerItem *combo_row = sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND |
 #ifdef __WXGTK3__
                 wxRIGHT, margin_5);
 #else
                 wxBOTTOM, 1);
                 (void)margin_5; // supress unused capture warning
 #endif // __WXGTK3__
+            if (rows)
+                rows->push_back(combo_row);
             if ((*combo)->connect_info_sizer) {
                 auto tmp_h_sizer = new wxBoxSizer(wxHORIZONTAL);
                 tmp_h_sizer->Add((*combo)->connect_info_sizer, 1, wxEXPAND);
@@ -511,12 +521,16 @@ Sidebar::Sidebar(Plater *parent)
 #endif // __WXGTK3__
             (*combo)->set_extruder_idx(0);
             sizer_filaments->ShowItems(false);
-            sizer_presets->Add(sizer_filaments, 1, wxEXPAND);
+            rows->push_back(sizer_presets->Add(sizer_filaments, 1, wxEXPAND));
         }
     };
 
+    // Tisma: as in OrcaSlicer, the printer with its nozzle and its bed first, then the filaments and the print
+    // settings (the process).
+    init_combo(&m_combo_printer,       _L("Printer"),            Preset::TYPE_PRINTER,       false);
+    init_printer_parts();
+
     m_combos_filament.push_back(nullptr);
-    init_combo(&m_combo_print,         _L("Print settings"),     Preset::TYPE_PRINT,         false);
     init_combo(&m_combos_filament[0],  _L("Filament"),           Preset::TYPE_FILAMENT,      true);
 
     m_btn_full_spectrum = new wxButton(m_presets_panel, wxID_ANY,
@@ -580,12 +594,12 @@ Sidebar::Sidebar(Plater *parent)
         const int gear_col_width = m_combos_filament[0]->edit_btn->GetBestSize().GetWidth()
                                  + 2 * int(0.3 * wxGetApp().em_unit());
         btn_row_sizer->AddSpacer(gear_col_width);
-        m_presets_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxBOTTOM, 2);
+        m_full_spectrum_row = m_presets_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxBOTTOM, 2);
     }
 
+    init_combo(&m_combo_print,         _L("Print settings"),     Preset::TYPE_PRINT,         false);
     init_combo(&m_combo_sla_print,     _L("SLA print settings"), Preset::TYPE_SLA_PRINT,     false);
     init_combo(&m_combo_sla_material,  _L("SLA material"),       Preset::TYPE_SLA_MATERIAL,  false);
-    init_combo(&m_combo_printer,       _L("Printer"),            Preset::TYPE_PRINTER,       false);
 
     init_workflow_combo(margin_5);
 
@@ -606,8 +620,8 @@ Sidebar::Sidebar(Plater *parent)
         | wxRIGHT
 #endif // __WXGTK3__
         , wxOSX ? 1 : margin_5);
-    if (m_btn_full_spectrum)
-        m_presets_sizer->Show(size_t(4), int(m_combos_filament.size()) >= 2);
+    if (m_full_spectrum_row)
+        m_full_spectrum_row->Show(int(m_combos_filament.size()) >= 2);
 
     // Object List
     m_object_list = new ObjectList(m_scrolled_panel);
@@ -891,6 +905,7 @@ void Sidebar::update_all_preset_comboboxes()
     }
     // Update the printer choosers, update the dirty flags.
     m_combo_printer->update();
+    update_printer_parts();
     // Update the filament choosers to only contain the compatible presets, update the color preview,
     // update the dirty flags.
     if (print_tech == ptFFF) {
@@ -901,6 +916,7 @@ void Sidebar::update_all_preset_comboboxes()
 void Sidebar::update_printer_presets_combobox()
 {
     m_combo_printer->update();
+    update_printer_parts();
     Layout();
 }
 
@@ -966,6 +982,8 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
         on_workflow_changed();
         return;
     }
+    if (evt.GetEventObject() == m_combo_nozzle || evt.GetEventObject() == m_combo_bed)
+        return;
 
     PlaterPresetComboBox* combo = static_cast<PlaterPresetComboBox*>(evt.GetEventObject());
     Preset::Type preset_type = combo->get_type();
@@ -1008,6 +1026,9 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
     }
     else if (select_preset) {
         wxWindowUpdateLocker noUpdates(m_presets_panel);
+        // Another printer: its default bed (Sidebar::update_printer_parts()), as in OrcaSlicer.
+        if (preset_type == Preset::TYPE_PRINTER)
+            wxGetApp().preset_bundle->project_config.set_key_value("curr_bed_type", new ConfigOptionString());
         wxGetApp().get_tab(preset_type)->select_preset(preset_name, false, last_selected_ph_printer_name);
     }
 
@@ -1055,7 +1076,7 @@ void Sidebar::init_workflow_combo(int margin_5)
 {
     auto *text = new wxStaticText(m_presets_panel, wxID_ANY, _L("Workflow") + ":");
     text->SetFont(wxGetApp().small_font());
-    m_presets_sizer->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT, 4);
+    m_slx_rows.push_back(m_presets_sizer->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT, 4));
 
     m_workflow = new BitmapComboBox(
         m_presets_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr,
@@ -1077,21 +1098,153 @@ void Sidebar::init_workflow_combo(int margin_5)
         empty_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, int(0.3 * wxGetApp().em_unit())
     );
 
-    m_presets_sizer->Add(
+    m_slx_rows.push_back(m_presets_sizer->Add(
         combo_and_btn_sizer, 0,
         wxEXPAND |
 #ifdef __WXGTK3__
             wxRIGHT,
         margin_5
-    );
+    ));
 #else
             wxBOTTOM,
         1
-    );
+    ));
 #endif
 }
 
 
+
+void Sidebar::init_printer_parts()
+{
+    const int em = wxGetApp().em_unit();
+    auto *grid = new wxFlexGridSizer(0, 2, int(0.3 * em), em);
+    grid->AddGrowableCol(1, 1);
+    auto add = [this, grid](wxStaticText **label, BitmapComboBox **combo, const wxString &text) {
+        *label = new wxStaticText(m_presets_panel, wxID_ANY, text);
+        *combo = new BitmapComboBox(m_presets_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+                                    nullptr, wxCB_READONLY);
+        grid->Add(*label, 0, wxALIGN_CENTER_VERTICAL);
+        grid->Add(*combo, 1, wxEXPAND);
+    };
+    add(&m_label_nozzle, &m_combo_nozzle, _L("Nozzle"));
+    add(&m_label_bed, &m_combo_bed, _L("Bed type"));
+    m_combo_nozzle->SetToolTip(_L("The nozzle of the printer: the printer profile for it is used."));
+    m_combo_bed->SetToolTip(_L("The bed (build plate) used: the bed temperatures of the filaments for it are used."));
+    // Handled here, not by on_select_preset().
+    m_combo_nozzle->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_nozzle(); });
+    m_combo_bed->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_bed(); });
+
+    // Aligned with the printer combo, which has its edit button on the right.
+    auto *row = new wxBoxSizer(wxHORIZONTAL);
+    row->Add(grid, 1, wxEXPAND);
+    if (m_combo_printer->edit_btn)
+        row->AddSpacer(m_combo_printer->edit_btn->GetBestSize().GetWidth() + 2 * int(0.3 * em));
+    m_printer_parts_row = m_presets_sizer->Add(row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.3 * em));
+}
+
+void Sidebar::update_printer_parts()
+{
+    if (m_combo_nozzle == nullptr)
+        return;
+    PresetBundle &bundle  = *wxGetApp().preset_bundle;
+    const Preset &printer = bundle.printers.get_edited_preset();
+    const bool    fff     = printer.printer_technology() == ptFFF;
+
+    // The nozzles: the printer presets of the model of the printer (of its parent for a user preset).
+    m_combo_nozzle->Clear();
+    m_nozzle_presets.clear();
+    int selection = 0;
+    const Preset *sys = printer.is_system ? &bundle.printers.get_selected_preset() : bundle.printers.get_preset_parent(printer);
+    const std::string model = sys ? sys->config.opt_string("printer_model") : std::string();
+    if (sys != nullptr && sys->vendor != nullptr && ! model.empty()) {
+        std::vector<std::pair<double, const Preset*>> nozzles;
+        for (const Preset &preset : bundle.printers.get_presets())
+            if (preset.is_system && preset.is_visible && preset.vendor == sys->vendor &&
+                preset.config.opt_string("printer_model") == model)
+                nozzles.emplace_back(std::atof(preset.config.opt_string("printer_variant").c_str()), &preset);
+        std::stable_sort(nozzles.begin(), nozzles.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+        for (const auto &[diameter, preset] : nozzles) {
+            const std::string variant = preset->config.opt_string("printer_variant");
+            m_combo_nozzle->Append(variant.empty() ? from_u8(preset->name) : from_u8(variant) + " " + _L("mm"));
+            if (preset->name == sys->name)
+                selection = int(m_nozzle_presets.size());
+            m_nozzle_presets.push_back(preset->name);
+        }
+    }
+    if (m_nozzle_presets.empty() && fff) {
+        // A printer without nozzle variants: its nozzle diameter.
+        const auto *diameters = printer.config.option<ConfigOptionFloats>("nozzle_diameter");
+        if (diameters && ! diameters->values.empty())
+            m_combo_nozzle->Append(format_wxstr("%1% %2%", double_to_string(diameters->values.front()), _L("mm")));
+    }
+    if (m_combo_nozzle->GetCount() > 0)
+        m_combo_nozzle->SetSelection(selection);
+    // A user preset of the printer is kept: its nozzle is changed in its settings.
+    m_combo_nozzle->Enable(printer.is_system && m_nozzle_presets.size() > 1);
+
+    // The beds, for the printers with interchangeable plates.
+    const bool beds = fff && supports_bed_types(printer.config);
+    if (beds) {
+        std::string curr = bundle.project_config.opt_string("curr_bed_type");
+        if (! find_bed_type(curr)) {
+            // None chosen: the default bed of the printer, else the plate assumed by the converted profiles.
+            curr = printer.config.opt_string("default_bed_type");
+            if (! find_bed_type(curr))
+                curr = "Textured PEI Plate";
+            bundle.project_config.set_key_value("curr_bed_type", new ConfigOptionString(curr));
+        }
+        m_combo_bed->Clear();
+        int bed_selection = 0;
+        for (size_t i = 0; i < bed_types().size(); ++ i) {
+            m_combo_bed->Append(_(bed_types()[i].label));
+            if (curr == bed_types()[i].key)
+                bed_selection = int(i);
+        }
+        m_combo_bed->SetSelection(bed_selection);
+    }
+    m_printer_parts_row->Show(fff);
+    m_label_bed->Show(beds);
+    m_combo_bed->Show(beds);
+}
+
+void Sidebar::on_select_nozzle()
+{
+    const int selection = m_combo_nozzle->GetSelection();
+    if (selection < 0 || selection >= int(m_nozzle_presets.size()))
+        return;
+    PresetBundle &bundle = *wxGetApp().preset_bundle;
+    const std::string name = m_nozzle_presets[size_t(selection)];
+    if (name == bundle.printers.get_selected_preset_name())
+        return;
+    // A physical printer selected with the preset of this nozzle stays selected.
+    std::string ph_name;
+    if (bundle.physical_printers.has_selection()) {
+        const PhysicalPrinter &ph = bundle.physical_printers.get_selected_printer();
+        if (ph.get_preset_names().count(name) > 0)
+            ph_name = ph.get_full_name(name);
+    }
+    {
+        wxWindowUpdateLocker noUpdates(m_presets_panel);
+        wxGetApp().get_tab(Preset::TYPE_PRINTER)->select_preset(name, false, ph_name);
+    }
+    m_plater->on_config_change(bundle.full_config());
+    m_object_list->update_object_list_by_printer_technology();
+    wxQueueEvent(m_plater, new SimpleEvent(EVT_REGENERATE_BED_THUMBNAILS));
+    m_plater->update();
+    update_printer_parts();
+}
+
+void Sidebar::on_select_bed()
+{
+    const int selection = m_combo_bed->GetSelection();
+    if (selection < 0 || selection >= int(bed_types().size()))
+        return;
+    PresetBundle &bundle = *wxGetApp().preset_bundle;
+    if (bundle.project_config.opt_string("curr_bed_type") == bed_types()[size_t(selection)].key)
+        return;
+    bundle.project_config.set_key_value("curr_bed_type", new ConfigOptionString(bed_types()[size_t(selection)].key));
+    m_plater->on_config_change(bundle.full_config());
+}
 
 void Sidebar::on_workflow_changed()
 {
@@ -1957,8 +2110,8 @@ void Sidebar::set_extruders_count(size_t extruders_count)
     // remove unused choices if any
     remove_unused_filament_combos(extruders_count);
 
-    if (m_btn_full_spectrum && m_presets_sizer) {
-        m_presets_sizer->Show(size_t(4), int(extruders_count) >= 2);
+    if (m_full_spectrum_row && m_presets_sizer) {
+        m_full_spectrum_row->Show(int(extruders_count) >= 2);
         m_presets_sizer->Layout();
     }
 

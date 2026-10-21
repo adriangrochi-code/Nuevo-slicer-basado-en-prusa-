@@ -12,7 +12,10 @@ El asistente de configuración es una sola página, «Impresoras», que se abre 
   OrcaSlicer), las impresoras de resina con las de filamento («Anycubic SLA» dentro de «Anycubic») y todos los
   paquetes de Prusa (Prusa Research, sus SLA, Pro AFS y Pro HT) bajo «Prusa». Entre paréntesis, cuántas impresoras
   de la marca están marcadas.
-- **Impresoras**: los modelos de la marca elegida, uno por boquilla, con casillas; al elegir uno se ve su foto.
+- **Impresoras**: los modelos de la marca elegida, una fila por modelo, con casillas; al elegir uno se ve su foto.
+- **Boquillas**: debajo de la foto, una casilla por boquilla del modelo (las variantes del perfil), como en
+  OrcaSlicer. Marcar la impresora marca la boquilla de 0.4 mm (o la primera, si no tiene de 0.4); desmarcarla quita
+  todas sus boquillas. Cada boquilla marcada instala su perfil de impresora.
 - **Buscador**: filtra por nombre en todas las marcas (todas las palabras deben coincidir, sin distinguir
   mayúsculas). Con una búsqueda, la primera entrada de «Marcas» es «Todos los resultados».
 - **Impresora personalizada**: la casilla «Mi impresora no está en la lista» agrega las páginas para definirla
@@ -191,6 +194,35 @@ python3 tools/profiles/validate_bundles.py build/src/tisma-slicer resources/shap
 
 El convertidor lee los tipos de opciones de `src/libslic3r/PrintConfig.cpp` y `Preset.cpp` de Tisma, y los valores
 por defecto de Orca de su `src/libslic3r/PrintConfig.cpp` (junto a `resources/profiles`).
+
+## Impresora, boquilla y cama en el panel derecho
+
+Como en OrcaSlicer, el panel derecho empieza por la impresora, sigue con los filamentos y termina con los ajustes de
+impresión (el proceso):
+
+- **Impresora**: cada modelo aparece una sola vez en la lista (se muestra el perfil de la boquilla elegida, si no el
+  de 0.4 mm). Los perfiles de usuario y las impresoras físicas se listan como antes.
+- **Boquilla**: las boquillas del modelo (los perfiles de sistema con el mismo `printer_model`); elegir una cambia al
+  perfil de esa boquilla. Una impresora física que tiene ese perfil sigue seleccionada. Con un perfil de usuario se ve
+  su boquilla, sin cambiarla.
+- **Tipo de cama**: solo en las impresoras con camas intercambiables (`support_multi_bed_types`, en «General» de la
+  impresora). Los tipos y sus nombres son los de OrcaSlicer (`src/libslic3r/BedType.cpp`, tomados de
+  `src/libslic3r/PrintConfig.cpp` de OrcaSlicer): Smooth Cool Plate, Engineering Plate, Smooth High Temp Plate,
+  Textured PEI Plate, Textured Cool Plate y Cool Plate (SuperTack). La cama elegida se guarda en el proyecto
+  (`curr_bed_type`, como en OrcaSlicer); al cambiar de impresora vuelve a su cama por defecto (`default_bed_type`).
+
+Cada filamento tiene una temperatura de cama (primera capa y resto) por tipo de cama, con las claves de OrcaSlicer
+(`hot_plate_temp`, `hot_plate_temp_initial_layer`, `textured_plate_temp`...), en «Temperatura de cama por tipo de
+cama» de la página «Filamento». Al laminar, la cama elegida reemplaza la temperatura de cama del filamento
+(`apply_bed_type()` en `Print::apply`); un 0 deja la del filamento (en OrcaSlicer, 0 quiere decir que el filamento no
+sirve para esa cama). Sin cama elegida se usa `default_bed_type` de la impresora, de modo que el G-code de inicio de
+OrcaSlicer que pregunta por `curr_bed_type` (por ejemplo el ajuste de Z de las Bambu Lab en la cama texturada) recibe
+la cama real.
+
+El conversor de OrcaSlicer copia las temperaturas por cama de los filamentos, `default_bed_type` de las impresoras (el
+nombre o el número del enum de OrcaSlicer) y activa `support_multi_bed_types` en las impresoras que lo tienen y en
+todas las Bambu Lab (OrcaSlicer siempre deja elegir la cama en ellas). La temperatura de cama del filamento sigue
+siendo la de la primera cama que da el filamento (`PLATE_ORDER`), para las impresoras sin tipos de cama.
 
 ## Revisión de los filamentos
 
