@@ -502,14 +502,14 @@ struct PageVendors: ConfigWizardPage
 // check, and a search by name over all brands. Checking a printer is the same as checking it in its vendor's page.
 struct PageBrands: ConfigWizardPage
 {
+    // A printer model; its nozzles (the variants) are chosen apart, as in OrcaSlicer.
     struct Entry {
         std::string                         repo_id;
         const VendorProfile                *vendor;
         const VendorProfile::PrinterModel  *model;
-        std::string                         variant;
         wxString                            label;       // in the list of a brand
         wxString                            full_label;  // in the search results (with the brand)
-        std::wstring                        search_text; // brand, model and nozzle, lower case
+        std::wstring                        search_text; // brand, model and nozzles, lower case
     };
     struct Brand {
         wxString            name;
@@ -526,6 +526,9 @@ private:
     wxCheckListBox     *m_printers_list;
     wxStaticBitmap     *m_preview;
     wxStaticText       *m_preview_name;
+    wxStaticText       *m_nozzles_label;
+    wxBoxSizer         *m_nozzles_sizer;
+    std::vector<wxCheckBox*> m_nozzle_boxes; // the nozzles of the model shown in the preview
     wxStaticText       *m_summary;
     wxCheckBox         *m_custom { nullptr };
     std::vector<Entry>  m_entries;
@@ -533,7 +536,12 @@ private:
     std::vector<int>    m_shown_brands;   // row of the brands list -> brand, -1: the results of the search
     std::vector<size_t> m_shown_entries;  // row of the printers list -> entry
 
-    bool    is_selected(const Entry &entry) const;
+    bool    is_selected(const Entry &entry, const std::string &variant) const;
+    bool    is_selected(const Entry &entry) const; // any nozzle
+    size_t  selected_count(const Entry &entry) const;
+    bool    pick(const Entry &entry, const std::string &variant, bool enable);
+    void    update_nozzles(const Entry *entry);
+    void    update_counts();
     size_t  selected_count(const Brand &brand) const;
     bool    matches(const Entry &entry) const;
     void    update_brands();
