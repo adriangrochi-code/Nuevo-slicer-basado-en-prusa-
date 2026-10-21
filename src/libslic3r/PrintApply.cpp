@@ -19,6 +19,7 @@
 
 #include "Model.hpp"
 #include "BeltPrinter.hpp"
+#include "BedType.hpp"
 #include <optional>
 #include "Print.hpp"
 #include "admesh/stl.h"
@@ -1184,6 +1185,8 @@ Print::ApplyStatus Print::apply(const Model &model_in, DynamicPrintConfig new_fu
         new_full_config.set_key_value("arc_fitting", new ConfigOptionEnum<ArcFittingType>(ArcFittingType::Disabled));
     }
     const Model &model = belt_model ? *belt_model : model_in;
+    // Tisma: the bed temperatures of the filaments for the plate chosen.
+    apply_bed_type(new_full_config);
 
 #ifdef _DEBUG
     check_model_ids_validity(model);

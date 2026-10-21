@@ -1115,6 +1115,7 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloat,              calib_end))
     ((ConfigOptionFloat,              calib_step))
     ((ConfigOptionFloat,              calib_band_height))
+    ((ConfigOptionString,             curr_bed_type))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(

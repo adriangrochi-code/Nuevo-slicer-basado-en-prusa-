@@ -177,7 +177,7 @@ SKIPPED = {
     'bed_custom_texture', 'bed_custom_model', 'inherits_group', 'renamed_from', 'description', '_comment',
     'wall_infill_order', 'brim_type', 'support_type', 'support_style', 'ironing_type', 'print_sequence',
     'exclude_object', 'gcode_label_objects', 'emit_machine_limits_to_gcode', 'only_one_wall_top', 'infill_combination',
-    'ensure_vertical_shell_thickness', 'fuzzy_skin', 'seam_position', 'default_bed_type',
+    'ensure_vertical_shell_thickness', 'fuzzy_skin', 'seam_position',
 }
 
 # Value translations of the enumerations.
@@ -558,6 +558,16 @@ class Converter:
             if seam:
                 out['seam_position'] = SEAM.get(seam, seam) if SEAM.get(seam, seam) in ('random', 'nearest', 'aligned', 'rear') else 'aligned'
         if kind == 'printer':
+            # The bed chosen with the printer: a name or the index of the enum of Orca (0 = its default plate).
+            bt = str(first(flat.get('default_bed_type', '')))
+            if bt.isdigit():
+                bt = BED_TYPES[int(bt)] if int(bt) < len(BED_TYPES) else ''
+            if bt not in PLATE_TEMPS and any('curr_bed_type' in str(v) for k, v in flat.items() if k.endswith('gcode')):
+                bt = 'Textured PEI Plate'  # the plate the custom G-code assumed before (see Converter.literal())
+            if bt in PLATE_TEMPS:
+                out['default_bed_type'] = bt
+            else:
+                out.pop('default_bed_type', None)
             flavor = out.get('gcode_flavor', 'marlin')
             relative = out.get('use_relative_e_distances', '0') == '1'
             # Rules of Tisma (PrusaSlicer) which Orca does not enforce.
@@ -640,7 +650,12 @@ def tisma_option_types(tisma_root):
     values = {}
     for m in re.finditer(r'static const t_config_enum_values s_keys_map_(\w+)\s*=?\s*\{(.*?)\};', src, re.S):
         values[m.group(1)] = re.findall(r'\{\s*"([^"]+)"', m.group(2))
-    limits = {}
+    # The bed temperatures for each bed type, defined in a loop over src/libslic3r/BedType.cpp.
+    bed_src = open(os.path.join(tisma_root, 'src', 'libslic3r', 'BedType.cpp'), encoding='utf-8').read()
+    bed_keys = re.findall(r'"([a-z_]+_plate_temp(?:_initial_layer)?)"', bed_src)
+    for key in bed_keys:
+        types.setdefault(key, 'coInts')
+    limits = {key: (0., 300.) for key in bed_keys}
     for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*co\w+\);(.{0,2500}?)(?=this->add|\Z)', src, re.S):
         # The last assignment wins, as in C++ (some definitions assign max twice).
         lo = re.findall(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
@@ -884,6 +899,9 @@ def main():
             elif kind == 'printer':
                 nozzle = to_float(first(flat.get('nozzle_diameter', ['0.4'])), 0.4)
             out = conv.convert(kind, flat, nozzle)
+            # Orca lets the user choose the plate of every Bambu Lab printer (support_multi_bed_types is not set).
+            if kind == 'printer' and vendor == 'BBL':
+                out['support_multi_bed_types'] = '1'
             converted[(kind, name)] = out
             return out
 

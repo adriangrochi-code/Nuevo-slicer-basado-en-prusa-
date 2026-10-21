@@ -52,6 +52,8 @@ set(SLIC3R_SOURCES
     BuildVolume.hpp
     BeltPrinter.cpp
     BeltPrinter.hpp
+    BedType.cpp
+    BedType.hpp
     BoostAdapter.hpp
     clipper.cpp
     clipper.hpp
