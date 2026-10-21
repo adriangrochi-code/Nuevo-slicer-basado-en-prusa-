@@ -23,8 +23,11 @@ master = [
 # A computing node needs only httpx (and the Tisma programs).
 node = []
 test = ["pytest>=8", "aiosmtpd>=1.4"]
+# The executable of the CI (tisma-cloud.spec): PyInstaller, GPLv2 with an exception for the programs it bundles.
+exe = ["pyinstaller>=6.6"]
 
 [project.scripts]
+tisma-cloud = "tisma_cloud.cli:main"
 tisma-cloud-admin = "tisma_cloud.admin:main"
 tisma-cloud-node = "tisma_cloud.node.__main__:main"
 

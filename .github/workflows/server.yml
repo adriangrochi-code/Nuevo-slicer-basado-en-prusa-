@@ -42,3 +42,56 @@ jobs:
         env:
           TISMA_TEST_DATABASE_URL: postgresql+psycopg://tisma:tisma@localhost:5432/tisma_test
         run: pytest -q
+
+  # The server as one program, tisma-cloud (.exe on Windows): master, node and administration (server/tisma-cloud.spec).
+  executable:
+    needs: tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            name: windows
+            exe: tisma-cloud.exe
+          - os: ubuntu-24.04
+            name: linux
+            exe: tisma-cloud
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: server
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install ".[master,exe]"
+      - name: Build
+        run: pyinstaller --noconfirm --clean tisma-cloud.spec
+      - name: Try it
+        env:
+          TISMA_DATABASE_URL: sqlite:///./try.db
+          TISMA_STORAGE_DIR: ./try-storage
+          TISMA_INTERNAL_EMAILS: "@tisma.com.uy"
+        run: |
+          set -e
+          exe=dist/${{ matrix.exe }}
+          "$exe" --help
+          "$exe" admin plan-set basico --hours 1 --concurrent 1
+          token=$("$exe" admin user-add equipo@tisma.com.uy --plan basico | tail -n 1)
+          "$exe" admin user-list | grep "unlimited"
+          "$exe" master --port 18990 > master.log 2>&1 &
+          master=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:18990/v1/health > /dev/null 2>&1 && break; sleep 1; done
+          curl -sf -H "Authorization: Bearer $token" http://127.0.0.1:18990/v1/me | grep '"unlimited":true'
+          kill $master || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tisma-cloud-${{ matrix.name }}
+          path: |
+            server/dist/${{ matrix.exe }}
+            server/.env.example
+            server/deploy/node.example.toml
+          retention-days: 30

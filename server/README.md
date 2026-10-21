@@ -49,6 +49,22 @@ Tisma / app / página web ──HTTPS──► MAESTRO (Caddy + API + PostgreSQL
 - Protección: límite de peticiones por minuto por usuario (según su plan), por nodo y de intentos de inicio de sesión
   (por dirección y por correo). Las contraseñas se guardan con scrypt; los tokens, como SHA-256.
 
+### Cuentas internas (sin cobro, sin límite)
+
+Para el equipo: una cuenta **interna** lamina y calcula sin límite de horas, de trabajos a la vez ni de peticiones, y
+no necesita pagar. No es administradora (no entra al panel ni recibe los avisos). El tiempo que usa se sigue contando
+(para saber cuánto cómputo se va en uso propio).
+
+- **Por correo o dominio:** `TISMA_INTERNAL_EMAILS=equipo@tisma.com.uy,@tisma.com.uy` (separados por comas; `@dominio`
+  vale para todas las direcciones del dominio). Una cuenta con esas direcciones es interna desde que se crea (registro,
+  Google, página web o `admin user-add`) y las que ya existían pasan a serlo al arrancar el maestro.
+- **Una por una:** en el panel `/admin`, botón «Hacer interna» / «Quitar sin límite» de cada usuario, o
+  `tisma-cloud admin user-set ana@correo.com --unlimited` (`--limited` la vuelve normal). Sacar una dirección de
+  `TISMA_INTERNAL_EMAILS` no la vuelve normal: hay que hacerlo así.
+- Solo vale con el correo **confirmado**: alguien que se registra con una dirección del equipo sin poder leer su correo
+  no queda sin límite.
+- Tisma y la app ven `"unlimited": true` en `/v1/me` (y `paid: true`).
+
 ## Qué se ve desde internet y qué no
 
 - **Desde internet** (`https://tismaservidores.net`, Caddy en el 443): la API de los usuarios (Tisma inicia sesión,
@@ -196,6 +212,24 @@ docker compose --env-file .env -f deploy/compose.master.yaml exec api python -m 
 Sin Docker: `pip install ".[master]"`, `TISMA_DATABASE_URL=postgresql+psycopg://...` y
 `uvicorn tisma_cloud.main:app --host 0.0.0.0 --port 8000`.
 
+### Ejecutable (sin Docker ni Python)
+
+Cada pull request y cada cambio en `main` que toca `server/` genera el programa **`tisma-cloud`** (`tisma-cloud.exe`
+en Windows) en la pestaña *Actions* del PR, artefactos `tisma-cloud-windows` y `tisma-cloud-linux` (se guardan 30
+días). Es un solo archivo con el maestro, el nodo y la administración (`tisma-cloud.spec`, PyInstaller):
+
+```
+tisma-cloud master --port 8000            # el maestro; lee .env de la carpeta (o --env archivo)
+tisma-cloud admin plan-set basico --hours 10 --concurrent 2 --rpm 120 --priority 1
+tisma-cloud admin user-add tu@correo.com --plan basico --admin --password
+tisma-cloud node --config node.toml       # un nodo (TISMA_NODE_TOKEN=tn_... en el entorno)
+```
+
+En la carpeta del programa, un `.env` con al menos `TISMA_DATABASE_URL` (PostgreSQL, o
+`sqlite:///./tisma.db` para probar) y `TISMA_STORAGE_DIR`. Las variables ya definidas en el sistema tienen prioridad.
+El HTTPS (Caddy) y la base de datos van aparte, como en la instalación con Docker. Para armarlo a mano:
+`pip install ".[master,exe]"` y `pyinstaller tisma-cloud.spec` (queda en `dist/`).
+
 ## Avisos de problemas
 
 El central revisa cada minuto y avisa por correo a los administradores (las cuentas con `--admin`, o las direcciones
@@ -271,6 +305,7 @@ python -m tisma_cloud.admin node-set i7-2 --disable
 python -m tisma_cloud.admin queue                         # trabajos esperando y corriendo por clase
 python -m tisma_cloud.admin user-list                     # plan, si está al día, horas usadas
 python -m tisma_cloud.admin user-set ana@correo.com --paid-until 2026-12-31
+python -m tisma_cloud.admin user-set equipo@tisma.com.uy --unlimited   # cuenta interna (ver «Cuentas internas»)
 ```
 
 La misma información está en la API de administración (`/v1/admin/...`, con el token de un administrador).

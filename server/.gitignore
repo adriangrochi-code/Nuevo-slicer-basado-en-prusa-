@@ -9,3 +9,6 @@ node-work/
 deploy/tisma/
 deploy/node.toml
 deploy/backups/
+build/
+dist/
+*.egg-info/

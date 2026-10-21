@@ -23,9 +23,13 @@ installed with pip.
 | typing-extensions | 4.16.0 | PSF-2.0 | dependency of the above |
 | certifi | 2026.10.19 | MPL-2.0 | dependency of httpx (CA certificates) |
 | pytest | 9.1.1 | MIT | tests only |
+| PyInstaller | 6.22.3 | GPL-2.0-or-later with the PyInstaller bootloader exception (allows building and distributing non-free programs) | builds the `tisma-cloud` executable (CI); not part of the service |
+| pyinstaller-hooks-contrib / altgraph | 2026.9 / 0.17.5 | GPL-2.0-or-later or Apache-2.0 (hooks) / MIT | dependencies of PyInstaller |
 
 psycopg is LGPL-3.0: it is used unmodified as a separately installed library (pip), which the LGPL allows in
-proprietary software; if it is ever modified, the modified source must be published.
+proprietary software; if it is ever modified, the modified source must be published. The `tisma-cloud` executable
+bundles it (one file): it is built for the machines of the service, not given to anyone. Before giving the executable
+to third parties, build it as a folder (PyInstaller "onedir", the psycopg files replaceable) and include the LGPL text.
 
 Programs run as separate processes (not linked):
 
