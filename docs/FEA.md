@@ -285,9 +285,10 @@ uniforme más ligero del resto de la pieza con la zona puesta y lo compara con e
 | Ultra | 1 ancho de línea del perímetro |
 
 El ancho de línea es el de los perímetros del perfil (con los ajustes del objeto; un porcentaje es de la altura de
-capa, como en el motor de PrusaSlicer, `Flow::extrusion_width`). Un análisis usa como máximo 1,2 millones de vóxeles (86 s en 4 núcleos con una
-barra de 100×50×50 mm); el relleno mínimo, el refuerzo, el lattice y la orientación hacen muchos análisis y usan
-como máximo 250 000 (~9 s cada uno). Por encima, el vóxel se agranda y el panel lo avisa.
+capa, como en el motor de PrusaSlicer, `Flow::extrusion_width`). No hay límite de vóxeles: se calcula con la resolución elegida. Como referencia, 1,2 millones de vóxeles tardan
+86 s en 4 núcleos (barra de 100×50×50 mm) y el relleno mínimo, el refuerzo, el lattice y la orientación hacen muchos
+análisis (~9 s cada uno con 250 000). Por encima de esas cantidades el panel avisa que el análisis es grande.
+`tisma-fea --max-voxels N` limita la cantidad (por ejemplo en los servidores) agrandando el vóxel.
 
 **Dirección de impresión**: el material es transversalmente isótropo con el eje débil en la dirección de
 apilado de las capas (`Setup::build_direction`, Z por defecto). La matriz constitutiva se rota con la matriz de Bond

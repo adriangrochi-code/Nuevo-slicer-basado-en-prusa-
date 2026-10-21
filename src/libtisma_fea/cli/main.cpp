@@ -48,6 +48,7 @@ const char *USAGE =
     "  --no-zones        lightest-infill: only the uniform infill\n"
     "  --ribs            lightest-infill: also ribs along the stresses\n"
     "  --no-gpu          run the multigrid on the CPU\n"
+    "  --max-voxels N    at most N voxels: a coarser grid when the quality needs more (default: no limit)\n"
     "\n"
     "Prints \"progress N\" (0..100) lines on the standard output. Exit codes: 0 done (see the verdict), 1 bad\n"
     "arguments or project, 2 the analysis failed.\n";
@@ -63,6 +64,7 @@ struct Args
     bool        zones { true };
     bool        ribs { false };
     bool        gpu { true };
+    int         max_voxels { 0 };
 };
 
 bool parse_int(const char *s, int &out)
@@ -101,6 +103,10 @@ bool parse_args(int argc, char **argv, Args &args, std::string &error)
         else if (a == "--no-zones") args.zones = false;
         else if (a == "--ribs")     args.ribs = true;
         else if (a == "--no-gpu")   args.gpu = false;
+        else if (a == "--max-voxels") {
+            if (! value(v)) return false;
+            if (! parse_int(v.c_str(), args.max_voxels)) { error = "Bad value of " + a; return false; }
+        }
         else { error = "Unknown argument " + a; return false; }
     }
     if (args.input.empty() || args.output.empty()) {
@@ -214,10 +220,9 @@ int main(int argc, char **argv)
         std::cerr << "tisma-fea: " << error << "\n";
         return 1;
     }
-    const bool single = args.mode == "analyze";
     bool limited = false;
     input.setup.voxel_size = Fea::quality_voxel_size(args.quality, its_volume(input.mesh), input.line_width,
-                                                     single ? Fea::MAX_VOXELS_SINGLE : Fea::MAX_VOXELS_MANY, &limited);
+                                                     double(args.max_voxels), &limited);
 
     Fea::ResultFile file;
     file.info["material"]       = input.material;

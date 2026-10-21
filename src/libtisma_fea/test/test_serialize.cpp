@@ -210,14 +210,16 @@ TEST_CASE("Qualities of the analysis", "[FEA][Quality]")
 {
     const double volume = 60000.;   // mm³
     bool limited = true;
-    CHECK(quality_voxel_size(Quality::Fast, volume, 0.45, MAX_VOXELS_SINGLE, &limited) == Approx(std::cbrt(volume / FAST_VOXELS)));
+    CHECK(quality_voxel_size(Quality::Fast, volume, 0.45, 0., &limited) == Approx(std::cbrt(volume / FAST_VOXELS)));
     CHECK(! limited);
-    CHECK(quality_voxel_size(Quality::Normal, volume, 0.45, MAX_VOXELS_SINGLE) == Approx(1.));
-    CHECK(quality_voxel_size(Quality::High, volume, 0.45, MAX_VOXELS_SINGLE) == Approx(0.9));
-    // Ultra: 0.45 mm voxels would be 658 000 voxels, more than the jobs of many analyses allow.
-    CHECK(quality_voxel_size(Quality::Ultra, volume, 0.45, MAX_VOXELS_SINGLE, &limited) == Approx(0.45));
+    CHECK(quality_voxel_size(Quality::Normal, volume, 0.45) == Approx(1.));
+    CHECK(quality_voxel_size(Quality::High, volume, 0.45) == Approx(0.9));
+    // Ultra: 0.45 mm voxels, 658 000 of them: no limit by default, a coarser grid only when a limit is given.
+    CHECK(quality_voxel_size(Quality::Ultra, volume, 0.45, 0., &limited) == Approx(0.45));
     CHECK(! limited);
-    CHECK(quality_voxel_size(Quality::Ultra, volume, 0.45, MAX_VOXELS_MANY, &limited) == Approx(std::cbrt(volume / MAX_VOXELS_MANY)));
+    CHECK(quality_voxel_size(Quality::Ultra, volume * 1000., 0.45, 0., &limited) == Approx(0.45));
+    CHECK(! limited);
+    CHECK(quality_voxel_size(Quality::Ultra, volume, 0.45, 2.5e5, &limited) == Approx(std::cbrt(volume / 2.5e5)));
     CHECK(limited);
     for (Quality q : { Quality::Fast, Quality::Normal, Quality::High, Quality::Ultra }) {
         Quality parsed = Quality::Fast;

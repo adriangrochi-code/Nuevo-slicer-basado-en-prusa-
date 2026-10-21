@@ -718,14 +718,9 @@ void GLGizmoEngineering::estimate_quality(const ModelObject &object, double &h, 
 
 void GLGizmoEngineering::apply_quality(Fea::ModelAnalysisInput &input, JobSize size)
 {
+    // No limit: the resolution chosen is the one computed (the panel warns about large analyses).
     m_quality_note.clear();
-    const double max_voxels = size == JobSize::Single ? Fea::MAX_VOXELS_SINGLE : Fea::MAX_VOXELS_MANY;
-    bool limited = false;
-    const double h = Fea::quality_voxel_size(m_quality, its_volume(input.mesh), input.line_width, max_voxels, &limited);
-    if (limited)
-        m_quality_note = GUI::format(_u8L("Limited to %1% voxels of %2$.2f mm (%3$.1f line widths)."),
-                                     size_t(max_voxels), h, h / std::max(input.line_width, 1e-3));
-    input.setup.voxel_size = h;
+    input.setup.voxel_size = Fea::quality_voxel_size(m_quality, its_volume(input.mesh), input.line_width);
 }
 
 template<class T> void GLGizmoEngineering::launch(std::function<T()> job, std::optional<T> *pending)
@@ -1716,14 +1711,15 @@ void GLGizmoEngineering::on_render_input_window(float x, float y, float bottom_l
         }
         double h = 0., voxels = 0.;
         estimate_quality(*mo, h, voxels);
-        if (voxels > Fea::MAX_VOXELS_SINGLE)
+        if (voxels > Fea::LARGE_VOXELS_SINGLE)
             ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT,
-                GUI::format(_u8L("About %1% voxels of %2$.2f mm: too many, limited to %3%."), size_t(voxels), h, size_t(Fea::MAX_VOXELS_SINGLE)));
+                GUI::format(_u8L("About %1% voxels of %2$.2f mm: a large analysis, it may take minutes and much memory."),
+                            size_t(voxels), h));
         else
             ui::muted(GUI::format(_u8L("About %1% voxels of %2$.2f mm."), size_t(voxels), h));
-        if (voxels > Fea::MAX_VOXELS_MANY)
-            ui::muted(GUI::format(_u8L("The infill search, the reinforcement, the lattice and the orientation use at most %1% voxels."),
-                                  size_t(Fea::MAX_VOXELS_MANY)), width);
+        if (voxels > Fea::LARGE_VOXELS_MANY)
+            ui::muted(_u8L("The infill search, the reinforcement, the lattice and the orientation run many analyses of this "
+                           "size: a lower resolution is faster."), width);
     }
     if (ImGuiPureWrap::checkbox(is_resin ? _u8L("Printed part (hollowing and interior infill of the profile)") :
                                            _u8L("Printed part (walls and infill of the profile)"), m_as_printed))

@@ -19,7 +19,7 @@ double quality_voxel_size(Quality quality, double volume, double line_width, dou
     case Quality::Normal: h = std::cbrt(volume / double(NORMAL_VOXELS)); break;
     default:              h = quality_line_widths(quality) * std::max(line_width, 1e-3); break;
     }
-    const bool over = volume / (h * h * h) > max_voxels;
+    const bool over = max_voxels > 0. && volume / (h * h * h) > max_voxels;
     if (over)
         h = std::cbrt(volume / max_voxels);
     if (limited)
