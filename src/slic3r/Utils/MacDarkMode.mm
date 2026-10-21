@@ -24,6 +24,15 @@ bool mac_dark_mode()
 
 }
 
+void mac_set_appearance(int mode)
+{
+    if (@available(macOS 10.14, *)) {
+        NSAppearance *appearance = mode == 1 ? [NSAppearance appearanceNamed:NSAppearanceNameAqua] :
+                                   mode == 2 ? [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua] : nil;
+        [NSApp setAppearance:appearance];
+    }
+}
+
 double mac_max_scaling_factor()
 {
     double scaling = 1.;

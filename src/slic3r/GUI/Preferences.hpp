@@ -32,6 +32,13 @@ namespace Slic3r {
 		NotifyReleaseNone
 	};
 
+	// Tisma: appearance of the interface (TismaTheme::Appearance).
+	enum  TismaAppearanceMode {
+		TismaAppearanceSystem,
+		TismaAppearanceLight,
+		TismaAppearanceDark
+	};
+
 	// Tisma (phase 7): quality of the 3D view, saved as TismaShading::Quality.
 	enum  TismaRenderQualityMode {
 		TismaRenderClassic,

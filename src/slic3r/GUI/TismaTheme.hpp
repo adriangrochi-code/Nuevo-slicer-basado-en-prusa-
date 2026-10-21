@@ -5,11 +5,30 @@
 #ifndef slic3r_TismaTheme_hpp_
 #define slic3r_TismaTheme_hpp_
 
+#include <string>
+
 #include <wx/colour.h>
 
 namespace Slic3r {
 namespace GUI {
 namespace TismaTheme {
+
+// Appearance of the program (Preferences > GUI > Appearance, app_config "appearance"): the mode of the operating system,
+// or always light or dark.
+enum class Appearance { System, Light, Dark };
+Appearance  appearance();
+std::string appearance_key(Appearance appearance);
+// Whether the operating system uses a dark mode (Windows: the mode of the apps; macOS: the system appearance; Linux: the
+// GTK theme).
+bool        system_dark();
+// Whether the program is drawn dark: the appearance chosen, or the one of the system.
+bool        dark();
+// Before the first window: the native controls follow the appearance chosen (Windows: dark_color_mode of the dark mode
+// of PrusaSlicer; Linux: the dark variant of the GTK theme; macOS: the appearance of the application).
+void        apply_to_toolkit();
+// Linux: GTK reads its theme when it starts. Before that, a forced appearance of the configuration file (ini_path) sets
+// GTK_THEME to the light or dark Adwaita, unless the user set GTK_THEME.
+void        set_gtk_theme_env(const std::string &ini_path);
 
 // Brand
 inline wxColour accent()            { return wxColour(0x7A, 0x24, 0xC9); }

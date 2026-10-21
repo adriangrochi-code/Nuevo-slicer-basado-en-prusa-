@@ -8,6 +8,7 @@
 ///|/
 #include "libslic3r/Technologies.hpp"
 #include "GUI_App.hpp"
+#include "TismaTheme.hpp"
 #include "GUI_Init.hpp" // IWYU pragma: keep
 #include "GUI_ObjectList.hpp"
 #include "GUI_ObjectManipulation.hpp"
@@ -1400,6 +1401,8 @@ bool GUI_App::on_init_inner()
 
     // If load_language() fails, the application closes.
     load_language(wxString(), true);
+    // Tisma: the appearance chosen (light, dark or the one of the system) before the first window.
+    TismaTheme::apply_to_toolkit();
 #ifdef _MSW_DARK_MODE
     bool init_dark_color_mode = app_config->get_bool("dark_color_mode");
     bool init_sys_menu_enabled = app_config->get_bool("sys_menu_enabled");
@@ -1733,17 +1736,8 @@ unsigned GUI_App::get_colour_approx_luma(const wxColour &colour)
 
 bool GUI_App::dark_mode()
 {
-#if __APPLE__
-    // The check for dark mode returns false positive on 10.12 and 10.13,
-    // which allowed setting dark menu bar and dock area, which is
-    // is detected as dark mode. We must run on at least 10.14 where the
-    // proper dark mode was first introduced.
-    return wxPlatformInfo::Get().CheckOSVersion(10, 14) && mac_dark_mode();
-#else
-    if (wxGetApp().app_config->has("dark_color_mode"))
-        return wxGetApp().app_config->get_bool("dark_color_mode");
-    return check_dark_mode();
-#endif
+    // Tisma: the appearance of Preferences (light, dark or the one of the system, see TismaTheme.cpp).
+    return TismaTheme::dark();
 }
 
 const wxColour GUI_App::get_label_default_clr_system()

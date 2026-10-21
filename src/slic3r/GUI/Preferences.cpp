@@ -9,6 +9,7 @@
 #include "Preferences.hpp"
 #include "OptionsGroup.hpp"
 #include "GUI_App.hpp"
+#include "TismaTheme.hpp"
 #include "Plater.hpp"
 #include "MsgDialog.hpp"
 #include "I18N.hpp"
@@ -73,6 +74,14 @@ namespace Slic3r {
 	};
 
 	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaRenderQualityMode)
+
+	static const t_config_enum_values s_keys_map_TismaAppearanceMode = {
+		{"system",      TismaAppearanceSystem},
+		{"light",       TismaAppearanceLight},
+		{"dark",        TismaAppearanceDark},
+	};
+
+	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaAppearanceMode)
 
 namespace GUI {
 
@@ -533,6 +542,15 @@ void PreferencesDialog::build()
 	// Add "GUI" tab
 	m_optgroup_gui = create_options_tab(L("GUI"), tabs);
 	m_optgroup_gui->on_change = [this](t_config_option_key opt_key, boost::any value) {
+		if (opt_key == "appearance") {
+			const int val_int = boost::any_cast<int>(value);
+			for (const auto& item : s_keys_map_TismaAppearanceMode)
+				if (item.second == val_int)
+					m_values[opt_key] = item.first;
+			if (m_values[opt_key] == get_app_config()->get("appearance"))
+				m_values.erase(opt_key);
+			return;
+		}
 		if (opt_key == "notify_release") {
 			int val_int = boost::any_cast<int>(value);
 			for (const auto& item : s_keys_map_NotifyReleaseMode) {
@@ -560,6 +578,19 @@ void PreferencesDialog::build()
 		else*/
 			m_values[opt_key] = boost::any_cast<bool>(value) ? "1" : "0";
 	};
+
+	// Tisma: light, dark or the mode of the operating system.
+	append_enum_option<TismaAppearanceMode>(m_optgroup_gui, "appearance",
+		L("Appearance"),
+		L("Colors of the interface: those of the operating system (light or dark, as it is set), or always light, or "
+		  "always dark."),
+		new ConfigOptionEnum<TismaAppearanceMode>(static_cast<TismaAppearanceMode>(
+			s_keys_map_TismaAppearanceMode.count(app_config->get("appearance")) ? s_keys_map_TismaAppearanceMode.at(app_config->get("appearance")) : 0)),
+		{ { "system", L("Like the system") },
+		  { "light",  L("Light") },
+		  { "dark",   L("Dark") }
+		});
+	m_optgroup_gui->append_separator();
 
 	append_bool_option(m_optgroup_gui, "seq_top_layer_only",
 		L("Sequential slider applied only to top layer"),
@@ -725,11 +756,6 @@ void PreferencesDialog::build()
 			m_values[opt_key] = boost::any_cast<bool>(value) ? "1" : "0";
 		};
 
-		append_bool_option(m_optgroup_dark_mode, "dark_color_mode",
-			L("Enable dark mode"),
-			L("If enabled, UI will use Dark mode colors. If disabled, old UI will be used."),
-			app_config->get_bool("dark_color_mode"));
-
 		if (wxPlatformInfo::Get().GetOSMajorVersion() >= 10) // Use system menu just for Window newer then Windows 10
 															 // Use menu with ownerdrawn items by default on systems older then Windows 10
 		{
@@ -807,7 +833,8 @@ void PreferencesDialog::accept(wxEvent&)
 #endif //(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
 	}
 
-	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "sys_menu_enabled", "font_pt_size", "suppress_round_corners" };
+	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "sys_menu_enabled", "font_pt_size", "suppress_round_corners",
+														 "appearance" };
 
 	for (const std::string& option : options_to_recreate_GUI) {
 		if (m_values.find(option) != m_values.end()) {
@@ -853,6 +880,11 @@ void PreferencesDialog::accept(wxEvent&)
 
 	for (std::map<std::string, std::string>::iterator it = m_values.begin(); it != m_values.end(); ++it)
 		app_config->set(it->first, it->second);
+	// Tisma: the native controls in the new appearance (on Windows it sets dark_color_mode, applied below).
+	if (m_values.find("appearance") != m_values.end()) {
+		GUI::TismaTheme::apply_to_toolkit();
+		m_values["dark_color_mode"] = app_config->get("dark_color_mode");
+	}
 
 	if (wxGetApp().is_editor()) {
 		wxGetApp().set_label_clr_sys(m_sys_colour->GetColour());
@@ -907,6 +939,11 @@ void PreferencesDialog::revert(wxEvent&)
 		}
 		if (key == "notify_release") {
 			m_optgroup_gui->set_value(key, s_keys_map_NotifyReleaseMode.at(app_config->get(key)));
+			continue;
+		}
+		if (key == "appearance") {
+			m_optgroup_gui->set_value(key, s_keys_map_TismaAppearanceMode.count(app_config->get(key)) ?
+				s_keys_map_TismaAppearanceMode.at(app_config->get(key)) : 0);
 			continue;
 		}
 		if (key == GUI::TismaShading::CONFIG_KEY) {

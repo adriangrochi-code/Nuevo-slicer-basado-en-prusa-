@@ -231,13 +231,17 @@ void AppConfig::set_defaults()
     if (get("use_legacy_3DConnexion").empty())
         set("use_legacy_3DConnexion", "0");
 
-    // Dark interface by default (Tisma palette, PrusaSlicer 3.0 style).
+    // Tisma: dark_color_mode follows the appearance (TismaTheme::apply_to_toolkit()).
     if (get("dark_color_mode").empty())
-        set("dark_color_mode", "1");
+        set("dark_color_mode", "0");
 
     if (get("sys_menu_enabled").empty())
         set("sys_menu_enabled", "1");
 #endif // _WIN32
+
+    // Tisma: light, dark or the mode of the operating system (Preferences > GUI > Appearance).
+    if (get("appearance").empty())
+        set("appearance", "system");
 
     if (get("show_step_import_parameters").empty())
         set("show_step_import_parameters", "1");
