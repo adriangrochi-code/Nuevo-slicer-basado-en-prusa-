@@ -474,6 +474,10 @@ class TabFilament : public Tab
     void            update_filament_overrides_page();
     void            create_extruder_combobox();
 	void 			update_volumetric_flow_preset_hints();
+    // Tisma: the first layer follows the filament (see follow_first_layer_temperatures()).
+    void            follow_first_layer_temperatures();
+    // Nozzle, first layer nozzle, bed and first layer bed temperatures last seen (-1: not yet).
+    int             m_followed_temperatures[4] { -1, -1, -1, -1 };
 
     std::map<std::string, wxWindow*> m_overrides_options;
 public:

@@ -2540,12 +2540,43 @@ void TabFilament::toggle_options()
     }
 }
 
+// Tisma: the first layer follows the filament. When only the nozzle (or bed) temperature changed, the first layer
+// temperature moves by the same amount (a first layer 10 degrees hotter stays 10 degrees hotter). Values that changed
+// together (another preset, values reverted, the first layer edited) are only remembered.
+void TabFilament::follow_first_layer_temperatures()
+{
+    static const char *keys[4] = { "temperature", "first_layer_temperature", "bed_temperature", "first_layer_bed_temperature" };
+    ConfigOptionInts *opts[4];
+    for (int i = 0; i < 4; ++i) {
+        opts[i] = m_config->option<ConfigOptionInts>(keys[i]);
+        if (opts[i] == nullptr || opts[i]->values.empty())
+            return;
+    }
+    bool changed = false;
+    for (int pair = 0; pair < 4; pair += 2) {
+        const int temp = opts[pair]->values[0], first = opts[pair + 1]->values[0];
+        const int last_temp = m_followed_temperatures[pair], last_first = m_followed_temperatures[pair + 1];
+        if (last_temp >= 0 && temp != last_temp && first == last_first && first > 0) {
+            opts[pair + 1]->values[0] = std::max(0, first + temp - last_temp);
+            changed = true;
+        }
+        m_followed_temperatures[pair]     = temp;
+        m_followed_temperatures[pair + 1] = opts[pair + 1]->values[0];
+    }
+    if (changed) {
+        reload_config();
+        update_dirty();
+    }
+}
+
 void TabFilament::update()
 {
     if (m_preset_bundle->printers.get_selected_preset().printer_technology() == ptSLA)
         return; // ys_FIXME
 
     m_update_cnt++;
+
+    follow_first_layer_temperatures();
 
     update_description_lines();
     Layout();
@@ -2596,6 +2627,8 @@ void TabFilament::sys_color_changed()
 
 void TabFilament::load_current_preset()
 {
+    // Another filament: its temperatures are remembered, not followed.
+    std::fill(std::begin(m_followed_temperatures), std::end(m_followed_temperatures), -1);
     const std::string& selected_filament_name = m_presets->get_selected_preset_name();
     if (m_active_extruder < 0) {
         // active extruder was invalidated before load new project file or configuration,
