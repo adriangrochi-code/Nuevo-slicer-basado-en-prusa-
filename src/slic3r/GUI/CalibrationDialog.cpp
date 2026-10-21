@@ -677,7 +677,7 @@ public:
         grid->AddGrowableCol(1);
         auto add_field = [&](const wxString& label, double value, double min, double max, double inc, int digits, const wxString& unit) {
             grid->Add(new wxStaticText(this, wxID_ANY, label), 0, wxALIGN_CENTER_VERTICAL);
-            auto ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(14 * em, -1),
+            auto ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 14),
                                              wxSP_ARROW_KEYS, min, max, value, inc);
             ctrl->SetDigits(digits);
             grid->Add(ctrl, 1, wxEXPAND);
@@ -938,7 +938,7 @@ public:
         for (int i = 0; i < 3; ++ i) {
             m_current[i] = cfg ? cfg->opt_float(std::string("material_correction_") + axes[i]) : 1.;
             grid->Add(new wxStaticText(this, wxID_ANY, format_wxstr(_L("Measured %1%"), wxString(axes[i]).Upper())), 0, wxALIGN_CENTER_VERTICAL);
-            m_measured[i] = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(12 * em, -1),
+            m_measured[i] = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 12),
                                                  wxSP_ARROW_KEYS, 0.5 * nominal[i], 1.5 * nominal[i], nominal[i], 0.01);
             m_measured[i]->SetDigits(2);
             grid->Add(m_measured[i], 0);
@@ -1108,7 +1108,7 @@ public:
         main->Add(m_choice, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
 
         auto row = new wxBoxSizer(wxHORIZONTAL);
-        m_value = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(12 * em, -1), wxSP_ARROW_KEYS, -1000., 1000., 0., 0.01);
+        m_value = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 12), wxSP_ARROW_KEYS, -1000., 1000., 0., 0.01);
         m_value->SetDigits(2);
         row->Add(m_value, 0, wxRIGHT, em / 2);
         m_unit = new wxStaticText(this, wxID_ANY, wxEmptyString);
@@ -1190,7 +1190,7 @@ public:
         auto add_row = [&](const wxString& label, double value, double min, double max, double inc, int digits,
                            const wxString& unit, const wxString& button, std::function<void()> on_button) {
             grid->Add(new wxStaticText(this, wxID_ANY, label), 0, wxALIGN_CENTER_VERTICAL);
-            auto ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1),
+            auto ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10),
                                              wxSP_ARROW_KEYS, min, max, value, inc);
             ctrl->SetDigits(digits);
             grid->Add(ctrl, 0);

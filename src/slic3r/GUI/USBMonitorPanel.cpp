@@ -713,7 +713,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
         now_text = new wxStaticText(this, wxID_ANY, "-", wxDefaultPosition, wxSize(15 * em, -1), wxST_NO_AUTORESIZE);
         now_text->SetFont(wxGetApp().bold_font().Scaled(1.2f));
         r->Add(now_text, 1, wxALIGN_CENTER_VERTICAL);
-        target = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0, max, value);
+        target = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0, max, value);
         r->Add(target, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
         r->Add(new wxStaticText(this, wxID_ANY, "°C"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
         auto *on = button(_L("Pre-heat"));
@@ -787,7 +787,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
 
     row = new wxBoxSizer(wxHORIZONTAL);
     row->Add(new wxStaticText(this, wxID_ANY, _L("Extruder") + ":"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
-    p->extrude_len = new wxSpinCtrlDouble(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0.1, 200., 5., 1.);
+    p->extrude_len = new wxSpinCtrlDouble(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0.1, 200., 5., 1.);
     row->Add(p->extrude_len, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
     row->Add(new wxStaticText(this, wxID_ANY, "mm"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
     auto *btn_extrude = button(_L("Extrude"));
@@ -802,7 +802,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
 
     row = new wxBoxSizer(wxHORIZONTAL);
     row->Add(new wxStaticText(this, wxID_ANY, _L("Fan") + ":"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
-    p->fan = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0, 100, 100);
+    p->fan = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0, 100, 100);
     row->Add(p->fan, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
     row->Add(new wxStaticText(this, wxID_ANY, "%"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
     auto *fan_on = button(_L("Set"));

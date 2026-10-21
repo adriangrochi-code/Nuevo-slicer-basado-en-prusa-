@@ -7738,9 +7738,9 @@ public:
         m_vase->SetSelection(int(plate.spiral_vase));
         add(_L("Spiral vase") + ":", m_vase);
 
-        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
+        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
         add(_L("First layer bed temperature (°C)") + ":", m_first_layer_bed);
-        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
+        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
         add(_L("Bed temperature (°C)") + ":", m_bed);
 
         m_locked = new wxCheckBox(this, wxID_ANY, _L("Lock the plate: arrange does not move its objects or put others on it"));

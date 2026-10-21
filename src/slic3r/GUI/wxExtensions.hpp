@@ -59,6 +59,9 @@ class wxDialog;
 
 void    msw_buttons_rescale(wxDialog* dlg, const int em_unit, const std::vector<int>& btn_ids, double height_koef = 1.);
 int     em_unit(wxWindow* win);
+// Tisma: the size of a spin control with a text width_em wide. GTK 3 draws its "-" and "+" buttons next to the text and
+// clips the "+" of a narrow control: there the width of the buttons is added.
+wxSize  spin_ctrl_size(wxWindow* win, double width_em);
 int     mode_icon_px_size();
 
 wxBitmapBundle* get_bmp_bundle(const std::string& bmp_name, int width = 16, int height = -1, const std::string& new_color_rgb = std::string());
