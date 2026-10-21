@@ -1490,7 +1490,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Number of cooling moves");
     def->tooltip = L("Filament is cooled by being moved back and forth in the "
                    "cooling tubes. Specify desired number of these moves.");
-    def->max = 0;
+    def->min = 0;
     def->max = 20;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts { 4 });
@@ -1826,7 +1826,7 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Heated build plate temperature for the first layer. Set this to zero to disable "
                    "bed temperature control commands in the output.");
     def->sidetext = L("°C");
-    def->max = 0;
+    def->min = 0;
     def->max = 300;
     def->set_default_value(new ConfigOptionInts { 0 });
 

@@ -642,10 +642,11 @@ def tisma_option_types(tisma_root):
         values[m.group(1)] = re.findall(r'\{\s*"([^"]+)"', m.group(2))
     limits = {}
     for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*co\w+\);(.{0,2500}?)(?=this->add|\Z)', src, re.S):
-        lo = re.search(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
-        hi = re.search(r'def->max\s*=\s*(-?[0-9.]+)', m.group(2))
+        # The last assignment wins, as in C++ (some definitions assign max twice).
+        lo = re.findall(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
+        hi = re.findall(r'def->max\s*=\s*(-?[0-9.]+)', m.group(2))
         if lo or hi:
-            limits[m.group(1)] = (float(lo.group(1)) if lo else None, float(hi.group(1)) if hi else None)
+            limits[m.group(1)] = (float(lo[-1]) if lo else None, float(hi[-1]) if hi else None)
     # Options of each preset type (src/libslic3r/Preset.cpp, and the per extruder options of the printers).
     preset_src = open(os.path.join(tisma_root, 'src', 'libslic3r', 'Preset.cpp'), encoding='utf-8').read()
     def keys_of(var):
