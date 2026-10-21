@@ -84,6 +84,9 @@ class Settings:
     alert_repeat_h: int = field(default_factory=lambda: _int("TISMA_ALERT_REPEAT_H", 12))
     # Key of the web site for /v1/site (it creates the users and records their payments). Empty: disabled.
     site_key: str = field(default_factory=lambda: os.environ.get("TISMA_SITE_KEY", ""))
+    # Internal accounts with unlimited computing, never charged (the team): e-mails and whole domains ("@tisma.com.uy"),
+    # comma separated. An account with one of them is internal from its creation, and at each start of the master.
+    internal_emails: str = field(default_factory=lambda: os.environ.get("TISMA_INTERNAL_EMAILS", ""))
     # Days a user may keep computing after paid_until (a payment that arrives late).
     grace_days: int = field(default_factory=lambda: _int("TISMA_GRACE_DAYS", 3))
     # Login attempts per minute from one address and for one e-mail.
@@ -93,3 +96,11 @@ class Settings:
 
     def __post_init__(self) -> None:
         self.storage_dir = Path(self.storage_dir)
+
+    def is_internal_email(self, email: str) -> bool:
+        """Whether the e-mail is one of internal_emails, or of one of its domains."""
+        email = email.strip().lower()
+        for entry in (e.strip().lower() for e in self.internal_emails.split(",")):
+            if entry and (email == entry or (entry.startswith("@") and email.endswith(entry))):
+                return True
+        return False

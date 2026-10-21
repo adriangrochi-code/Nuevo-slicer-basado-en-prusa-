@@ -288,17 +288,30 @@ async function recordPayment(u) {
   } catch (e) { if (e.message !== "auth") $("app-error").textContent = `No se pudo registrar el pago: ${e.message}`; }
 }
 
+async function setUnlimited(u) {
+  const internal = !u.unlimited;
+  if (!confirm(internal ? `¿Hacer interna a ${u.email}? Lamina y calcula sin límite y no se le cobra.`
+                        : `¿Volver ${u.email} a una cuenta normal, limitada por su plan?`)) return;
+  try {
+    await api(`/v1/admin/users/${encodeURIComponent(u.email)}/unlimited`, { method: "PUT",
+      body: JSON.stringify({ unlimited: internal }) });
+    refresh();
+  } catch (e) { if (e.message !== "auth") $("app-error").textContent = `No se pudo cambiar la cuenta: ${e.message}`; }
+}
+
 function renderUsers(users, pays) {
   $("users").replaceChildren(el("tr", {}, ["Usuario", "Plan", "Estado", "Pagado hasta", "Horas del mes", "Trabajos", ""].map((h) => el("th", {}, h))),
     ...users.map((u) => el("tr", {},
-      el("td", {}, u.email, u.is_admin ? el("span", { class: "muted" }, " (admin)") : null),
+      el("td", {}, u.email, u.is_admin ? el("span", { class: "muted" }, " (admin)") : null,
+        u.unlimited ? el("span", { class: "muted" }, " (interna, sin límite)") : null),
       el("td", {}, u.plan),
-      el("td", { class: u.account.paid ? "status-done" : "status-failed" }, !u.enabled ? "deshabilitado" : u.account.paid ? "al día" : "sin pagar"),
+      el("td", { class: u.account.paid ? "status-done" : "status-failed" }, !u.enabled ? "deshabilitado" : u.account.unlimited ? "sin límite" : u.account.paid ? "al día" : "sin pagar"),
       el("td", {}, u.access_until ? new Date(u.access_until).toLocaleDateString() : "–",
         u.store_until && u.store_until === u.access_until ? el("span", { class: "muted" }, " (Google Play)") : null),
       el("td", {}, `${u.account.hours_used.toFixed(2)} / ${u.account.hours_included}`),
       el("td", {}, u.account.active_jobs),
-      el("td", {}, el("button", { type: "button", onclick: () => recordPayment(u) }, "Registrar pago")))));
+      el("td", {}, el("button", { type: "button", onclick: () => recordPayment(u) }, "Registrar pago"), " ",
+        el("button", { type: "button", onclick: () => setUnlimited(u) }, u.unlimited ? "Quitar sin límite" : "Hacer interna")))));
   $("payments").replaceChildren(el("tr", {}, ["Fecha", "Usuario", "Plan", "Importe", "Medio", "Estado", "Nota"].map((h) => el("th", {}, h))),
     ...(pays.length ? pays.map((p) => el("tr", {},
       el("td", { class: "muted" }, ago(p.created_at)), el("td", {}, p.user), el("td", {}, `${p.plan} · ${p.months} m`),

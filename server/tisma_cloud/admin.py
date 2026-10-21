@@ -73,6 +73,10 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--plan", required=name == "user-add")
         p.add_argument("--paid-until")
         p.add_argument("--password", action="store_true", help="ask a password for the login from Tisma")
+        g = p.add_mutually_exclusive_group()
+        g.add_argument("--unlimited", action="store_true",
+                       help="internal account: unlimited computing, never charged (the team)")
+        g.add_argument("--limited", action="store_true", help="a normal account again, limited by its plan")
         if name == "user-add":
             p.add_argument("--admin", action="store_true")
         else:
@@ -126,7 +130,8 @@ def main(argv: list[str] | None = None) -> int:
                 if user is not None:
                     print(f"The user {email} exists", file=sys.stderr)
                     return 1
-                user = User(email=email, plan_name=args.plan, is_admin=args.admin)
+                user = User(email=email, plan_name=args.plan, is_admin=args.admin,
+                            unlimited=settings.is_internal_email(email))
                 s.add(user)
             elif user is None:
                 print(f"No user {email}", file=sys.stderr)
@@ -139,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
                 user.password_hash = hash_password(ask_password())
             if getattr(args, "enable", False) or getattr(args, "disable", False):
                 user.enabled = args.enable
+            if args.unlimited or args.limited:
+                user.unlimited = args.unlimited
             s.flush()
             if args.command == "user-add":
                 token = new_token("tu")
@@ -146,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"User {email} created. Access token (shown only now):\n{token}")
             else:
                 print(f"{email}: plan {user.plan_name}, paid until {user.paid_until}, "
-                      f"{'enabled' if user.enabled else 'disabled'}")
+                      f"{'enabled' if user.enabled else 'disabled'}{', unlimited' if user.unlimited else ''}")
         elif args.command == "user-token":
             user = s.execute(select(User).where(User.email == args.email.strip().lower())).scalar_one_or_none()
             if user is None:
@@ -158,7 +165,8 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "user-list":
             for u in s.execute(select(User).order_by(User.email)).scalars():
                 acc = account(s, u, settings.grace_days)
-                flags = (" admin" if u.is_admin else "") + ("" if u.enabled else " disabled")
+                flags = (" admin" if u.is_admin else "") + (" unlimited" if u.unlimited else "") + \
+                    ("" if u.enabled else " disabled")
                 state = "paid" if acc.paid else "NOT PAID"
                 print(f"{u.email:35} {acc.plan:10} {state:8} until {u.paid_until or '-'}  "
                       f"{acc.hours_used:.2f}/{acc.hours_included:g} h  {acc.active_jobs} active{flags}")

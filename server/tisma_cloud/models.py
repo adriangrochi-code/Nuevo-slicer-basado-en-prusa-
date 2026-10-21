@@ -55,6 +55,9 @@ class User(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     # Administrators are not limited by plans or payments.
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Internal accounts (the team, TISMA_INTERNAL_EMAILS): not limited by plans or payments and never charged, without
+    # the rights of an administrator.
+    unlimited: Mapped[bool] = mapped_column(Boolean, default=False)
     # The user proved the e-mail is theirs (a code sent to it, or Google for its own addresses). Accounts made by the
     # administrator or the web site are trusted; self-registered ones start unverified.
     email_verified: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -68,6 +71,11 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     plan: Mapped[Plan] = relationship(lazy="joined")
+
+    @property
+    def is_unlimited(self) -> bool:
+        """Not limited by plans or payments: administrators and internal accounts with their e-mail confirmed."""
+        return self.is_admin or (self.unlimited and self.email_verified)
 
     @property
     def access_until(self) -> datetime | None:

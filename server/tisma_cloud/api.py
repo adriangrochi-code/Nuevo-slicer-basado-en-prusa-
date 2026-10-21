@@ -39,6 +39,7 @@ class Services:
         self.settings = settings
         self.db = Database(settings.database_url)
         self.db.create_all()
+        self.sync_internal_accounts()
         self.storage = Storage(settings.storage_dir)
         self.limiter = RateLimiter()
         # A slower window for the e-mails sent to one address (at most a few per hour).
@@ -50,6 +51,16 @@ class Services:
                           if settings.play_push_audience and settings.play_push_account else None)
         self._alerts_checked = 0.
         self._alerts_lock = threading.Lock()
+
+    def sync_internal_accounts(self) -> None:
+        """The accounts with an e-mail of TISMA_INTERNAL_EMAILS are internal (unlimited). Removing an address from the
+        list does not take it back: `tisma-cloud-admin user-set EMAIL --limited` does."""
+        if not self.settings.internal_emails.strip():
+            return
+        with self.db.session() as s:
+            for user in s.execute(select(User).where(User.unlimited.is_(False))).scalars():
+                if self.settings.is_internal_email(user.email):
+                    user.unlimited = True
 
     def sweep(self) -> None:
         """Requeues the jobs of lost nodes and removes the files of old jobs."""
@@ -123,7 +134,7 @@ def user_view(user: User) -> dict[str, Any]:
             "paid_until": user.paid_until.isoformat() + "Z" if user.paid_until else None,
             "store_until": user.store_until.isoformat() + "Z" if user.store_until else None,
             "access_until": user.access_until.isoformat() + "Z" if user.access_until else None, "enabled": user.enabled,
-            "is_admin": user.is_admin}
+            "is_admin": user.is_admin, "unlimited": user.unlimited}
 
 
 def plan_view(plan: Plan) -> dict[str, Any]:
@@ -255,6 +266,10 @@ class ManualPaymentBody(BaseModel):
     note: str = Field(default="", max_length=200)
 
 
+class UnlimitedBody(BaseModel):
+    unlimited: bool
+
+
 class SiteUser(BaseModel):
     """A user as the web site sends it (create or update; omitted fields keep their value)."""
 
@@ -355,7 +370,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             now = utcnow()
             if api_token.last_used is None or now - api_token.last_used > timedelta(minutes=5):
                 api_token.last_used = now
-            limit = 10**6 if user.is_admin else user.plan.requests_per_minute
+            limit = 10**6 if user.is_unlimited else user.plan.requests_per_minute
         if not limiter.allow(f"user:{user.id}", limit):
             raise HTTPException(429, "Too many requests: wait a minute", headers={"Retry-After": "60"})
         request.state.token_hash = hash_token(token)
@@ -467,7 +482,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     or s.get(Plan, "trial")
             # Not verified nor paid yet: the code sent to the address confirms it; then the account can pay.
             user = User(email=email, plan_name=plan.name, password_hash=hash_password(body.password),
-                        email_verified=False)
+                        email_verified=False, unlimited=cfg.is_internal_email(email))
             s.add(user)
             s.flush()
             code = codes.issue(s, user, "verify")
@@ -579,7 +594,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     plan = s.execute(select(Plan).where(Plan.public.is_(True)).order_by(Plan.price_cents)).scalars().first() \
                         or s.get(Plan, "trial")
                     user = User(email=who.email, plan_name=plan.name, google_sub=who.sub,
-                                email_verified=who.authoritative)
+                                email_verified=who.authoritative, unlimited=cfg.is_internal_email(who.email))
                     s.add(user)
                     s.flush()
             if not user.enabled:
@@ -961,6 +976,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return {"users": [{**user_view(u), "account": scheduler.account(s, u, cfg.grace_days).as_dict()}
                               for u in s.execute(select(User).order_by(User.email)).scalars()]}
 
+    @app.put("/v1/admin/users/{email}/unlimited")
+    def admin_unlimited(_admin: AdminDep, email: str, body: UnlimitedBody) -> dict:
+        """Makes an account internal (unlimited computing, never charged) or a normal one again."""
+        with db.session() as s:
+            user = s.execute(select(User).where(User.email == email.strip().lower())).scalar_one_or_none()
+            if user is None:
+                raise HTTPException(404, "No such user")
+            user.unlimited = body.unlimited
+            s.flush()
+            return {"user": user_view(user), "account": scheduler.account(s, user, cfg.grace_days).as_dict()}
+
     @app.post("/v1/admin/users/{email}/payments", status_code=201)
     def admin_manual_payment(_admin: AdminDep, email: str, body: ManualPaymentBody) -> dict:
         """A payment received outside the provider (transfer, cash): the plan is paid body.months more."""
@@ -1018,7 +1044,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if user is None:
                 if not email or not body.plan:
                     raise HTTPException(422, "A new user needs an e-mail and a plan")
-                user = User(external_id=external_id, email=email, plan_name=body.plan)
+                user = User(external_id=external_id, email=email, plan_name=body.plan,
+                            unlimited=cfg.is_internal_email(email))
                 s.add(user)
             if email:
                 user.email = email

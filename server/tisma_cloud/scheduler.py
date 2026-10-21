@@ -38,6 +38,8 @@ class Account:
     active_jobs: int
     max_concurrent: int
     requests_per_minute: int
+    # An administrator or an internal account: no limit of hours, jobs or payments (the time is still counted).
+    unlimited: bool = False
 
     @property
     def hours_left(self) -> float:
@@ -53,6 +55,7 @@ class Account:
             "hours_left": round(self.hours_left, 3),
             "active_jobs": self.active_jobs,
             "max_concurrent": self.max_concurrent,
+            "unlimited": self.unlimited,
         }
 
 
@@ -68,10 +71,11 @@ def account(session: Session, user: User, grace_days: int, now: datetime | None 
         select(func.count()).select_from(Job).where(Job.user_id == user.id, Job.status.in_(ACTIVE))
     ).scalar_one()
     until = user.access_until
-    paid = user.is_admin or (until is not None and now <= until + timedelta(days=grace_days))
+    paid = user.is_unlimited or (until is not None and now <= until + timedelta(days=grace_days))
     return Account(plan=plan.name, paid_until=until, paid=paid, hours_included=plan.monthly_hours,
                    hours_used=used_seconds(session, user.id, month_of(now)) / 3600., active_jobs=active,
-                   max_concurrent=plan.max_concurrent, requests_per_minute=plan.requests_per_minute)
+                   max_concurrent=plan.max_concurrent, requests_per_minute=plan.requests_per_minute,
+                   unlimited=user.is_unlimited)
 
 
 class Refused(Exception):
@@ -86,7 +90,7 @@ def admit(session: Session, user: User, grace_days: int) -> None:
     """Raises Refused when the user may not submit a job now. The user row is locked (PostgreSQL) so that parallel
     submissions of one user are counted one after the other."""
     session.execute(select(User.id).where(User.id == user.id).with_for_update())
-    if user.is_admin:
+    if user.is_unlimited:
         return
     acc = account(session, user, grace_days)
     if not acc.paid:
