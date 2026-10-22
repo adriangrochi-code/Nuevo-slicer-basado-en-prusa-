@@ -27,10 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import uy.com.tisma.app.core.TismaCore
 import uy.com.tisma.app.ui.AccountScreen
+import uy.com.tisma.app.ui.EngineeringScreen
 import uy.com.tisma.app.ui.PrepareScreen
 import uy.com.tisma.app.ui.TismaTheme
 import uy.com.tisma.app.ui.Workspace
@@ -43,9 +45,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab { SLICE, ACCOUNT }
+private enum class Tab { SLICE, ENGINEERING, ACCOUNT }
 
-/** The two tabs of the app: slicing on the phone and the Tisma Cloud account. */
+/** The tabs of the app: slicing and structural analysis on the phone, and the Tisma Cloud account. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TismaApp() {
@@ -69,6 +71,9 @@ fun TismaApp() {
                 NavigationBarItem(selected = tab == Tab.SLICE, onClick = { tab = Tab.SLICE },
                     icon = { Icon(Icons.Filled.Build, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_slice)) })
+                NavigationBarItem(selected = tab == Tab.ENGINEERING, onClick = { tab = Tab.ENGINEERING },
+                    icon = { Icon(painterResource(R.drawable.ic_engineering), contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_engineering)) })
                 NavigationBarItem(selected = tab == Tab.ACCOUNT, onClick = { tab = Tab.ACCOUNT },
                     icon = { Icon(Icons.Filled.AccountCircle, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_account)) })
@@ -78,6 +83,7 @@ fun TismaApp() {
         // The slice screen stays composed, so switching tabs keeps the model and the slice result (and a slice running).
         Box(Modifier.fillMaxSize().padding(padding)) {
             PrepareScreen(workspace, Modifier.hiddenIf(tab != Tab.SLICE))
+            if (tab == Tab.ENGINEERING) EngineeringScreen(workspace)
             if (tab == Tab.ACCOUNT) AccountScreen()
         }
     }

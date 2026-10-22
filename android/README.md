@@ -29,3 +29,10 @@ Open a model (STL, 3MF, OBJ), slice it on the phone, see the print time and fila
 - **Quality**: layer height, infill, walls, supports, brim.
 - **Advanced**: top and bottom solid layers, infill pattern, seam, support style, supports only from the bed,
   ironing. Each one stays as the printer profile until it is changed.
+- **Engineering**: the structural analysis of the desktop program (`src/libtisma_fea`) on the phone, for STL and
+  OBJ models. Tap the faces where the part is held (or keep it held by the faces on the bed) and where the loads act
+  (force, direction, on a point or on the whole face); choose the material (that of the filament by default), the
+  safety factor and the temperature. *Analyse* tells whether it holds, with the safety factor, the largest stress and
+  displacement and a colour map on the model; *Lightest infill* finds the lowest infill density that holds and can
+  set it for the slice. The analysis runs in `app/src/main/cpp/engineering.cpp` with the walls, infill and filament
+  of the slice settings.

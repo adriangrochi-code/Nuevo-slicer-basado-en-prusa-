@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tisma</string>
+    <string name="app_name" translatable="false">Tisma</string>
     <string name="core_missing">This build does not include the slicing core (built without the Android dependencies).</string>
     <string name="core_version">Core: %1$s</string>
     <string name="open_model">Open model (STL, 3MF, OBJ)</string>
@@ -13,7 +13,7 @@
     <string name="save_gcode">Save G-code</string>
     <string name="tab_slice">Slice</string>
     <string name="tab_account">Account</string>
-    <string name="cloud_title">Tisma Cloud</string>
+    <string name="cloud_title" translatable="false">Tisma Cloud</string>
     <string name="cloud_intro">Your Tisma Cloud account: the plan and the hours of cloud slicing and analysis.</string>
     <string name="cloud_plan">Plan: %1$s</string>
     <string name="cloud_paid">Paid until %1$s</string>
@@ -101,4 +101,64 @@
     <string name="support_organic">Organic (tree)</string>
     <string name="supports_on_bed_only">Supports only from the bed</string>
     <string name="ironing">Ironing of the top surfaces</string>
+    <string name="tab_engineering">Engineering</string>
+    <string name="eng_no_model">Open a model in the Slice tab to analyse it.</string>
+    <string name="eng_no_preview">The analysis needs a model with a preview (STL or OBJ).</string>
+    <string name="eng_tap_fix">Tap the faces where the part is held</string>
+    <string name="eng_tap_load">Tap where the load is applied</string>
+    <string name="eng_tool">Tap to</string>
+    <string name="eng_tool_fix">Fix faces</string>
+    <string name="eng_tool_load">Add loads</string>
+    <string name="eng_bed_fixture">Held by the faces on the bed</string>
+    <string name="eng_fixed_faces">Fixed faces: %1$d</string>
+    <string name="eng_clear">Clear</string>
+    <string name="eng_force">Force</string>
+    <string name="eng_direction">Direction</string>
+    <string name="eng_dir_down">Down</string>
+    <string name="eng_dir_up">Up</string>
+    <string name="eng_dir_x_plus">+X</string>
+    <string name="eng_dir_x_minus">−X</string>
+    <string name="eng_dir_y_plus">+Y</string>
+    <string name="eng_dir_y_minus">−Y</string>
+    <string name="eng_dir_into_face">Against the face</string>
+    <string name="eng_load_on">Applied on</string>
+    <string name="eng_point">A point</string>
+    <string name="eng_whole_face">The whole face</string>
+    <string name="eng_load_point">Load %1$d: %2$s N on a point</string>
+    <string name="eng_load_face">Load %1$d: %2$s N on a face</string>
+    <string name="eng_requirements">Material and requirements</string>
+    <string name="eng_requirements_summary">%1$s · safety factor %2$s · %3$s °C</string>
+    <string name="eng_material">Material</string>
+    <string name="eng_material_filament">Of the filament (%1$s)</string>
+    <string name="eng_safety_factor">Safety factor required</string>
+    <string name="eng_temperature">Ambient temperature in use</string>
+    <string name="eng_quality">Precision</string>
+    <string name="eng_quality_fast">Fast</string>
+    <string name="eng_quality_normal">Normal</string>
+    <string name="eng_quality_high">High</string>
+    <string name="eng_not_ready">Fix at least one face (or the faces on the bed) and add a load.</string>
+    <string name="eng_analyze">Analyse</string>
+    <string name="eng_lightest">Lightest infill</string>
+    <string name="eng_cancel">Cancel</string>
+    <string name="eng_cancelled">Cancelled.</string>
+    <string name="eng_error_no_fixture">No fixed face was found on the model: fix a face.</string>
+    <string name="eng_error_no_load">No load was placed on the model: add a load.</string>
+    <string name="eng_verdict_holds">It holds with the safety factor required</string>
+    <string name="eng_verdict_low_margin">It holds, but with less margin than required</string>
+    <string name="eng_verdict_out_of_load">It breaks with these loads</string>
+    <string name="eng_verdict_too_flexible">It holds but bends more than allowed</string>
+    <string name="eng_verdict_out_of_temperature">Too hot for the material</string>
+    <string name="eng_verdict_not_applicable">The analysis does not apply to flexible materials</string>
+    <string name="eng_safety">Safety factor: %1$s (required %2$s)</string>
+    <string name="eng_stress">Largest stress: %1$s MPa</string>
+    <string name="eng_displacement">Largest displacement: %1$s mm</string>
+    <string name="eng_mass">Mass: %1$s g of %2$s</string>
+    <string name="eng_alternatives">Materials that would hold: %1$s</string>
+    <string name="eng_lightest_result">Lightest infill that holds: %1$d %%</string>
+    <string name="eng_use_infill">Slice with %1$d %% infill</string>
+    <string name="eng_infill_in_use">That is the infill of the slice settings.</string>
+    <string name="eng_not_feasible">It does not hold even with solid infill: try more walls, another material or another orientation.</string>
+    <string name="eng_voxels">%1$d voxels of %2$s mm. Approximate values of printed parts: test critical parts.</string>
+    <string name="eng_legend_low">Low stress</string>
+    <string name="eng_legend_high">Breaks</string>
 </resources>

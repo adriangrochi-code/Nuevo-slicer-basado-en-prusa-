@@ -4,6 +4,8 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 /**
  * Triangles of a model for the preview on screen: x, y, z of the 3 corners of each triangle in [vertices], at most
@@ -24,6 +26,83 @@ class PreviewMesh(val vertices: FloatArray) {
             max[axis] = maxOf(max[axis], vertices[i])
         }
     }
+
+    /** Unit normals of the triangles (by the order of their corners, outwards for a closed mesh): x, y, z of each. */
+    val normals: FloatArray by lazy {
+        val v = vertices
+        val out = FloatArray(triangleCount * 3)
+        for (t in 0 until triangleCount) {
+            val b = t * 9
+            val ax = v[b + 3] - v[b]; val ay = v[b + 4] - v[b + 1]; val az = v[b + 5] - v[b + 2]
+            val bx = v[b + 6] - v[b]; val by = v[b + 7] - v[b + 1]; val bz = v[b + 8] - v[b + 2]
+            val nx = ay * bz - az * by; val ny = az * bx - ax * bz; val nz = ax * by - ay * bx
+            val len = sqrt(nx * nx + ny * ny + nz * nz).coerceAtLeast(1e-20f)
+            out[t * 3] = nx / len; out[t * 3 + 1] = ny / len; out[t * 3 + 2] = nz / len
+        }
+        out
+    }
+
+    /** Unit normal of triangle [t]. */
+    fun normal(t: Int): FloatArray = normals.copyOfRange(t * 3, t * 3 + 3)
+
+    /** Centre of triangle [t]. */
+    fun centroid(t: Int): FloatArray {
+        val b = t * 9
+        return FloatArray(3) { (vertices[b + it] + vertices[b + 3 + it] + vertices[b + 6 + it]) / 3 }
+    }
+
+    // Triangles sharing each edge, by the corners of the edge (the same point in two triangles is the same float).
+    private val neighbors: Array<IntArray> by lazy {
+        val byEdge = HashMap<List<Float>, MutableList<Int>>()
+        for (t in 0 until triangleCount) for (k in 0..2) byEdge.getOrPut(edgeKey(t, k)) { ArrayList(2) } += t
+        Array(triangleCount) { t -> IntArray(3) { k -> byEdge[edgeKey(t, k)]!!.firstOrNull { it != t } ?: -1 } }
+    }
+
+    private fun edgeKey(t: Int, k: Int): List<Float> {
+        val a = t * 9 + k * 3
+        val b = t * 9 + ((k + 1) % 3) * 3
+        val p = listOf(vertices[a], vertices[a + 1], vertices[a + 2])
+        val q = listOf(vertices[b], vertices[b + 1], vertices[b + 2])
+        // The same edge from both triangles: the smaller corner first.
+        return if (compare(p, q) <= 0) p + q else q + p
+    }
+
+    private fun compare(p: List<Float>, q: List<Float>): Int {
+        for (i in 0..2) if (p[i] != q[i]) return p[i].compareTo(q[i])
+        return 0
+    }
+
+    /**
+     * The flat face around triangle [t]: the connected triangles whose normals are within 3° of its own, as the
+     * desktop program picks a face (GLGizmoEngineering::pick_face()). The core picks the same face on the full mesh.
+     */
+    fun flatRegion(t: Int): IntArray {
+        val n = normal(t)
+        val limit = cos(Math.toRadians(3.0)).toFloat()
+        val seen = BooleanArray(triangleCount)
+        val out = ArrayList<Int>()
+        val queue = ArrayDeque<Int>()
+        queue += t
+        seen[t] = true
+        while (queue.isNotEmpty()) {
+            val f = queue.removeFirst()
+            out += f
+            for (m in neighbors[f]) {
+                if (m < 0 || seen[m]) continue
+                if (normals[m * 3] * n[0] + normals[m * 3 + 1] * n[1] + normals[m * 3 + 2] * n[2] > limit) {
+                    seen[m] = true
+                    queue += m
+                }
+            }
+        }
+        return out.toIntArray()
+    }
+
+    /** The faces resting on the bed: facing down at the lowest height (as the core finds them). */
+    fun bedFaces(): IntArray = (0 until triangleCount).filter { t ->
+        val b = t * 9
+        normals[t * 3 + 2] < -0.999f && maxOf(vertices[b + 2], vertices[b + 5], vertices[b + 8]) < min[2] + 0.02f
+    }.toIntArray()
 
     companion object {
         const val MAX_TRIANGLES = 20_000

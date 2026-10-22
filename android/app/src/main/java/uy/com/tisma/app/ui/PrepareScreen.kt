@@ -97,6 +97,7 @@ fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
                 // tells the format).
                 val file = withContext(Dispatchers.IO) { copyToCache(context, uri) }
                 workspace.model = file
+                workspace.engineering = EngineeringState()
                 workspace.info = null
                 workspace.mesh = withContext(Dispatchers.Default) { runCatching { PreviewMesh.load(file) }.getOrNull() }
                 workspace.info = if (TismaCore.available) withContext(Dispatchers.Default) { TismaCore.modelInfo(file.absolutePath) } else null
@@ -210,7 +211,7 @@ fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
 
 /** A titled card with a one-line summary that opens to show its settings. */
 @Composable
-private fun Section(title: String, summary: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, summary: String, content: @Composable () -> Unit) {
     var open by rememberSaveable(title) { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
@@ -233,7 +234,7 @@ private fun Section(title: String, summary: String, content: @Composable () -> U
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun <T> Choices(label: String, options: List<T>, selected: T, text: @Composable (T) -> String, onSelect: (T) -> Unit) {
+internal fun <T> Choices(label: String, options: List<T>, selected: T, text: @Composable (T) -> String, onSelect: (T) -> Unit) {
     Text(label, style = MaterialTheme.typography.labelLarge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for (o in options)
@@ -243,7 +244,7 @@ private fun <T> Choices(label: String, options: List<T>, selected: T, text: @Com
 
 /** A number field that keeps what is typed and reports it only when it is a valid number. */
 @Composable
-private fun NumberField(label: String, value: Double, suffix: String, modifier: Modifier = Modifier, onValue: (Double) -> Unit) {
+internal fun NumberField(label: String, value: Double, suffix: String, modifier: Modifier = Modifier, onValue: (Double) -> Unit) {
     var text by remember(value) { mutableStateOf(num(value)) }
     OutlinedTextField(
         value = text,
@@ -260,7 +261,7 @@ private fun NumberField(label: String, value: Double, suffix: String, modifier: 
 }
 
 @Composable
-private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onChange)
@@ -432,7 +433,7 @@ private fun ResultCard(r: SliceResult, onSave: () -> Unit, onShare: () -> Unit) 
     }
 }
 
-private fun num(v: Double): String = String.format(Locale.ROOT, "%.2f", v).trimEnd('0').trimEnd('.')
+internal fun num(v: Double): String = String.format(Locale.ROOT, "%.2f", v).trimEnd('0').trimEnd('.')
 
 private fun mm(v: Double) = String.format(Locale.ROOT, "%.1f", v)
 

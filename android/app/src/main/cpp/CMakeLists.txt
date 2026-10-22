@@ -1,5 +1,5 @@
-# Native part of the Tisma Android app: Tisma's slicing core (the same src/ as the desktop program) and the JNI layer
-# of the app (tisma_jni.cpp). The dependencies are Tisma's deps/ built for Android (android/README.md), passed by
+# Native part of the Tisma Android app: Tisma's slicing core and structural analysis (the same src/ as the desktop
+# program) and the JNI layer of the app (tisma_jni.cpp, engineering.cpp). The dependencies are Tisma's deps/ built for Android (android/README.md), passed by
 # app/build.gradle.kts as -DTISMA_DEPS_DIR=<destdir>/usr/local.
 cmake_minimum_required(VERSION 3.22)
 project(TismaAndroid C CXX)
@@ -25,9 +25,10 @@ set(SLIC3R_ENABLE_FORMAT_STEP OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${TISMA_SOURCE_DIR} tisma EXCLUDE_FROM_ALL)
 
-add_library(tisma SHARED tisma_jni.cpp)
+add_library(tisma SHARED tisma_jni.cpp engineering.cpp engineering.hpp)
 target_link_libraries(tisma PRIVATE
     libslic3r
+    libtisma_fea
     slic3r-arrange-wrapper
     log
 )

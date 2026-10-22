@@ -18,6 +18,8 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "arrange-wrapper/ModelArrange.hpp"
 
+#include "engineering.hpp"
+
 using namespace Slic3r;
 
 namespace {
@@ -90,6 +92,12 @@ public:
         if (m_listener) {
             jclass cls = env->GetObjectClass(listener);
             m_method   = env->GetMethodID(cls, "onProgress", "(ILjava/lang/String;)V");
+            // Optional: listeners which can cancel (AnalysisListener).
+            m_cancelled = env->GetMethodID(cls, "cancelled", "()Z");
+            if (env->ExceptionCheck()) {
+                env->ExceptionClear();
+                m_cancelled = nullptr;
+            }
         }
     }
     ~ProgressReporter()
@@ -105,6 +113,26 @@ public:
     {
         if (!m_listener || !m_method)
             return;
+        with_env([&](JNIEnv *env) {
+            jstring jtext = env->NewStringUTF(text.c_str());
+            env->CallVoidMethod(m_listener, m_method, (jint) percent, jtext);
+            env->DeleteLocalRef(jtext);
+        });
+    }
+
+    // The listener asks to stop (false without a cancellable listener).
+    bool cancelled() const
+    {
+        bool out = false;
+        if (m_listener && m_cancelled)
+            with_env([&](JNIEnv *env) { out = env->CallBooleanMethod(m_listener, m_cancelled); });
+        return out;
+    }
+
+private:
+    // Runs f with the JNIEnv of the current thread, attaching the threads of the core to the VM.
+    template<class F> void with_env(F &&f) const
+    {
         JNIEnv *env      = nullptr;
         bool    attached = false;
         if (g_vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
@@ -117,18 +145,16 @@ public:
                 return;
             attached = true;
         }
-        jstring jtext = env->NewStringUTF(text.c_str());
-        env->CallVoidMethod(m_listener, m_method, (jint) percent, jtext);
-        env->DeleteLocalRef(jtext);
+        f(env);
         if (env->ExceptionCheck())
             env->ExceptionClear();
         if (attached)
             g_vm->DetachCurrentThread();
     }
 
-private:
-    jobject   m_listener = nullptr;
-    jmethodID m_method   = nullptr;
+    jobject   m_listener  = nullptr;
+    jmethodID m_method    = nullptr;
+    jmethodID m_cancelled = nullptr;
 };
 
 } // namespace
@@ -223,6 +249,30 @@ JNIEXPORT jstring JNICALL Java_uy_com_tisma_app_core_TismaCore_nativeSlice(JNIEn
         throw_core(env, ex.what());
         return nullptr;
     }
+}
+
+// Structural analysis of the first object of a model (engineering.hpp). Writes the voxel field to jfield and returns
+// the result as JSON.
+JNIEXPORT jstring JNICALL Java_uy_com_tisma_app_core_TismaCore_nativeAnalyze(JNIEnv *env, jclass, jstring jmodel, jstring jini,
+                                                                             jstring jrequest, jstring jfield, jobject listener)
+{
+    try {
+        const DynamicPrintConfig config = load_config(to_std(env, jini));
+        ProgressReporter progress(env, listener);
+        const std::string json = TismaApp::analyze(to_std(env, jmodel), config, to_std(env, jrequest), to_std(env, jfield),
+            [&progress](int percent) { progress.report(percent, std::string()); },
+            [&progress]() { return progress.cancelled(); });
+        return env->NewStringUTF(json.c_str());
+    } catch (const std::exception &ex) {
+        __android_log_print(ANDROID_LOG_WARN, TAG, "Analysis failed: %s", ex.what());
+        throw_core(env, ex.what());
+        return nullptr;
+    }
+}
+
+JNIEXPORT jstring JNICALL Java_uy_com_tisma_app_core_TismaCore_nativeMaterials(JNIEnv *env, jclass)
+{
+    return env->NewStringUTF(TismaApp::materials_json().c_str());
 }
 
 } // extern "C"

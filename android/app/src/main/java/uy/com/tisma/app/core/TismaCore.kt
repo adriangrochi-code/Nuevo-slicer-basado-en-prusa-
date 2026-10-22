@@ -18,6 +18,14 @@ fun interface ProgressListener {
     fun onProgress(percent: Int, text: String)
 }
 
+/** A progress listener which can stop the work: the core asks [cancelled] while it runs. */
+interface AnalysisListener : ProgressListener {
+    fun cancelled(): Boolean
+}
+
+/** A material of the structural analysis (libtisma_fea/src/Materials.cpp). [linear]: the analysis applies to it. */
+data class AnalysisMaterial(val key: String, val name: String, val linear: Boolean)
+
 /** The slicing core of Tisma Slicer (C++, libtisma.so). Its calls block: run them off the main thread. */
 object TismaCore {
     /** False when the app was built without the core (no Android deps): the interface still works. */
@@ -52,7 +60,24 @@ object TismaCore {
         )
     }
 
+    /**
+     * Structural analysis of the first object of [modelPath] with the settings of [configIni] (walls, infill, filament)
+     * and [request]. The failure index of the voxels is written to [fieldPath] (read it with [FieldMap]).
+     */
+    fun analyze(modelPath: String, configIni: String, request: String, fieldPath: String, listener: AnalysisListener?): EngineeringAnswer =
+        EngineeringAnswer.parse(nativeAnalyze(modelPath, configIni, request, fieldPath, listener))
+
+    fun materials(): List<AnalysisMaterial> {
+        val json = org.json.JSONArray(nativeMaterials())
+        return List(json.length()) { i ->
+            json.getJSONObject(i).let { AnalysisMaterial(it.getString("key"), it.getString("name"), it.getBoolean("linear")) }
+        }
+    }
+
     @JvmStatic private external fun nativeVersion(): String
     @JvmStatic private external fun nativeModelInfo(path: String): String
     @JvmStatic private external fun nativeSlice(modelPath: String, configIni: String, gcodePath: String, listener: ProgressListener?): String
+    @JvmStatic private external fun nativeAnalyze(modelPath: String, configIni: String, request: String, fieldPath: String,
+                                                  listener: ProgressListener?): String
+    @JvmStatic private external fun nativeMaterials(): String
 }
