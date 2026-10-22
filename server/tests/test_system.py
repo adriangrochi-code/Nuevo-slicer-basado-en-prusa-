@@ -1,0 +1,118 @@
+"""What the service needs from the operating system (system.py), the supervisor and the diagnosis (manager.py)."""
+
+from __future__ import annotations
+
+import sys
+import xml.etree.ElementTree as ET
+
+import pytest
+
+from tisma_cloud import cli, manager as manager_module, system
+from tisma_cloud.manager import Manager
+
+TASK_NS = {"t": "http://schemas.microsoft.com/windows/2004/02/mit/task"}
+
+
+def test_task_definition_keeps_the_service_running():
+    xml = system.task_xml(r"C:\Tisma Cloud\tisma-cloud.exe", r'--home "C:\Tisma & Co" run', r"C:\Tisma & Co", "Tisma <Cloud>")
+    root = ET.fromstring(xml.split("\n", 1)[1])  # without the declaration of UTF-16 (the file is written as UTF-16)
+    settings = root.find("t:Settings", TASK_NS)
+    # No limit (schtasks /SC ONSTART stops it after 3 days), normal priority, started again when it fails.
+    assert settings.find("t:ExecutionTimeLimit", TASK_NS).text == "PT0S"
+    assert settings.find("t:Priority", TASK_NS).text == "5"
+    assert settings.find("t:RestartOnFailure/t:Count", TASK_NS).text == "999"
+    assert settings.find("t:DisallowStartIfOnBatteries", TASK_NS).text == "false"
+    assert root.find("t:Principals/t:Principal/t:UserId", TASK_NS).text == "S-1-5-18"  # SYSTEM
+    assert root.find("t:Triggers/t:BootTrigger", TASK_NS) is not None
+    exec_ = root.find("t:Actions/t:Exec", TASK_NS)
+    assert exec_.find("t:Command", TASK_NS).text == r"C:\Tisma Cloud\tisma-cloud.exe"
+    assert exec_.find("t:Arguments", TASK_NS).text == r'--home "C:\Tisma & Co" run'
+    assert exec_.find("t:WorkingDirectory", TASK_NS).text == r"C:\Tisma & Co"
+    assert system.task_problems(xml) == []
+    # A task made by schtasks /SC ONSTART (the older versions) has the defaults.
+    old = xml.replace("<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>", "<ExecutionTimeLimit>PT72H</ExecutionTimeLimit>")
+    old = old[:old.index("<RestartOnFailure>")] + old[old.index("</RestartOnFailure>") + len("</RestartOnFailure>"):]
+    assert len(system.task_problems(old)) == 2
+
+
+def test_run_command_with_the_folder(tmp_path):
+    cmd = manager_module.run_command(tmp_path, "--child")
+    assert cmd[-4:] == ["--home", str(tmp_path), "run", "--child"]
+    assert manager_module.run_command()[-1] == "run"
+
+
+def test_home_option_of_the_commands(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("TISMA_HOME", raising=False)
+    monkeypatch.chdir(tmp_path)
+    home = tmp_path / "service"
+    assert cli.main(["--home", str(home), "role", "node"]) == 0
+    assert (home / "tisma-cloud.toml").read_text(encoding="utf-8").count('role = "node"') == 1
+
+
+def test_supervisor_starts_the_service_again(tmp_path, monkeypatch):
+    """The role crashes twice, then ends cleanly: the supervisor starts it three times and ends."""
+    m = Manager(tmp_path)
+    m.set_role("node")
+    counter = tmp_path / "runs"
+    script = tmp_path / "role.py"
+    script.write_text("import pathlib, sys\n"
+                      f"p = pathlib.Path({str(counter)!r})\n"
+                      "n = int(p.read_text()) + 1 if p.exists() else 1\n"
+                      "p.write_text(str(n))\n"
+                      "sys.exit(0 if n >= 3 else 7)\n", encoding="utf-8")
+    monkeypatch.setattr(manager_module, "run_command", lambda home=None, *a: [sys.executable, str(script)])
+    sleeps = []
+    monkeypatch.setattr(manager_module.time, "sleep", sleeps.append)
+    assert m._supervise() == 0
+    assert counter.read_text() == "3"
+    assert sleeps == [5., 10.]
+
+
+def test_node_programs_are_found(tmp_path, monkeypatch):
+    install = tmp_path / "Tisma Slicer"
+    install.mkdir()
+    slicer = install / system.SLICER_NAMES[0]
+    fea = install / system.FEA_NAMES[0]
+    slicer.write_text("")
+    fea.write_text("")
+    monkeypatch.setattr(system, "tisma_slicer_folders", lambda: [tmp_path / "nothing", install])
+    assert system.find_tisma_programs() == (str(slicer), str(fea))
+    m = Manager(tmp_path / "home")
+    m.set_role("node")  # the programs are looked for when the node is made
+    node = m.read_node()
+    assert node["tisma_slicer"] == str(slicer) and node["tisma_fea"] == str(fea)
+    # A path typed by the user which exists is kept.
+    other = tmp_path / "other-slicer"
+    other.write_text("")
+    m.set_setting("tisma_slicer", str(other))
+    assert m.detect_programs() == {}
+    assert m.read_node()["tisma_slicer"] == str(other)
+
+
+def test_diagnosis_of_a_node(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(system, "tisma_slicer_folders", lambda: [])
+    monkeypatch.setattr(system.shutil, "which", lambda _name: None)
+    m = Manager(tmp_path)
+    m.set_role("node")
+    m.set_setting("master_url", "http://127.0.0.1:9")  # nothing listens there
+    checks = {c.name: c for c in m.checks()}
+    assert checks["Programa tisma-slicer"].ok is False and checks["Programa tisma-slicer"].fix == "programs"
+    assert checks["Maestro"].ok is False
+    assert checks["Token del nodo"].ok is False
+    assert checks["Carpeta de trabajo"].ok is True
+    with pytest.raises(RuntimeError):
+        m.fix("programs")
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["--home", str(tmp_path), "check"]) == 1
+    out = capsys.readouterr().out
+    assert "✖ Maestro" in out and "tisma-cloud check --fix" in out
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the firewall rule is only made on Windows")
+def test_firewall_is_windows_only(tmp_path):
+    m = Manager(tmp_path)
+    m.set_role("master")
+    assert m.firewall_open() is None
+    assert all(c.name != "Firewall de Windows" for c in m.checks())
+    with pytest.raises(RuntimeError):
+        m.set_firewall(True)

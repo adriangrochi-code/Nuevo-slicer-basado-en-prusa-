@@ -8,10 +8,13 @@ of the service (gui.py); over SSH the same is done with these commands, or with 
     tisma-cloud logs [N]                the last N lines of its log (40)
     tisma-cloud config [KEY [VALUE]]    show the settings, or change one (port, TISMA_* of the master, keys of a node)
     tisma-cloud autostart on|off        start the service with the machine
+    tisma-cloud firewall on|off         open the port of the master in the Windows firewall
+    tisma-cloud check [--fix]           check what the machine needs to serve, and fix what can be fixed
     tisma-cloud console                 a menu with all of the above (for SSH)
     tisma-cloud panel                   the control panel of the master in a window (servers, queue, jobs, users)
     tisma-cloud admin <command> ...     administration of the master (as tisma-cloud-admin: users, nodes, plans...)
     tisma-cloud run                     the service in the foreground (what start runs)
+    tisma-cloud --home DIR ...          use the files of the service in DIR
     tisma-cloud master [--host H] [--port P] [--env .env]   the master in the foreground
     tisma-cloud node [--config node.toml]                   a node in the foreground
 
@@ -189,7 +192,8 @@ def console(manager) -> int:
         print_status(manager)
         print(" 1) Estado          2) Iniciar        3) Detener        4) Reiniciar")
         print(" 5) Elegir rol      6) Configuración  7) Registro       8) Administración")
-        print(" 9) Inicio automático con la máquina  10) Nodos: qué hace cada uno  0) Salir")
+        print(" 9) Inicio automático con la máquina  10) Nodos: qué hace cada uno")
+        print("11) Diagnóstico     12) Firewall de Windows                          0) Salir")
         choice = ask("> ")
         try:
             if choice in ("0", "q", "salir"):
@@ -232,6 +236,17 @@ def console(manager) -> int:
                     print(output.rstrip() or f"(código {code})")
             elif choice == "10":
                 console_nodes(manager, ask)
+            elif choice == "11":
+                if print_checks(manager) and ask("¿Arreglar lo que se pueda? (s/n): ").lower().startswith("s"):
+                    print_checks(manager, fix=True)
+            elif choice == "12":
+                on = manager.firewall_open()
+                if on is None:
+                    print("Solo en Windows (en Linux ver deploy/firewall.nft).")
+                elif ask(f"Puerto {manager.port()} {'abierto' if on else 'cerrado'} en el firewall. ¿Cambiar? (s/n): "
+                         ).lower().startswith("s"):
+                    manager.set_firewall(not on)
+                    print("Abierto." if not on else "Cerrado.")
             elif choice == "9":
                 on = manager.autostart_enabled()
                 if ask(f"Inicio automático {'activado' if on else 'desactivado'}. ¿Cambiar? (s/n): ").lower().startswith("s"):
@@ -239,6 +254,34 @@ def console(manager) -> int:
                     print("Activado." if not on else "Desactivado.")
         except Exception as e:  # noqa: BLE001
             print(f"Error: {e}")
+
+
+CHECK_MARKS = {True: "✔", False: "✖", None: "!"}
+
+
+def print_checks(manager, fix: bool = False) -> int:
+    """The diagnosis of the machine; with fix, what can be fixed is fixed first. 1 when something is wrong."""
+    checks = manager.checks()
+    if fix:
+        for c in checks:
+            if c.ok is False and c.fix:
+                try:
+                    print(f"Arreglando «{c.name}»: {manager.fix(c.fix)}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"No se pudo arreglar «{c.name}»: {e}")
+        checks = manager.checks()
+    for c in checks:
+        print(f" {CHECK_MARKS[c.ok]} {c.name}: {c.detail}" + (" (tisma-cloud check --fix)" if c.ok is False and c.fix
+                                                            and not fix else ""))
+    return 1 if any(c.ok is False for c in checks) else 0
+
+
+PANEL_WITHOUT_WEBVIEW2 = (
+    "Este Windows no tiene WebView2, el motor de la ventana del panel (Windows Server 2019 y 2022 no lo traen).\n"
+    "- Instalá «Microsoft Edge WebView2 Runtime» (gratis, de Microsoft): "
+    "https://developer.microsoft.com/microsoft-edge/webview2/\n"
+    "- O abrí el panel desde el navegador de otra PC: http://<IP de este servidor>:{port}/admin "
+    "(con el puerto abierto en el firewall: tisma-cloud firewall on)")
 
 
 def open_panel(manager) -> int:
@@ -252,14 +295,27 @@ def open_panel(manager) -> int:
     if not manager.health():
         print("El maestro no está en marcha: tisma-cloud start", file=sys.stderr)
         return 1
+    if os.name == "nt":
+        from .system import webview2_version
+
+        # Windows Server 2019 and 2022 have neither WebView2 nor a modern browser (Internet Explorer cannot show
+        # the panel).
+        if webview2_version() is None:
+            print(PANEL_WITHOUT_WEBVIEW2.format(port=manager.port()), file=sys.stderr)
+            return 2
     url = manager.panel_url()
     try:
         import webview
     except ImportError:
         webbrowser.open(url)
         return 0
-    webview.create_window("Tisma Cloud · Panel", url, width=1280, height=900, min_size=(900, 600))
-    webview.start()
+    try:
+        webview.create_window("Tisma Cloud · Panel", url, width=1280, height=900, min_size=(900, 600))
+        webview.start()
+    except Exception as e:  # noqa: BLE001
+        print(f"La ventana del panel no se pudo abrir ({e}).\n" + PANEL_WITHOUT_WEBVIEW2.format(port=manager.port()),
+              file=sys.stderr)
+        return 2
     return 0
 
 
@@ -277,6 +333,10 @@ def main(argv: list[str] | None = None) -> int:
     from .manager import Manager
 
     args = list(sys.argv[1:] if argv is None else argv)
+    # The folder of the service, before the command (the scheduled task and the supervisor pass it).
+    if len(args) >= 2 and args[0] == "--home":
+        os.environ["TISMA_HOME"] = args[1]
+        args = args[2:]
     manager = Manager()
     command, rest = (args[0], args[1:]) if args else ("gui", [])
     # The commands of the service work in its folder (relative paths of .env, node.toml).
@@ -320,12 +380,20 @@ def main(argv: list[str] | None = None) -> int:
                 manager.set_autostart(rest[0] in ("on", "1", "si", "sí", "yes"))
             print("on" if manager.autostart_enabled() else "off")
             return 0
+        if command == "firewall":
+            if rest:
+                manager.set_firewall(rest[0] in ("on", "1", "si", "sí", "yes"))
+            on = manager.firewall_open()
+            print("(solo en Windows)" if on is None else "on" if on else "off")
+            return 0
+        if command == "check":
+            return print_checks(manager, fix="--fix" in rest)
         if command == "console":
             return console(manager)
         if command == "panel":
             return open_panel(manager)
         if command == "run":
-            return manager.run()
+            return manager.run(child="--child" in rest)
         if command == "master":
             return run_master(rest)
         if command == "node":

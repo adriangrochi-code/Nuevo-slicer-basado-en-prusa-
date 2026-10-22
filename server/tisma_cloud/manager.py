@@ -7,6 +7,9 @@ Everything is kept in one folder, the home (TISMA_HOME, else the folder of the e
     .env               settings of the master (TISMA_* variables, see .env.example)
     node.toml          settings of a node (see deploy/node.example.toml)
     logs/tisma-cloud.log, tisma-cloud.pid
+
+The service runs as a small supervisor ("run") which starts the master or the node ("run --child") and starts it again
+if it stops with an error, so that a crash does not leave the machine without service.
 """
 
 from __future__ import annotations
@@ -21,6 +24,8 @@ import tomllib
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+
+from . import system
 
 ROLES = ("master", "node")
 ROLE_NAMES = {"master": "maestro (servidor central)", "node": "nodo de cómputo"}
@@ -71,11 +76,21 @@ def default_home() -> Path:
     return Path.cwd()
 
 
-def run_command() -> list[str]:
-    """The command that runs the service in the foreground ("run"): the executable, or this Python."""
-    if getattr(sys, "frozen", False):
-        return [sys.executable, "run"]
-    return [sys.executable, "-m", "tisma_cloud.cli", "run"]
+def run_command(home: Path | None = None, *args: str) -> list[str]:
+    """The command that runs the service in the foreground ("run"): the executable, or this Python. With the folder of
+    the service when it is given (a scheduled task or a child process do not get TISMA_HOME)."""
+    base = [sys.executable] if getattr(sys, "frozen", False) else [sys.executable, "-m", "tisma_cloud.cli"]
+    return base + (["--home", str(home)] if home else []) + ["run", *args]
+
+
+@dataclass
+class Check:
+    """One item of the diagnosis of the machine: ok (True), wrong (False) or only a warning (None), what was found,
+    and the key of the fix (Manager.fix) when Tisma Cloud can fix it."""
+    name: str
+    ok: bool | None
+    detail: str
+    fix: str | None = None
 
 
 @dataclass
@@ -173,6 +188,7 @@ class Manager:
             self.write_env({"TISMA_DATABASE_URL": "sqlite:///./tisma.db", "TISMA_STORAGE_DIR": "./storage"})
         if role == "node" and not self.node_path.exists():
             self.write_node(dict(NODE_DEFAULTS))
+            self.detect_programs()
 
     def port(self) -> int:
         return int(self._settings().get("port", 8000))
@@ -183,6 +199,12 @@ class Manager:
         data = self._settings()
         data["port"] = int(port)
         self._save_settings(data)
+        # The firewall rule follows the port (it needs an administrator: the diagnosis shows it if it did not).
+        if system.firewall_port() is not None:
+            try:
+                system.set_firewall(int(port))
+            except RuntimeError:
+                pass
 
     # ---- settings of the master (.env)
     def read_env(self) -> dict[str, str]:
@@ -384,7 +406,7 @@ class Manager:
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         if os.name == "nt" and self.autostart_enabled():
             # The scheduled task runs apart from the session (an SSH session closes its processes when it ends).
-            subprocess.run(["schtasks", "/Run", "/TN", TASK_NAME], check=True, capture_output=True)
+            system.run_task(TASK_NAME)
         else:
             kwargs: dict = {"cwd": str(self.home), "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL,
                             "stderr": subprocess.DEVNULL, "close_fds": True}
@@ -392,11 +414,11 @@ class Manager:
             if os.name == "nt":
                 flags = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED, NEW_PROCESS_GROUP, NO_WINDOW
                 try:
-                    subprocess.Popen(run_command(), env=env, creationflags=flags | 0x01000000, **kwargs)  # BREAKAWAY
+                    subprocess.Popen(run_command(self.home), env=env, creationflags=flags | 0x01000000, **kwargs)  # BREAKAWAY
                 except OSError:
-                    subprocess.Popen(run_command(), env=env, creationflags=flags, **kwargs)
+                    subprocess.Popen(run_command(self.home), env=env, creationflags=flags, **kwargs)
             else:
-                subprocess.Popen(run_command(), env=env, start_new_session=True, **kwargs)
+                subprocess.Popen(run_command(self.home), env=env, start_new_session=True, **kwargs)
         deadline = time.monotonic() + wait_s
         while time.monotonic() < deadline:
             st = self.status()
@@ -411,7 +433,11 @@ class Manager:
             self.pid_path.unlink(missing_ok=True)
             return self.status()
         if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+            # The supervisor and the master or node it runs.
+            r = subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, text=True)
+            if r.returncode != 0 and _pid_alive(pid):
+                raise RuntimeError("No se pudo detener el servicio (si arranca con la máquina corre como SYSTEM: "
+                                   "ejecutá como administrador). " + (r.stderr or r.stdout).strip())
         else:
             try:
                 os.killpg(pid, signal.SIGTERM)
@@ -448,24 +474,26 @@ class Manager:
 
     def autostart_enabled(self) -> bool:
         if os.name == "nt":
-            r = subprocess.run(["schtasks", "/Query", "/TN", TASK_NAME], capture_output=True)
-            return r.returncode == 0
+            return system.task_definition(TASK_NAME) is not None
         unit, _ = self._systemd_unit()
         return unit.is_file()
 
+    def autostart_problems(self) -> list[str]:
+        """Windows: what is wrong in the scheduled task (one made by an older version); empty when it is right."""
+        if os.name != "nt":
+            return []
+        xml = system.task_definition(TASK_NAME)
+        return system.task_problems(xml) if xml else []
+
     def set_autostart(self, enabled: bool) -> None:
-        """Windows: a scheduled task at the start of the machine (as SYSTEM, needs an administrator). Linux: a systemd
-        service (of the system as root, of the user otherwise)."""
-        cmd = run_command()
+        """Windows: a scheduled task at the start of the machine (as SYSTEM, no time limit, started again if it fails;
+        needs an administrator). Linux: a systemd service (of the system as root, of the user otherwise)."""
+        cmd = run_command(self.home)
         if os.name == "nt":
             if enabled:
-                command = subprocess.list2cmdline(cmd)
-                r = subprocess.run(["schtasks", "/Create", "/F", "/TN", TASK_NAME, "/TR", command, "/SC", "ONSTART",
-                                    "/RU", "SYSTEM", "/RL", "HIGHEST"], capture_output=True, text=True)
+                system.create_task(TASK_NAME, cmd, self.home, "Tisma Cloud: el maestro o el nodo de cómputo de esta máquina")
             else:
-                r = subprocess.run(["schtasks", "/Delete", "/F", "/TN", TASK_NAME], capture_output=True, text=True)
-            if r.returncode != 0:
-                raise RuntimeError((r.stderr or r.stdout).strip() or "schtasks failed (run as administrator)")
+                system.delete_task(TASK_NAME)
             return
         unit, scope = self._systemd_unit()
         if enabled:
@@ -483,10 +511,127 @@ class Manager:
             unit.unlink(missing_ok=True)
             subprocess.run(["systemctl", *scope, "daemon-reload"], capture_output=True)
 
+    # ---- the Windows firewall (the port of the master)
+    def firewall_open(self) -> bool | None:
+        """The port of the master is open in the Windows firewall (None: not Windows)."""
+        if os.name != "nt":
+            return None
+        return system.firewall_port() == self.port()
+
+    def set_firewall(self, enabled: bool) -> None:
+        system.set_firewall(self.port() if enabled else None)
+
+    # ---- the programs of a node
+    def detect_programs(self, replace: bool = False) -> dict[str, str]:
+        """Fills tisma_slicer and tisma_fea of node.toml with the programs of Tisma Slicer found on this machine (only
+        the empty or wrong ones, unless replace). Returns what was set."""
+        node = self.read_node()
+        slicer, fea = system.find_tisma_programs()
+        found = {}
+        for key, path in (("tisma_slicer", slicer), ("tisma_fea", fea)):
+            current = str(node.get(key) or "")
+            if path and (replace or not current or not Path(current).is_file()):
+                found[key] = path
+        if found:
+            self.write_node(found)
+        return found
+
+    # ---- diagnosis
+    def checks(self) -> list[Check]:
+        """What this machine needs to serve, checked one by one (the window, tisma-cloud check)."""
+        out: list[Check] = []
+        role = self.role()
+        if not role:
+            return [Check("Rol", False, "Sin rol: elegí maestro o nodo")]
+        st = self.status()
+        out.append(Check("Servicio", st.running and st.healthy is not False, st.detail, None if st.running else "start"))
+        on = self.autostart_enabled()
+        problems = self.autostart_problems() if on else []
+        out.append(Check("Inicio con la máquina", True if on and not problems else None if not on else False,
+                         ("Tarea programada «Tisma Cloud»" if os.name == "nt" else "Servicio de systemd") if on and not problems
+                         else ("La tarea " + ", ".join(problems) + ": crearla de nuevo") if problems
+                         else "Desactivado: el servicio no arranca solo después de un reinicio", "autostart"))
+        if role == "master":
+            fw = self.firewall_open()
+            if fw is not None:
+                rule = system.firewall_port()
+                out.append(Check("Firewall de Windows", fw,
+                                 f"Puerto {self.port()} abierto a la red" if fw else
+                                 f"La regla abre el puerto {rule}, no el {self.port()}" if rule else
+                                 f"El puerto {self.port()} está cerrado: los nodos y los clientes no llegan", "firewall"))
+            if st.running and st.healthy:
+                try:
+                    has = self.has_admin()
+                    out.append(Check("Administrador", True if has else None, "Hay un administrador" if has else
+                                     "Sin administrador: crealo al abrir el panel"))
+                except Exception as e:  # noqa: BLE001
+                    out.append(Check("Administrador", None, f"No se pudo leer la base de datos: {e}"))
+            if os.name == "nt":
+                version = system.webview2_version()
+                out.append(Check("Ventana del panel (WebView2)", True if version else None,
+                                 f"WebView2 {version}" if version else
+                                 "Este Windows no tiene WebView2 (Windows Server 2019 y 2022 no lo traen): instalá "
+                                 "«Microsoft Edge WebView2 Runtime» o abrí el panel desde otra PC en "
+                                 f"http://<IP de este servidor>:{self.port()}/admin"))
+            url = self.read_env().get("TISMA_PUBLIC_URL", "")
+            out.append(Check("Dirección pública", True if url.startswith("https://") else None,
+                             url if url.startswith("https://") else
+                             (f"{url}: sin HTTPS, las contraseñas viajan sin cifrar" if url else
+                              "Sin dirección pública: los clientes de internet no llegan (ver README, HTTPS con Caddy)")))
+        else:
+            node = self.read_node()
+            for key, label in (("tisma_slicer", "Programa tisma-slicer"), ("tisma_fea", "Programa tisma-fea")):
+                path = str(node.get(key) or "")
+                ok = bool(path) and Path(path).is_file()
+                out.append(Check(label, ok, path if ok else (f"No existe: {path}" if path else
+                                                             "No configurado: instalá Tisma Slicer en esta máquina"),
+                                 None if ok else "programs"))
+            out.append(Check("Token del nodo", bool(node.get("token")), "Configurado" if node.get("token") else
+                             "Falta: en el maestro, Administración > node-add NOMBRE"))
+            master = str(node.get("master_url") or "").rstrip("/")
+            try:
+                import ssl
+
+                context = None if node.get("verify_tls", True) else ssl._create_unverified_context()  # noqa: S323
+                with urllib.request.urlopen(f"{master}/v1/health", timeout=4, context=context) as r:
+                    reach = r.status == 200
+                detail = f"{master} responde"
+            except Exception as e:  # noqa: BLE001
+                reach, detail = False, f"{master} no responde ({getattr(e, 'reason', e)})"
+            out.append(Check("Maestro", reach, detail))
+            work = Path(node.get("work_dir") or "node-work")
+            work = work if work.is_absolute() else self.home / work
+            try:
+                work.mkdir(parents=True, exist_ok=True)
+                probe = work / ".tisma-write-test"
+                probe.write_text("ok")
+                probe.unlink()
+                out.append(Check("Carpeta de trabajo", True, str(work)))
+            except OSError as e:
+                out.append(Check("Carpeta de trabajo", False, f"{work}: {e}"))
+        return out
+
+    def fix(self, key: str) -> str:
+        """Fixes one item of the diagnosis (Check.fix). Returns what was done."""
+        if key == "start":
+            return self.start().detail
+        if key == "autostart":
+            self.set_autostart(True)
+            return "Inicio con la máquina activado"
+        if key == "firewall":
+            self.set_firewall(True)
+            return f"Puerto {self.port()} abierto en el firewall de Windows"
+        if key == "programs":
+            found = self.detect_programs(replace=True)
+            if not found:
+                raise RuntimeError("No se encontró Tisma Slicer en esta máquina: instalalo o indicá los programas")
+            return "Programas encontrados: " + ", ".join(found.values())
+        raise ValueError(f"Nothing to fix for {key}")
+
     # ---- running in the foreground (the process started by start())
-    def run(self) -> int:
-        """Runs the role of this machine until it is stopped, writing the pid file and, when not in a terminal, the
-        log."""
+    def run(self, child: bool = False) -> int:
+        """Runs the role of this machine until it is stopped, writing the log when not in a terminal. Without child: the
+        supervisor, which writes the pid file and runs the role in a child process, started again when it fails."""
         role = self.role()
         if not role:
             print("No role: tisma-cloud role master|node", file=sys.stderr)
@@ -498,16 +643,45 @@ class Manager:
             os.dup2(log.fileno(), 1)
             os.dup2(log.fileno(), 2)
             sys.stdout = sys.stderr = log
-        self.pid_path.write_text(str(os.getpid()))
-        try:
-            if role == "master":
-                from .cli import load_env, serve_master
+        if not child:
+            self.pid_path.write_text(str(os.getpid()))
+            try:
+                return self._supervise()
+            finally:
+                if self._read_pid() == os.getpid():
+                    self.pid_path.unlink(missing_ok=True)
+        if role == "master":
+            from .cli import load_env, serve_master
 
-                load_env(self.env_path)
-                return serve_master("0.0.0.0", self.port())
-            from .node.__main__ import main as node_main
+            load_env(self.env_path)
+            return serve_master("0.0.0.0", self.port())
+        from .node.__main__ import main as node_main
 
-            return node_main(["--config", str(self.node_path)])
-        finally:
-            if self._read_pid() == os.getpid():
-                self.pid_path.unlink(missing_ok=True)
+        return node_main(["--config", str(self.node_path)])
+
+    def _supervise(self) -> int:
+        """Runs the role in a child process and starts it again when it stops with an error (after 5 s, doubling up to
+        a minute while it keeps failing). A clean exit ends the service."""
+        child: subprocess.Popen | None = None
+
+        def stop(_signum, _frame):  # noqa: ANN001
+            if child is not None and child.poll() is None:
+                child.terminate()
+            raise SystemExit(0)
+
+        if os.name != "nt":
+            signal.signal(signal.SIGTERM, stop)
+        delay = 5.
+        while True:
+            started = time.monotonic()
+            child = subprocess.Popen(run_command(self.home, "--child"), cwd=str(self.home), stdin=subprocess.DEVNULL,
+                                     creationflags=0x08000000 if os.name == "nt" else 0)  # no console window
+            code = child.wait()
+            if code == 0:
+                return 0
+            if time.monotonic() - started > 300:
+                delay = 5.
+            print(f"[tisma-cloud] {time.strftime('%Y-%m-%d %H:%M:%S')}: el servicio terminó con el código {code}; "
+                  f"arranca de nuevo en {delay:.0f} s", flush=True)
+            time.sleep(delay)
+            delay = min(delay * 2, 60.)

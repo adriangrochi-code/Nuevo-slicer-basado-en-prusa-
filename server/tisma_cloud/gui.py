@@ -68,6 +68,12 @@ class App:
         self.autostart = tk.BooleanVar(value=False)
         ttk.Checkbutton(service, text="Iniciar con la máquina", variable=self.autostart,
                         command=self.on_autostart).pack(side="right")
+        # Windows: the port of the master in the firewall (Windows Server closes it by default).
+        self.firewall = tk.BooleanVar(value=False)
+        self.firewall_box = ttk.Checkbutton(service, text="Abrir el puerto en el firewall", variable=self.firewall,
+                                            command=self.on_firewall)
+        if os.name == "nt":
+            self.firewall_box.pack(side="right", padx=(0, 12))
         self.buttons = {}
         for key, label in (("restart", "Reiniciar"), ("stop", "Detener"), ("start", "Iniciar")):
             b = ttk.Button(service, text=label, command=lambda k=key: self.service(k),
@@ -80,14 +86,17 @@ class App:
         self.settings_tab = ttk.Frame(self.tabs, padding=12)
         self.admin_tab = ttk.Frame(self.tabs, padding=12)
         self.log_tab = ttk.Frame(self.tabs, padding=12)
+        self.check_tab = ttk.Frame(self.tabs, padding=12)
         self.tabs.add(self.settings_tab, text="Configuración")
         self.tabs.add(self.admin_tab, text="Administración")
+        self.tabs.add(self.check_tab, text="Diagnóstico")
         self.tabs.add(self.log_tab, text="Registro")
 
         self.log = scrolledtext.ScrolledText(self.log_tab, height=10, font=("TkFixedFont", 9), state="disabled")
         self.log.pack(fill="both", expand=True)
         self.build_admin()
         self.build_settings()
+        self.build_checks()
         threading.Thread(target=self.load_autostart, daemon=True).start()
         self.refresh()
         self.load_nodes()
@@ -129,7 +138,20 @@ class App:
         bottom = ttk.Frame(self.settings_tab)
         bottom.pack(fill="x", pady=(12, 0))
         ttk.Button(bottom, text="Guardar", style="Accent.TButton", command=self.save).pack(side="right")
+        if role == "node":
+            ttk.Button(bottom, text="Buscar Tisma Slicer", command=self.find_programs).pack(side="right", padx=6)
         ttk.Label(bottom, text="Los cambios se usan al reiniciar el servicio.", foreground="#6B6B76").pack(side="left")
+
+    def find_programs(self) -> None:
+        """The programs of Tisma Slicer installed on this machine, for the node."""
+        found = self.m.detect_programs(replace=True)
+        if found:
+            self.build_settings()
+            messagebox.showinfo("Tisma Cloud", "Encontrados:\n" + "\n".join(found.values()), parent=self.root)
+        else:
+            messagebox.showwarning("Tisma Cloud", "No se encontró Tisma Slicer en esta máquina: instalalo, o indicá "
+                                   "los programas con «Buscar…».", parent=self.root)
+        self.load_checks()
 
     def browse(self, var: tk.StringVar) -> None:
         path = filedialog.askopenfilename(parent=self.root)
@@ -149,6 +171,98 @@ class App:
         if self.m.status().running and messagebox.askyesno("Tisma Cloud", "Guardado. ¿Reiniciar el servicio ahora?",
                                                            parent=self.root):
             self.service("restart")
+
+    # ---- diagnosis: what the machine needs to serve
+    def build_checks(self) -> None:
+        ttk.Label(self.check_tab, text="Lo que esta máquina necesita para dar servicio. Elegí un punto marcado con ✖ "
+                  "y tocá «Arreglar» (algunos arreglos piden abrir Tisma Cloud como administrador).",
+                  wraplength=780).pack(anchor="w", pady=(0, 8))
+        self.check_view = ttk.Treeview(self.check_tab, columns=("detail",), height=9, selectmode="browse")
+        self.check_view.heading("#0", text="Punto")
+        self.check_view.heading("detail", text="Estado")
+        self.check_view.column("#0", width=230, stretch=False)
+        self.check_view.pack(fill="both", expand=True)
+        self.check_view.tag_configure("ok", foreground="#1E9E52")
+        self.check_view.tag_configure("bad", foreground="#C62828")
+        self.check_view.tag_configure("warn", foreground="#B07D00")
+        self.check_view.bind("<Double-1>", lambda _e: self.fix_selected())
+        # The whole text of the chosen point (the list cuts long ones).
+        self.check_detail = ttk.Label(self.check_tab, text="", wraplength=780, foreground="#4A4A55")
+        self.check_detail.pack(anchor="w", pady=(6, 0))
+        self.check_view.bind("<<TreeviewSelect>>", lambda _e: self.show_check_detail())
+        bar = ttk.Frame(self.check_tab)
+        bar.pack(fill="x", pady=(8, 0))
+        self.fix_button = ttk.Button(bar, text="Arreglar", style="Accent.TButton", command=self.fix_selected)
+        self.fix_button.pack(side="left")
+        ttk.Button(bar, text="Arreglar todo", command=self.fix_all).pack(side="left", padx=6)
+        ttk.Button(bar, text="Volver a comprobar", command=self.load_checks).pack(side="right")
+        self.checks: list = []
+        self.load_checks()
+
+    def load_checks(self) -> None:
+        """The checks run apart (some ask the network or PowerShell), then the list is filled."""
+        self.check_view.delete(*self.check_view.get_children())
+        self.check_view.insert("", "end", text="Comprobando…", values=("",))
+
+        def work() -> None:
+            try:
+                checks = self.m.checks()
+            except Exception as e:  # noqa: BLE001
+                from .manager import Check
+
+                checks = [Check("Diagnóstico", False, str(e))]
+            self.root.after(0, lambda: self.show_checks(checks))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def show_checks(self, checks: list) -> None:
+        self.checks = checks
+        self.check_view.delete(*self.check_view.get_children())
+        self.check_detail.config(text="")
+        for i, c in enumerate(checks):
+            mark, tag = {True: ("✔", "ok"), False: ("✖", "bad"), None: ("!", "warn")}[c.ok]
+            fix = "  (se puede arreglar)" if c.ok is False and c.fix else ""
+            self.check_view.insert("", "end", iid=str(i), text=f"{mark} {c.name}", values=(c.detail + fix,), tags=(tag,))
+
+    def show_check_detail(self) -> None:
+        sel = self.check_view.selection()
+        if sel and sel[0].isdigit() and int(sel[0]) < len(self.checks):
+            c = self.checks[int(sel[0])]
+            self.check_detail.config(text=f"{c.name}: {c.detail}")
+
+    def fix_selected(self) -> None:
+        sel = self.check_view.selection()
+        check = self.checks[int(sel[0])] if sel and sel[0].isdigit() and int(sel[0]) < len(self.checks) else None
+        if check is None or not check.fix:
+            messagebox.showinfo("Tisma Cloud", "Elegí un punto que se pueda arreglar.", parent=self.root)
+            return
+        self.run_fixes([check])
+
+    def fix_all(self) -> None:
+        self.run_fixes([c for c in self.checks if c.ok is False and c.fix])
+
+    def run_fixes(self, checks: list) -> None:
+        def work() -> None:
+            done, errors = [], []
+            for c in checks:
+                try:
+                    done.append(self.m.fix(c.fix))
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"{c.name}: {e}")
+            self.root.after(0, lambda: self.after_fixes(done, errors))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def after_fixes(self, done: list[str], errors: list[str]) -> None:
+        if errors:
+            hint = "\n\nEn Windows, abrí Tisma Cloud como administrador (clic derecho > Ejecutar como administrador)."
+            messagebox.showerror("Tisma Cloud", "\n".join(errors) + hint, parent=self.root)
+        elif done:
+            messagebox.showinfo("Tisma Cloud", "\n".join(done), parent=self.root)
+        self.build_settings()
+        threading.Thread(target=self.load_autostart, daemon=True).start()
+        self.load_checks()
+        self.refresh(reschedule=False)
 
     # ---- administration of the master
     def build_admin(self) -> None:
@@ -302,6 +416,14 @@ class App:
         if not self.m.health():
             messagebox.showinfo("Tisma Cloud", "Iniciá el maestro para abrir el panel.", parent=self.root)
             return
+        if os.name == "nt":
+            from .cli import PANEL_WITHOUT_WEBVIEW2
+            from .system import webview2_version
+
+            if webview2_version() is None:
+                messagebox.showwarning("Tisma Cloud", PANEL_WITHOUT_WEBVIEW2.format(port=self.m.port()),
+                                       parent=self.root)
+                return
         try:
             if not self.m.has_admin():
                 email = simpledialog.askstring("Primer administrador", "Correo del administrador:", parent=self.root)
@@ -329,8 +451,10 @@ class App:
             self.role.set(self.m.role())
             return
         self.build_settings()
-        self.refresh()
+        # One refresh: the periodic one is already scheduled.
+        self.refresh(reschedule=False)
         self.load_nodes()
+        self.load_checks()
 
     def service(self, action: str) -> None:
         for b in self.buttons.values():
@@ -351,13 +475,27 @@ class App:
         if error:
             messagebox.showerror("Tisma Cloud", error, parent=self.root)
         self.refresh(reschedule=False)
+        self.load_checks()
 
     def load_autostart(self) -> None:
         try:
             enabled = self.m.autostart_enabled()
         except Exception:  # noqa: BLE001
             enabled = False
-        self.root.after(0, lambda: self.autostart.set(enabled))
+        try:
+            firewall = bool(self.m.firewall_open())
+        except Exception:  # noqa: BLE001
+            firewall = False
+        self.root.after(0, lambda: (self.autostart.set(enabled), self.firewall.set(firewall)))
+
+    def on_firewall(self) -> None:
+        try:
+            self.m.set_firewall(self.firewall.get())
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Tisma Cloud", f"{e}\n\nEn Windows hay que abrir Tisma Cloud como administrador.",
+                                 parent=self.root)
+            self.firewall.set(not self.firewall.get())
+        self.load_checks()
 
     def on_autostart(self) -> None:
         try:
@@ -379,6 +517,7 @@ class App:
         self.buttons["stop"].state(["!disabled"] if st.running else ["disabled"])
         self.buttons["restart"].state(["!disabled"] if st.running else ["disabled"])
         self.tabs.tab(self.admin_tab, state="normal" if st.role == "master" else "disabled")
+        self.firewall_box.state(["!disabled"] if st.role == "master" else ["disabled"])
         lines = self.m.logs(300)
         self.log.config(state="normal")
         self.log.delete("1.0", "end")

@@ -220,15 +220,18 @@ días). Es un solo archivo para todas las máquinas: en cada una se elige si es 
 un **nodo de cómputo** (esclavo). Se maneja de dos formas, con lo mismo:
 
 - **En la pantalla del servidor:** doble clic en `tisma-cloud.exe` abre la ventana de Tisma Cloud: rol de la máquina,
-  configuración (la del maestro o la del nodo), Iniciar / Detener / Reiniciar, «Iniciar con la máquina», el registro
-  y, en el maestro, la administración:
+  configuración (la del maestro o la del nodo; en un nodo, «Buscar Tisma Slicer» encuentra los programas), Iniciar /
+  Detener / Reiniciar, «Iniciar con la máquina», en Windows «Abrir el puerto en el firewall», el **Diagnóstico** (lo que
+  la máquina necesita para dar servicio, con «Arreglar» para lo que se puede arreglar solo), el registro y, en el
+  maestro, la administración:
   - **Nodos: qué hace cada uno.** La lista de los nodos con su estado; «Qué hace…» marca los tipos de trabajo de cada
     nodo (laminar, laminar placas grandes, análisis estructural, relleno mínimo / resina) y su orden: toma primero los
     de arriba. Se usa desde su próximo trabajo. También habilitar / deshabilitar y agregar un nodo (muestra su token).
   - **Panel de control:** el panel del maestro (servidores en línea, qué hace cada uno, cola por tipo, trabajos,
     usuarios y pagos) en su propia ventana, ya con la sesión iniciada. Ahí cada usuario tiene «Hacer interna»: cuenta
     sin cobro y sin límite (ver «Cuentas internas»). La primera vez pide crear el administrador (correo y contraseña).
-    En Windows usa el motor Edge del sistema (WebView2); si falta, o en Linux, abre el navegador.
+    En Windows usa el motor Edge del sistema (WebView2); si falta (Windows Server 2019 y 2022 no lo traen) explica
+    cómo instalarlo o cómo abrir el panel desde otra PC; en Linux abre el navegador.
   - Usuarios, cola, planes y cualquier comando de administración, y «Cuenta interna…» para un correo.
 - **Por SSH:** los mismos pasos con comandos, o con el menú de `tisma-cloud console`:
 
@@ -240,6 +243,8 @@ tisma-cloud config master_url http://192.168.1.10:8000   # en un nodo
 tisma-cloud start | stop | restart | status
 tisma-cloud logs 100
 tisma-cloud autostart on                  # que arranque con la máquina
+tisma-cloud firewall on                   # Windows: abrir el puerto del maestro en el firewall
+tisma-cloud check                         # diagnóstico; check --fix arregla lo que se puede
 tisma-cloud admin node-add i7-1 --priorities slice,slice_large,fea
 tisma-cloud admin user-add tu@correo.com --plan basico --admin --password
 tisma-cloud admin node-set i7-1 --priorities fea,slice   # qué hace un nodo, en orden
@@ -252,10 +257,16 @@ configuración del maestro: al menos `TISMA_DATABASE_URL`, PostgreSQL o `sqlite:
 `TISMA_STORAGE_DIR`), `node.toml` (la del nodo) y `logs/tisma-cloud.log`. Las variables ya definidas en el sistema
 tienen prioridad sobre `.env`.
 
-**Iniciar con la máquina:** en Windows crea la tarea programada «Tisma Cloud» (al encender, como SYSTEM): hay que abrir
-el programa o la consola SSH como administrador. En Linux crea el servicio `tisma-cloud` de systemd (del sistema como
-root, del usuario si no). Con la tarea creada, `start` en Windows la ejecuta, así el servicio sigue andando al cerrar
-la sesión SSH.
+**Si el servicio se cae:** `tisma-cloud` corre como un pequeño supervisor que arranca el maestro o el nodo y lo vuelve a
+arrancar si termina con un error (a los 5 s, y si sigue fallando cada vez más espaciado, hasta un minuto). Queda
+anotado en el registro.
+
+**Iniciar con la máquina:** en Windows crea la tarea programada «Tisma Cloud» (al encender, como SYSTEM, aunque nadie
+inicie sesión; sin límite de tiempo, con prioridad normal y reintento cada minuto si falla): hay que abrir el programa o
+la consola SSH como administrador. En Linux crea el servicio `tisma-cloud` de systemd (del sistema como root, del
+usuario si no). Con la tarea creada, `start` en Windows la ejecuta, así el servicio sigue andando al cerrar la sesión
+SSH. Las tareas creadas por versiones anteriores (con `schtasks /SC ONSTART`) se detenían a los 3 días, que es lo que
+pone Windows por defecto: el diagnóstico lo marca y «Arreglar» la crea de nuevo.
 
 **SSH en Windows** (servidor OpenSSH incluido en Windows 10 1809 / Server 2019 y posteriores, según la guía de
 Microsoft «Get started with OpenSSH for Windows»), en PowerShell como administrador:
@@ -269,8 +280,36 @@ Set-Service -Name sshd -StartupType 'Automatic'
 Abrir el puerto 22 solo en la red local (no en el router). Después, desde otra PC: `ssh usuario@IP-del-servidor` y
 `cd` a la carpeta de `tisma-cloud.exe`.
 
-El HTTPS (Caddy) y la base de datos PostgreSQL van aparte, como en la instalación con Docker. Los comandos sueltos de
-antes siguen: `tisma-cloud master [--port P] [--env .env]`, `tisma-cloud node [--config node.toml]`. Para armar el
+#### Windows Server
+
+Probado por el CI en Windows Server 2022 (los equipos de GitHub Actions): tarea de arranque como SYSTEM, regla del
+firewall, supervisor que revive el maestro, arrancar y detener. Pasos en el servidor, con una cuenta de administrador:
+
+1. Copiar `tisma-cloud.exe` a una carpeta propia, por ejemplo `C:\TismaCloud\` (ahí quedan su configuración, la base
+   SQLite y los archivos). Abrirlo con clic derecho > *Ejecutar como administrador*.
+2. Elegir **Maestro**, revisar la configuración (puerto, base de datos, carpeta de archivos) e **Iniciar**.
+3. Marcar **Iniciar con la máquina** y **Abrir el puerto en el firewall** (Windows Server bloquea por defecto las
+   conexiones entrantes: sin la regla, los nodos y los clientes no llegan).
+4. Pestaña **Diagnóstico**: todo en ✔ o en «!» (avisos). Lo marcado con ✖ se arregla con «Arreglar».
+5. **Panel de control:** necesita *Microsoft Edge WebView2 Runtime*, que Windows Server 2019 y 2022 no traen (el
+   Diagnóstico dice si está). Se instala gratis desde
+   <https://developer.microsoft.com/microsoft-edge/webview2/> (instalador «Evergreen Standalone», x64). Sin él, el
+   panel se abre desde el navegador de otra PC de la red: `http://IP-del-servidor:8000/admin`, con el correo y la
+   contraseña del administrador (el Internet Explorer de Windows Server no sirve para el panel).
+6. En cada **nodo** con Windows: instalar Tisma Slicer, abrir `tisma-cloud.exe` como administrador, elegir **Nodo**,
+   poner la dirección del maestro y el token (de *Agregar nodo…* en el maestro); los programas `tisma-slicer-console.exe`
+   y `tisma-fea.exe` se encuentran solos en la carpeta de instalación de Tisma Slicer («Buscar Tisma Slicer»).
+   **Iniciar con la máquina** y **Diagnóstico** igual que en el maestro (un nodo no necesita abrir puertos: él llama
+   al maestro).
+
+En Windows Server Core (sin escritorio) no hay ventana: todo se hace por SSH con los comandos o `tisma-cloud console`.
+
+**HTTPS en Windows:** Caddy tiene versión para Windows y puede correr como servicio de Windows (ver «Running Caddy» en
+<https://caddyserver.com/docs/running>); usa el mismo `deploy/Caddyfile`. Para internet hay que abrir en el firewall
+los puertos 80 y 443 de Caddy, y dejar el del maestro solo para la red local. La base de datos puede ser SQLite para
+empezar, o PostgreSQL (instalador oficial para Windows) con `TISMA_DATABASE_URL`.
+
+Los comandos sueltos de antes siguen: `tisma-cloud master [--port P] [--env .env]`, `tisma-cloud node [--config node.toml]`. Para armar el
 programa a mano: `pip install ".[master,exe]"` y `pyinstaller tisma-cloud.spec` (queda en `dist/`).
 
 ## Avisos de problemas
@@ -317,6 +356,7 @@ sola vez).
 
 En la máquina del nodo:
 
+- **Con el programa `tisma-cloud`** (Windows o Linux): ver «Programa tisma-cloud» y «Windows Server» arriba.
 - **Sin Docker** (Linux o Windows): instalar Tisma Slicer y Python 3.11+, `pip install .`, copiar
   `deploy/node.example.toml` a `node.toml`, completar las rutas de `tisma-slicer` (en Windows
   `tisma-slicer-console.exe`) y `tisma-fea`, y correr `TISMA_NODE_TOKEN=tn_... python -m tisma_cloud.node --config node.toml`.

@@ -84,7 +84,7 @@ jobs:
           "$exe" admin user-list | grep "unlimited"
           "$exe" master --port 18990 > master.log 2>&1 &
           master=$!
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:18990/v1/health > /dev/null 2>&1 && break; sleep 1; done
+          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:18990/v1/health > /dev/null 2>&1 && break; sleep 1; done
           curl -sf -H "Authorization: Bearer $token" http://127.0.0.1:18990/v1/me | grep '"unlimited":true'
           kill $master || true
       - name: Try the service (role, start, status, stop)
@@ -101,6 +101,50 @@ jobs:
           "$exe" logs 20
           "$exe" stop
           if "$exe" status; then echo "still running"; exit 1; fi
+      # The runners of GitHub are Windows Server 2022 with an administrator: what a server does at boot.
+      - name: Windows Server (start with the machine as SYSTEM, firewall, supervisor)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = (Resolve-Path dist/tisma-cloud.exe).Path
+          $svc = Join-Path $PWD "winsvc-home"
+          function tc { & $exe --home $svc @args; if ($LASTEXITCODE -ne 0) { throw "tisma-cloud $args failed ($LASTEXITCODE)" } }
+          function healthy { try { (Invoke-WebRequest http://127.0.0.1:18992/v1/health -UseBasicParsing -TimeoutSec 2).StatusCode -eq 200 } catch { $false } }
+          tc role master
+          tc config port 18992
+          tc firewall on
+          $port = (Get-NetFirewallRule -DisplayName "Tisma Cloud" | Get-NetFirewallPortFilter).LocalPort
+          if ($port -ne "18992") { throw "firewall rule opens $port" }
+          tc autostart on
+          $xml = schtasks /Query /XML /TN "Tisma Cloud" | Out-String
+          if ($xml -notmatch "<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>" -or $xml -notmatch "<RestartOnFailure>") { throw "task: $xml" }
+          tc start   # through the scheduled task, as SYSTEM
+          tc status
+          if (-not (healthy)) { tc logs 40; throw "the master does not answer" }
+          # The supervisor starts the master again when it dies.
+          $sup = [int](Get-Content "$svc/tisma-cloud.pid")
+          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Select-Object -First 1
+          if (-not $child) { throw "no child of the supervisor $sup" }
+          taskkill /PID $child.ProcessId /T /F | Out-Null
+          Start-Sleep 2
+          $back = $false
+          for ($i = 0; $i -lt 40; $i++) { if (healthy) { $back = $true; break }; Start-Sleep 1 }
+          tc logs 15
+          if (-not $back) { throw "the master was not started again" }
+          & $exe --home $svc check
+          tc stop
+          & $exe --home $svc status
+          if ($LASTEXITCODE -ne 3) { throw "still running" }
+          if (healthy) { throw "the master still answers" }
+          tc autostart off
+          tc firewall off
+          if (Get-NetFirewallRule -DisplayName "Tisma Cloud" -ErrorAction SilentlyContinue) { throw "rule left" }
+      - name: Tests on Windows (service and system)
+        if: matrix.name == 'windows'
+        run: |
+          pip install ".[master,test]"
+          pytest -q tests/test_system.py tests/test_manager.py
       - uses: actions/upload-artifact@v4
         with:
           name: tisma-cloud-${{ matrix.name }}
