@@ -1,7 +1,64 @@
+import javax.inject.Inject
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+/**
+ * The catalog of the printer picker (assets/printers.json), made from Tisma's vendor bundles by
+ * android/tools/printer_catalog.py, so that the app always has the printers of the profiles it is built with.
+ */
+abstract class PrinterCatalogTask : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val profiles: DirectoryProperty
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val scripts: ConfigurableFileCollection
+
+    @get:Input
+    abstract val python: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @get:Inject
+    abstract val exec: ExecOperations
+
+    @TaskAction
+    fun generate() {
+        // Only the catalog in the folder (it becomes the assets of the app).
+        outputDir.get().asFile.listFiles()?.forEach { it.deleteRecursively() }
+        exec.exec {
+            commandLine(python.get(), scripts.files.first { it.name == "printer_catalog.py" }.absolutePath,
+                profiles.get().asFile.absolutePath, outputDir.file("printers.json").get().asFile.absolutePath)
+        }
+    }
+}
+
+val printerCatalog = tasks.register<PrinterCatalogTask>("printerCatalog") {
+    profiles.set(rootProject.layout.projectDirectory.dir("../resources/profiles"))
+    scripts.from(rootProject.file("tools/printer_catalog.py"), rootProject.file("../tools/profiles/validate_bundles.py"))
+    // Python 3: -PtismaPython=... or TISMA_PYTHON, else "python" on Windows and "python3" elsewhere.
+    python.set((project.findProperty("tismaPython") as String?) ?: System.getenv("TISMA_PYTHON")
+        ?: if (System.getProperty("os.name").startsWith("Windows")) "python" else "python3")
+    outputDir.set(layout.buildDirectory.dir("generated/printerCatalog"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(printerCatalog, PrinterCatalogTask::outputDir)
+    }
+}
+
+// The JVM tests also read the catalog of the real profiles (PrinterCatalogTest).
+tasks.withType<Test>().configureEach {
+    dependsOn(printerCatalog)
+    // The output folder is set by the Android plugin when it adds it to the assets: read it when the tests run.
+    doFirst { systemProperty("tisma.printerCatalog", printerCatalog.get().outputDir.file("printers.json").get().asFile.absolutePath) }
 }
 
 // Tisma's deps/ built for Android (see android/README.md): -PtismaDepsDir=... or TISMA_ANDROID_DEPS. Without them the

@@ -94,3 +94,38 @@ class PreviewMeshTest {
         assertTrue(m.triangleCount > PreviewMesh.MAX_TRIANGLES / 2)
     }
 }
+
+class AdvancedSettingsTest {
+    private fun ini(s: SliceSettings) = s.toIni().lines().filter { "=" in it }
+        .associate { it.substringBefore('=').trim() to it.substringAfter('=').trim() }
+
+    @Test
+    fun profileValuesAreNotWritten() {
+        val o = ini(SliceSettings())
+        for (k in listOf("top_solid_layers", "bottom_solid_layers", "fill_pattern", "seam_position", "support_material_style", "ironing"))
+            assertTrue(k, k !in o)
+    }
+
+    @Test
+    fun changedValuesAreWritten() {
+        val o = ini(SliceSettings(topLayers = 6, bottomLayers = 4, infillPattern = InfillPattern.GYROID, seam = SeamPosition.REAR,
+            supportStyle = SupportStyle.ORGANIC, supportsOnBedOnly = true, ironing = true))
+        assertEquals("6", o["top_solid_layers"])
+        assertEquals("4", o["bottom_solid_layers"])
+        assertEquals("gyroid", o["fill_pattern"])
+        assertEquals("rear", o["seam_position"])
+        assertEquals("organic", o["support_material_style"])
+        assertEquals("1", o["support_material_buildplate_only"])
+        assertEquals("1", o["ironing"])
+        assertEquals("top", o["ironing_type"])
+    }
+
+    @Test
+    fun bedSizeOfShapes() {
+        assertEquals(250.0 to 210.0, SliceSettings.bedSize("0x0,250x0,250x210,0x210"))
+        assertEquals(200.0 to 200.0, SliceSettings.bedSize("-100x-100,100x-100,100x100,-100x100"))
+        assertEquals(null, SliceSettings.bedSize("garbage"))
+        // A typo of a vendor bundle (Anker M5), read as the core does: 235-0 is 235x0.
+        assertEquals(235.0 to 235.0, SliceSettings.bedSize("0x0,235-0,235x235,0x235"))
+    }
+}

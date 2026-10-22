@@ -20,10 +20,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ import uy.com.tisma.app.core.TismaCore
 import uy.com.tisma.app.ui.AccountScreen
 import uy.com.tisma.app.ui.PrepareScreen
 import uy.com.tisma.app.ui.TismaTheme
+import uy.com.tisma.app.ui.Workspace
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +50,8 @@ private enum class Tab { SLICE, ACCOUNT }
 @Composable
 fun TismaApp() {
     var tab by rememberSaveable { mutableStateOf(Tab.SLICE) }
+    val context = LocalContext.current
+    val workspace = remember { Workspace(context) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -72,7 +77,7 @@ fun TismaApp() {
     ) { padding ->
         // The slice screen stays composed, so switching tabs keeps the model and the slice result (and a slice running).
         Box(Modifier.fillMaxSize().padding(padding)) {
-            PrepareScreen(Modifier.hiddenIf(tab != Tab.SLICE))
+            PrepareScreen(workspace, Modifier.hiddenIf(tab != Tab.SLICE))
             if (tab == Tab.ACCOUNT) AccountScreen()
         }
     }

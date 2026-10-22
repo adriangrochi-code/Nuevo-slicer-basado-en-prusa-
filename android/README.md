@@ -19,5 +19,13 @@ Without `-PtismaDepsDir` the app is built without the core (the screen says so):
 
 ## What it does now
 
-Open a model (STL, 3MF, OBJ), slice it on the phone with the default settings of the core (or an INI file of a
-printer, print and filament), see the print time and filament, save the G-code.
+Open a model (STL, 3MF, OBJ), slice it on the phone, see the print time and filament, save or share the G-code.
+
+- **Printer**: any FFF printer of Tisma's profiles (brand, model, then nozzle and variant), with the bed, firmware,
+  custom G-code, machine limits and the default print profile of its manufacturer; or a custom printer typed by hand.
+  The catalog (`assets/printers.json`) is made when the app is built, from `resources/profiles`, by
+  `tools/printer_catalog.py` (Python 3 on the build machine; `-PtismaPython=...` to choose the interpreter).
+- **Filament**: Tisma's generic PLA, PETG, ABS and FLEX, with their temperatures editable.
+- **Quality**: layer height, infill, walls, supports, brim.
+- **Advanced**: top and bottom solid layers, infill pattern, seam, support style, supports only from the bed,
+  ironing. Each one stays as the printer profile until it is changed.

@@ -17,6 +17,8 @@ on:
       - 'android/**'
       - 'deps/**'
       - 'src/**'
+      - 'resources/profiles/**'
+      - 'tools/profiles/validate_bundles.py'
       - 'CMakeLists.txt'
       - '.github/workflows/build_android.yml'
 

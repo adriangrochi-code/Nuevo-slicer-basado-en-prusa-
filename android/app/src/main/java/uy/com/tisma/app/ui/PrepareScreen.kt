@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,30 +61,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uy.com.tisma.app.R
 import uy.com.tisma.app.core.GcodeFlavor
+import uy.com.tisma.app.core.InfillPattern
 import uy.com.tisma.app.core.Material
-import uy.com.tisma.app.core.ModelInfo
 import uy.com.tisma.app.core.PreviewMesh
+import uy.com.tisma.app.core.SeamPosition
 import uy.com.tisma.app.core.SliceResult
 import uy.com.tisma.app.core.SliceSettings
-import uy.com.tisma.app.core.SliceSettingsStore
+import uy.com.tisma.app.core.SupportStyle
 import uy.com.tisma.app.core.TismaCore
 import java.io.File
 import java.util.Locale
 
 /** Prepare and slice: the model on the bed, the settings of printer, filament and quality, the result. */
 @Composable
-fun PrepareScreen(modifier: Modifier = Modifier) {
+fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val store = remember { SliceSettingsStore(context) }
-    var settings by remember { mutableStateOf(store.load()) }
-    fun update(s: SliceSettings) {
-        settings = s
-        store.save(s)
-    }
-    var model by remember { mutableStateOf<File?>(null) }
-    var info by remember { mutableStateOf<ModelInfo?>(null) }
-    var mesh by remember { mutableStateOf<PreviewMesh?>(null) }
+    val settings = workspace.settings
+    val update = workspace::update
+    val model = workspace.model
+    val info = workspace.info
+    val mesh = workspace.mesh
+    LaunchedEffect(Unit) { workspace.loadCatalog() }
     var result by remember { mutableStateOf<SliceResult?>(null) }
     var progress by remember { mutableStateOf<Pair<Int, String>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -96,9 +96,10 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                 // The core reads files: the chosen document is copied to the cache, with its name (the extension
                 // tells the format).
                 val file = withContext(Dispatchers.IO) { copyToCache(context, uri) }
-                model = file
-                mesh = withContext(Dispatchers.Default) { runCatching { PreviewMesh.load(file) }.getOrNull() }
-                info = if (TismaCore.available) withContext(Dispatchers.Default) { TismaCore.modelInfo(file.absolutePath) } else null
+                workspace.model = file
+                workspace.info = null
+                workspace.mesh = withContext(Dispatchers.Default) { runCatching { PreviewMesh.load(file) }.getOrNull() }
+                workspace.info = if (TismaCore.available) withContext(Dispatchers.Default) { TismaCore.modelInfo(file.absolutePath) } else null
             } catch (e: Exception) {
                 error = e.message ?: e.toString()
             }
@@ -152,9 +153,10 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             if (!TismaCore.available)
                 Text(stringResource(R.string.core_missing), color = MaterialTheme.colorScheme.error)
 
-            PrinterSection(settings, ::update)
-            FilamentSection(settings, ::update)
-            QualitySection(settings, ::update)
+            PrinterSection(workspace)
+            FilamentSection(settings, update)
+            QualitySection(settings, update)
+            AdvancedSection(settings, update)
 
             val problems = settings.problems()
             if (problems.isNotEmpty())
@@ -169,8 +171,9 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         try {
                             val ini = File(context.cacheDir, "settings.ini")
                             val out = File(context.cacheDir, source.nameWithoutExtension + ".gcode")
+                            val text = workspace.ini()
                             result = withContext(Dispatchers.Default) {
-                                ini.writeText(settings.toIni())
+                                ini.writeText(text)
                                 TismaCore.slice(source.absolutePath, ini.absolutePath, out.absolutePath) { percent, text ->
                                     scope.launch(Dispatchers.Main) { progress = percent to text }
                                 }
@@ -211,7 +214,8 @@ private fun Section(title: String, summary: String, content: @Composable () -> U
     var open by rememberSaveable(title) { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // The whole header opens and closes the section, not only the arrow.
+            Row(Modifier.clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(title, style = MaterialTheme.typography.titleSmall)
                     Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -229,7 +233,7 @@ private fun Section(title: String, summary: String, content: @Composable () -> U
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun <T> Choices(label: String, options: List<T>, selected: T, text: (T) -> String, onSelect: (T) -> Unit) {
+private fun <T> Choices(label: String, options: List<T>, selected: T, text: @Composable (T) -> String, onSelect: (T) -> Unit) {
     Text(label, style = MaterialTheme.typography.labelLarge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for (o in options)
@@ -264,20 +268,62 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 }
 
 @Composable
-private fun PrinterSection(s: SliceSettings, update: (SliceSettings) -> Unit) {
-    Section(stringResource(R.string.section_printer),
-        stringResource(R.string.printer_summary, num(s.bedX), num(s.bedY), num(s.maxHeight), num(s.nozzle), s.flavor.label)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberField("X", s.bedX, "mm", Modifier.weight(1f)) { update(s.copy(bedX = it)) }
-            NumberField("Y", s.bedY, "mm", Modifier.weight(1f)) { update(s.copy(bedY = it)) }
-            NumberField("Z", s.maxHeight, "mm", Modifier.weight(1f)) { update(s.copy(maxHeight = it)) }
+private fun PrinterSection(workspace: Workspace) {
+    val s = workspace.settings
+    val update = workspace::update
+    val catalog = workspace.catalog
+    val preset = workspace.printerPreset()
+    val model = s.printer?.let { catalog?.find(it.vendor, it.model) }
+    var picking by remember { mutableStateOf(false) }
+    val summary = if (preset != null)
+        stringResource(R.string.catalog_printer_summary, s.printer!!.model, preset.nozzle)
+    else
+        stringResource(R.string.printer_summary, num(s.bedX), num(s.bedY), num(s.maxHeight), num(s.nozzle), s.flavor.label)
+    Section(stringResource(R.string.section_printer), summary) {
+        if (catalog != null)
+            OutlinedButton(onClick = { picking = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(if (preset != null) s.printer!!.vendor + " · " + s.printer.model else stringResource(R.string.choose_printer))
+            }
+        if (preset != null && model != null) {
+            Choices(stringResource(R.string.nozzle), model.nozzles, preset.nozzle, { "$it mm" }) { n ->
+                update(s.withPrinter(model.vendor, model.name, model.presetFor(n, preset)))
+            }
+            // Variants of the same nozzle (with or without a multi-material unit, input shaper...).
+            val sameNozzle = model.presets.filter { it.nozzle == preset.nozzle }
+            if (sameNozzle.size > 1)
+                Choices(stringResource(R.string.printer_variant), sameNozzle, preset, { it.name }) {
+                    update(s.withPrinter(model.vendor, model.name, it))
+                }
+            Text(stringResource(R.string.printer_bed, num(s.bedX), num(s.bedY), num(s.maxHeight)),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            if (s.printer != null && catalog != null)
+                Text(stringResource(R.string.printer_not_in_catalog, s.printer.model), color = MaterialTheme.colorScheme.error)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberField("X", s.bedX, "mm", Modifier.weight(1f)) { update(s.copy(bedX = it)) }
+                NumberField("Y", s.bedY, "mm", Modifier.weight(1f)) { update(s.copy(bedY = it)) }
+                NumberField("Z", s.maxHeight, "mm", Modifier.weight(1f)) { update(s.copy(maxHeight = it)) }
+            }
+            Choices(stringResource(R.string.nozzle), listOf(0.2, 0.4, 0.6, 0.8), s.nozzle, { "${num(it)} mm" }) { n ->
+                // A layer the new nozzle can print.
+                update(s.copy(nozzle = n, layerHeight = minOf(s.layerHeight, SliceSettings.layerChoices(n).last())))
+            }
+            Choices(stringResource(R.string.firmware), GcodeFlavor.entries, s.flavor, { it.label }) { update(s.copy(flavor = it)) }
         }
-        Choices(stringResource(R.string.nozzle), listOf(0.2, 0.4, 0.6, 0.8), s.nozzle, { "${num(it)} mm" }) { n ->
-            // A layer the new nozzle can print.
-            update(s.copy(nozzle = n, layerHeight = minOf(s.layerHeight, layerChoices(n).last())))
-        }
-        Choices(stringResource(R.string.firmware), GcodeFlavor.entries, s.flavor, { it.label }) { update(s.copy(flavor = it)) }
     }
+    if (picking && catalog != null)
+        PrinterPicker(
+            catalog,
+            onPick = { m ->
+                update(s.withPrinter(m.vendor, m.name, m.defaultPreset()))
+                picking = false
+            },
+            onCustom = {
+                update(s.withCustomPrinter())
+                picking = false
+            },
+            onDismiss = { picking = false },
+        )
 }
 
 @Composable
@@ -302,7 +348,7 @@ private fun FilamentSection(s: SliceSettings, update: (SliceSettings) -> Unit) {
 private fun QualitySection(s: SliceSettings, update: (SliceSettings) -> Unit) {
     Section(stringResource(R.string.section_quality),
         stringResource(R.string.quality_summary, num(s.layerHeight), s.infillPercent, s.perimeters)) {
-        Choices(stringResource(R.string.layer_height), layerChoices(s.nozzle), s.layerHeight, { "${num(it)} mm" }) {
+        Choices(stringResource(R.string.layer_height), SliceSettings.layerChoices(s.nozzle), s.layerHeight, { "${num(it)} mm" }) {
             update(s.copy(layerHeight = it))
         }
         Text(stringResource(R.string.infill, s.infillPercent), style = MaterialTheme.typography.labelLarge)
@@ -312,6 +358,58 @@ private fun QualitySection(s: SliceSettings, update: (SliceSettings) -> Unit) {
         SwitchRow(stringResource(R.string.supports), s.supports) { update(s.copy(supports = it)) }
         SwitchRow(stringResource(R.string.brim), s.brim) { update(s.copy(brim = it)) }
     }
+}
+
+/** Settings most prints leave to the profile: each one can go back to "As the profile". */
+@Composable
+private fun AdvancedSection(s: SliceSettings, update: (SliceSettings) -> Unit) {
+    val profile = stringResource(R.string.as_profile)
+    val changed = listOfNotNull(s.topLayers, s.bottomLayers, s.infillPattern, s.seam, s.supportStyle).size +
+        (if (s.supportsOnBedOnly) 1 else 0) + (if (s.ironing) 1 else 0)
+    Section(stringResource(R.string.section_advanced),
+        if (changed == 0) stringResource(R.string.advanced_summary_none) else stringResource(R.string.advanced_summary, changed)) {
+        Choices(stringResource(R.string.top_layers), listOf(null, 3, 4, 5, 6, 8), s.topLayers, { it?.toString() ?: profile }) {
+            update(s.copy(topLayers = it))
+        }
+        Choices(stringResource(R.string.bottom_layers), listOf(null, 3, 4, 5, 6, 8), s.bottomLayers, { it?.toString() ?: profile }) {
+            update(s.copy(bottomLayers = it))
+        }
+        Choices(stringResource(R.string.infill_pattern), listOf<InfillPattern?>(null) + InfillPattern.entries, s.infillPattern,
+            { it?.let { p -> stringResource(p.label()) } ?: profile }) { update(s.copy(infillPattern = it)) }
+        Choices(stringResource(R.string.seam), listOf<SeamPosition?>(null) + SeamPosition.entries, s.seam,
+            { it?.let { p -> stringResource(p.label()) } ?: profile }) { update(s.copy(seam = it)) }
+        if (s.supports) {
+            Choices(stringResource(R.string.support_style), listOf<SupportStyle?>(null) + SupportStyle.entries, s.supportStyle,
+                { it?.let { p -> stringResource(p.label()) } ?: profile }) { update(s.copy(supportStyle = it)) }
+            SwitchRow(stringResource(R.string.supports_on_bed_only), s.supportsOnBedOnly) { update(s.copy(supportsOnBedOnly = it)) }
+        }
+        SwitchRow(stringResource(R.string.ironing), s.ironing) { update(s.copy(ironing = it)) }
+    }
+}
+
+private fun InfillPattern.label(): Int = when (this) {
+    InfillPattern.GRID -> R.string.pattern_grid
+    InfillPattern.GYROID -> R.string.pattern_gyroid
+    InfillPattern.CUBIC -> R.string.pattern_cubic
+    InfillPattern.ADAPTIVE_CUBIC -> R.string.pattern_adaptive_cubic
+    InfillPattern.HONEYCOMB -> R.string.pattern_honeycomb
+    InfillPattern.HONEYCOMB_3D -> R.string.pattern_honeycomb_3d
+    InfillPattern.TRIANGLES -> R.string.pattern_triangles
+    InfillPattern.RECTILINEAR -> R.string.pattern_rectilinear
+    InfillPattern.LIGHTNING -> R.string.pattern_lightning
+}
+
+private fun SeamPosition.label(): Int = when (this) {
+    SeamPosition.ALIGNED -> R.string.seam_aligned
+    SeamPosition.NEAREST -> R.string.seam_nearest
+    SeamPosition.REAR -> R.string.seam_rear
+    SeamPosition.RANDOM -> R.string.seam_random
+}
+
+private fun SupportStyle.label(): Int = when (this) {
+    SupportStyle.GRID -> R.string.support_grid
+    SupportStyle.SNUG -> R.string.support_snug
+    SupportStyle.ORGANIC -> R.string.support_organic
 }
 
 @Composable
@@ -333,10 +431,6 @@ private fun ResultCard(r: SliceResult, onSave: () -> Unit, onShare: () -> Unit) 
         }
     }
 }
-
-/** Layer heights a nozzle prints well: up to three quarters of its diameter. */
-private fun layerChoices(nozzle: Double): List<Double> =
-    listOf(0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.4, 0.5, 0.6).filter { it <= 0.75 * nozzle + 1e-9 }.ifEmpty { listOf(0.08) }
 
 private fun num(v: Double): String = String.format(Locale.ROOT, "%.2f", v).trimEnd('0').trimEnd('.')
 
