@@ -23,6 +23,7 @@
 #include "TismaTheme.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/StateColor.hpp"
+#include "Widgets/StaticBox.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -473,12 +474,31 @@ Sidebar::Sidebar(Plater *parent)
 
     const int margin_5 = int(0.5 * wxGetApp().em_unit());// 5;
 
-    auto init_combo = [this, margin_5](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
+    // Tisma: a section of the presets is a card: a rounded panel with its caption and its controls.
+    const int em = wxGetApp().em_unit();
+    auto make_card = [this, em](wxBoxSizer *&content) {
+        const bool dark = wxGetApp().dark_mode();
+        auto *card = new ::StaticBox(m_presets_panel);
+        card->SetCornerRadius(0.6 * em);
+        card->SetBackgroundColorNormal(TismaTheme::card_bg(dark));
+        card->SetBorderColorNormal(TismaTheme::separator(dark));
+        card->SetBackgroundColour(TismaTheme::card_bg(dark));
+        auto *padding = new wxBoxSizer(wxVERTICAL);
+        content = new wxBoxSizer(wxVERTICAL);
+        padding->Add(content, 1, wxEXPAND | wxALL, int(0.8 * em));
+        card->SetSizer(padding);
+        m_cards.push_back(card);
+        return card;
+    };
+
+    auto init_combo = [this, margin_5, em, make_card](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
+        wxBoxSizer *card_sizer = nullptr;
+        ::StaticBox *card = make_card(card_sizer);
         // Caption in the PrusaSlicer 3.0 style: small, upper case, muted.
-        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label.Upper());
+        auto *text = new wxStaticText(card, wxID_ANY, label.Upper());
         text->SetFont(wxGetApp().small_font().Bold());
         m_preset_captions.push_back(text);
-        *combo = new PlaterPresetComboBox(m_presets_panel, preset_type);
+        *combo = new PlaterPresetComboBox(card, preset_type);
 
         auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
         combo_and_btn_sizer->Add(*combo, 1, wxEXPAND);
@@ -486,42 +506,35 @@ Sidebar::Sidebar(Plater *parent)
             combo_and_btn_sizer->Add((*combo)->edit_btn, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT,
                                     int(0.3*wxGetApp().em_unit()));
 
-        auto *sizer_presets = this->m_presets_sizer;
         auto *sizer_filaments = this->m_filaments_sizer;
-        // The rows shown for the filament or the resin printers only.
+        // The cards shown for the filament or the resin printers only.
         std::vector<wxSizerItem*> *rows = preset_type == Preset::TYPE_PRINT || filament ? &m_fff_rows :
             preset_type == Preset::TYPE_SLA_PRINT || preset_type == Preset::TYPE_SLA_MATERIAL ? &m_sla_rows : nullptr;
-        // Hide controls, which will be shown/hidden in respect to the printer technology
-        text->Show(preset_type == Preset::TYPE_PRINTER);
-        wxSizerItem *caption_row = sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
-        if (rows)
-            rows->push_back(caption_row);
+        card_sizer->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxBOTTOM, int(0.5 * em));
         if (! filament) {
-            combo_and_btn_sizer->ShowItems(preset_type == Preset::TYPE_PRINTER);
-            wxSizerItem *combo_row = sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND |
-#ifdef __WXGTK3__
-                wxRIGHT, margin_5);
-#else
-                wxBOTTOM, 1);
-                (void)margin_5; // supress unused capture warning
-#endif // __WXGTK3__
-            if (rows)
-                rows->push_back(combo_row);
+            card_sizer->Add(combo_and_btn_sizer, 0, wxEXPAND);
             if ((*combo)->connect_info_sizer) {
                 auto tmp_h_sizer = new wxBoxSizer(wxHORIZONTAL);
                 tmp_h_sizer->Add((*combo)->connect_info_sizer, 1, wxEXPAND);
-                sizer_presets->Add(tmp_h_sizer, 0, wxBOTTOM, int(0.3 * wxGetApp().em_unit()));
+                card_sizer->Add(tmp_h_sizer, 0, wxTOP, int(0.3 * em));
             }
         } else {
-            sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND |
-#ifdef __WXGTK3__
-                wxRIGHT, margin_5);
-#else
-                wxBOTTOM, 1);
-#endif // __WXGTK3__
+            sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND | wxBOTTOM, int(0.3 * em));
             (*combo)->set_extruder_idx(0);
-            sizer_filaments->ShowItems(false);
-            rows->push_back(sizer_presets->Add(sizer_filaments, 1, wxEXPAND));
+            card_sizer->Add(sizer_filaments, 1, wxEXPAND);
+        }
+        (void)margin_5;
+        // Hidden until the technology of the printer is known (show_preset_comboboxes()).
+        card->Show(preset_type == Preset::TYPE_PRINTER);
+        wxSizerItem *card_row = m_presets_sizer->Add(card, 0, wxEXPAND | wxBOTTOM, int(0.6 * em));
+        if (rows)
+            rows->push_back(card_row);
+        if (preset_type == Preset::TYPE_PRINTER) {
+            m_card_printer       = card;
+            m_card_printer_sizer = card_sizer;
+        } else if (filament) {
+            m_card_filament       = card;
+            m_card_filament_sizer = card_sizer;
         }
     };
 
@@ -533,7 +546,7 @@ Sidebar::Sidebar(Plater *parent)
     m_combos_filament.push_back(nullptr);
     init_combo(&m_combos_filament[0],  _L("Filament"),           Preset::TYPE_FILAMENT,      true);
 
-    m_btn_full_spectrum = new wxButton(m_presets_panel, wxID_ANY,
+    m_btn_full_spectrum = new wxButton(m_card_filament, wxID_ANY,
                                        _L("Virtual Extruders - Color Mixing"),
                                        wxDefaultPosition, wxDefaultSize,
                                        wxBU_EXACTFIT);
@@ -594,7 +607,7 @@ Sidebar::Sidebar(Plater *parent)
         const int gear_col_width = m_combos_filament[0]->edit_btn->GetBestSize().GetWidth()
                                  + 2 * int(0.3 * wxGetApp().em_unit());
         btn_row_sizer->AddSpacer(gear_col_width);
-        m_full_spectrum_row = m_presets_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxBOTTOM, 2);
+        m_full_spectrum_row = m_card_filament_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxTOP, int(0.3 * em));
     }
 
     init_combo(&m_combo_print,         _L("Print settings"),     Preset::TYPE_PRINT,         false);
@@ -824,7 +837,7 @@ Sidebar::~Sidebar() {}
 
 void Sidebar::init_filament_combo(PlaterPresetComboBox** combo, int extr_idx)
 {
-    *combo = new PlaterPresetComboBox(m_presets_panel, Slic3r::Preset::TYPE_FILAMENT);
+    *combo = new PlaterPresetComboBox(m_card_filament, Slic3r::Preset::TYPE_FILAMENT);
     (*combo)->set_extruder_idx(extr_idx);
 
     auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -832,12 +845,7 @@ void Sidebar::init_filament_combo(PlaterPresetComboBox** combo, int extr_idx)
     combo_and_btn_sizer->Add((*combo)->edit_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
                             int(0.3*wxGetApp().em_unit()));
 
-    this->m_filaments_sizer->Add(combo_and_btn_sizer, 1, wxEXPAND |
-#ifdef __WXGTK3__
-        wxRIGHT, int(0.5 * wxGetApp().em_unit()));
-#else
-        wxBOTTOM, 1);
-#endif // __WXGTK3__
+    this->m_filaments_sizer->Add(combo_and_btn_sizer, 1, wxEXPAND | wxBOTTOM, int(0.3 * wxGetApp().em_unit()));
 }
 
 void Sidebar::remove_unused_filament_combos(const size_t current_extruder_count)
@@ -1120,8 +1128,8 @@ void Sidebar::init_printer_parts()
     auto *grid = new wxFlexGridSizer(0, 2, int(0.3 * em), em);
     grid->AddGrowableCol(1, 1);
     auto add = [this, grid](wxStaticText **label, BitmapComboBox **combo, const wxString &text) {
-        *label = new wxStaticText(m_presets_panel, wxID_ANY, text);
-        *combo = new BitmapComboBox(m_presets_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+        *label = new wxStaticText(m_card_printer, wxID_ANY, text);
+        *combo = new BitmapComboBox(m_card_printer, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
                                     nullptr, wxCB_READONLY);
         grid->Add(*label, 0, wxALIGN_CENTER_VERTICAL);
         grid->Add(*combo, 1, wxEXPAND);
@@ -1139,7 +1147,7 @@ void Sidebar::init_printer_parts()
     row->Add(grid, 1, wxEXPAND);
     if (m_combo_printer->edit_btn)
         row->AddSpacer(m_combo_printer->edit_btn->GetBestSize().GetWidth() + 2 * int(0.3 * em));
-    m_printer_parts_row = m_presets_sizer->Add(row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.3 * em));
+    m_printer_parts_row = m_card_printer_sizer->Add(row, 0, wxEXPAND | wxTOP, int(0.5 * em));
 }
 
 void Sidebar::update_printer_parts()
@@ -1293,6 +1301,12 @@ void Sidebar::apply_tisma_theme()
             win->SetBackgroundColour(TismaTheme::panel_bg(dark));
     for (wxStaticText* caption : m_preset_captions)
         caption->SetForegroundColour(TismaTheme::text_muted(dark));
+    for (::StaticBox *card : m_cards) {
+        card->SetBackgroundColorNormal(TismaTheme::card_bg(dark));
+        card->SetBorderColorNormal(TismaTheme::separator(dark));
+        card->SetBackgroundColour(TismaTheme::card_bg(dark));
+        card->Refresh();
+    }
 
     // Slice and print via USB: filled accent buttons.
     for (::Button *btn : { m_btn_reslice, m_btn_usb_print, m_btn_compact }) {

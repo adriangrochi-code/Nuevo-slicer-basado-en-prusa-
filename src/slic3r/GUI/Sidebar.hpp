@@ -38,6 +38,8 @@ class ModeSizer;
 class Button;
 class wxStaticText;
 
+class StaticBox;
+
 namespace Slic3r {
 
 namespace GUI {
@@ -82,6 +84,13 @@ class Sidebar : public wxPanel
     BitmapComboBox*                     m_workflow          { nullptr };
     std::vector<sla::Workflow>          m_available_workflows;
     std::vector<PlaterPresetComboBox*>  m_combos_filament;
+    // Tisma: the sections of the presets as cards (rounded panels), as in OrcaSlicer: printer (with its nozzle and its
+    // bed), filaments, print settings, SLA print settings, SLA material.
+    std::vector<::StaticBox*>           m_cards;
+    ::StaticBox*                        m_card_printer          { nullptr };
+    wxBoxSizer*                         m_card_printer_sizer    { nullptr };
+    ::StaticBox*                        m_card_filament         { nullptr };
+    wxBoxSizer*                         m_card_filament_sizer   { nullptr };
     // Tisma: the nozzle and the bed of the printer, chosen apart from the printer as in OrcaSlicer. The printer combo
     // lists a model once, the nozzle combo switches between the printer presets of the model.
     wxStaticText*                       m_label_nozzle      { nullptr };
