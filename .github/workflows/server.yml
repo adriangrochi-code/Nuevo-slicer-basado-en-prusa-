@@ -77,6 +77,9 @@ jobs:
           TISMA_INTERNAL_EMAILS: "@tisma.com.uy"
         run: |
           set -e
+          # The administration commands work in the folder of the service (that of the executable, dist/), the loose
+          # "master" command in the current one: one folder for both, so that they share the SQLite file.
+          export TISMA_HOME="$PWD"
           exe=dist/${{ matrix.exe }}
           "$exe" --help
           "$exe" admin plan-set basico --hours 1 --concurrent 1
