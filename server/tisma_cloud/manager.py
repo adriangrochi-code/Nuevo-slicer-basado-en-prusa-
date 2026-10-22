@@ -135,7 +135,8 @@ def _toml_value(value) -> str:
 
 class Manager:
     def __init__(self, home: str | os.PathLike | None = None) -> None:
-        self.home = Path(home) if home else default_home()
+        # Absolute: the commands change to this folder, a relative path would then point elsewhere.
+        self.home = (Path(home) if home else default_home()).resolve()
         self.home.mkdir(parents=True, exist_ok=True)
 
     # ---- files

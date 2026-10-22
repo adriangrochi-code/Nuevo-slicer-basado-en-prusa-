@@ -49,6 +49,16 @@ def test_home_option_of_the_commands(tmp_path, monkeypatch, capsys):
     assert (home / "tisma-cloud.toml").read_text(encoding="utf-8").count('role = "node"') == 1
 
 
+def test_relative_home(tmp_path, monkeypatch):
+    """TISMA_HOME=service-home: the commands change to the folder and still find its files."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TISMA_HOME", "service-home")
+    assert cli.main(["role", "master"]) == 0
+    assert cli.main(["config", "port", "18999"]) == 0
+    assert Manager(tmp_path / "service-home").port() == 18999
+    assert (tmp_path / "service-home" / "tisma-cloud.toml").is_file()
+
+
 def test_supervisor_starts_the_service_again(tmp_path, monkeypatch):
     """The role crashes twice, then ends cleanly: the supervisor starts it three times and ends."""
     m = Manager(tmp_path)
