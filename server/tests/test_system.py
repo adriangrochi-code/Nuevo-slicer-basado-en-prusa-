@@ -54,6 +54,8 @@ def test_relative_home(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("TISMA_HOME", "service-home")
     assert cli.main(["role", "master"]) == 0
+    # Each command is a process of its own, started in the folder of the user.
+    monkeypatch.chdir(tmp_path)
     assert cli.main(["config", "port", "18999"]) == 0
     assert Manager(tmp_path / "service-home").port() == 18999
     assert (tmp_path / "service-home" / "tisma-cloud.toml").is_file()
