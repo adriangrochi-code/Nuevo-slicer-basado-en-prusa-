@@ -212,23 +212,66 @@ docker compose --env-file .env -f deploy/compose.master.yaml exec api python -m 
 Sin Docker: `pip install ".[master]"`, `TISMA_DATABASE_URL=postgresql+psycopg://...` y
 `uvicorn tisma_cloud.main:app --host 0.0.0.0 --port 8000`.
 
-### Ejecutable (sin Docker ni Python)
+### Programa tisma-cloud (Windows y Linux, sin Docker ni Python)
 
 Cada pull request y cada cambio en `main` que toca `server/` genera el programa **`tisma-cloud`** (`tisma-cloud.exe`
 en Windows) en la pestaña *Actions* del PR, artefactos `tisma-cloud-windows` y `tisma-cloud-linux` (se guardan 30
-días). Es un solo archivo con el maestro, el nodo y la administración (`tisma-cloud.spec`, PyInstaller):
+días). Es un solo archivo para todas las máquinas: en cada una se elige si es el **maestro** (el servidor central) o
+un **nodo de cómputo** (esclavo). Se maneja de dos formas, con lo mismo:
+
+- **En la pantalla del servidor:** doble clic en `tisma-cloud.exe` abre la ventana de Tisma Cloud: rol de la máquina,
+  configuración (la del maestro o la del nodo), Iniciar / Detener / Reiniciar, «Iniciar con la máquina», el registro
+  y, en el maestro, la administración:
+  - **Nodos: qué hace cada uno.** La lista de los nodos con su estado; «Qué hace…» marca los tipos de trabajo de cada
+    nodo (laminar, laminar placas grandes, análisis estructural, relleno mínimo / resina) y su orden: toma primero los
+    de arriba. Se usa desde su próximo trabajo. También habilitar / deshabilitar y agregar un nodo (muestra su token).
+  - **Panel de control:** el panel del maestro (servidores en línea, qué hace cada uno, cola por tipo, trabajos,
+    usuarios y pagos) en su propia ventana, ya con la sesión iniciada. Ahí cada usuario tiene «Hacer interna»: cuenta
+    sin cobro y sin límite (ver «Cuentas internas»). La primera vez pide crear el administrador (correo y contraseña).
+    En Windows usa el motor Edge del sistema (WebView2); si falta, o en Linux, abre el navegador.
+  - Usuarios, cola, planes y cualquier comando de administración, y «Cuenta interna…» para un correo.
+- **Por SSH:** los mismos pasos con comandos, o con el menú de `tisma-cloud console`:
 
 ```
-tisma-cloud master --port 8000            # el maestro; lee .env de la carpeta (o --env archivo)
-tisma-cloud admin plan-set basico --hours 10 --concurrent 2 --rpm 120 --priority 1
+tisma-cloud role master                   # o: role node
+tisma-cloud config                        # ver la configuración
+tisma-cloud config port 8000              # cambiar una (port, las TISMA_* del maestro, las claves del nodo)
+tisma-cloud config master_url http://192.168.1.10:8000   # en un nodo
+tisma-cloud start | stop | restart | status
+tisma-cloud logs 100
+tisma-cloud autostart on                  # que arranque con la máquina
+tisma-cloud admin node-add i7-1 --priorities slice,slice_large,fea
 tisma-cloud admin user-add tu@correo.com --plan basico --admin --password
-tisma-cloud node --config node.toml       # un nodo (TISMA_NODE_TOKEN=tn_... en el entorno)
+tisma-cloud admin node-set i7-1 --priorities fea,slice   # qué hace un nodo, en orden
+tisma-cloud admin user-set equipo@tisma.com.uy --unlimited   # cuenta interna: sin cobro, sin límite
+tisma-cloud console                       # menú con todo lo anterior (opción 10: qué hace cada nodo)
 ```
 
-En la carpeta del programa, un `.env` con al menos `TISMA_DATABASE_URL` (PostgreSQL, o
-`sqlite:///./tisma.db` para probar) y `TISMA_STORAGE_DIR`. Las variables ya definidas en el sistema tienen prioridad.
-El HTTPS (Caddy) y la base de datos van aparte, como en la instalación con Docker. Para armarlo a mano:
-`pip install ".[master,exe]"` y `pyinstaller tisma-cloud.spec` (queda en `dist/`).
+Todo queda en la carpeta del programa (o en `TISMA_HOME`): `tisma-cloud.toml` (rol y puerto), `.env` (la
+configuración del maestro: al menos `TISMA_DATABASE_URL`, PostgreSQL o `sqlite:///./tisma.db` para probar, y
+`TISMA_STORAGE_DIR`), `node.toml` (la del nodo) y `logs/tisma-cloud.log`. Las variables ya definidas en el sistema
+tienen prioridad sobre `.env`.
+
+**Iniciar con la máquina:** en Windows crea la tarea programada «Tisma Cloud» (al encender, como SYSTEM): hay que abrir
+el programa o la consola SSH como administrador. En Linux crea el servicio `tisma-cloud` de systemd (del sistema como
+root, del usuario si no). Con la tarea creada, `start` en Windows la ejecuta, así el servicio sigue andando al cerrar
+la sesión SSH.
+
+**SSH en Windows** (servidor OpenSSH incluido en Windows 10 1809 / Server 2019 y posteriores, según la guía de
+Microsoft «Get started with OpenSSH for Windows»), en PowerShell como administrador:
+
+```
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType 'Automatic'
+```
+
+Abrir el puerto 22 solo en la red local (no en el router). Después, desde otra PC: `ssh usuario@IP-del-servidor` y
+`cd` a la carpeta de `tisma-cloud.exe`.
+
+El HTTPS (Caddy) y la base de datos PostgreSQL van aparte, como en la instalación con Docker. Los comandos sueltos de
+antes siguen: `tisma-cloud master [--port P] [--env .env]`, `tisma-cloud node [--config node.toml]`. Para armar el
+programa a mano: `pip install ".[master,exe]"` y `pyinstaller tisma-cloud.spec` (queda en `dist/`).
 
 ## Avisos de problemas
 

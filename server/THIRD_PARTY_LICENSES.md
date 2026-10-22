@@ -23,6 +23,9 @@ installed with pip.
 | typing-extensions | 4.16.0 | PSF-2.0 | dependency of the above |
 | certifi | 2026.10.19 | MPL-2.0 | dependency of httpx (CA certificates) |
 | pytest | 9.1.1 | MIT | tests only |
+| pywebview | 6.2.1 | BSD-3-Clause | the window of the control panel in `tisma-cloud.exe` (Windows only) |
+| pythonnet / clr_loader / bottle / proxy_tools | 3.2.1 / 0.3.1 / 0.13.4 / 0.1.0 | MIT | dependencies of pywebview on Windows |
+| Microsoft WebView2 SDK (`Microsoft.Web.WebView2.Core.dll`, `.WinForms.dll`, `WebView2Loader.dll`, in pywebview) | — | Microsoft redistributable SDK terms | the Edge engine of Windows; the runtime is part of Windows 10/11 |
 | PyInstaller | 6.22.3 | GPL-2.0-or-later with the PyInstaller bootloader exception (allows building and distributing non-free programs) | builds the `tisma-cloud` executable (CI); not part of the service |
 | pyinstaller-hooks-contrib / altgraph | 2026.9 / 0.17.5 | GPL-2.0-or-later or Apache-2.0 (hooks) / MIT | dependencies of PyInstaller |
 

@@ -122,6 +122,16 @@ const STATUS = { queued: "esperando", running: "corriendo", done: "terminado", f
 const KEY = "tisma-admin-token";
 let token = null;
 try { token = sessionStorage.getItem(KEY); } catch (e) {}
+// Opened by the tisma-cloud program on this machine: the session it created comes in the fragment of the address (never
+// sent to the server); it is kept and removed from the address.
+{
+  const m = location.hash.match(/token=([A-Za-z0-9_\-]+)/);
+  if (m) {
+    token = m[1];
+    try { sessionStorage.setItem(KEY, token); } catch (e) {}
+    history.replaceState(null, "", location.pathname);
+  }
+}
 let classes = [];
 // Priority lists being edited (not saved yet): kept across refreshes.
 const drafts = {};

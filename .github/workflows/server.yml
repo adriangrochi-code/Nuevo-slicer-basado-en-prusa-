@@ -87,6 +87,20 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:18990/v1/health > /dev/null 2>&1 && break; sleep 1; done
           curl -sf -H "Authorization: Bearer $token" http://127.0.0.1:18990/v1/me | grep '"unlimited":true'
           kill $master || true
+      - name: Try the service (role, start, status, stop)
+        run: |
+          set -e
+          exe=dist/${{ matrix.exe }}
+          export TISMA_HOME=service-home
+          "$exe" role master
+          "$exe" config port 18991
+          "$exe" config TISMA_INTERNAL_EMAILS @tisma.com.uy
+          "$exe" start
+          "$exe" status
+          curl -sf http://127.0.0.1:18991/v1/health
+          "$exe" logs 20
+          "$exe" stop
+          if "$exe" status; then echo "still running"; exit 1; fi
       - uses: actions/upload-artifact@v4
         with:
           name: tisma-cloud-${{ matrix.name }}
