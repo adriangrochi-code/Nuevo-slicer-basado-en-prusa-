@@ -33903,3 +33903,111 @@ msgstr "El plan no está pagado: pagalo en la página web (el enlace está en Co
 
 msgid "Confirm your e-mail first with the code we sent to it (the link below opens the account page)."
 msgstr "Primero confirmá tu correo con el código que te mandamos (el enlace de abajo abre la página de la cuenta)."
+
+msgid "3D"
+msgstr "3D"
+
+msgid "Add models to the plate (STL, 3MF, STEP, OBJ...)"
+msgstr "Agregar modelos a la placa (STL, 3MF, STEP, OBJ...)"
+
+msgid "Analysis"
+msgstr "Análisis"
+
+msgid "Arrange the objects on the plate (A)"
+msgstr "Ordenar los objetos en la placa (A)"
+
+msgid "Arrange, move, rotate, scale and cut the objects"
+msgstr "Ordenar, mover, rotar, escalar y cortar los objetos"
+
+msgid "Close the structural analysis"
+msgstr "Cerrar el análisis estructural"
+
+msgid "Cut the selection (C)"
+msgstr "Cortar la selección (C)"
+
+msgid "Export the G-code to a file (Ctrl+G)"
+msgstr "Exportar el G-code a un archivo (Ctrl+G)"
+
+msgid "Frame"
+msgstr "Encuadrar"
+
+msgid "Frame the objects, or the bed when there are none (Z)"
+msgstr "Encuadrar los objetos, o la cama si no hay ninguno (Z)"
+
+msgid "Isometric view"
+msgstr "Vista isométrica"
+
+msgid "Lay on face"
+msgstr "Apoyar en cara"
+
+msgid "Move the selection (M)"
+msgstr "Mover la selección (M)"
+
+msgid "Open the structural analysis of the selected object"
+msgstr "Abrir el análisis estructural del objeto seleccionado"
+
+msgid "Open, remove and save the models of the plate"
+msgstr "Abrir, quitar y guardar los modelos de la placa"
+
+msgid "Place the selection on one of its faces (F)"
+msgstr "Apoyar la selección sobre una de sus caras (F)"
+
+msgid "Print over USB"
+msgstr "Imprimir por USB"
+
+msgid "Remove all"
+msgstr "Quitar todo"
+
+msgid "Remove all the objects of the plate"
+msgstr "Quitar todos los objetos de la placa"
+
+msgid "Remove the selected objects"
+msgstr "Quitar los objetos seleccionados"
+
+msgid "Rotate the selection, or optimize its orientation (R)"
+msgstr "Rotar la selección u optimizar su orientación (R)"
+
+msgid "Save the project (3MF)"
+msgstr "Guardar el proyecto (3MF)"
+
+msgid "Scale the selection (S)"
+msgstr "Escalar la selección (S)"
+
+msgid "Send the G-code to the printer over the network"
+msgstr "Enviar el G-code a la impresora por la red"
+
+msgid "Slice the plate (Ctrl+R)"
+msgstr "Laminar la placa (Ctrl+R)"
+
+msgid "Slice, see the layers and toolpaths, export or send the G-code"
+msgstr "Laminar, ver las capas y trayectorias, exportar o enviar el G-code"
+
+msgid "USB"
+msgstr "USB"
+
+msgid "View"
+msgstr "Vista"
+
+msgid "View from above"
+msgstr "Vista desde arriba"
+
+msgid "View from the back"
+msgstr "Vista desde atrás"
+
+msgid "View from the front"
+msgstr "Vista desde el frente"
+
+msgid "View from the left"
+msgstr "Vista desde la izquierda"
+
+msgid "View from the right"
+msgstr "Vista desde la derecha"
+
+msgid "Views of the printer and zoom"
+msgstr "Vistas de la impresora y zoom"
+
+msgid "Zoom in (or the mouse wheel)"
+msgstr "Acercar (o la rueda del ratón)"
+
+msgid "Zoom out (or the mouse wheel)"
+msgstr "Alejar (o la rueda del ratón)"

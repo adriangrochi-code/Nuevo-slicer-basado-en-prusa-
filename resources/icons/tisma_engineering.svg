@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same drawing as the Android app (android/app/src/main/res/drawable/ic_engineering.xml). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#808080" d="M4,3h16v3.5h-6v11h6V21H4v-3.5h6v-11H4z"/>
+</svg>

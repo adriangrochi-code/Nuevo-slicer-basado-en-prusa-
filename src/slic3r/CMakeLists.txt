@@ -153,6 +153,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FragmentDialog.hpp
     GUI/NavRail.cpp
     GUI/NavRail.hpp
+    GUI/PlateTools.cpp
+    GUI/PlateTools.hpp
     GUI/QuickSettings.cpp
     GUI/QuickSettings.hpp
     GUI/TismaTheme.cpp

@@ -85,6 +85,7 @@
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "NavRail.hpp"
+#include "PlateTools.hpp"
 #include "libslic3r/SLA/Workflows.hpp"
 
 // For stl export
@@ -336,6 +337,8 @@ struct Plater::priv
 
     // GUI elements
     wxSizer* panel_sizer{ nullptr };
+    // Tisma: the groups of tools of the plate, at the left of the 3D view.
+    PlateTools* plate_tools{ nullptr };
     wxPanel* current_panel{ nullptr };
     std::vector<wxPanel*> panels;
     Sidebar *sidebar;
@@ -454,6 +457,7 @@ struct Plater::priv
 
     void update(unsigned int flags = 0);
     void select_view(const std::string& direction);
+    PlateTools* create_plate_tools();
     void select_view_3D(const std::string& name);
     void select_next_view_3D();
 
@@ -781,9 +785,16 @@ void Plater::priv::init()
     panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
-    // The 3D view with the status bar under it.
+    // The 3D view with the status bar under it, the tools of the plate at its left.
     auto *center_sizer = new wxBoxSizer(wxVERTICAL);
-    center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    if (wxGetApp().is_editor()) {
+        plate_tools = create_plate_tools();
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        row->Add(plate_tools, 0, wxEXPAND);
+        row->Add(panel_sizer, 1, wxEXPAND);
+        center_sizer->Add(row, 1, wxEXPAND | wxALL, 0);
+    } else
+        center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
     if (wxGetApp().is_editor()) {
         auto *status = new StatusStrip(q, [this]() {
             StatusStrip::State st;
@@ -1277,6 +1288,147 @@ void Plater::priv::update(unsigned int flags)
         this->restart_background_process(update_status);
     else
         this->schedule_background_process();
+}
+
+// The groups of tools of the plate (the arrangement of the Android app): File, View, Arrange, Engineering, Slice.
+PlateTools* Plater::priv::create_plate_tools()
+{
+    auto *tools = new PlateTools(q);
+    auto canvas3d    = [this]() { return view3D->get_canvas3d(); };
+    auto has_objects = [this]() { return ! model.objects.empty(); };
+    auto has_selection = [this, canvas3d]() { return ! canvas3d()->get_selection().is_empty(); };
+    // The plate (not the preview), without the structural analysis open.
+    auto to_plate = [this]() {
+        if (q->is_preview_shown())
+            q->select_view_3D("3D");
+        q->close_engineering();
+    };
+    auto tool = [](const wxString& label, const wxString& tooltip, const std::string& icon, std::function<void()> on_click,
+                   std::function<bool()> is_enabled = nullptr, std::function<bool()> is_selected = nullptr) {
+        PlateTools::Tool t;
+        t.label       = label;
+        t.tooltip     = tooltip;
+        t.icon        = icon;
+        t.on_click    = std::move(on_click);
+        t.is_enabled  = std::move(is_enabled);
+        t.is_selected = std::move(is_selected);
+        return t;
+    };
+
+    PlateTools::Group file;
+    file.label     = _L("File");
+    file.tooltip   = _L("Open, remove and save the models of the plate");
+    file.icon      = "tisma_folder";
+    file.on_select = to_plate;
+    file.tools = {
+        tool(_L("Open"), _L("Add models to the plate (STL, 3MF, STEP, OBJ...)"), "tisma_folder", [this]() { q->add_model(); }),
+        tool(_L("Remove"), _L("Remove the selected objects"), "delete", [this]() { q->remove_selected(); },
+             [this]() { return q->can_delete(); }),
+        tool(_L("Remove all"), _L("Remove all the objects of the plate"), "delete_all", [this]() { q->reset_with_confirm(); },
+             [this]() { return q->can_delete_all(); }),
+        tool(_L("Save"), _L("Save the project (3MF)"), "tisma_save", []() { wxGetApp().mainframe->save_project(); }, has_objects),
+    };
+    tools->add_group(std::move(file));
+
+    // The views act on the plate or on the preview, whichever is shown.
+    auto zoom = [this](double delta) {
+        q->get_camera().update_zoom(delta);
+        if (GLCanvas3D *c = q->get_current_canvas3D())
+            c->set_as_dirty();
+    };
+    PlateTools::Group view;
+    view.label   = _L("View");
+    view.tooltip = _L("Views of the printer and zoom");
+    view.icon    = "tisma_view";
+    view.neutral = true;
+    view.tools = {
+        tool(_L("3D"), _L("Isometric view"), "tisma_view", [this]() { q->select_view("iso"); }),
+        tool(_L("Top"), _L("View from above"), "tisma_view_top", [this]() { q->select_view("top"); }),
+        tool(_L("Front"), _L("View from the front"), "tisma_view_front", [this]() { q->select_view("front"); }),
+        tool(_L("Left"), _L("View from the left"), "tisma_view_left", [this]() { q->select_view("left"); }),
+        tool(_L("Right"), _L("View from the right"), "tisma_view_right", [this]() { q->select_view("right"); }),
+        tool(_L("Back"), _L("View from the back"), "tisma_view_back", [this]() { q->select_view("rear"); }),
+        tool(_L("Zoom in"), _L("Zoom in (or the mouse wheel)"), "tisma_zoom_in", [zoom]() { zoom(1.); }),
+        tool(_L("Zoom out"), _L("Zoom out (or the mouse wheel)"), "tisma_zoom_out", [zoom]() { zoom(-1.); }),
+        tool(_L("Frame"), _L("Frame the objects, or the bed when there are none (Z)"), "tisma_zoom_fit", [this, has_objects]() {
+            if (GLCanvas3D *c = q->get_current_canvas3D()) {
+                if (has_objects()) c->zoom_to_volumes(); else c->zoom_to_bed();
+            }
+        }),
+    };
+    tools->add_group(std::move(view));
+
+    // The gizmos of the 3D view; each one is selected while it is open.
+    auto gizmo = [this, canvas3d](GLGizmosManager::EType type) {
+        return [this, canvas3d, type]() {
+            if (q->is_preview_shown())
+                q->select_view_3D("3D");
+            canvas3d()->get_gizmos_manager().open_gizmo(type);
+            canvas3d()->set_as_dirty();
+        };
+    };
+    auto gizmo_open = [canvas3d](GLGizmosManager::EType type) {
+        return [canvas3d, type]() { return canvas3d()->get_gizmos_manager().get_current_type() == type; };
+    };
+    PlateTools::Group arrange;
+    arrange.label     = _L("Arrange");
+    arrange.tooltip   = _L("Arrange, move, rotate, scale and cut the objects");
+    arrange.icon      = "move";
+    arrange.on_select = to_plate;
+    arrange.tools = {
+        tool(_L("Arrange"), _L("Arrange the objects on the plate (A)"), "arrange", [this]() { q->arrange(false); },
+             [this]() { return q->can_arrange(); }),
+        tool(_L("Move"), _L("Move the selection (M)"), "move", gizmo(GLGizmosManager::Move), has_selection, gizmo_open(GLGizmosManager::Move)),
+        tool(_L("Rotate"), _L("Rotate the selection, or optimize its orientation (R)"), "rotate", gizmo(GLGizmosManager::Rotate),
+             has_selection, gizmo_open(GLGizmosManager::Rotate)),
+        tool(_L("Scale"), _L("Scale the selection (S)"), "scale", gizmo(GLGizmosManager::Scale), has_selection,
+             gizmo_open(GLGizmosManager::Scale)),
+        tool(_L("Lay on face"), _L("Place the selection on one of its faces (F)"), "place", gizmo(GLGizmosManager::Flatten),
+             has_selection, gizmo_open(GLGizmosManager::Flatten)),
+        tool(_L("Cut"), _L("Cut the selection (C)"), "cut", gizmo(GLGizmosManager::Cut), has_selection,
+             gizmo_open(GLGizmosManager::Cut)),
+    };
+    tools->add_group(std::move(arrange));
+
+    // The structural analysis is a gizmo of the 3D view, with its own panel of tools.
+    PlateTools::Group engineering;
+    engineering.label     = _L("Engineering");
+    engineering.tooltip   = _L("Structural analysis at the working temperature (supports, loads and material) and "
+                               "structures: lightest infill, reinforcements and lattice");
+    engineering.icon      = "tisma_engineering";
+    engineering.on_select = [this]() { q->open_engineering(); };
+    engineering.is_active = [this]() { return q->is_engineering_open(); };
+    engineering.tools = {
+        tool(_L("Analysis"), _L("Open the structural analysis of the selected object"), "tisma_engineering",
+             [this]() { q->open_engineering(); }, has_objects, [this]() { return q->is_engineering_open(); }),
+        tool(_L("Close"), _L("Close the structural analysis"), "cross", [this]() { q->close_engineering(); },
+             [this]() { return q->is_engineering_open(); }),
+    };
+    tools->add_group(std::move(engineering));
+
+    // Slice: the preview by layers, the G-code and where it goes.
+    auto has_host = []() {
+        const DynamicPrintConfig *cfg = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
+        const auto *host = cfg ? cfg->option<ConfigOptionString>("print_host") : nullptr;
+        return host != nullptr && ! host->value.empty();
+    };
+    PlateTools::Group slice;
+    slice.label     = _L("Slice");
+    slice.tooltip   = _L("Slice, see the layers and toolpaths, export or send the G-code");
+    slice.icon      = "tisma_slice";
+    slice.on_select = [this]() { q->close_engineering(); q->select_view_3D("Preview"); };
+    slice.is_active = [this]() { return q->is_preview_shown(); };
+    slice.tools = {
+        tool(_L("Slice now"), _L("Slice the plate (Ctrl+R)"), "tisma_slice", [this]() { q->select_view_3D("Preview"); q->reslice(); },
+             has_objects),
+        tool(_L("Export"), _L("Export the G-code to a file (Ctrl+G)"), "export_gcode", [this]() { q->export_gcode(false); }, has_objects),
+        tool(_L("Send"), _L("Send the G-code to the printer over the network"), "tisma_send", [this]() { q->send_gcode(); },
+             [has_objects, has_host]() { return has_objects() && has_host(); }),
+        tool(_L("USB"), _L("Print over USB"), "plug", [this]() { q->usb_print(); },
+             [this, has_objects]() { return has_objects() && printer_technology == ptFFF && USBMonitorPanel::has_printer(); }),
+    };
+    tools->add_group(std::move(slice));
+    return tools;
 }
 
 void Plater::priv::select_view(const std::string& direction)
