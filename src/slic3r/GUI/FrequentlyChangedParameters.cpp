@@ -56,8 +56,6 @@ wxDEFINE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS,     SimpleEvent);
 
 // The chips of the supports: none, on the build plate only, everywhere, where the user painted (enforcers) only.
 enum SupportChip { scNone, scBuildPlate, scEverywhere, scEnforcers };
-// The chips of the infill: these densities; any other one is typed in the field beside the caption.
-static const std::vector<double> INFILL_DENSITIES = { 0., 10., 15., 20., 30., 50., 100. };
 // The chips of the pad of a resin print.
 enum PadChip { pcNone, pcBelow, pcAround };
 
@@ -72,9 +70,10 @@ static int support_chip(const DynamicPrintConfig& config, bool is_fff)
     return config.opt_bool(buildplate_only) ? scBuildPlate : scEverywhere;
 }
 
-static wxString percent(double value)
+// The labels of the support chips, in the order of SupportChip.
+static std::vector<wxString> support_labels()
 {
-    return wxString::Format("%g%%", value);
+    return { _L("None"), _L("Build plate only"), _L("Everywhere"), _L("Painted only") };
 }
 
 // A small field of a number typed with the keyboard, added to the row with its unit after it: Enter or leaving the
@@ -114,28 +113,42 @@ FreqChangedParams::FreqChangedParams(wxWindow* fff_parent, wxWindow* sla_parent)
         m_captions.push_back(title);
         sizer->Add(title, 0, wxTOP | wxBOTTOM, int(0.4 * em));
     };
-    const std::vector<wxString> supports = { _L("None"), _L("Build plate only"), _L("Everywhere"), _L("Painted only") };
+    const std::vector<wxString> supports = support_labels();
 
     // Filament printers: supports, infill, brim and the purging volumes of a multi-material printer.
     m_fff_sizer = new wxBoxSizer(wxVERTICAL);
-    caption(fff_parent, m_fff_sizer, _L("Supports"));
+    // The supports in one row, the caption and the choice; a click on the choice unfolds the chips to change it, and they
+    // fold again once one is chosen.
+    auto* support_row = new wxBoxSizer(wxHORIZONTAL);
+    auto* support_label = new TismaTitle(fff_parent, _L("Supports"), TismaTitle::Style::Caption);
+    m_captions.push_back(support_label);
+    support_row->Add(support_label, 1, wxALIGN_CENTER_VERTICAL);
+    m_support_choice = new TismaChip(fff_parent, supports.front(), "collapse_btn",
+                                     [this]() { unfold_supports(! m_support->IsShown()); }, 2.2);
+    m_support_choice->SetToolTip(_L("Select what kind of support do you need"));
+    support_row->Add(m_support_choice, 0, wxALIGN_CENTER_VERTICAL);
+    m_fff_sizer->Add(support_row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.4 * em));
     m_support = new TismaChoiceChips(fff_parent, supports, [this](int idx) { on_support(true, idx); });
     m_support->SetToolTip(_L("Select what kind of support do you need"));
-    m_fff_sizer->Add(m_support, 0, wxEXPAND);
+    m_fff_sizer->Add(m_support, 0, wxEXPAND | wxBOTTOM, int(0.4 * em));
 
-    // The caption of the infill with its density typed beside it, then the usual densities as chips.
+    // The infill in one row: the caption, a slider and the density typed beside it. The slider shows the density while
+    // it is dragged and loads it when it is released (a new slicing at each step would be of no use).
     auto* infill_row = new wxBoxSizer(wxHORIZONTAL);
     auto* infill_label = new TismaTitle(fff_parent, _L("Infill"), TismaTitle::Style::Caption);
     m_captions.push_back(infill_label);
-    infill_row->Add(infill_label, 1, wxALIGN_CENTER_VERTICAL);
+    infill_row->Add(infill_label, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
+    m_infill = new TismaSlider(fff_parent, 0., 100., 1., [this](double v, bool final) {
+        if (final)
+            set_infill(v);
+        else
+            m_infill_value->GetTextCtrl()->ChangeValue(wxString::Format("%g", v));
+    });
+    m_infill->SetToolTip(_L("Infill density, in percent:"));
+    infill_row->Add(m_infill, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
     m_infill_value = number_field(fff_parent, infill_row, "%", [this](double v) { set_infill(v); });
     m_infill_value->SetToolTip(_L("Infill density, in percent:"));
     m_fff_sizer->Add(infill_row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.4 * em));
-    std::vector<wxString> densities;
-    for (double d : INFILL_DENSITIES)
-        densities.push_back(percent(d));
-    m_infill = new TismaChoiceChips(fff_parent, densities, [this](int idx) { on_infill(idx); });
-    m_fff_sizer->Add(m_infill, 0, wxEXPAND);
 
     // The brim: its width typed when it is on, and the switch.
     auto* brim_row = new wxBoxSizer(wxHORIZONTAL);
@@ -172,6 +185,20 @@ FreqChangedParams::FreqChangedParams(wxWindow* fff_parent, wxWindow* sla_parent)
     m_brim_width = wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_float("brim_width");
     sys_color_changed();
     update_from_config();
+    unfold_supports(false);
+}
+
+void FreqChangedParams::unfold_supports(bool unfold)
+{
+    m_support->Show(unfold);
+    // The chevrons down while the chips are folded (they open below), up while they are shown.
+    m_support_choice->set_icon(unfold ? "expand_btn" : "collapse_btn");
+    m_fff_sizer->Layout();
+    if (wxWindow* card = m_support->GetParent()) {
+        card->Layout();
+        if (card->GetParent())
+            card->GetParent()->Layout();
+    }
 }
 
 wxWindow* FreqChangedParams::get_wiping_dialog_button() noexcept
@@ -182,13 +209,12 @@ wxWindow* FreqChangedParams::get_wiping_dialog_button() noexcept
 void FreqChangedParams::update_from_config()
 {
     const DynamicPrintConfig& fff = wxGetApp().preset_bundle->prints.get_edited_preset().config;
-    m_support->set_selection(support_chip(fff, true));
+    const int support = support_chip(fff, true);
+    m_support->set_selection(support);
+    m_support_choice->set_text(support_labels()[std::clamp(support, 0, int(scEnforcers))]);
 
     const double density = fff.option<ConfigOptionPercent>("fill_density")->value;
-    const auto it = std::find_if(INFILL_DENSITIES.begin(), INFILL_DENSITIES.end(),
-                                 [density](double d) { return std::abs(d - density) < 1e-6; });
-    // Another density: no chip, the field shows it.
-    m_infill->set_selection(it == INFILL_DENSITIES.end() ? -1 : int(it - INFILL_DENSITIES.begin()));
+    m_infill->set_value(density);
     m_infill_value->GetTextCtrl()->ChangeValue(wxString::Format("%g", density));
 
     const double brim_width = fff.opt_float("brim_width");
@@ -227,12 +253,8 @@ void FreqChangedParams::on_support(bool is_fff, int idx)
         }
     }
     tab->load_config(new_conf);
-}
-
-void FreqChangedParams::on_infill(int idx)
-{
-    if (idx >= 0 && idx < int(INFILL_DENSITIES.size()))
-        set_infill(INFILL_DENSITIES[idx]);
+    if (is_fff)
+        unfold_supports(false);
 }
 
 void FreqChangedParams::set_infill(double density)
@@ -323,8 +345,10 @@ void FreqChangedParams::show_wiping_dialog(wxWindow* parent)
 
 void FreqChangedParams::msw_rescale()
 {
-    for (TismaChoiceChips* chips : { m_support, m_infill, m_sla_support, m_pad })
+    for (TismaChoiceChips* chips : { m_support, m_sla_support, m_pad })
         chips->msw_rescale();
+    m_support_choice->msw_rescale();
+    m_infill->msw_rescale();
     m_brim->Rescale();
     m_infill_value->Rescale();
     m_brim_value->Rescale();
@@ -336,8 +360,10 @@ void FreqChangedParams::sys_color_changed()
     const bool dark = wxGetApp().dark_mode();
     for (TismaTitle* title : m_captions)
         title->sys_color_changed();
-    for (TismaChoiceChips* chips : { m_support, m_infill, m_sla_support, m_pad })
+    for (TismaChoiceChips* chips : { m_support, m_sla_support, m_pad })
         chips->sys_color_changed();
+    m_support_choice->sys_color_changed();
+    m_infill->sys_color_changed();
     m_brim->SysColorChange();
     // A link in the accent color.
     m_wiping_dialog_button->SetBackgroundColor(StateColor(
