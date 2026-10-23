@@ -34164,3 +34164,6 @@ msgstr "Cama predeterminada"
 
 msgid "The bed chosen when this printer is selected."
 msgstr "La cama que se elige al seleccionar esta impresora."
+
+msgid "Legend"
+msgstr "Leyenda"

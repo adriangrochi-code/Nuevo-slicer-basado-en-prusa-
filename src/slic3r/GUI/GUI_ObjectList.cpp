@@ -89,7 +89,8 @@ ObjectList::ObjectList(wxWindow* parent) :
 #ifdef _WIN32
         wxBORDER_SIMPLE | 
 #endif
-        wxDV_MULTIPLE)
+        // Tisma: a list without the header of its columns, as in the modern slicers.
+        wxDV_MULTIPLE | wxDV_NO_HEADER)
 {
     wxGetApp().UpdateDVCDarkUI(this, true);
 
