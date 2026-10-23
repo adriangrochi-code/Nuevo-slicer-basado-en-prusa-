@@ -23,7 +23,8 @@ from . import __version__, alerts, billing, codes, google_play, remote, schedule
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, mailer_for
 from .db import Database
-from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles, plan_job
+from .jobs import (ESTIMATE_MAX_TRIANGLES, JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles,
+                   estimate_seconds, plan_job)
 from .models import Alert, ApiToken, Bridge, Job, Node, Payment, Plan, RemoteCommand, User, utcnow
 from .guard import Guard
 from .ratelimit import RateLimiter
@@ -199,6 +200,8 @@ class CommandResultBody(BaseModel):
 
 class ClaimBody(BaseModel):
     info: dict[str, Any] = Field(default_factory=dict)
+    # Job classes the node cannot take now (it runs as many analyses as it can).
+    exclude: list[str] = Field(default_factory=list, max_length=len(JOB_CLASSES))
 
 
 class HeartbeatBody(BaseModel):
@@ -816,9 +819,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(422, "'params' is not JSON") from None
         try:
             file.file.seek(0)
-            # The triangles choose the queue of slicing; for an analysis it only checks that it is a 3MF project.
-            triangles = count_triangles(file.file, cfg.large_slice_triangles if kind == "slice" else 0)
+            # The triangles choose the queue of slicing and estimate its duration; for an analysis it only checks
+            # that it is a 3MF project.
+            triangles = count_triangles(file.file, max(cfg.large_slice_triangles, ESTIMATE_MAX_TRIANGLES)
+                                        if kind == "slice" else 0)
             plan = plan_job(kind, parsed, triangles, cfg.large_slice_triangles)
+            estimate = estimate_seconds(plan, triangles)
         except JobError as ex:
             raise HTTPException(422, str(ex)) from None
         with db.session() as s:
@@ -827,8 +833,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 scheduler.admit(s, u, cfg.grace_days)
             except scheduler.Refused as ex:
                 raise HTTPException(ex.status, str(ex)) from None
+            now = utcnow()
             job = Job(user_id=u.id, kind=plan.kind, job_class=plan.job_class, params=json.dumps(plan.params),
-                      priority=u.plan.priority, input_name=safe_filename(file.filename or "", "project.3mf"))
+                      priority=u.plan.priority, input_name=safe_filename(file.filename or "", "project.3mf"),
+                      created_at=now, order_at=now + timedelta(seconds=min(estimate, cfg.queue_size_wait_max_s)))
             s.add(job)
             s.flush()
             try:
@@ -877,12 +885,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return job_view(job)
 
     # ---- computing nodes
-    def try_claim(node_id: int) -> dict | None:
+    def try_claim(node_id: int, exclude: list[str]) -> dict | None:
         with db.session() as s:
             node = s.get(Node, node_id)
             if node is None or not node.enabled:
                 return None
-            job = scheduler.claim(s, node, db.is_sqlite)
+            job = scheduler.claim(s, node, db.is_sqlite, exclude)
             if job is None:
                 return None
             return {"id": job.id, "kind": job.kind, "job_class": job.job_class, "params": job.params_dict,
@@ -901,7 +909,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + wait_s
         while True:
-            job = await run_in_threadpool(try_claim, node.id)
+            job = await run_in_threadpool(try_claim, node.id, body.exclude)
             if job is not None:
                 return {"job": job, "priorities": node.priority_list}
             if loop.time() >= deadline:

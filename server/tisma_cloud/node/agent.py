@@ -19,7 +19,8 @@ from pathlib import Path
 import httpx
 
 from .. import __version__
-from .config import NodeConfig
+from ..jobs import FEA_CLASSES
+from .config import NodeConfig, memory_gb
 from .runners import RUNNERS, JobCancelled, JobFailed
 
 log = logging.getLogger("tisma_cloud.node")
@@ -30,15 +31,10 @@ PROGRESS_EVERY_S = 2.
 
 def machine_info(cfg: NodeConfig) -> dict:
     info = {"host": platform.node(), "os": platform.platform(), "cpus": os.cpu_count(), "slots": cfg.slots,
-            "gpu": cfg.gpu, "version": __version__}
-    try:
-        with open("/proc/meminfo", encoding="ascii") as f:
-            for line in f:
-                if line.startswith("MemTotal:"):
-                    info["memory_gb"] = round(int(line.split()[1]) / 1024 / 1024, 1)
-                    break
-    except OSError:
-        pass
+            "fea_slots": cfg.fea_slots, "gpu": cfg.gpu, "version": __version__}
+    memory = memory_gb()
+    if memory is not None:
+        info["memory_gb"] = round(memory, 1)
     return info
 
 
@@ -50,13 +46,16 @@ class Agent:
         self.info = machine_info(cfg)
         self._lock = threading.Lock()
         self._running: dict[str, threading.Event] = {}
+        # Taken by a slot while it may claim, or runs, a structural analysis.
+        self._fea = threading.BoundedSemaphore(max(1, cfg.fea_slots))
         self._stop = threading.Event()
         cfg.work_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- master
-    def claim(self, wait: int | None = None) -> dict | None:
+    def claim(self, wait: int | None = None, exclude: tuple[str, ...] = ()) -> dict | None:
         params = {"wait": wait} if wait is not None else None
-        r = self.client.post("/v1/node/claim", json={"info": self.info}, params=params, timeout=120.)
+        r = self.client.post("/v1/node/claim", json={"info": self.info, "exclude": list(exclude)}, params=params,
+                             timeout=120.)
         if r.status_code == 204:
             return None
         r.raise_for_status()
@@ -142,15 +141,37 @@ class Agent:
         job = self.claim(wait)
         return self.process(job) if job else None
 
+    def claim_for_slot(self, wait: int | None = None) -> tuple[dict | None, bool]:
+        """Claims a job for a slot: an analysis only while fewer than fea_slots run. Returns the job and whether the
+        slot holds an analysis place (release it with release_fea() when the job ends)."""
+        may_analyse = self._fea.acquire(blocking=False)
+        try:
+            job = self.claim(wait, exclude=() if may_analyse else FEA_CLASSES)
+        except BaseException:
+            if may_analyse:
+                self._fea.release()
+            raise
+        holds = may_analyse and job is not None and job.get("job_class") in FEA_CLASSES
+        if may_analyse and not holds:
+            self._fea.release()
+        return job, holds
+
+    def release_fea(self) -> None:
+        self._fea.release()
+
     # ---- the service
     def _slot(self, index: int) -> None:
         backoff = 1.
         while not self._stop.is_set():
             try:
-                job = self.claim()
+                job, holds = self.claim_for_slot()
                 backoff = 1.
-                if job:
-                    self.process(job)
+                try:
+                    if job:
+                        self.process(job)
+                finally:
+                    if holds:
+                        self.release_fea()
             except httpx.HTTPError as ex:
                 log.warning("Slot %d: master not reachable (%s), retrying in %.0f s", index, ex, backoff)
                 self._stop.wait(backoff)
@@ -164,7 +185,8 @@ class Agent:
                 log.warning("Heartbeat failed: %s", ex)
 
     def run_forever(self) -> None:
-        log.info("Node with %d slot(s) working for %s", self.cfg.slots, self.cfg.master_url)
+        log.info("Node with %d slot(s) (%d for analyses) working for %s", self.cfg.slots, self.cfg.fea_slots,
+                 self.cfg.master_url)
         threads = [threading.Thread(target=self._heartbeats, daemon=True)]
         threads += [threading.Thread(target=self._slot, args=(i,), daemon=True) for i in range(self.cfg.slots)]
         for t in threads:

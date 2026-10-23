@@ -254,6 +254,46 @@ def test_plan_priority_and_age(client, f):
     assert [f.claim(node)["id"] for _ in range(3)] == [j3["id"], j1["id"], j2["id"]]
 
 
+def test_short_jobs_first_but_long_ones_not_forever(client, f, settings):
+    from datetime import timedelta
+
+    from tisma_cloud.models import Job
+
+    user = f.user(plan=f.plan("big", concurrent=10))
+    node = f.node("n", "slice_large")
+    big = f.submit(user, data=make_3mf(triangles=60_000))
+    small = f.submit(user, data=make_3mf(triangles=2_000))
+    # Submitted after the big plate, the small one is sliced first.
+    assert [f.claim(node)["id"] for _ in range(2)] == [small["id"], big["id"]]
+    # A big plate waiting for a while goes before a small one that just arrived.
+    waiting = f.submit(user, data=make_3mf(triangles=60_000))
+    db = client.app.state.services.db
+    with db.session() as s:
+        job = s.get(Job, waiting["id"])
+        job.created_at -= timedelta(seconds=10)
+        job.order_at -= timedelta(seconds=10)
+    late = f.submit(user, data=make_3mf(triangles=2_000))
+    assert [f.claim(node)["id"] for _ in range(2)] == [waiting["id"], late["id"]]
+    # The extra wait for its size is capped.
+    settings.queue_size_wait_max_s = 1
+    capped = f.submit(user, data=make_3mf(triangles=60_000))
+    with db.session() as s:
+        job = s.get(Job, capped["id"])
+        assert (job.order_at - job.created_at).total_seconds() == 1
+
+
+def test_node_can_leave_out_classes(client, f):
+    user = f.user(plan=f.plan("big", concurrent=10))
+    node = f.node("n", "fea,slice")
+    analysis = f.submit(user, kind="fea", params="{}")
+    plate = f.submit(user)
+    # A node already running its analyses asks for the other classes only.
+    r = client.post("/v1/node/claim", headers=node, json={"exclude": ["fea", "fea_optimize"]})
+    assert r.status_code == 200 and r.json()["job"]["id"] == plate["id"]
+    assert client.post("/v1/node/claim", headers=node, json={"exclude": ["fea"]}).status_code == 204
+    assert f.claim(node)["id"] == analysis["id"]
+
+
 def test_disabled_node_gets_nothing(client, f):
     user = f.user()
     node = f.node("n", "slice")

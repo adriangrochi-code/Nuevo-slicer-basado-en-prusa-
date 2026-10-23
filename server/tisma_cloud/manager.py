@@ -52,7 +52,8 @@ NODE_FIELDS = [
     ("tisma_slicer", "Programa tisma-slicer (consola)", str, False),
     ("tisma_fea", "Programa tisma-fea", str, False),
     ("work_dir", "Carpeta de trabajo", str, False),
-    ("slots", "Trabajos a la vez", int, False),
+    ("slots", "Trabajos a la vez (0 = automático)", int, False),
+    ("fea_slots", "Análisis estructurales a la vez", int, False),
     ("timeout_s", "Duración máxima de un trabajo [s]", int, False),
     ("gpu", "Usar la placa de video", bool, False),
     ("verify_tls", "Verificar el certificado HTTPS", bool, False),
@@ -65,7 +66,8 @@ JOB_CLASS_NAMES = {
     "fea_optimize": "Relleno mínimo / paredes de resina (muchos análisis)",
 }
 NODE_DEFAULTS = {"master_url": "http://192.168.1.10:8000", "token": "", "tisma_slicer": "", "tisma_fea": "",
-                 "work_dir": "node-work", "slots": 1, "timeout_s": 3600, "gpu": True, "verify_tls": True}
+                 "work_dir": "node-work", "slots": 0, "fea_slots": 1, "timeout_s": 3600, "gpu": True,
+                 "verify_tls": True}
 
 
 def default_home() -> Path:

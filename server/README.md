@@ -363,12 +363,37 @@ En la máquina del nodo:
 - **Con Docker** (Linux): copiar los programas de una compilación de Tisma para Linux a `deploy/tisma/`, crear
   `deploy/node.toml` y correr `TISMA_NODE_TOKEN=tn_... docker compose -f deploy/compose.node.yaml up -d`.
 
-Sugerencia para tus equipos (a ajustar cuando se midan):
+Sugerencia para tus equipos:
 
 | Equipo | Prioridades | `slots` |
 |---|---|---|
-| i5-9400F + GTX 1060 (también maestro) | `fea_optimize,fea,slice_large,slice` | 2 |
-| i7 3.ª gen. 16 GB (×2) | `slice,slice_large,fea` | 1 |
+| i5-9400F + GTX 1060 (también maestro) | `fea_optimize,fea,slice_large,slice` | 0 (automático: 3, 6 hilos) |
+| i7 3.ª gen. 16 GB (×2) | `slice,slice_large,fea` | 0 (automático: 4, 8 hilos) |
+
+## Capacidad: más usuarios con menos espera
+
+Medido con `tisma-slicer` en 4 núcleos (Xeon 2,1 GHz, 16 GB):
+
+- Un trabajo de laminado deja ocupados unos 3 de los 4 núcleos (partes del laminado no se reparten), y arrancar el
+  programa cuesta 0,14 s: no hace falta dejarlo abierto entre trabajos. Placas de pocos miles de triángulos tardan
+  menos de 1 s; un Benchy de 225 000 triángulos, de 6 a 13 s según su tamaño, con 0,3 a 0,7 GB de memoria.
+- De punta a punta (maestro, un nodo y 12 placas mezcladas enviadas juntas):
+
+  | Nodo | Todo listo en | Tiempo hasta el resultado (promedio) | (mediana) |
+  |---|---|---|---|
+  | 1 trabajo a la vez, cola por orden de llegada (antes) | 54,1 s | 33,5 s | 30,4 s |
+  | 1 a la vez, los cortos primero | 53,0 s | 15,6 s | 3,9 s |
+  | `slots = 0` (2 a la vez) y los cortos primero (ahora) | 44,0 s | 13,5 s | 3,4 s |
+
+Por eso:
+
+- **La cola toma primero los trabajos cortos.** Cada trabajo tiene su lugar en la cola: cuándo llegó más su duración
+  estimada (por sus triángulos; los análisis, por su calidad). Uno corto pasa a uno largo que llegó un poco antes, y
+  uno largo nunca espera más de `TISMA_QUEUE_SIZE_WAIT_MAX_S` (600 s) por encima del orden de llegada. La prioridad
+  del plan sigue yendo primero.
+- **Cada nodo corre varios trabajos a la vez**: `slots = 0` (automático) es uno cada dos núcleos y 2 GB de memoria.
+- **Un análisis estructural a la vez por nodo** (`fea_slots = 1`): usan mucha memoria y la placa de video; mientras
+  corre uno, los otros lugares del nodo siguen laminando.
 
 ## Administración
 

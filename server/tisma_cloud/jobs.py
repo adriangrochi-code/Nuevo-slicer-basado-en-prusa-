@@ -12,6 +12,8 @@ from typing import IO
 
 # The queues. A node takes the classes of its priority list (Node.priorities), in that order.
 JOB_CLASSES = ("slice", "slice_large", "fea", "fea_optimize")
+# The structural analyses: a node runs fea_slots of them at a time (they take much memory and the graphics card).
+FEA_CLASSES = ("fea", "fea_optimize")
 JOB_CLASS_DESCRIPTIONS = {
     "slice": "Slicing of a plate",
     "slice_large": "Slicing of a large plate (many triangles)",
@@ -80,6 +82,22 @@ def plan_job(kind: str, params: dict, triangles: int, large_slice_triangles: int
 
 # Largest uncompressed size of a project read for the estimation (a zip bomb stops there and counts as large).
 MAX_SCANNED_BYTES = 4 << 30
+# Triangles counted at most for the estimate of the duration of a slicing job (about 100 MB of model read).
+ESTIMATE_MAX_TRIANGLES = 2_000_000
+
+# Rough duration of a job, only to order its queue (the shortest first, see scheduler.claim()). Measured with
+# tisma-slicer on 4 cores (Xeon 2.1 GHz): plates of a few thousand triangles in under a second, of 225 000 triangles
+# in 6 to 13 s depending on their size (README, Capacity). The analyses by quality, relative to each other.
+SLICE_BASE_S = 0.5
+SLICE_PER_TRIANGLE_S = 3.5e-5
+FEA_QUALITY_S = {"fast": 5., "normal": 15., "high": 60., "ultra": 240.}
+FEA_OPTIMIZE_FACTOR = 5.
+
+
+def estimate_seconds(plan: JobPlan, triangles: int) -> float:
+    if plan.kind == "slice":
+        return SLICE_BASE_S + SLICE_PER_TRIANGLE_S * triangles
+    return FEA_QUALITY_S[plan.params["quality"]] * (1. if plan.params["mode"] == "analyze" else FEA_OPTIMIZE_FACTOR)
 
 
 def count_triangles(project: IO[bytes], stop_after: int) -> int:

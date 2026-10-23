@@ -8,6 +8,27 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+def memory_gb() -> float | None:
+    """Memory of the machine [GB], or None where it is not known (it is read on Linux)."""
+    try:
+        with open("/proc/meminfo", encoding="ascii") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    return int(line.split()[1]) / 1024 / 1024
+    except OSError:
+        pass
+    return None
+
+
+def auto_slots(cpus: int, memory: float | None) -> int:
+    """Jobs at a time for a machine: one per two cores (measured on 4 cores: two at a time gave the shortest average
+    wait of a mixed queue, README), and 2 GB of memory for each (a plate of 225 000 triangles took 0.7 GB)."""
+    slots = max(1, cpus // 2)
+    if memory is not None:
+        slots = min(slots, max(1, int(memory // 2)))
+    return slots
+
+
 @dataclass
 class NodeConfig:
     master_url: str
@@ -15,8 +36,11 @@ class NodeConfig:
     tisma_slicer: str
     tisma_fea: str
     work_dir: Path = Path("./node-work")
-    # Jobs run at the same time (one per machine is best for slicing, which already uses every core).
-    slots: int = 1
+    # Jobs run at the same time; 0: automatic (auto_slots()). A slicing job keeps only about 3 of 4 cores busy, so
+    # two at a time finish a mixed queue sooner (README, Capacity).
+    slots: int = 0
+    # Structural analyses run at the same time (they take much memory and the graphics card).
+    fea_slots: int = 1
     # Longest run of a job [s]; it is stopped and failed after that.
     timeout_s: int = 3600
     # The structural analysis may use the graphics card (Vulkan).
@@ -39,6 +63,7 @@ class NodeConfig:
                 raise ValueError(f"'{key}' is missing in {path}")
         cfg = NodeConfig(**data)
         cfg.work_dir = Path(cfg.work_dir)
-        cfg.slots = max(1, int(cfg.slots))
+        cfg.slots = int(cfg.slots) if int(cfg.slots) > 0 else auto_slots(os.cpu_count() or 1, memory_gb())
+        cfg.fea_slots = max(1, int(cfg.fea_slots))
         cfg.master_url = cfg.master_url.rstrip("/")
         return cfg

@@ -14,7 +14,7 @@ import pytest
 from conftest import DATA, make_3mf
 
 from tisma_cloud.node.agent import Agent
-from tisma_cloud.node.config import NodeConfig
+from tisma_cloud.node.config import NodeConfig, auto_slots, memory_gb
 from tisma_cloud.node.runners import JobFailed, sanitize_project
 
 posix_only = pytest.mark.skipif(sys.platform == "win32", reason="fake programs are shell scripts")
@@ -172,10 +172,41 @@ def test_node_config(tmp_path, monkeypatch):
     p.write_text('master_url = "https://cloud.example/"\ntisma_slicer = "s"\ntisma_fea = "f"\nslots = 0\n')
     monkeypatch.setenv("TISMA_NODE_TOKEN", "tn_x")
     cfg = NodeConfig.load(p)
-    assert cfg.master_url == "https://cloud.example" and cfg.token == "tn_x" and cfg.slots == 1
+    # 0: automatic, from the cores and the memory of the machine.
+    assert cfg.master_url == "https://cloud.example" and cfg.token == "tn_x"
+    assert cfg.slots == auto_slots(os.cpu_count() or 1, memory_gb()) and cfg.slots >= 1 and cfg.fea_slots == 1
+    p.write_text('master_url = "x"\ntisma_slicer = "s"\ntisma_fea = "f"\nslots = 3\nfea_slots = 0\n')
+    cfg = NodeConfig.load(p)
+    assert cfg.slots == 3 and cfg.fea_slots == 1
     p.write_text('master_url = "x"\ntisma_slicer = "s"\ntisma_fea = "f"\ncolour = 1\n')
     with pytest.raises(ValueError, match="colour"):
         NodeConfig.load(p)
+
+
+def test_auto_slots():
+    # One job per two cores, and 2 GB of memory for each.
+    assert auto_slots(4, 15.5) == 2
+    assert auto_slots(16, 32.) == 8
+    assert auto_slots(16, 8.) == 4
+    assert auto_slots(1, None) == 1 and auto_slots(8, 1.) == 1
+
+
+def test_one_analysis_at_a_time(client, f, node_cfg):
+    user = f.user(plan=f.plan("big", concurrent=10))
+    agent = agent_for(client, f.node("n", "fea,slice"), node_cfg)
+    a1 = f.submit(user, kind="fea", params="{}")
+    a2 = f.submit(user, kind="fea", params="{}")
+    plate = f.submit(user)
+    # The first slot takes an analysis and holds its place; the next one may only take the plate.
+    job, holds = agent.claim_for_slot()
+    assert job["id"] == a1["id"] and holds
+    job, holds = agent.claim_for_slot()
+    assert job["id"] == plate["id"] and not holds
+    assert agent.claim_for_slot() == (None, False)
+    # The analysis ended: the next one can be taken.
+    agent.release_fea()
+    job, holds = agent.claim_for_slot()
+    assert job["id"] == a2["id"] and holds
 
 
 # ---- with the real programs: TISMA_SLICER_BIN and TISMA_FEA_BIN point to tisma-slicer and tisma-fea.

@@ -2,7 +2,10 @@
 off does not stop the others.
 
 A node takes the first queued job of the first class of its priority list that has one; within a class, the jobs of
-the plans with a higher priority first, then the oldest. On PostgreSQL the row is locked with FOR UPDATE SKIP LOCKED,
+the plans with a higher priority first, then by their place in the queue (Job.order_at): when they were submitted
+plus their estimated duration, capped. So short jobs go before long ones submitted a little earlier (measured: the
+average wait of a mixed queue falls to less than half, README), and a long job waits at most the cap longer than in
+arrival order. On PostgreSQL the row is locked with FOR UPDATE SKIP LOCKED,
 so that nodes claiming at the same time do not wait for each other; the conditional UPDATE (status still queued)
 makes the claim safe on any database.
 
@@ -117,14 +120,17 @@ def charge_time(session: Session, job: Job) -> None:
         session.flush()
 
 
-def claim(session: Session, node: Node, is_sqlite: bool) -> Job | None:
-    """The next job for the node, already marked as running on it, or None."""
+def claim(session: Session, node: Node, is_sqlite: bool, exclude: tuple[str, ...] | list[str] = ()) -> Job | None:
+    """The next job for the node, already marked as running on it, or None. The classes in exclude are skipped (the
+    node runs as many of them as it can)."""
     for job_class in node.priority_list:
+        if job_class in exclude:
+            continue
         while True:
             query = (
                 select(Job.id)
                 .where(Job.status == "queued", Job.job_class == job_class)
-                .order_by(Job.priority.desc(), Job.created_at, Job.id)
+                .order_by(Job.priority.desc(), func.coalesce(Job.order_at, Job.created_at), Job.created_at, Job.id)
                 .limit(1)
             )
             if not is_sqlite:

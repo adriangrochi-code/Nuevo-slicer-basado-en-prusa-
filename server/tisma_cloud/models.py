@@ -245,6 +245,10 @@ class Job(Base):
     # The project and the result were deleted (retention_h after the job ended).
     files_removed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    # Its place in the queue: when it was submitted plus its estimated duration (capped), so that short jobs pass
+    # long ones submitted a little earlier but a long one never waits much more than that (scheduler.claim()).
+    # Empty for the jobs of older versions (their created_at counts).
+    order_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

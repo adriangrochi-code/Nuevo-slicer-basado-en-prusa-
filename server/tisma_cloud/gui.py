@@ -16,6 +16,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 
 from .manager import JOB_CLASS_NAMES, MASTER_FIELDS, NODE_FIELDS, ROLE_NAMES, Manager
+from .node.config import auto_slots, memory_gb
 
 # The violet of Tisma, ink and surfaces. The status colours are only for states and always come with a word.
 VIOLET = "#7A24C9"
@@ -539,8 +540,9 @@ class App:
         found = sum(1 for c in programs if c and c.ok)
         self.node_tiles["programs"].set(f"{found} de 2", "tisma-slicer y tisma-fea" if found == 2 else
                                         "Configuración > Buscar Tisma Slicer")
-        self.node_tiles["slots"].set(number(int(node.get("slots", 1))), f"hasta {number(int(node.get('timeout_s', 0)))} s "
-                                     "cada uno")
+        slots = int(node.get("slots", 0))
+        self.node_tiles["slots"].set(number(slots) if slots > 0 else f"Auto ({number(auto_slots(os.cpu_count() or 1, memory_gb()))})",
+                                     f"hasta {number(int(node.get('timeout_s', 0)))} s cada uno")
         self.node_tiles["gpu"].set("Sí" if node.get("gpu") else "No", "para el análisis estructural")
         for child in self.node_checks_rows.winfo_children():
             child.destroy()

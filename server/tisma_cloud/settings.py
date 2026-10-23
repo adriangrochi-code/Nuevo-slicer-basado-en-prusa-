@@ -31,6 +31,8 @@ class Settings:
     claim_wait_s: int = field(default_factory=lambda: _int("TISMA_CLAIM_WAIT_S", 20))
     # Plates with more triangles are "large slicing" jobs (provisional threshold until measured on the machines).
     large_slice_triangles: int = field(default_factory=lambda: _int("TISMA_LARGE_SLICE_TRIANGLES", 300_000))
+    # The queue takes the shortest jobs first: a job waits at most this much longer than in arrival order [s].
+    queue_size_wait_max_s: int = field(default_factory=lambda: _int("TISMA_QUEUE_SIZE_WAIT_MAX_S", 600))
     # Results and projects older than this are deleted [h].
     retention_h: int = field(default_factory=lambda: _int("TISMA_RETENTION_H", 72))
     # Networks from which the administration (/admin and /v1/admin) can be used: the local network only. From any other
