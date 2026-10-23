@@ -122,6 +122,7 @@ curados (marcados así en la nota de cada material).
 | libnest2d | LGPL-3.0 **(sin verificar)** |
 | localesutils, hints | Prusa (AGPL-3.0, del propio proyecto) |
 | miniz | MIT |
+| openpnp-capture (0.0.28, commit `32a9bdd`, https://github.com/openpnp/openpnp-capture) | MIT, Copyright (c) 2017 Jason von Nieda, Niels Moseley (`bundled_deps/openpnp-capture/LICENSE.txt`); compatible con AGPL-3.0. Las cámaras USB (UVC) de la computadora en Dispositivos: DirectShow en Windows, AVFoundation en macOS, V4L2 en Linux. Solo la biblioteca (sin tests ni su copia de libjpeg-turbo); cambios: MJPEG con la libjpeg que ya usa Tisma, el tamaño del cuadro se borra después de cerrar el hilo de captura, sin `-march=native`. |
 | prusa_fdm_mixer | MIT |
 | qoi | MIT |
 | semver | MIT |

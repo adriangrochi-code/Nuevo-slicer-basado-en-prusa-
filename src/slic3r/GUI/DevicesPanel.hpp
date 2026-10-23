@@ -15,6 +15,9 @@
 
 #include <wx/panel.h>
 
+#include "../Utils/UsbCamera.hpp"
+
+class wxComboBox;
 class wxStaticText;
 class Button;
 class SwitchButton;
@@ -25,7 +28,7 @@ class DynamicPrintConfig;
 
 namespace GUI {
 
-class BambuCameraView;
+class CameraView;
 class PrinterWebViewPanel;
 class TismaPageList;
 class TismaTitle;
@@ -58,9 +61,21 @@ private:
     void change_access_code();
     void send_sliced();
     void open_in_browser();
+    // The printer selected in the list (on_select, then the cameras).
+    void select_printer();
     // The camera of a Bambu Lab printer (A1, P1), streamed in the background while the printer is selected.
     void start_camera(const DynamicPrintConfig &config);
     void stop_camera();
+    // The camera shown for the selected printer: its own (Bambu Lab A1, P1) or a USB camera of this computer, chosen
+    // per printer and kept in the configuration of Tisma (section tisma_usb_cameras).
+    void refresh_cameras();
+    void on_camera_choice();
+    void show_selected_camera();
+    void start_usb_camera(const UsbCameraInfo &camera);
+    // Shows the view of the camera of the selected printer and returns it.
+    CameraView* show_camera_view();
+    // Key of the selected printer in tisma_usb_cameras.
+    std::string camera_key() const;
     // URL of the web interface of a physical printer.
     static std::string web_url(const std::string &print_host, int host_type);
 
@@ -80,7 +95,16 @@ private:
     void                 style_controls();
     PrinterWebViewPanel *m_web        { nullptr };
     USBMonitorPanel     *m_usb        { nullptr };
-    BambuCameraView     *m_camera     { nullptr };
+    CameraView          *m_camera     { nullptr };
+    wxStaticText        *m_camera_label { nullptr };
+    wxComboBox          *m_camera_choice{ nullptr };
+    wxStaticText        *m_camera_info  { nullptr };
+    // The USB cameras in m_camera_choice, after its first item (the camera of the printer, or none).
+    std::vector<UsbCameraInfo> m_usb_cameras;
+    // The selected printer streams its own camera (Bambu Lab in LAN mode): its configuration.
+    std::unique_ptr<DynamicPrintConfig> m_printer_camera;
+    // The search of the USB cameras in flight (older answers are ignored).
+    int                  m_cameras_request{ 0 };
     // Set to end the camera stream in flight.
     std::shared_ptr<std::atomic<bool>> m_camera_stop;
     bool                 m_web_created{ false };

@@ -37,6 +37,7 @@
 #include "libslic3r/Utils.hpp"
 #include "LocalesUtils.hpp"
 
+#include "CameraView.hpp"
 #include "DevicesPanel.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
@@ -219,6 +220,9 @@ private:
 struct USBMonitorPanel::priv
 {
     USBMonitorPanel          *q;
+    // A USB camera pointed at the printer (chosen in the Devices page), hidden without one.
+    wxBoxSizer               *camera_box { nullptr };
+    CameraView               *camera { nullptr };
     USB::USBPrinterConnection connection;
     wxTimer                   timer;
 
@@ -849,6 +853,15 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
     row->Add(p->btn_cancel, 0);
     box->Add(row, 0, wxALL, em / 2);
 
+    // ---- Camera: a USB camera of this computer pointed at the printer, the larger part of this column when there is one.
+    p->camera_box = new wxBoxSizer(wxVERTICAL);
+    p->camera_box->Add(new TismaTitle(this, _L("Camera")), 0, wxLEFT | wxBOTTOM, em / 2);
+    p->camera = new CameraView(this);
+    p->camera->SetMinSize(wxSize(-1, 10 * em));
+    p->camera_box->Add(p->camera, 1, wxEXPAND | wxALL, em / 4);
+    right->Add(p->camera_box, 3, wxEXPAND | wxBOTTOM, em);
+    right->Hide(p->camera_box);
+
     // ---- Temperature graph
     box = section(right, _L("Temperature"));
     p->graph = new TempGraph(this, p->samples);
@@ -929,6 +942,22 @@ void USBMonitorPanel::print_file(const std::string &path, const std::string &nam
     }
     p.start_print(std::move(commands), from_u8(name));
     p.update();
+}
+
+CameraView* USBMonitorPanel::camera() const
+{
+    return p->camera;
+}
+
+void USBMonitorPanel::show_camera(bool show)
+{
+    if (GetSizer()->IsShown(p->camera_box) == show)
+        return;
+    GetSizer()->Show(p->camera_box, show, true);
+    // The terminal gives the camera most of its height.
+    const int em = wxGetApp().em_unit();
+    p->console->SetMinSize(wxSize(40 * em, (show ? 5 : 12) * em));
+    Layout();
 }
 
 void USBMonitorPanel::sys_color_changed()

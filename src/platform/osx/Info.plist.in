@@ -22,6 +22,10 @@
   <string>????</string>
   <key>CFBundleVersion</key>
   <string>@SLIC3R_BUILD_ID@</string>
+  <!-- Tisma Slicer: the USB cameras pointed at the printers (Devices page). Without it macOS ends the program when
+       it opens a camera. -->
+  <key>NSCameraUsageDescription</key>
+  <string>To show the USB camera pointed at a printer and check its print.</string>
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>

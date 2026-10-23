@@ -25,7 +25,8 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
   ajustes por objeto y el botón principal (Laminar, Exportar o Enviar).
 - **Impresión, Filamento, Impresora**: páginas propias, con el perfil arriba (elegir, guardar, renombrar, borrar,
   comparar) y los ajustes en grupos con títulos grandes, como en el teléfono; búsqueda y modo simple o experto.
-- **Dispositivos**: impresoras por USB y por red (estado, cámara, envío).
+- **Dispositivos**: impresoras por USB y por red (estado, cámara, envío). Cada impresora puede usar una cámara USB
+  de la computadora (ver `docs/USB_CAMERA.md`).
 - **Más**: calibración, Thingiverse, cuenta de Tisma Cloud, preferencias, asistente de configuración, ayuda.
 
 ## Inventario: de dónde viene cada función y a dónde va

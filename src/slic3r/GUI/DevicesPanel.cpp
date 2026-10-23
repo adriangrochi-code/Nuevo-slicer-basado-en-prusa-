@@ -16,6 +16,7 @@
 
 #include <wx/button.h>
 #include <wx/checkbox.h>
+#include <wx/combobox.h>
 #include <wx/dcbuffer.h>
 #include <wx/image.h>
 #include <wx/listbox.h>
@@ -30,6 +31,7 @@
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
+#include "CameraView.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "I18N.hpp"
@@ -44,91 +46,18 @@
 #include "format.hpp"
 #include "../Utils/PrintHost.hpp"
 #include "../Utils/BambuLan.hpp"
+#include "../Utils/UsbCamera.hpp"
 
+#include <chrono>
+#include <mutex>
 #include <thread>
 
 namespace Slic3r {
 namespace GUI {
 
-// The last image of the camera of a Bambu Lab printer, scaled to the panel keeping its proportions, or a message while
-// there is none.
-class BambuCameraView : public wxPanel
-{
-public:
-    explicit BambuCameraView(wxWindow *parent) : wxPanel(parent, wxID_ANY)
-    {
-        SetBackgroundStyle(wxBG_STYLE_PAINT);
-        SetMinSize(wxSize(-1, 16 * wxGetApp().em_unit()));
-        Bind(wxEVT_PAINT, [this](wxPaintEvent &) { paint(); });
-        Bind(wxEVT_SIZE, [this](wxSizeEvent &evt) { Refresh(); evt.Skip(); });
-    }
-
-    // A JPEG of the printer; false when it cannot be read.
-    bool set_jpeg(const std::string &jpeg)
-    {
-        wxLogNull no_log;
-        wxMemoryInputStream in(jpeg.data(), jpeg.size());
-        wxImage image;
-        if (!image.LoadFile(in, wxBITMAP_TYPE_JPEG) || !image.IsOk())
-            return false;
-        m_image = image;
-        m_scaled = wxBitmap();
-        Refresh();
-        return true;
-    }
-
-    void set_message(const wxString &message)
-    {
-        m_image = wxImage();
-        m_scaled = wxBitmap();
-        m_message = message;
-        Refresh();
-    }
-
-private:
-    wxImage  m_image;
-    wxBitmap m_scaled;
-    wxString m_message;
-
-    void paint()
-    {
-        wxAutoBufferedPaintDC dc(this);
-        const wxSize size = GetClientSize();
-        dc.SetBackground(wxBrush(wxColour(32, 33, 36)));
-        dc.Clear();
-        if (m_image.IsOk() && size.x > 0 && size.y > 0) {
-            const double scale = std::min(double(size.x) / m_image.GetWidth(), double(size.y) / m_image.GetHeight());
-            const int w = std::max(1, int(m_image.GetWidth() * scale));
-            const int h = std::max(1, int(m_image.GetHeight() * scale));
-            if (!m_scaled.IsOk() || m_scaled.GetWidth() != w || m_scaled.GetHeight() != h)
-                m_scaled = wxBitmap(m_image.Scale(w, h, wxIMAGE_QUALITY_BILINEAR));
-            dc.DrawBitmap(m_scaled, (size.x - w) / 2, (size.y - h) / 2);
-            return;
-        }
-        const int em = wxGetApp().em_unit();
-        dc.SetTextForeground(wxColour(200, 200, 205));
-        dc.SetFont(GetFont());
-        // Wrapped by words to the width of the panel.
-        wxArrayString lines;
-        wxString line;
-        for (const wxString &word : wxSplit(m_message, ' ')) {
-            const wxString longer = line.empty() ? word : line + " " + word;
-            if (!line.empty() && dc.GetTextExtent(longer).x > size.x - 2 * em) {
-                lines.Add(line);
-                line = word;
-            } else
-                line = longer;
-        }
-        if (!line.empty())
-            lines.Add(line);
-        const int line_h = dc.GetCharHeight() * 5 / 4;
-        int y = (size.y - line_h * int(lines.size())) / 2;
-        for (const wxString &l : lines) {
-            dc.DrawText(l, (size.x - dc.GetTextExtent(l).x) / 2, y);
-            y += line_h;
-        }
-    }
-};
+// The images per second of a USB camera shown here: smooth enough to follow the nozzle, light for the computer (a
+// 1280 x 720 image is copied and scaled on the GUI thread).
+static constexpr double USB_CAMERA_VIEW_FPS = 15.;
 
 DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 {
@@ -180,6 +109,18 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_hint = new wxStaticText(this, wxID_ANY, "");
     m_hint->SetForegroundColour(TismaTheme::text_muted(dark));
     right->Add(m_hint, 0, wxEXPAND | wxBOTTOM, em / 2);
+    // The camera: the one of the printer or a USB camera of this computer pointed at it.
+    auto *camera_row = new wxBoxSizer(wxHORIZONTAL);
+    m_camera_label = new wxStaticText(this, wxID_ANY, _L("Camera"));
+    camera_row->Add(m_camera_label, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
+    m_camera_choice = new wxComboBox(this, wxID_ANY, "", wxDefaultPosition, wxSize(22 * em, -1), 0, nullptr, wxCB_READONLY);
+    m_camera_choice->SetToolTip(_L("A USB camera plugged into this computer and pointed at the printer: for the printers without "
+                                   "a camera (most Marlin printers) or with a slow one (Bambu Lab A1 and P1 series)."));
+    camera_row->Add(m_camera_choice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
+    m_camera_info = new wxStaticText(this, wxID_ANY, "");
+    m_camera_info->SetForegroundColour(TismaTheme::text_muted(dark));
+    camera_row->Add(m_camera_info, 1, wxALIGN_CENTER_VERTICAL);
+    right->Add(camera_row, 0, wxEXPAND | wxBOTTOM, em / 2);
     m_web = new PrinterWebViewPanel(this, L"");
     m_web->Hide();
     right->Add(m_web, 1, wxEXPAND);
@@ -188,7 +129,7 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_usb->Hide();
     right->Add(m_usb, 1, wxEXPAND);
     // Bambu Lab printers (no web interface): their camera.
-    m_camera = new BambuCameraView(this);
+    m_camera = new CameraView(this);
     m_camera->Hide();
     right->Add(m_camera, 1, wxEXPAND);
     main->Add(right, 1, wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, em);
@@ -202,6 +143,7 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_btn_code->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { change_access_code(); });
     m_btn_send->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { send_sliced(); });
     m_btn_browser->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { open_in_browser(); });
+    m_camera_choice->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_camera_choice(); });
     m_start->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &) {
         wxGetApp().app_config->set("tisma_devices_start_print", m_start->GetValue() ? "1" : "0");
     });
@@ -224,6 +166,8 @@ void DevicesPanel::style_controls()
     m_caption->sys_color_changed();
     m_title->sys_color_changed();
     m_start_label->SetForegroundColour(TismaTheme::text(dark));
+    m_camera_label->SetForegroundColour(TismaTheme::text(dark));
+    m_camera_info->SetForegroundColour(TismaTheme::text_muted(dark));
     for (::Button *btn : { m_btn_add, m_btn_edit, m_btn_code, m_btn_browser })
         style_tisma_button(btn, false);
     style_tisma_button(m_btn_send, true);
@@ -284,6 +228,13 @@ std::string DevicesPanel::web_url(const std::string &print_host, int host_type)
 
 void DevicesPanel::on_select()
 {
+    select_printer();
+    refresh_cameras();
+}
+
+void DevicesPanel::select_printer()
+{
+    m_printer_camera.reset();
     const int sel = m_list->GetSelectionIndex();
     const bool network = sel >= 0 && size_t(sel) < m_entries.size() && m_entries[sel].type == Entry::Type::Network;
     m_btn_edit->Enable(network);
@@ -349,7 +300,8 @@ void DevicesPanel::on_select()
                 Layout();
             });
         }).detach();
-        start_camera(cfg);
+        // Its camera, unless a USB camera was chosen for it (refresh_cameras).
+        m_printer_camera = std::make_unique<DynamicPrintConfig>(cfg);
         return;
     }
     if (host_type == htFlashforge) {
@@ -579,6 +531,178 @@ void DevicesPanel::stop_camera()
         m_camera->Hide();
         Layout();
     }
+    if (m_usb != nullptr)
+        m_usb->show_camera(false);
+}
+
+CameraView* DevicesPanel::show_camera_view()
+{
+    // The USB printer: in its panel, next to the print (the panel needs the whole height); else under the printer.
+    const int  sel = m_list->GetSelectionIndex();
+    const bool usb = sel >= 0 && size_t(sel) < m_entries.size() && m_entries[sel].type == Entry::Type::USB;
+    if (usb) {
+        m_usb->show_camera(true);
+        return m_usb->camera();
+    }
+    m_camera->Show();
+    Layout();
+    return m_camera;
+}
+
+std::string DevicesPanel::camera_key() const
+{
+    const int sel = m_list->GetSelectionIndex();
+    if (sel < 0 || size_t(sel) >= m_entries.size())
+        return {};
+    if (m_entries[sel].type == Entry::Type::USB)
+        return "usb";
+    // Any name of a printer as a key of the configuration file (no spaces, '=' or brackets).
+    static const char hex[] = "0123456789abcdef";
+    std::string key = "printer_";
+    for (unsigned char c : m_entries[sel].name) {
+        key += hex[c >> 4];
+        key += hex[c & 15];
+    }
+    return key;
+}
+
+void DevicesPanel::refresh_cameras()
+{
+    const int request = ++m_cameras_request;
+    m_usb_cameras.clear();
+    m_camera_choice->Clear();
+    m_camera_choice->Append(m_printer_camera ? _L("The camera of the printer") : _L("No camera"));
+    m_camera_choice->SetSelection(0);
+    m_camera_choice->Enable(false);
+    m_camera_info->SetLabel(_L("Looking for USB cameras..."));
+    // Listing the cameras opens each one (some systems take a while): in the background.
+    std::thread([this, request]() {
+        std::vector<UsbCameraInfo> cameras = UsbCamera::list();
+        wxGetApp().CallAfter([this, request, cameras = std::move(cameras)]() {
+            if (request != m_cameras_request)
+                return;
+            m_usb_cameras = cameras;
+            const std::string saved = wxGetApp().app_config->get("tisma_usb_cameras", camera_key());
+            int selection = 0;
+            for (size_t i = 0; i < m_usb_cameras.size(); ++ i) {
+                m_camera_choice->Append(from_u8(m_usb_cameras[i].name));
+                if (m_usb_cameras[i].id == saved)
+                    selection = int(i) + 1;
+            }
+            // Chosen before, unplugged now: kept, and said.
+            if (selection == 0 && ! saved.empty())
+                selection = m_camera_choice->Append(_L("USB camera (not connected)"));
+            m_camera_choice->SetSelection(selection);
+            m_camera_choice->Enable(true);
+            show_selected_camera();
+        });
+    }).detach();
+}
+
+void DevicesPanel::on_camera_choice()
+{
+    const int sel = m_camera_choice->GetSelection();
+    const std::string key = camera_key();
+    if (key.empty())
+        return;
+    if (sel == 0)
+        wxGetApp().app_config->erase("tisma_usb_cameras", key);
+    else if (sel > 0 && size_t(sel) <= m_usb_cameras.size())
+        wxGetApp().app_config->set("tisma_usb_cameras", key, m_usb_cameras[sel - 1].id);
+    show_selected_camera();
+}
+
+void DevicesPanel::show_selected_camera()
+{
+    stop_camera();
+    const int sel = m_camera_choice->GetSelection();
+    if (sel > 0 && size_t(sel) <= m_usb_cameras.size()) {
+        start_usb_camera(m_usb_cameras[sel - 1]);
+        return;
+    }
+    if (sel > 0) {
+        m_camera_info->SetLabel("");
+        show_camera_view()->set_message(_L("The USB camera chosen for this printer is not connected. Plug it in and select "
+                                           "the printer again."));
+        return;
+    }
+    m_camera_info->SetLabel(m_usb_cameras.empty() ? _L("No USB camera connected to this computer.") : wxString());
+    if (m_printer_camera)
+        start_camera(*m_printer_camera);
+}
+
+void DevicesPanel::start_usb_camera(const UsbCameraInfo &camera)
+{
+    stop_camera();
+    auto stop = std::make_shared<std::atomic<bool>>(false);
+    m_camera_stop = stop;
+    CameraView *view = show_camera_view();
+    view->set_message(format_wxstr(_L("Opening %1%..."), from_u8(camera.name)));
+    m_camera_info->SetLabel("");
+    // The last frame, taken by the GUI thread: when it is slower than the camera, frames are skipped, not queued.
+    struct Latest
+    {
+        std::mutex      mutex;
+        UsbCameraFrame  frame;
+        UsbCameraFormat format;
+        FrameRate       rate;
+        double          fps{ 0. };
+        bool            pending{ false };
+    };
+    auto latest = std::make_shared<Latest>();
+    std::thread([this, stop, latest, view, id = camera.id]() {
+        UsbCameraFormat format;
+        std::string     error;
+        const bool ok = UsbCamera::stream(id, USB_CAMERA_VIEW_FPS, [this, stop, latest, view, &format](UsbCameraFrame &&frame) {
+            const double t = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+            std::lock_guard<std::mutex> lock(latest->mutex);
+            latest->frame  = std::move(frame);
+            latest->format = format;
+            latest->fps    = latest->rate.add(t);
+            if (! latest->pending) {
+                latest->pending = true;
+                wxGetApp().CallAfter([this, stop, latest, view]() {
+                    UsbCameraFrame  frame;
+                    UsbCameraFormat format;
+                    double          fps;
+                    {
+                        std::lock_guard<std::mutex> lock(latest->mutex);
+                        frame = std::move(latest->frame);
+                        format = latest->format;
+                        fps = latest->fps;
+                        latest->pending = false;
+                    }
+                    if (*stop || frame.rgb.empty())
+                        return;
+                    view->set_rgb(frame.width, frame.height, frame.rgb);
+                    const wxString info = format_wxstr(_L("%1% x %2% %3%, %4% images per second (the camera gives %5%)"),
+                                                       format.width, format.height, from_u8(UsbCamera::fourcc_name(format.fourcc)),
+                                                       int(fps + 0.5), format.fps);
+                    if (m_camera_info->GetLabel() != info)
+                        m_camera_info->SetLabel(info);
+                });
+            }
+            return ! *stop;
+        }, *stop, format, error);
+        wxGetApp().CallAfter([this, stop, view, ok, error]() {
+            if (*stop || ok)
+                return;
+            // The errors of UsbCamera::stream, in the language of Tisma.
+            wxString message;
+            if (error == "not connected")
+                message = _L("The USB camera is not connected. Plug it in and select the printer again.");
+            else if (error == "the camera could not be opened (in use by another program?)")
+                message = _L("The USB camera could not be opened: another program may be using it.");
+            else if (error == "the camera was disconnected")
+                message = _L("The USB camera was disconnected. Plug it in and select the printer again.");
+            else if (error == "the camera sends no images")
+                message = _L("The USB camera sends no images. Unplug it, plug it in again and select the printer again.");
+            else
+                message = format_wxstr(_L("Could not show the USB camera: %1%"), from_u8(error));
+            view->set_message(message);
+            m_camera_info->SetLabel("");
+        });
+    }).detach();
 }
 
 void DevicesPanel::open_in_browser()

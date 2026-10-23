@@ -5,5 +5,8 @@
   <!-- for dynamic loading of libraries without signature validation. Used for 3dconnection drivers.-->
   <key>com.apple.security.cs.disable-library-validation</key>  
   <true/>
+  <!-- Tisma Slicer: the USB cameras pointed at the printers (hardened runtime). -->
+  <key>com.apple.security.device.camera</key>
+  <true/>
 </dict>
 </plist>

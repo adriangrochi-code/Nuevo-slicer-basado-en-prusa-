@@ -34209,3 +34209,45 @@ msgstr "Terminar"
 
 msgid "Nozzles"
 msgstr "Boquillas"
+
+msgid "A USB camera plugged into this computer and pointed at the printer: for the printers without a camera (most Marlin printers) or with a slow one (Bambu Lab A1 and P1 series)."
+msgstr "Una cámara USB conectada a esta computadora y apuntada a la impresora: para las impresoras sin cámara (la mayoría de las Marlin) o con una lenta (series A1 y P1 de Bambu Lab)."
+
+msgid "The camera of the printer"
+msgstr "La cámara de la impresora"
+
+msgid "No camera"
+msgstr "Sin cámara"
+
+msgid "Looking for USB cameras..."
+msgstr "Buscando cámaras USB..."
+
+msgid "USB camera (not connected)"
+msgstr "Cámara USB (no conectada)"
+
+msgid "The USB camera chosen for this printer is not connected. Plug it in and select the printer again."
+msgstr "La cámara USB elegida para esta impresora no está conectada. Conectala y volvé a seleccionar la impresora."
+
+msgid "No USB camera connected to this computer."
+msgstr "No hay ninguna cámara USB conectada a esta computadora."
+
+msgid "Opening %1%..."
+msgstr "Abriendo %1%..."
+
+msgid "%1% x %2% %3%, %4% images per second (the camera gives %5%)"
+msgstr "%1% x %2% %3%, %4% imágenes por segundo (la cámara da %5%)"
+
+msgid "The USB camera is not connected. Plug it in and select the printer again."
+msgstr "La cámara USB no está conectada. Conectala y volvé a seleccionar la impresora."
+
+msgid "The USB camera could not be opened: another program may be using it."
+msgstr "No se pudo abrir la cámara USB: puede que otro programa la esté usando."
+
+msgid "The USB camera was disconnected. Plug it in and select the printer again."
+msgstr "Se desconectó la cámara USB. Conectala y volvé a seleccionar la impresora."
+
+msgid "The USB camera sends no images. Unplug it, plug it in again and select the printer again."
+msgstr "La cámara USB no manda imágenes. Desconectala, volvé a conectarla y seleccioná la impresora de nuevo."
+
+msgid "Could not show the USB camera: %1%"
+msgstr "No se pudo mostrar la cámara USB: %1%"

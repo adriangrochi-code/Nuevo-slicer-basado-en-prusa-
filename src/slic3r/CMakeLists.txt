@@ -268,6 +268,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdateDialogs.hpp
     GUI/FirmwareDialog.cpp
     GUI/USBMonitorPanel.cpp
+    GUI/CameraView.cpp
+    GUI/CameraView.hpp
     GUI/DevicesPanel.cpp
     GUI/DevicesPanel.hpp
     GUI/USBMonitorPanel.hpp
@@ -395,6 +397,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/Moonraker.cpp
     Utils/Moonraker.hpp
     Utils/BambuLan.cpp
+    Utils/UsbCamera.cpp
+    Utils/UsbCamera.hpp
     Utils/BambuLan.hpp
     Utils/BambuLanClient.cpp
     Utils/BambuLanClient.hpp
@@ -503,6 +507,7 @@ target_link_libraries(
     GLEW::GLEW
     OpenGL::GL
     hidapi
+    openpnp_capture
     libcurl
     ${wxWidgets_LIBRARIES}
     NanoSVG::nanosvg
