@@ -4104,15 +4104,17 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
             for (const auto &model : vendor->second)
                 needed |= ! model.second.empty();
         const Bundle &prusa = bundles.prusa_bundle();
-        auto installed = [this, &install_bundles](const std::pair<const std::string, Bundle> &pair) {
+        auto installed = [&install_bundles](const std::pair<const std::string, Bundle> &pair) {
             return ! pair.second.is_prusa_bundle && (pair.second.location == BundleLocation::IN_VENDOR ||
                 std::find(install_bundles.begin(), install_bundles.end(), pair.first) != install_bundles.end());
         };
         auto only_in_prusa = [&](const std::string &section, Preset::Type type) {
             if (! appconfig_new.has_section(section))
                 return false;
-            for (const auto &[name, value] : appconfig_new.get_section(section)) {
-                if (value != "1" || prusa.preset_bundle->get_presets(type).find_preset(name) == nullptr)
+            for (const auto &entry : appconfig_new.get_section(section)) {
+                // Not a structured binding: C++17 lambdas cannot capture those (Clang refuses).
+                const std::string &name = entry.first;
+                if (entry.second != "1" || prusa.preset_bundle->get_presets(type).find_preset(name) == nullptr)
                     continue;
                 if (std::none_of(bundles.begin(), bundles.end(), [&](const auto &pair) {
                         return installed(pair) && pair.second.preset_bundle->get_presets(type).find_preset(name) != nullptr; }))
