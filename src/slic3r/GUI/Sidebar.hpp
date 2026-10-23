@@ -112,6 +112,15 @@ class Sidebar : public wxPanel
         std::string preset;
     };
     std::vector<NozzleChoice>           m_nozzles;          // item of the nozzle combo -> nozzle
+    // Tisma: a filament printer with several extruders (tool changer, IDEX, several hotends): the nozzle of each one,
+    // since the nozzle combo above sets all of them, and when they differ a switch that prints the walls with the
+    // finest nozzle and the infill with the coarsest one ("printing with different nozzle diameters" of Prusa Research).
+    wxSizerItem*                        m_extruder_nozzles_row      { nullptr };
+    wxSizer*                            m_extruder_nozzles_sizer    { nullptr };
+    std::vector<wxStaticText*>          m_labels_extruder_nozzle;
+    std::vector<BitmapComboBox*>        m_combos_extruder_nozzle;
+    wxSizerItem*                        m_fine_coarse_row           { nullptr };
+    ::SwitchButton*                     m_fine_coarse               { nullptr };
     // Rows of the preset chooser shown for the filament (FFF) and the resin (SLA) printers, and for the Prusa SLX.
     std::vector<wxSizerItem*>           m_fff_rows, m_sla_rows, m_slx_rows;
     wxSizerItem*                        m_full_spectrum_row { nullptr };
@@ -181,6 +190,12 @@ class Sidebar : public wxPanel
     // Tisma: a diameter typed in the nozzle field.
     void on_type_nozzle();
     void apply_nozzle(const NozzleChoice &nozzle);
+    // The edited printer with other nozzles: then the print and filament profiles compatible with them.
+    void load_printer_nozzles(const DynamicPrintConfig &printer_config);
+    // The combos of the nozzle of each extruder and the switch of the fine and coarse nozzles.
+    void update_extruder_nozzles();
+    void on_extruder_nozzle(size_t extruder);
+    void on_fine_coarse(bool on);
     void on_select_bed();
 
     void show_preset_comboboxes();
