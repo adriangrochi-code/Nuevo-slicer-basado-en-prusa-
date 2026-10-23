@@ -40,7 +40,9 @@ static std::vector<std::string> s_project_options {
     "colorprint_heights",
     "wiping_volumes_matrix",
     "wiping_volumes_use_custom_matrix",
-    "calib_mode", "calib_start", "calib_end", "calib_step", "calib_band_height"
+    "calib_mode", "calib_start", "calib_end", "calib_step", "calib_band_height",
+    // Tisma: the plate chosen in the sidebar (BedType.hpp).
+    "curr_bed_type"
 };
 
 const char *PresetBundle::PRUSA_BUNDLE = "PrusaResearch";

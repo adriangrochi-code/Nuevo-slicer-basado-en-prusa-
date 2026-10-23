@@ -36,6 +36,19 @@ float tisma_shadow(vec3 eye_pos, float NdotL)
     return 1.0 - tisma_shadow_intensity * shadow / 9.0;
 }
 
+// Tisma Slicer (phase 7c): output to the G-buffer of the deferred shading (see src/slic3r/GUI/TismaShading.cpp), disabled
+// by default: the color before lighting, the material in the alpha and the eye normal. Octahedral normal encoding of
+// PrusaSlicer 3.0 (gbuffer_ao.fs, Copyright (c) Prusa Research, AGPLv3).
+uniform bool tisma_gbuffer;
+uniform float tisma_material;
+out vec2 tisma_out_normal;
+
+vec2 tisma_encode_normal(vec3 n)
+{
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);
+}
+
 // Tisma Slicer (phase 7): lighting computed per pixel (the same lights as the vertex shader), disabled by default.
 uniform bool tisma_per_pixel;
 
@@ -62,6 +75,11 @@ out vec4 out_color;
 
 void main()
 {
+    if (tisma_gbuffer) {
+        out_color = vec4(uniform_color.rgb, tisma_material);
+        tisma_out_normal = tisma_encode_normal(normalize(tisma_eye_normal));
+        return;
+    }
     vec2 light = (tisma_per_pixel || tisma_shadows) ? tisma_lighting(tisma_eye_normal, tisma_eye_pos) : intensity;
     out_color = vec4(vec3(light.y) + uniform_color.rgb * (light.x + emission_factor), uniform_color.a);
 }

@@ -12,6 +12,21 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
 
 ## Sin publicar (0.10.0)
 
+- **Tisma Cloud: laminar y calcular en servidores** (Configuración > Cuenta de Tisma Cloud): con usuario y contraseña
+  de la página web, «Archivo > Exportar > Laminar en la nube y exportar G-code» lamina la placa activa en los
+  servidores, y en Ingeniería «Calcular en la nube» corre el análisis, el relleno mínimo y las paredes de resina allí,
+  con el mismo resultado que en la PC. Nueva herramienta de línea de comandos `tisma-fea` (el análisis de un objeto de
+  un proyecto 3MF) y formato de resultados `.tfea`. El servidor (`server/`) es aparte y no forma parte de Tisma.
+- Tisma Cloud: las descargas de G-code y resultados viajan comprimidas (un G-code baja unas 8 veces más rápido) y la
+  ventana de la cuenta enlaza a la página donde se crea la cuenta y se paga el plan.
+- El laminado por línea de comandos ya no puede seguir con un script de post-procesado sin que alguien lo confirme
+  (sin respuesta es «no»).
+- **Análisis estructural en la tarjeta gráfica** (Vulkan): el multigrid del análisis corre en la GPU cuando hay una
+  (Preferencias > General); sin driver de Vulkan sigue en el procesador, con los mismos resultados.
+- **Render con oclusión ambiental y materiales realistas** (Preferencias > Cámara > Calidad de render): dos modos
+  nuevos como los de PrusaSlicer 3.0. «Oclusión ambiental» (el predeterminado) oscurece rincones, uniones y el
+  contacto de las piezas con la cama; «Materiales realistas» agrega iluminación física, con filamentos «Silk» más
+  brillantes y «Matte» más ásperos.
 - **Ingeniería con impresoras de resina**: el análisis estructural de la pieza maciza o ahuecada y la búsqueda del
   espesor de pared y el relleno interior más livianos que aguantan las cargas. Nuevo **relleno interior** de las piezas
   ahuecadas (Print Settings > Hollowing): barras a 45° y verticales que se imprimen sin soportes. Materiales de resina

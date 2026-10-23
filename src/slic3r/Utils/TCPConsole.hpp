@@ -19,7 +19,8 @@ namespace Utils {
 using boost::asio::ip::tcp;
 
 // Generic command / response TCP telnet like console class.
-// Used by the MKS host to send G-code commands to test connection ("M105") and to start printing ("M23 filename", "M24").
+// Used by the MKS host to send G-code commands to test connection ("M105") and to start printing ("M23 filename", "M24"),
+// and by the Flashforge host, which also streams the file through it (raw data, see enqueue_data()).
 class TCPConsole
 {
 public:
@@ -35,6 +36,7 @@ public:
         m_connect_timeout = std::chrono::milliseconds(5000);
         m_write_timeout = std::chrono::milliseconds(10000);
         m_read_timeout = std::chrono::milliseconds(10000);
+        m_queue_delay = std::chrono::milliseconds(0);
     }
 
     void set_line_delimiter(const std::string& newline) {
@@ -52,9 +54,17 @@ public:
 
     bool enqueue_cmd(const std::string& cmd) {
         // TODO: Add multithread protection to queue
-        m_cmd_queue.push_back(cmd);
+        m_cmd_queue.push_back({ cmd, false });
         return true;
     }
+    // Raw bytes (a part of a file being uploaded): sent as they are, without the line delimiter and without waiting
+    // for a reply.
+    bool enqueue_data(const std::string& data) {
+        m_cmd_queue.push_back({ data, true });
+        return true;
+    }
+    // Pause before each queued item (some printers need time to store a file before the next command).
+    void set_queue_delay(std::chrono::steady_clock::duration delay) { m_queue_delay = delay; }
 
     bool run_queue();
     std::string error_message() const { return m_error_code.message(); }
@@ -79,7 +89,14 @@ private:
     std::chrono::steady_clock::duration     m_write_timeout;
     std::chrono::steady_clock::duration     m_read_timeout;
 
-    std::deque<std::string>                 m_cmd_queue;
+    struct QueuedItem {
+        std::string text;
+        bool        raw;
+    };
+    std::deque<QueuedItem>                  m_cmd_queue;
+    std::chrono::steady_clock::duration     m_queue_delay;
+    // The item being written expects a reply line (a command) or not (raw data).
+    bool                                    m_expect_reply { true };
 
     boost::asio::io_context                 m_io_context;
     tcp::resolver                           m_resolver;

@@ -5,6 +5,7 @@
 #ifndef slic3r_BambuLanClient_hpp_
 #define slic3r_BambuLanClient_hpp_
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -19,6 +20,8 @@ namespace Slic3r {
 //   device/<serial>/request. The serial number is the common name of the printer's certificate.
 // - Implicit FTPS on port 990 with the same credentials to upload the job.
 // - The job is a .gcode.3mf with the G-code in Metadata/plate_1.gcode, started by the "project_file" command.
+// - The camera of the A1 and P1: JPEG images over TLS on port 6000 (video.md). The X1, P2S and H2 serve RTSPS on
+//   port 322 instead, which Tisma does not read.
 namespace BambuMqtt {
     enum PacketType : uint8_t { CONNECT = 1, CONNACK = 2, PUBLISH = 3, SUBSCRIBE = 8, SUBACK = 9, PINGREQ = 12, PINGRESP = 13, DISCONNECT = 14 };
 
@@ -40,6 +43,16 @@ namespace BambuMqtt {
     // Topic and payload of a PUBLISH packet (any QoS).
     bool   parse_publish(const Packet &packet, std::string &topic, std::string &payload);
 } // namespace BambuMqtt
+
+namespace BambuCamera {
+    // The 80 bytes sent after connecting: 0x40 and 0x3000 (little endian), then the user and the access code, each
+    // padded with zeros to 32 bytes.
+    std::string auth_packet(const std::string &user, const std::string &access_code);
+    // Parses the image at the start of buf: a 16-byte header whose first 4 bytes are the size of the JPEG (little
+    // endian), then the JPEG. Returns the bytes it takes, 0 when buf does not hold a whole image yet. Throws
+    // std::runtime_error on a size that cannot be an image.
+    size_t parse_frame(const std::string &buf, std::string &jpeg);
+} // namespace BambuCamera
 
 struct BambuStatus
 {
@@ -68,6 +81,7 @@ struct BambuLanClient
     std::string cafile;       // CA of the printer certificates
     int         mqtt_port{ 8883 };
     int         ftps_port{ 990 };
+    int         camera_port{ 6000 };
 
     // (bytes sent, total); returns false to cancel.
     using ProgressFn = std::function<bool(size_t, size_t)>;
@@ -82,6 +96,12 @@ struct BambuLanClient
     // Packs the G-code as <name>.gcode.3mf, uploads it and starts it.
     bool print(const boost::filesystem::path &gcode, const std::string &upload_name, bool start, bool use_ams,
                const ProgressFn &progress, std::string &error) const;
+    // Streams the camera images (JPEG) to on_frame until it returns false or stop is set. Errors: "no camera" when
+    // nothing listens on the camera port (the X1, P2S and H2 send their camera by RTSPS), "refused" when the printer
+    // closes the connection before the first image (wrong access code, camera off or in use), "closed" when it ends
+    // the stream later, otherwise a description.
+    bool stream_camera(const std::function<bool(const std::string &jpeg)> &on_frame, const std::atomic<bool> &stop,
+                       std::string &error) const;
     // Name on the SD card for an upload name ("my part.gcode" -> "my_part.gcode.3mf").
     static std::string job_name(const std::string &upload_name);
 

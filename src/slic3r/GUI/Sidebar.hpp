@@ -82,6 +82,17 @@ class Sidebar : public wxPanel
     BitmapComboBox*                     m_workflow          { nullptr };
     std::vector<sla::Workflow>          m_available_workflows;
     std::vector<PlaterPresetComboBox*>  m_combos_filament;
+    // Tisma: the nozzle and the bed of the printer, chosen apart from the printer as in OrcaSlicer. The printer combo
+    // lists a model once, the nozzle combo switches between the printer presets of the model.
+    wxStaticText*                       m_label_nozzle      { nullptr };
+    BitmapComboBox*                     m_combo_nozzle      { nullptr };
+    wxStaticText*                       m_label_bed         { nullptr };
+    BitmapComboBox*                     m_combo_bed         { nullptr };
+    wxSizerItem*                        m_printer_parts_row { nullptr };
+    std::vector<std::string>            m_nozzle_presets;   // item of the nozzle combo -> printer preset
+    // Rows of the preset chooser shown for the filament (FFF) and the resin (SLA) printers, and for the Prusa SLX.
+    std::vector<wxSizerItem*>           m_fff_rows, m_sla_rows, m_slx_rows;
+    wxSizerItem*                        m_full_spectrum_row { nullptr };
 
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
@@ -137,6 +148,10 @@ class Sidebar : public wxPanel
     void update_all_preset_comboboxes();
     void update_reslice_btn_tooltip();
     void init_workflow_combo(int margin_5);
+    void init_printer_parts();
+    void update_printer_parts();
+    void on_select_nozzle();
+    void on_select_bed();
 
     void show_preset_comboboxes();
     // Tisma colors of the panel and of the action buttons.

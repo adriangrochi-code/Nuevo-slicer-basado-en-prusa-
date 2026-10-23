@@ -8,9 +8,14 @@
 
 - Like the printers, the FTPS server requires the data connection to resume the TLS session of the control connection
   (vsftpd require_ssl_reuse) and answers PASV with the address 0.0.0.0.
+- The camera of the A1 and P1 (OpenBambuAPI, video.md): TLS, an 80-byte authentication packet, then JPEG images each
+  after a 16-byte header. The images of --camera-images (JPEG files, in turn) or a tiny invalid placeholder.
+- With --ssdp-port, the announcement of the printers (NOTIFY with Location, USN and DevName.bambu.com) to
+  127.0.0.1:<port> every second.
 
 Python standard library and the openssl command only (OPENSSL=<path> if it is not in PATH). Usage:
-    python3 tools/bambu/fake_printer.py --dir /tmp/fake [--mqtt-port 18883] [--ftps-port 18990]
+    python3 tools/bambu/fake_printer.py --dir /tmp/fake [--mqtt-port 18883] [--ftps-port 18990] [--camera-port 16000]
+        [--camera-images a.jpg b.jpg] [--ssdp-port 11990]
 """
 import argparse
 import json
@@ -21,6 +26,7 @@ import ssl
 import struct
 import subprocess
 import threading
+import time
 
 SERIAL = "01P00A000000001"
 ACCESS_CODE = "12345678"
@@ -215,6 +221,48 @@ class FtpsHandler(socketserver.StreamRequestHandler):
             return
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Camera of the A1 and P1
+# ---------------------------------------------------------------------------------------------------------------------
+class CameraHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        try:
+            auth = b""
+            while len(auth) < 80:
+                chunk = self.request.recv(80 - len(auth))
+                if not chunk:
+                    return
+                auth += chunk
+            size, kind = struct.unpack("<II", auth[:8])
+            user = auth[16:48].rstrip(b"\0").decode()
+            password = auth[48:80].rstrip(b"\0").decode()
+            # A wrong access code: the connection is closed (what the printers do is not documented).
+            if size != 0x40 or kind != 0x3000 or user != "bblp" or password != ACCESS_CODE:
+                return
+            images = self.server.images or [b"\xff\xd8fake image\xff\xd9"]
+            n = 0
+            while True:
+                image = images[n % len(images)]
+                self.request.sendall(struct.pack("<IIII", len(image), 0, 1, 0) + image)
+                n += 1
+                time.sleep(0.2)
+        except (ssl.SSLError, OSError):
+            return
+
+
+def announce(port, every_s=1.0):
+    """The NOTIFY message of the printers, as captured from an X1C (Bambu Lab forum, "Use SSDP standards")."""
+    message = ("NOTIFY * HTTP/1.1\r\nHOST: 239.255.255.250:1990\r\nServer: Buildroot/2018.02-rc3 UPnP/1.0 ssdpd/1.8\r\n"
+               "Location: 127.0.0.1\r\nNT: urn:bambulab-com:device:3dprinter:1\r\nNTS: ssdp:alive\r\n"
+               f"USN: {SERIAL}\r\nCache-Control: max-age=1800\r\nDevModel.bambu.com: C11\r\n"
+               "DevName.bambu.com: Fake P1P\r\nDevSignal.bambu.com: -30\r\nDevConnect.bambu.com: lan\r\n"
+               "DevBind.bambu.com: free\r\n\r\n").encode()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while True:
+        sock.sendto(message, ("127.0.0.1", port))
+        time.sleep(every_s)
+
+
 class TlsServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
@@ -233,16 +281,24 @@ def main():
     parser.add_argument("--dir", required=True)
     parser.add_argument("--mqtt-port", type=int, default=18883)
     parser.add_argument("--ftps-port", type=int, default=18990)
+    parser.add_argument("--camera-port", type=int, default=16000)
+    parser.add_argument("--camera-images", nargs="*", default=[])
+    parser.add_argument("--ssdp-port", type=int, default=0)
     parser.add_argument("--no-session-reuse", action="store_true",
                         help="accept FTPS data connections that do not resume the TLS session")
     args = parser.parse_args()
     os.makedirs(args.dir, exist_ok=True)
     tls = tls_context(*make_certificates(args.dir))
+    camera = TlsServer(("127.0.0.1", args.camera_port), CameraHandler, tls, args.dir)
+    camera.images = [open(p, "rb").read() for p in args.camera_images]
     servers = [TlsServer(("127.0.0.1", args.mqtt_port), MqttHandler, tls, args.dir),
-               TlsServer(("127.0.0.1", args.ftps_port), FtpsHandler, tls, args.dir, not args.no_session_reuse)]
+               TlsServer(("127.0.0.1", args.ftps_port), FtpsHandler, tls, args.dir, not args.no_session_reuse), camera]
     for s in servers[1:]:
         threading.Thread(target=s.serve_forever, daemon=True).start()
-    print(f"fake printer {SERIAL}: MQTT {args.mqtt_port}, FTPS {args.ftps_port}, access code {ACCESS_CODE}", flush=True)
+    if args.ssdp_port:
+        threading.Thread(target=announce, args=(args.ssdp_port,), daemon=True).start()
+    print(f"fake printer {SERIAL}: MQTT {args.mqtt_port}, FTPS {args.ftps_port}, camera {args.camera_port}, "
+          f"access code {ACCESS_CODE}", flush=True)
     servers[0].serve_forever()
 
 

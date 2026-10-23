@@ -24,6 +24,9 @@ licencia de la versión exacta antes de cualquier distribución. Esto no es ases
   `PrusaSlicer*.po` / `PrusaSlicer.mo` porque los busca por `SLIC3R_APP_KEY`.
 - Código de **OrcaSlicer** (AGPL-3.0): se puede portar con atribución. El suite de calibraciones actual está
   inspirado en Orca, pero el código y los modelos son propios; no se copió código de Orca.
+  El host de impresoras **Flashforge** (`src/slic3r/Utils/Flashforge.cpp`) sí está basado en el de OrcaSlicer
+  (`src/slic3r/Utils/Flashforge.cpp`, rama `main` del 20-10-2026), con atribución en el encabezado; ver
+  `docs/FLASHFORGE.md`.
 
 ### Compatibilidad de licencias con AGPL-3.0
 
@@ -96,6 +99,12 @@ Solo valores numéricos de las hojas de datos técnicas de los fabricantes (no s
 Las hojas no dan densidad ni coeficiente de Poisson: se usan 1,15 g/cm³ y 0,35, valores típicos de fotopolímeros
 curados (marcados así en la nota de cada material).
 
+### Código adaptado de PrusaSlicer 3.0
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| Shaders y parámetros del render de PrusaSlicer 3.0 (`resources/shaders/140/ao_*.fs`, `gbuffer_ao.fs`, `Scene.cpp`, `LightingHelper.hpp`, `GraphicsSettings.hpp`) | 3.0.0-alpha12 | AGPL-3.0, Copyright (c) Prusa Research (la misma que Tisma) | Sombras, oclusión ambiental, codificación de normales y PBR adaptados en `resources/shaders/140/tisma_*.fs` y `src/slic3r/GUI/TismaShading.cpp`, con la cita en cada archivo. Ver `docs/RENDER.md`. |
+
 ### App de Android (`android/`)
 
 | Origen | Versión | Licencia | Notas |
@@ -131,6 +140,8 @@ La app es código propio (AGPL-3.0 como el resto de Tisma); no se usa código de
 | semver | MIT |
 | stb_dxt / stb_image | dominio público / MIT |
 | tcbspan | BSL-1.0 |
+| vulkan (Khronos Vulkan-Headers `vulkan-sdk-1.3.275.0`, commit `217e93c`: solo las cabeceras C `vulkan.h`, `vk_platform.h`, `vulkan_core.h` y `vk_video/`) | Apache-2.0 OR MIT (`bundled_deps/vulkan/LICENSE.md`); compatible con AGPL-3.0. Para el análisis estructural en la GPU. |
+| volk (`vulkan-sdk-1.3.275.0`, commit `f2a16e3`) | MIT (`bundled_deps/volk/LICENSE.md`). Carga Vulkan al ejecutar: no hace falta el SDK ni el driver para compilar o usar Tisma. |
 
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 

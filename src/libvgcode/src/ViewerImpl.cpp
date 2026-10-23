@@ -246,6 +246,11 @@ unsigned int init_shader(const std::string& shader_name, const char* vertex_shad
     glcheck();
     glsafe(glAttachShader(shader_id, vs_id));
     glsafe(glAttachShader(shader_id, fs_id));
+#ifndef ENABLE_OPENGL_ES
+    // Tisma Slicer (phase 7c): outputs of the toolpaths shaders to the G-buffer (color, encoded eye normal).
+    glsafe(glBindFragDataLocation(shader_id, 0, "fragment_color"));
+    glsafe(glBindFragDataLocation(shader_id, 1, "tisma_out_normal"));
+#endif // ENABLE_OPENGL_ES
     glsafe(glLinkProgram(shader_id));
     res = check_program(shader_id);
     if (!res.empty()) {
@@ -1874,7 +1879,7 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     glsafe(glUniformMatrix4fv(m_uni_segments_projection_matrix_id, 1, GL_FALSE, projection_matrix.data()));
     glsafe(glUniform3fv(m_uni_segments_camera_position_id, 1, camera_position.data()));
 #ifndef ENABLE_OPENGL_ES
-    const int prev_shadow_texture = apply_shading(m_uni_shading[0]);
+    const int prev_shadow_texture = apply_shading(m_uni_shading[0], m_shading.segments_material);
 #endif // ENABLE_OPENGL_ES
 
     glsafe(glDisable(GL_CULL_FACE));
@@ -1947,12 +1952,22 @@ void ViewerImpl::init_shading_uniforms(ShadingUniforms& uniforms, unsigned int s
     uniforms.eye_to_shadow_matrix = glGetUniformLocation(shader_id, "eye_to_shadow_matrix");
     uniforms.shadow_map           = glGetUniformLocation(shader_id, "shadow_map");
     uniforms.shadow_intensity     = glGetUniformLocation(shader_id, "shadow_intensity");
+    uniforms.gbuffer              = glGetUniformLocation(shader_id, "gbuffer");
+    uniforms.gbuffer_material     = glGetUniformLocation(shader_id, "gbuffer_material");
     glcheck();
 }
 
-int ViewerImpl::apply_shading(const ShadingUniforms& uniforms)
+int ViewerImpl::apply_shading(const ShadingUniforms& uniforms, float gbuffer_material)
 {
-    const bool shadows = m_shading.shadow_map_tex_id != 0;
+    if (uniforms.gbuffer != -1)
+        glsafe(glUniform1i(uniforms.gbuffer, m_shading.gbuffer ? 1 : 0));
+    if (uniforms.gbuffer_material != -1)
+        glsafe(glUniform1f(uniforms.gbuffer_material, gbuffer_material));
+    const bool shadows = !m_shading.gbuffer && m_shading.shadow_map_tex_id != 0;
+    // Always on its own unit: a sampler2D left on unit 0, the one of the samplerBuffer of the positions, makes the
+    // draw calls invalid.
+    if (uniforms.shadow_map != -1)
+        glsafe(glUniform1i(uniforms.shadow_map, SHADOW_MAP_TEXTURE_UNIT));
     if (uniforms.per_pixel != -1)
         glsafe(glUniform1i(uniforms.per_pixel, m_shading.per_pixel ? 1 : 0));
     if (uniforms.shadows_enabled != -1)
@@ -1963,8 +1978,6 @@ int ViewerImpl::apply_shading(const ShadingUniforms& uniforms)
         glsafe(glUniformMatrix4fv(uniforms.eye_to_shadow_matrix, 1, GL_FALSE, m_shading.eye_to_shadow_matrix.data()));
     if (uniforms.shadow_intensity != -1)
         glsafe(glUniform1f(uniforms.shadow_intensity, m_shading.shadow_intensity));
-    if (uniforms.shadow_map != -1)
-        glsafe(glUniform1i(uniforms.shadow_map, SHADOW_MAP_TEXTURE_UNIT));
     int prev_texture = 0;
     glsafe(glActiveTexture(GL_TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT));
     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_texture));
@@ -2008,7 +2021,7 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glUniformMatrix4fv(m_uni_options_view_matrix_id, 1, GL_FALSE, view_matrix.data()));
     glsafe(glUniformMatrix4fv(m_uni_options_projection_matrix_id, 1, GL_FALSE, projection_matrix.data()));
 #ifndef ENABLE_OPENGL_ES
-    const int prev_shadow_texture = apply_shading(m_uni_shading[1]);
+    const int prev_shadow_texture = apply_shading(m_uni_shading[1], m_shading.options_material);
 #endif // ENABLE_OPENGL_ES
 
     glsafe(glEnable(GL_CULL_FACE));

@@ -3,11 +3,15 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Multigrid.hpp"
+#include "Gpu.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <map>
 #include <unordered_map>
+
+#include <boost/log/trivial.hpp>
 
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
@@ -119,8 +123,15 @@ static Multigrid::Matrix24d octant_interpolation(int ox, int oy, int oz)
 
 bool Multigrid::build(FineLevel fine, const ElementMatrix &element_matrix, const std::function<bool()> &cancel)
 {
+    m_gpu.reset();
     m_levels.clear();
     m_direct.reset();
+    // The matrices of the elements of level 0 for the GPU.
+    FineLevel table;
+    table.gpu            = fine.gpu;
+    table.matrices       = std::move(fine.matrices);
+    table.element_matrix = std::move(fine.element_matrix);
+    table.element_scale  = std::move(fine.element_scale);
     {
         auto level = std::make_unique<Level>();
         level->size     = fine.size;
@@ -312,6 +323,8 @@ bool Multigrid::build(FineLevel fine, const ElementMatrix &element_matrix, const
         m_direct.reset();
         return false;
     }
+    if (table.gpu && ! table.matrices.empty() && ! (cancel && cancel()) && ! build_gpu(table))
+        m_gpu.reset();
     return true;
 }
 
@@ -331,14 +344,7 @@ void Multigrid::cycle(size_t l, const std::vector<double> &b, std::vector<double
 {
     const Level &level = *m_levels[l];
     if (l + 1 == m_levels.size()) {
-        Eigen::Map<const Eigen::VectorXd> bv(b.data(), Eigen::Index(b.size()));
-        Eigen::VectorXd bf = bv;
-        for (size_t d = 0; d < b.size(); ++ d)
-            if (level.fixed[d])
-                bf[Eigen::Index(d)] = 0.;
-        const Eigen::VectorXd xv = m_direct->solver.solve(bf);
-        for (size_t d = 0; d < x.size(); ++ d)
-            x[d] = level.fixed[d] ? 0. : xv[Eigen::Index(d)];
+        solve_coarsest(b, x);
         return;
     }
     std::fill(x.begin(), x.end(), 0.);
@@ -371,10 +377,322 @@ void Multigrid::cycle(size_t l, const std::vector<double> &b, std::vector<double
     smooth(level, b, x, SMOOTH_SWEEPS);
 }
 
+void Multigrid::solve_coarsest(const std::vector<double> &b, std::vector<double> &x) const
+{
+    const Level &level = *m_levels.back();
+    Eigen::Map<const Eigen::VectorXd> bv(b.data(), Eigen::Index(b.size()));
+    Eigen::VectorXd bf = bv;
+    for (size_t d = 0; d < b.size(); ++ d)
+        if (level.fixed[d])
+            bf[Eigen::Index(d)] = 0.;
+    const Eigen::VectorXd xv = m_direct->solver.solve(bf);
+    x.resize(b.size());
+    for (size_t d = 0; d < x.size(); ++ d)
+        x[d] = level.fixed[d] ? 0. : xv[Eigen::Index(d)];
+}
+
 void Multigrid::apply(const std::vector<double> &r, std::vector<double> &z) const
 {
+    if (m_gpu && apply_gpu(r, z))
+        return;
     z.assign(r.size(), 0.);
     cycle(0, r, z);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The V-cycle on the GPU: the same steps as cycle() in single precision, with the shaders of src/libtisma_fea/src/gpu
+// (fea_apply: a Jacobi sweep or the residual, fea_restrict, fea_prolong). The command buffers are recorded once: the
+// first one uploads the residual and goes down to the coarsest level, whose right hand side is read back and solved
+// on the CPU; the second one uploads its solution, goes up and the result is read back.
+
+struct Multigrid::Gpu
+{
+    gpu::Context *ctx { nullptr };
+    struct LevelBuffers {
+        uint32_t    nodes { 0 };
+        float       damping { 0.f };
+        bool        per_element { false };
+        gpu::Buffer elem_nodes, elem_mat, matrices, node_adj, free, dinv, x, b, t;
+        // Interpolation from the next coarser level (prolongation) and restriction to it (gathered on its nodes).
+        gpu::Buffer parents, weights, offsets, children, child_weights;
+        VkDescriptorSet apply_xt { VK_NULL_HANDLE }, apply_tx { VK_NULL_HANDLE }, restrict_set { VK_NULL_HANDLE }, prolong_set { VK_NULL_HANDLE };
+    };
+    std::vector<LevelBuffers> levels;
+    gpu::Buffer      dummy;
+    gpu::Buffer      staging_r, staging_z, staging_cb, staging_cx;
+    VkDescriptorPool pool { VK_NULL_HANDLE };
+    VkCommandBuffer  down { VK_NULL_HANDLE }, up { VK_NULL_HANDLE };
+
+    ~Gpu()
+    {
+        if (ctx == nullptr)
+            return;
+        std::lock_guard<std::mutex> lock(ctx->mutex());
+        ctx->free_command_buffer(down);
+        ctx->free_command_buffer(up);
+        if (pool != VK_NULL_HANDLE)
+            vkDestroyDescriptorPool(ctx->device(), pool, nullptr);
+        for (LevelBuffers &l : levels)
+            for (gpu::Buffer *b : { &l.elem_nodes, &l.elem_mat, &l.matrices, &l.node_adj, &l.free, &l.dinv, &l.x, &l.b, &l.t,
+                                    &l.parents, &l.weights, &l.offsets, &l.children, &l.child_weights })
+                ctx->destroy_buffer(*b);
+        for (gpu::Buffer *b : { &dummy, &staging_r, &staging_z, &staging_cb, &staging_cx })
+            ctx->destroy_buffer(*b);
+    }
+};
+
+namespace {
+
+template<class T> bool device_buffer(gpu::Context &ctx, const std::vector<T> &data, gpu::Buffer &out)
+{
+    const size_t bytes = std::max<size_t>(data.size() * sizeof(T), 4);
+    if (bytes > ctx.max_storage_buffer_range() || ! ctx.create_buffer(bytes, false, out))
+        return false;
+    return data.empty() || ctx.upload(out, data.data(), data.size() * sizeof(T));
+}
+
+VkDescriptorSet descriptor_set(gpu::Context &ctx, VkDescriptorPool pool, gpu::Kernel kernel, std::initializer_list<const gpu::Buffer *> buffers)
+{
+    const gpu::Context::Pipeline &p = ctx.pipeline(kernel);
+    VkDescriptorSetAllocateInfo ai { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    ai.descriptorPool     = pool;
+    ai.descriptorSetCount = 1;
+    ai.pSetLayouts        = &p.set_layout;
+    VkDescriptorSet set = VK_NULL_HANDLE;
+    if (vkAllocateDescriptorSets(ctx.device(), &ai, &set) != VK_SUCCESS)
+        return VK_NULL_HANDLE;
+    std::vector<VkDescriptorBufferInfo> infos;
+    infos.reserve(buffers.size());
+    for (const gpu::Buffer *b : buffers)
+        infos.push_back({ b->buffer, 0, VK_WHOLE_SIZE });
+    std::vector<VkWriteDescriptorSet> writes(infos.size());
+    for (size_t i = 0; i < infos.size(); ++ i) {
+        writes[i].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[i].dstSet          = set;
+        writes[i].dstBinding      = uint32_t(i);
+        writes[i].descriptorCount = 1;
+        writes[i].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[i].pBufferInfo     = &infos[i];
+    }
+    vkUpdateDescriptorSets(ctx.device(), uint32_t(writes.size()), writes.data(), 0, nullptr);
+    return set;
+}
+
+struct ApplyParams { uint32_t nodes; uint32_t per_element; float c0; float c1; uint32_t use_dinv; };
+
+void dispatch(gpu::Context &ctx, VkCommandBuffer cmd, gpu::Kernel kernel, VkDescriptorSet set, const void *push, uint32_t push_size, uint32_t items)
+{
+    const gpu::Context::Pipeline &p = ctx.pipeline(kernel);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.pipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.layout, 0, 1, &set, 0, nullptr);
+    vkCmdPushConstants(cmd, p.layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_size, push);
+    vkCmdDispatch(cmd, (items + 63) / 64, 1, 1);
+    gpu::barrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
+                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT);
+}
+
+void copy(VkCommandBuffer cmd, const gpu::Buffer &src, const gpu::Buffer &dst, VkDeviceSize size)
+{
+    VkBufferCopy region { 0, 0, size };
+    vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
+    gpu::barrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
+                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_READ_BIT);
+}
+
+} // namespace
+
+bool Multigrid::build_gpu(const FineLevel &table)
+{
+    gpu::Context *ctx = gpu::Context::get();
+    if (ctx == nullptr || m_levels.size() < 2)
+        return false;
+    // Declared before the lock: when the GPU cannot be used, it is released (which locks the context) after it.
+    auto g = std::make_unique<Gpu>();
+    g->ctx = ctx;
+    std::lock_guard<std::mutex> lock(ctx->mutex());
+    const size_t n_levels = m_levels.size();
+    // The coarsest level is solved on the CPU: the GPU levels are all the others, plus the vectors of the coarsest.
+    g->levels.resize(n_levels);
+    for (size_t l = 0; l < n_levels; ++ l) {
+        const Level   &level = *m_levels[l];
+        Gpu::LevelBuffers &lb = g->levels[l];
+        lb.nodes   = uint32_t(level.nodes.size());
+        lb.damping = float(level.damping);
+        const size_t dofs = level.dofs();
+        for (gpu::Buffer *b : { &lb.x, &lb.b, &lb.t })
+            if (! ctx->create_buffer(dofs * sizeof(float), false, *b))
+                return false;
+        std::vector<float> free_dof(dofs), dinv(dofs);
+        for (size_t d = 0; d < dofs; ++ d) {
+            free_dof[d] = level.fixed[d] ? 0.f : 1.f;
+            dinv[d]     = level.diag[d] > 0. ? float(1. / level.diag[d]) : 0.f;
+        }
+        if (! device_buffer(*ctx, free_dof, lb.free) || ! device_buffer(*ctx, dinv, lb.dinv))
+            return false;
+        if (l + 1 == n_levels)
+            break;
+        // Elements, their matrices and the elements around every node.
+        std::vector<int> elem_nodes(level.elements.size() * 8), node_adj(level.nodes.size() * 8, -1);
+        std::vector<uint8_t> adj_count(level.nodes.size(), 0);
+        for (size_t e = 0; e < level.elements.size(); ++ e)
+            for (int a = 0; a < 8; ++ a) {
+                const int n = level.elements[e][a];
+                elem_nodes[8 * e + a] = n;
+                if (adj_count[n] < 8)
+                    node_adj[8 * size_t(n) + adj_count[n] ++] = int(8 * e + a);
+            }
+        if (! device_buffer(*ctx, elem_nodes, lb.elem_nodes) || ! device_buffer(*ctx, node_adj, lb.node_adj))
+            return false;
+        std::vector<float> matrices;
+        if (l == 0) {
+            if (table.element_matrix.size() != level.elements.size() || table.element_scale.size() != level.elements.size())
+                return false;
+            matrices.reserve(table.matrices.size() * 576);
+            for (const Matrix24d &m : table.matrices)
+                for (int r = 0; r < 24; ++ r)
+                    for (int c = 0; c < 24; ++ c)
+                        matrices.push_back(float(m(r, c)));
+            struct ElementMatrix { int ma; int mb; float sa; float sb; };
+            std::vector<ElementMatrix> elem_mat(level.elements.size());
+            for (size_t e = 0; e < elem_mat.size(); ++ e)
+                elem_mat[e] = { table.element_matrix[e][0], table.element_matrix[e][1], table.element_scale[e][0], table.element_scale[e][1] };
+            if (! device_buffer(*ctx, elem_mat, lb.elem_mat))
+                return false;
+        } else {
+            lb.per_element = true;
+            matrices.reserve(level.kmat.size() * 576);
+            for (const Matrix24f &m : level.kmat)
+                for (int r = 0; r < 24; ++ r)
+                    for (int c = 0; c < 24; ++ c)
+                        matrices.push_back(m(r, c));
+        }
+        if (! device_buffer(*ctx, matrices, lb.matrices))
+            return false;
+        // Transfers to the next coarser level.
+        const Level &coarse = *m_levels[l + 1];
+        std::vector<int>   parents(level.nodes.size() * 8, -1);
+        std::vector<float> weights(level.nodes.size() * 8, 0.f);
+        std::vector<std::vector<std::pair<int, float>>> children(coarse.nodes.size());
+        for (size_t n = 0; n < level.nodes.size(); ++ n)
+            for (int q = 0; q < 8 && level.parents[n][q] >= 0; ++ q) {
+                parents[8 * n + q] = level.parents[n][q];
+                weights[8 * n + q] = level.weights[n][q];
+                children[level.parents[n][q]].emplace_back(int(n), level.weights[n][q]);
+            }
+        std::vector<uint32_t> offsets(coarse.nodes.size() + 1, 0);
+        std::vector<int>      child_nodes;
+        std::vector<float>    child_weights;
+        for (size_t c = 0; c < children.size(); ++ c) {
+            for (const auto &[n, w] : children[c]) {
+                child_nodes.push_back(n);
+                child_weights.push_back(w);
+            }
+            offsets[c + 1] = uint32_t(child_nodes.size());
+        }
+        if (! device_buffer(*ctx, parents, lb.parents) || ! device_buffer(*ctx, weights, lb.weights) ||
+            ! device_buffer(*ctx, offsets, lb.offsets) || ! device_buffer(*ctx, child_nodes, lb.children) ||
+            ! device_buffer(*ctx, child_weights, lb.child_weights))
+            return false;
+    }
+    if (! ctx->create_buffer(4, false, g->dummy))
+        return false;
+    const size_t fine_bytes   = m_levels.front()->dofs() * sizeof(float);
+    const size_t coarse_bytes = m_levels.back()->dofs() * sizeof(float);
+    if (! ctx->create_buffer(fine_bytes, true, g->staging_r) || ! ctx->create_buffer(fine_bytes, true, g->staging_z) ||
+        ! ctx->create_buffer(coarse_bytes, true, g->staging_cb) || ! ctx->create_buffer(coarse_bytes, true, g->staging_cx))
+        return false;
+
+    // Descriptor sets.
+    const uint32_t gpu_levels = uint32_t(n_levels - 1);
+    VkDescriptorPoolSize pool_size { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, gpu_levels * (2 * 9 + 6 + 5) };
+    VkDescriptorPoolCreateInfo dpi { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    dpi.maxSets       = gpu_levels * 4;
+    dpi.poolSizeCount = 1;
+    dpi.pPoolSizes    = &pool_size;
+    if (vkCreateDescriptorPool(ctx->device(), &dpi, nullptr, &g->pool) != VK_SUCCESS)
+        return false;
+    for (size_t l = 0; l + 1 < n_levels; ++ l) {
+        Gpu::LevelBuffers &lb = g->levels[l];
+        Gpu::LevelBuffers &cb = g->levels[l + 1];
+        const gpu::Buffer *elem_mat = lb.per_element ? &g->dummy : &lb.elem_mat;
+        lb.apply_xt = descriptor_set(*ctx, g->pool, gpu::Kernel::Apply, { &lb.elem_nodes, elem_mat, &lb.matrices, &lb.node_adj, &lb.free, &lb.dinv, &lb.x, &lb.b, &lb.t });
+        lb.apply_tx = descriptor_set(*ctx, g->pool, gpu::Kernel::Apply, { &lb.elem_nodes, elem_mat, &lb.matrices, &lb.node_adj, &lb.free, &lb.dinv, &lb.t, &lb.b, &lb.x });
+        lb.restrict_set = descriptor_set(*ctx, g->pool, gpu::Kernel::Restrict, { &lb.offsets, &lb.children, &lb.child_weights, &cb.free, &lb.t, &cb.b });
+        lb.prolong_set  = descriptor_set(*ctx, g->pool, gpu::Kernel::Prolong, { &lb.parents, &lb.weights, &lb.free, &cb.x, &lb.x });
+        if (! lb.apply_xt || ! lb.apply_tx || ! lb.restrict_set || ! lb.prolong_set)
+            return false;
+    }
+
+    // Command buffers.
+    g->down = ctx->allocate_command_buffer();
+    g->up   = ctx->allocate_command_buffer();
+    if (g->down == VK_NULL_HANDLE || g->up == VK_NULL_HANDLE)
+        return false;
+    VkCommandBufferBeginInfo bi { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    auto smooth_sweeps = [&](VkCommandBuffer cmd, const Gpu::LevelBuffers &lb) {
+        // SMOOTH_SWEEPS (2) Jacobi sweeps: x -> t -> x.
+        static_assert(SMOOTH_SWEEPS == 2, "the sweeps alternate between x and t");
+        const ApplyParams p { lb.nodes, lb.per_element ? 1u : 0u, 1.f, lb.damping, 1u };
+        dispatch(*ctx, cmd, gpu::Kernel::Apply, lb.apply_xt, &p, sizeof(p), lb.nodes);
+        dispatch(*ctx, cmd, gpu::Kernel::Apply, lb.apply_tx, &p, sizeof(p), lb.nodes);
+    };
+    vkBeginCommandBuffer(g->down, &bi);
+    copy(g->down, g->staging_r, g->levels[0].b, fine_bytes);
+    for (size_t l = 0; l + 1 < n_levels; ++ l) {
+        const Gpu::LevelBuffers &lb = g->levels[l];
+        vkCmdFillBuffer(g->down, lb.x.buffer, 0, VK_WHOLE_SIZE, 0);
+        gpu::barrier(g->down, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+        smooth_sweeps(g->down, lb);
+        const ApplyParams residual { lb.nodes, lb.per_element ? 1u : 0u, 0.f, 1.f, 0u };
+        dispatch(*ctx, g->down, gpu::Kernel::Apply, lb.apply_xt, &residual, sizeof(residual), lb.nodes);
+        const uint32_t coarse_nodes = g->levels[l + 1].nodes;
+        dispatch(*ctx, g->down, gpu::Kernel::Restrict, lb.restrict_set, &coarse_nodes, sizeof(coarse_nodes), coarse_nodes);
+    }
+    copy(g->down, g->levels.back().b, g->staging_cb, coarse_bytes);
+    if (vkEndCommandBuffer(g->down) != VK_SUCCESS)
+        return false;
+    vkBeginCommandBuffer(g->up, &bi);
+    copy(g->up, g->staging_cx, g->levels.back().x, coarse_bytes);
+    for (size_t l = n_levels - 1; l-- > 0;) {
+        const Gpu::LevelBuffers &lb = g->levels[l];
+        dispatch(*ctx, g->up, gpu::Kernel::Prolong, lb.prolong_set, &lb.nodes, sizeof(lb.nodes), lb.nodes);
+        smooth_sweeps(g->up, lb);
+    }
+    copy(g->up, g->levels.front().x, g->staging_z, fine_bytes);
+    if (vkEndCommandBuffer(g->up) != VK_SUCCESS)
+        return false;
+    m_gpu = std::move(g);
+    return true;
+}
+
+bool Multigrid::apply_gpu(const std::vector<double> &r, std::vector<double> &z) const
+{
+    Gpu &g = *m_gpu;
+    std::lock_guard<std::mutex> lock(g.ctx->mutex());
+    float *rf = static_cast<float *>(g.staging_r.mapped);
+    for (size_t d = 0; d < r.size(); ++ d)
+        rf[d] = float(r[d]);
+    if (! g.ctx->submit_and_wait(g.down))
+        return false;
+    const Level &coarse = *m_levels.back();
+    std::vector<double> bc(coarse.dofs()), xc;
+    const float *bcf = static_cast<const float *>(g.staging_cb.mapped);
+    for (size_t d = 0; d < bc.size(); ++ d)
+        bc[d] = double(bcf[d]);
+    solve_coarsest(bc, xc);
+    float *xcf = static_cast<float *>(g.staging_cx.mapped);
+    for (size_t d = 0; d < xc.size(); ++ d)
+        xcf[d] = float(xc[d]);
+    if (! g.ctx->submit_and_wait(g.up))
+        return false;
+    const float *zf = static_cast<const float *>(g.staging_z.mapped);
+    z.resize(r.size());
+    for (size_t d = 0; d < z.size(); ++ d)
+        z[d] = double(zf[d]);
+    return true;
 }
 
 } // namespace Fea

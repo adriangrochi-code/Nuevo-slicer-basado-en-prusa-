@@ -37,6 +37,7 @@
 
 #include "Config.hpp"
 #include "I18N.hpp"
+#include "BedType.hpp"
 #include "format.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
@@ -111,6 +112,7 @@ static const t_config_enum_values s_keys_map_PrintHostType {
     { "mks",            htMKS },
     { "prusaconnectnew", htPrusaConnectNew },
     { "bambulab",       htBambuLan },
+    { "flashforge",     htFlashforge },
 
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrintHostType)
@@ -573,6 +575,15 @@ void PrintConfigDef::init_common_params()
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionBool(false));
     
+    def = this->add("flashforge_serial_number", coString);
+    def->label = L("Serial number");
+    def->tooltip = L("Flashforge printers: the serial number shown on the printer (Settings > About). With the access "
+                     "code of the LAN mode in the API key field, Tisma uses the local API of the printer (Adventurer 5M, "
+                     "5M Pro, AD5X); without them, the older G-code console.");
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("preset_names", coStrings);
     def->label = L("Printer preset names");
     def->tooltip = L("Names of presets related to the physical printer");
@@ -1480,7 +1491,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Number of cooling moves");
     def->tooltip = L("Filament is cooled by being moved back and forth in the "
                    "cooling tubes. Specify desired number of these moves.");
-    def->max = 0;
+    def->min = 0;
     def->max = 20;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts { 4 });
@@ -1816,7 +1827,7 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Heated build plate temperature for the first layer. Set this to zero to disable "
                    "bed temperature control commands in the output.");
     def->sidetext = L("°C");
-    def->max = 0;
+    def->min = 0;
     def->max = 300;
     def->set_default_value(new ConfigOptionInts { 0 });
 
@@ -2728,7 +2739,8 @@ void PrintConfigDef::init_fff_params()
         { "astrobox",       "AstroBox" },
         { "repetier",       "Repetier" },
         { "mks",            "MKS" },
-        { "bambulab",       "Bambu Lab (LAN)" }
+        { "bambulab",       "Bambu Lab (LAN)" },
+        { "flashforge",     "Flashforge" }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
@@ -4354,6 +4366,58 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm");
     def->set_default_value(new ConfigOptionFloat(5.));
 
+    // Tisma: the plate chosen in the sidebar, the value of curr_bed_type of OrcaSlicer (BedType.hpp).
+    def = this->add("curr_bed_type", coString);
+    def->label = L("Bed type");
+    def->tooltip = L("The bed (build plate) used: the bed temperatures of the filament for it are used.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("support_multi_bed_types", coBool);
+    def->label = L("Choose the bed type");
+    def->tooltip = L("The printer has interchangeable beds (build plates): the bed is chosen in the sidebar and the "
+                     "filaments give a bed temperature for each one.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("default_bed_type", coString);
+    def->label = L("Default bed type");
+    def->tooltip = L("The bed chosen when this printer is selected.");
+    def->mode = comAdvanced;
+    // The plates of bed_types() (BedType.cpp).
+    def->set_enum_values(ConfigOptionDef::GUIType::select_close, {
+        { "",                    L("None") },
+        { "Cool Plate",          L("Smooth Cool Plate") },
+        { "Engineering Plate",   L("Engineering Plate") },
+        { "High Temp Plate",     L("Smooth High Temp Plate") },
+        { "Textured PEI Plate",  L("Textured PEI Plate") },
+        { "Textured Cool Plate", L("Textured Cool Plate") },
+        { "Supertack Plate",     L("Cool Plate (SuperTack)") } });
+    def->set_default_value(new ConfigOptionString());
+
+    // The bed temperatures of a filament for each bed type, with the names of OrcaSlicer.
+    for (const BedType &bed : bed_types()) {
+        def = this->add(bed.first_layer_temp_key, coInts);
+        def->label = L("First layer");
+        def->full_label = L("First layer bed temperature");
+        def->tooltip = L("Bed temperature of the first layer on this bed. 0: the first layer bed temperature of the "
+                         "filament.");
+        def->sidetext = L("°C");
+        def->min = 0;
+        def->max = 300;
+        def->mode = comAdvanced;
+        def->set_default_value(new ConfigOptionInts { 0 });
+
+        def = this->add(bed.temp_key, coInts);
+        def->label = L("Other layers");
+        def->full_label = L("Bed temperature");
+        def->tooltip = L("Bed temperature of the layers after the first one on this bed. 0: the bed temperature of "
+                         "the filament.");
+        def->sidetext = L("°C");
+        def->min = 0;
+        def->max = 300;
+        def->mode = comAdvanced;
+        def->set_default_value(new ConfigOptionInts { 0 });
+    }
 
     def = this->add("wipe_tower_width", coFloat);
     def->label = L("Width");

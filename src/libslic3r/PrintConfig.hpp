@@ -88,7 +88,10 @@ enum class MachineLimitsUsage {
 };
 
 enum PrintHostType {
-   htPrusaLink, htPrusaConnect, htOctoPrint, htMoonraker, htDuet, htFlashAir, htAstroBox, htRepetier, htMKS, htBambuLan, htPrusaConnectNew
+   htPrusaLink, htPrusaConnect, htOctoPrint, htMoonraker, htDuet, htFlashAir, htAstroBox, htRepetier, htMKS, htBambuLan, htFlashforge,
+   // Not in the list of the "host_type" option: keep it last, the physical printer dialog takes the value of a host
+   // type as its position in that list.
+   htPrusaConnectNew
 };
 
 enum AuthorizationType {
@@ -1112,6 +1115,7 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloat,              calib_end))
     ((ConfigOptionFloat,              calib_step))
     ((ConfigOptionFloat,              calib_band_height))
+    ((ConfigOptionString,             curr_bed_type))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(

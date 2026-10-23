@@ -781,6 +781,21 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         fl.fixed    = fixed;
         fl.diag     = diag;
         fl.multiply = multiply;
+        if (setup.gpu) {
+            // The matrices for the GPU: those of the layer orientations, then those of the aligned infill.
+            fl.gpu = true;
+            for (const Orientation &o : orientations)
+                fl.matrices.push_back(o.ke);
+            for (const InfillGroup &g : infill_groups)
+                fl.matrices.push_back(g.ke);
+            fl.element_matrix.resize(elements.size());
+            fl.element_scale.resize(elements.size());
+            for (size_t e = 0; e < elements.size(); ++ e) {
+                const int g = infill_group_of[e];
+                fl.element_matrix[e] = { int(orientation_of[e]), g >= 0 ? int(orientations.size()) + g : -1 };
+                fl.element_scale[e]  = { vm_mat.stiffness[e], g >= 0 ? float(1. - double(vm_mat.shell[e])) : 0.f };
+            }
+        }
         auto element_matrix = [&](size_t e) {
             Matrix24d k = double(vm_mat.stiffness[e]) * orientations[orientation_of[e]].ke;
             if (const int g = infill_group_of[e]; g >= 0)
@@ -789,6 +804,8 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
         };
         use_mg = mg.build(std::move(fl), element_matrix, cancel);
         res.multigrid_levels = use_mg ? mg.levels() : 0;
+        if (use_mg && mg.on_gpu())
+            res.gpu_device = gpu_device_name();
     }
     auto precondition = [&](const std::vector<double> &r, std::vector<double> &z) {
         if (use_mg)
@@ -806,7 +823,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             s += a[i] * b[i];
         return s;
     };
-    std::vector<double> u(n_dofs, 0.), r = f, z(n_dofs), p(n_dofs), q(n_dofs);
+    std::vector<double> u(n_dofs, 0.), r = f, z(n_dofs), p(n_dofs), q(n_dofs), r_old;
     precondition(r, z);
     p = z;
     double rz = dot(r, z);
@@ -835,6 +852,11 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             return res;
         }
         const double alpha = rz / pq;
+        // A preconditioner in single precision (the multigrid on the GPU) is not exactly the same operator at every
+        // iteration: the flexible (Polak-Ribiere) beta keeps the conjugate gradient converging.
+        const bool flexible = use_mg && mg.on_gpu();
+        if (flexible)
+            r_old = r;
         for (size_t d = 0; d < n_dofs; ++ d) {
             u[d] += alpha * p[d];
             r[d] -= alpha * q[d];
@@ -856,7 +878,7 @@ Result analyze(const indexed_triangle_set &mesh, const Setup &setup, std::functi
             rz = dot(r, z);
             continue;
         }
-        const double beta = rz_new / rz;
+        const double beta = flexible ? (rz_new - dot(r_old, z)) / rz : rz_new / rz;
         rz = rz_new;
         for (size_t d = 0; d < n_dofs; ++ d)
             p[d] = z[d] + beta * p[d];

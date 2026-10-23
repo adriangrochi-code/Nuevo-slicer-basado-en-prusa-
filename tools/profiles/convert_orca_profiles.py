@@ -28,6 +28,28 @@ import re
 import shutil
 import sys
 
+# Values of the OrcaSlicer data that are plainly wrong, replaced when converting: (vendor, filament) -> options.
+# Kobra S1 Max 0.6 / 0.8 mm nozzles: engineering filaments left at a placeholder 220 C; the values of the same filament
+# for the 0.4 mm nozzle are used. re3D PC 0.4: first layer at 20 C (its nozzle temperature is 260); re3D rPETG 0.8:
+# 0 C (the re3D PETG value). Found by tools/profiles/check_filaments.py.
+DATA_FIXES = {
+    ('Anycubic', 'Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '270'},
+    ('Anycubic', 'Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '270'},
+    ('Anycubic', 'Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '250'},
+    ('Anycubic', 'Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('Anycubic', 'Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle'): {'temperature': '280', 'first_layer_temperature': '280'},
+    ('Anycubic', 'Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle'): {'temperature': '280', 'first_layer_temperature': '280'},
+    ('re3D', 're3D PC @0.4 nozzle'): {'temperature': '260', 'first_layer_temperature': '260'},
+    ('re3D', 're3D rPETG @0.8 nozzle'): {'temperature': '250', 'first_layer_temperature': '250'},
+}
+
 # --------------------------------------------------------------------------------------------------------------------
 # Option names: Orca -> Tisma. Options with the same name in both programs are copied as they are.
 RENAMED = {
@@ -155,7 +177,7 @@ SKIPPED = {
     'bed_custom_texture', 'bed_custom_model', 'inherits_group', 'renamed_from', 'description', '_comment',
     'wall_infill_order', 'brim_type', 'support_type', 'support_style', 'ironing_type', 'print_sequence',
     'exclude_object', 'gcode_label_objects', 'emit_machine_limits_to_gcode', 'only_one_wall_top', 'infill_combination',
-    'ensure_vertical_shell_thickness', 'fuzzy_skin', 'seam_position', 'default_bed_type',
+    'ensure_vertical_shell_thickness', 'fuzzy_skin', 'seam_position',
 }
 
 # Value translations of the enumerations.
@@ -536,6 +558,16 @@ class Converter:
             if seam:
                 out['seam_position'] = SEAM.get(seam, seam) if SEAM.get(seam, seam) in ('random', 'nearest', 'aligned', 'rear') else 'aligned'
         if kind == 'printer':
+            # The bed chosen with the printer: a name or the index of the enum of Orca (0 = its default plate).
+            bt = str(first(flat.get('default_bed_type', '')))
+            if bt.isdigit():
+                bt = BED_TYPES[int(bt)] if int(bt) < len(BED_TYPES) else ''
+            if bt not in PLATE_TEMPS and any('curr_bed_type' in str(v) for k, v in flat.items() if k.endswith('gcode')):
+                bt = 'Textured PEI Plate'  # the plate the custom G-code assumed before (see Converter.literal())
+            if bt in PLATE_TEMPS:
+                out['default_bed_type'] = bt
+            else:
+                out.pop('default_bed_type', None)
             flavor = out.get('gcode_flavor', 'marlin')
             relative = out.get('use_relative_e_distances', '0') == '1'
             # Rules of Tisma (PrusaSlicer) which Orca does not enforce.
@@ -618,12 +650,18 @@ def tisma_option_types(tisma_root):
     values = {}
     for m in re.finditer(r'static const t_config_enum_values s_keys_map_(\w+)\s*=?\s*\{(.*?)\};', src, re.S):
         values[m.group(1)] = re.findall(r'\{\s*"([^"]+)"', m.group(2))
-    limits = {}
+    # The bed temperatures for each bed type, defined in a loop over src/libslic3r/BedType.cpp.
+    bed_src = open(os.path.join(tisma_root, 'src', 'libslic3r', 'BedType.cpp'), encoding='utf-8').read()
+    bed_keys = re.findall(r'"([a-z_]+_plate_temp(?:_initial_layer)?)"', bed_src)
+    for key in bed_keys:
+        types.setdefault(key, 'coInts')
+    limits = {key: (0., 300.) for key in bed_keys}
     for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*co\w+\);(.{0,2500}?)(?=this->add|\Z)', src, re.S):
-        lo = re.search(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
-        hi = re.search(r'def->max\s*=\s*(-?[0-9.]+)', m.group(2))
+        # The last assignment wins, as in C++ (some definitions assign max twice).
+        lo = re.findall(r'def->min\s*=\s*(-?[0-9.]+)', m.group(2))
+        hi = re.findall(r'def->max\s*=\s*(-?[0-9.]+)', m.group(2))
         if lo or hi:
-            limits[m.group(1)] = (float(lo.group(1)) if lo else None, float(hi.group(1)) if hi else None)
+            limits[m.group(1)] = (float(lo[-1]) if lo else None, float(hi[-1]) if hi else None)
     # Options of each preset type (src/libslic3r/Preset.cpp, and the per extruder options of the printers).
     preset_src = open(os.path.join(tisma_root, 'src', 'libslic3r', 'Preset.cpp'), encoding='utf-8').read()
     def keys_of(var):
@@ -861,6 +899,9 @@ def main():
             elif kind == 'printer':
                 nozzle = to_float(first(flat.get('nozzle_diameter', ['0.4'])), 0.4)
             out = conv.convert(kind, flat, nozzle)
+            # Orca lets the user choose the plate of every Bambu Lab printer (support_multi_bed_types is not set).
+            if kind == 'printer' and vendor == 'BBL':
+                out['support_multi_bed_types'] = '1'
             converted[(kind, name)] = out
             return out
 
@@ -994,6 +1035,8 @@ def main():
                 emit(kind, parent, presets[(kind, parent)])
             emitted.add((kind, name))
             values = get_converted(kind, name, data)
+            if (vendor, name) in DATA_FIXES and kind == 'filament':
+                values = dict(values, **DATA_FIXES[(vendor, name)])
             if parent_in_bundle:
                 pvals = get_converted(kind, parent, presets[(kind, parent)])
                 own = {k: v for k, v in values.items() if pvals.get(k) != v}

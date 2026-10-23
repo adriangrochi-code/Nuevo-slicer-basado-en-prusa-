@@ -72,6 +72,7 @@
 #include "Preferences.hpp"
 #include "WebViewPanel.hpp"
 #include "UserAccount.hpp"
+#include "TismaCloudDialog.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
@@ -1737,6 +1738,11 @@ void MainFrame::init_menubar_as_editor()
 		append_menu_item(export_menu, wxID_ANY, _L("Export G-code to SD Card / Flash Drive") + dots + "\tCtrl+U", _L("Export current plate as G-code to SD card / Flash drive"),
 			[this](wxCommandEvent&) { if (m_plater) m_plater->export_gcode(true); }, "export_to_sd", nullptr,
 			[this]() {return can_export_gcode_sd(); }, this);
+        // Tisma: the plate sliced on the servers of Tisma Cloud.
+        append_menu_item(export_menu, wxID_ANY, _L("Slice in the &Cloud and Export G-code") + dots,
+            _L("Slice the current plate on the Tisma Cloud servers and save the G-code"),
+            [this](wxCommandEvent&) { if (m_plater) slice_in_cloud(m_plater); }, "export_gcode", nullptr,
+            [this]() { return can_export_model(); }, this);
         export_menu->AppendSeparator();
         append_menu_item(export_menu, wxID_ANY, _L("Export Plate as &STL/OBJ") + dots, _L("Export current plate as STL/OBJ"),
             [this](wxCommandEvent&) { if (m_plater) m_plater->export_stl_obj(); }, "export_plater", nullptr,

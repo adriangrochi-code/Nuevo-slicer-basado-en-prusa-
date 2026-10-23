@@ -1,0 +1,30 @@
+#version 450
+// Tisma Slicer: correction of a level of the multigrid with the solution of the next coarser level, interpolated
+// trilinearly (src/libtisma_fea/src/GpuMultigrid.cpp): x += P xc on the free degrees of freedom.
+layout(local_size_x = 64) in;
+
+layout(push_constant) uniform Params {
+    uint nodes;   // fine nodes
+} params;
+
+layout(std430, binding = 0) readonly buffer Parents { int parent[]; };
+layout(std430, binding = 1) readonly buffer Weights { float weight[]; };
+layout(std430, binding = 2) readonly buffer Free    { float free_dof[]; };
+layout(std430, binding = 3) readonly buffer Coarse  { float coarse[]; };
+layout(std430, binding = 4) buffer X                { float x[]; };
+
+void main()
+{
+    uint n = gl_GlobalInvocationID.x;
+    if (n >= params.nodes)
+        return;
+    vec3 v = vec3(0.0);
+    for (uint q = 0u; q < 8u; ++q) {
+        int p = parent[8u * n + q];
+        if (p < 0)
+            break;
+        v += weight[8u * n + q] * vec3(coarse[3u * uint(p)], coarse[3u * uint(p) + 1u], coarse[3u * uint(p) + 2u]);
+    }
+    for (uint k = 0u; k < 3u; ++k)
+        x[3u * n + k] += free_dof[3u * n + k] * v[k];
+}

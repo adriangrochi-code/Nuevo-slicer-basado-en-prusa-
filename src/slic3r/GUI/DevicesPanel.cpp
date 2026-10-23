@@ -4,13 +4,22 @@
 ///|/
 #include "DevicesPanel.hpp"
 
+#include <algorithm>
+#include <memory>
+
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 
 #include <wx/button.h>
 #include <wx/checkbox.h>
+#include <wx/dcbuffer.h>
+#include <wx/image.h>
 #include <wx/listbox.h>
+#include <wx/log.h>
+#include <wx/mstream.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
+#include <wx/textdlg.h>
 #include <wx/utils.h>
 
 #include "libslic3r/AppConfig.hpp"
@@ -37,6 +46,86 @@
 namespace Slic3r {
 namespace GUI {
 
+// The last image of the camera of a Bambu Lab printer, scaled to the panel keeping its proportions, or a message while
+// there is none.
+class BambuCameraView : public wxPanel
+{
+public:
+    explicit BambuCameraView(wxWindow *parent) : wxPanel(parent, wxID_ANY)
+    {
+        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        SetMinSize(wxSize(-1, 16 * wxGetApp().em_unit()));
+        Bind(wxEVT_PAINT, [this](wxPaintEvent &) { paint(); });
+        Bind(wxEVT_SIZE, [this](wxSizeEvent &evt) { Refresh(); evt.Skip(); });
+    }
+
+    // A JPEG of the printer; false when it cannot be read.
+    bool set_jpeg(const std::string &jpeg)
+    {
+        wxLogNull no_log;
+        wxMemoryInputStream in(jpeg.data(), jpeg.size());
+        wxImage image;
+        if (!image.LoadFile(in, wxBITMAP_TYPE_JPEG) || !image.IsOk())
+            return false;
+        m_image = image;
+        m_scaled = wxBitmap();
+        Refresh();
+        return true;
+    }
+
+    void set_message(const wxString &message)
+    {
+        m_image = wxImage();
+        m_scaled = wxBitmap();
+        m_message = message;
+        Refresh();
+    }
+
+private:
+    wxImage  m_image;
+    wxBitmap m_scaled;
+    wxString m_message;
+
+    void paint()
+    {
+        wxAutoBufferedPaintDC dc(this);
+        const wxSize size = GetClientSize();
+        dc.SetBackground(wxBrush(wxColour(32, 33, 36)));
+        dc.Clear();
+        if (m_image.IsOk() && size.x > 0 && size.y > 0) {
+            const double scale = std::min(double(size.x) / m_image.GetWidth(), double(size.y) / m_image.GetHeight());
+            const int w = std::max(1, int(m_image.GetWidth() * scale));
+            const int h = std::max(1, int(m_image.GetHeight() * scale));
+            if (!m_scaled.IsOk() || m_scaled.GetWidth() != w || m_scaled.GetHeight() != h)
+                m_scaled = wxBitmap(m_image.Scale(w, h, wxIMAGE_QUALITY_BILINEAR));
+            dc.DrawBitmap(m_scaled, (size.x - w) / 2, (size.y - h) / 2);
+            return;
+        }
+        const int em = wxGetApp().em_unit();
+        dc.SetTextForeground(wxColour(200, 200, 205));
+        dc.SetFont(GetFont());
+        // Wrapped by words to the width of the panel.
+        wxArrayString lines;
+        wxString line;
+        for (const wxString &word : wxSplit(m_message, ' ')) {
+            const wxString longer = line.empty() ? word : line + " " + word;
+            if (!line.empty() && dc.GetTextExtent(longer).x > size.x - 2 * em) {
+                lines.Add(line);
+                line = word;
+            } else
+                line = longer;
+        }
+        if (!line.empty())
+            lines.Add(line);
+        const int line_h = dc.GetCharHeight() * 5 / 4;
+        int y = (size.y - line_h * int(lines.size())) / 2;
+        for (const wxString &l : lines) {
+            dc.DrawText(l, (size.x - dc.GetTextExtent(l).x) / 2, y);
+            y += line_h;
+        }
+    }
+};
+
 DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 {
     const int  em   = wxGetApp().em_unit();
@@ -55,11 +144,15 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     wxGetApp().UpdateDarkUI(m_list);
     left->Add(m_list, 1, wxEXPAND | wxBOTTOM, em / 2);
     auto *btn_add = new wxButton(this, wxID_ANY, "+ " + _L("Add network printer"));
-    btn_add->SetToolTip(_L("OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, Repetier, MKS, FlashAir, AstroBox. "
-                           "The printers of the local network can be searched in the dialog."));
+    btn_add->SetToolTip(_L("Bambu Lab (LAN), Flashforge, OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, "
+                           "Repetier, MKS, FlashAir, AstroBox. The printers of the local network can be searched in the dialog."));
     left->Add(btn_add, 0, wxEXPAND | wxBOTTOM, em / 4);
     m_btn_edit = new wxButton(this, wxID_ANY, _L("Edit printer") + dots);
-    left->Add(m_btn_edit, 0, wxEXPAND);
+    left->Add(m_btn_edit, 0, wxEXPAND | wxBOTTOM, em / 4);
+    m_btn_code = new wxButton(this, wxID_ANY, _L("Change access code") + dots);
+    m_btn_code->SetToolTip(_L("When the printer shows a new access code or API key: type it here, Tisma tests the connection "
+                              "and saves it."));
+    left->Add(m_btn_code, 0, wxEXPAND);
     main->Add(left, 0, wxEXPAND | wxALL, em);
 
     // Right: the selected printer.
@@ -86,6 +179,10 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_usb = new USBMonitorPanel(this);
     m_usb->Hide();
     right->Add(m_usb, 1, wxEXPAND);
+    // Bambu Lab printers (no web interface): their camera.
+    m_camera = new BambuCameraView(this);
+    m_camera->Hide();
+    right->Add(m_camera, 1, wxEXPAND);
     main->Add(right, 1, wxEXPAND | wxTOP | wxBOTTOM | wxRIGHT, em);
 
     SetSizer(main);
@@ -94,6 +191,7 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     m_list->Bind(wxEVT_LISTBOX_DCLICK, [this](wxCommandEvent &) { edit_printer(); });
     btn_add->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { add_network_printer(); });
     m_btn_edit->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { edit_printer(); });
+    m_btn_code->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { change_access_code(); });
     m_btn_send->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { send_sliced(); });
     m_btn_browser->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { open_in_browser(); });
     m_start->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
@@ -103,10 +201,19 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     Bind(wxEVT_SHOW, [this](wxShowEvent &evt) {
         if (evt.IsShown())
             update_list();
+        else
+            stop_camera();
         evt.Skip();
     });
 
     update_list();
+}
+
+DevicesPanel::~DevicesPanel()
+{
+    // Only the stream: the windows are going away.
+    if (m_camera_stop)
+        *m_camera_stop = true;
 }
 
 void DevicesPanel::update_list()
@@ -159,10 +266,12 @@ void DevicesPanel::on_select()
     const int sel = m_list->GetSelection();
     const bool network = sel != wxNOT_FOUND && size_t(sel) < m_entries.size() && m_entries[sel].type == Entry::Type::Network;
     m_btn_edit->Enable(network);
+    m_btn_code->Enable(network);
     m_btn_send->Enable(network);
     m_btn_browser->Enable(network);
     m_start->Enable(network);
     m_usb->Show(! network);
+    stop_camera();
     if (! network) {
         m_title->SetLabel(_L("USB printer"));
         m_hint->SetLabel(_L("Plug the printer in with its USB cable: it is detected by itself. After slicing, \"Print via USB\" "
@@ -214,7 +323,31 @@ void DevicesPanel::on_select()
                     if (status.gcode_state == "RUNNING" || status.gcode_state == "PAUSE")
                         text += " " + format_wxstr(_L("Progress %1% %%, %2% min left."), status.percent, status.remaining_min);
                 }
-                m_hint->SetLabel(text + "\n" + _L("Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."));
+                m_hint->SetLabel(text + "\n" + _L("Select it again to refresh."));
+                Layout();
+            });
+        }).detach();
+        start_camera(cfg);
+        return;
+    }
+    if (host_type == htFlashforge) {
+        // No web interface: the connection is tested in the background and its result shown.
+        m_web->Hide();
+        m_url.clear();
+        m_btn_browser->Enable(false);
+        m_hint->SetLabel(_L("Flashforge printer: testing the connection..."));
+        Layout();
+        const int request = ++m_status_request;
+        DynamicPrintConfig config = cfg;
+        std::thread([this, request, config]() mutable {
+            std::unique_ptr<PrintHost> host(PrintHost::get_print_host(&config));
+            wxString msg;
+            const bool ok = host && host->test(msg);
+            const wxString text = !host ? wxString() : ok ? host->get_test_ok_msg() : host->get_test_failed_msg(msg);
+            wxGetApp().CallAfter([this, request, text]() {
+                if (request != m_status_request)
+                    return;
+                m_hint->SetLabel(text + "\n" + _L("Select it again to test again. If the access code changed, use \"Change access code\"."));
                 Layout();
             });
         }).detach();
@@ -284,6 +417,54 @@ void DevicesPanel::edit_printer()
     }
 }
 
+void DevicesPanel::change_access_code()
+{
+    const int sel = m_list->GetSelection();
+    if (sel == wxNOT_FOUND || size_t(sel) >= m_entries.size() || m_entries[sel].type != Entry::Type::Network)
+        return;
+    PhysicalPrinterCollection &printers = wxGetApp().preset_bundle->physical_printers;
+    const PhysicalPrinter *found = printers.find_printer(m_entries[sel].name);
+    if (found == nullptr)
+        return;
+    PhysicalPrinter printer = *found;
+    const auto *auth = dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(printer.config.option("printhost_authorization_type"));
+    const auto *host_type = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
+    if (auth != nullptr && auth->value == AuthorizationType::atUserPassword &&
+        (host_type == nullptr || host_type->value == htPrusaLink)) {
+        // User and password (PrusaLink, digest): the full dialog.
+        edit_printer();
+        return;
+    }
+    wxTextEntryDialog dlg(this, _L("New access code or API key of the printer:"), from_u8(printer.name),
+                          from_u8(printer.config.opt_string("printhost_apikey")));
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+    const std::string code = boost::trim_copy(into_u8(dlg.GetValue()));
+    printer.config.opt_string("printhost_apikey") = code;
+
+    // Test before saving: a wrong code is saved only if asked.
+    std::unique_ptr<PrintHost> host(PrintHost::get_print_host(&printer.config));
+    if (host && host->can_test()) {
+        wxString msg;
+        bool ok;
+        {
+            wxBusyCursor wait;
+            ok = host->test(msg);
+        }
+        if (!ok) {
+            MessageDialog ask(this, host->get_test_failed_msg(msg) + "\n\n" + _L("Save the new code anyway?"),
+                              _L("Change access code"), wxYES_NO | wxNO_DEFAULT | wxICON_WARNING);
+            if (ask.ShowModal() != wxID_YES)
+                return;
+        }
+    }
+    printers.save_printer(printer);
+    wxGetApp().sidebar().update_presets(Preset::TYPE_PRINTER);
+    m_url.clear();
+    update_list();
+    on_select();
+}
+
 void DevicesPanel::send_sliced()
 {
     const int sel = m_list->GetSelection();
@@ -324,6 +505,58 @@ void DevicesPanel::send_sliced()
     if (NotificationManager *nm = plater->get_notification_manager())
         nm->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::PrintInfoNotificationLevel,
                               into_u8(format_wxstr(_L("Sending %1% to %2%."), from_u8(filename), from_u8(printer->name))));
+}
+
+void DevicesPanel::start_camera(const DynamicPrintConfig &cfg)
+{
+    stop_camera();
+    auto stop = std::make_shared<std::atomic<bool>>(false);
+    m_camera_stop = stop;
+    m_camera->set_message(_L("Connecting to the camera of the printer..."));
+    m_camera->Show();
+    Layout();
+    DynamicPrintConfig config = cfg;
+    std::thread([this, stop, config]() mutable {
+        BambuLan host(&config);
+        std::string error;
+        // The images go to the GUI thread as they come (about one a second); the GUI thread decodes them.
+        const bool ok = host.client().stream_camera([this, stop](const std::string &jpeg) {
+            wxGetApp().CallAfter([this, stop, jpeg]() {
+                if (!*stop)
+                    m_camera->set_jpeg(jpeg);
+            });
+            return !*stop;
+        }, *stop, error);
+        wxGetApp().CallAfter([this, stop, ok, error]() {
+            // ok: stopped from here.
+            if (*stop || ok)
+                return;
+            wxString message;
+            if (error == "no camera")
+                message = _L("This printer sends its camera by RTSPS (X1, P2S and H2 series), which Tisma does not show yet. "
+                             "The camera of the A1 and P1 series is shown here.");
+            else if (error == "refused")
+                message = _L("The printer closed the camera connection before sending an image: check the access code, and "
+                             "that the camera is on and not in use by another program.");
+            else if (error == "closed")
+                message = _L("The printer ended the camera stream. Select the printer again to reconnect.");
+            else
+                message = format_wxstr(_L("Could not show the camera: %1%"), from_u8(error));
+            m_camera->set_message(message);
+        });
+    }).detach();
+}
+
+void DevicesPanel::stop_camera()
+{
+    if (m_camera_stop) {
+        *m_camera_stop = true;
+        m_camera_stop.reset();
+    }
+    if (m_camera != nullptr && m_camera->IsShown()) {
+        m_camera->Hide();
+        Layout();
+    }
 }
 
 void DevicesPanel::open_in_browser()
