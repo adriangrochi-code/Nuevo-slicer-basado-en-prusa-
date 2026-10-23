@@ -7,6 +7,7 @@ Sources:
 - Firewall cmdlets (NetSecurity module): https://learn.microsoft.com/powershell/module/netsecurity/
 - Detecting the WebView2 Runtime: https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution
 - Inno Setup uninstall key "<AppId>_is1" with InstallLocation: https://jrsoftware.org/ishelp/ (Uninstall registry key)
+- GetConsoleMode fails for a handle that is not a console: https://learn.microsoft.com/windows/console/getconsolemode
 """
 
 from __future__ import annotations
@@ -40,6 +41,23 @@ def _powershell(script: str) -> subprocess.CompletedProcess:
 
 
 # ---- the scheduled task (Windows)
+def is_terminal(stream) -> bool:  # noqa: ANN001
+    """Whether the stream is a terminal. On Windows isatty() is also true for the NUL device, the output of the service
+    started in the background: there only a console counts."""
+    try:
+        if stream is None or not stream.isatty():
+            return False
+        if os.name != "nt":
+            return True
+        import ctypes
+        import msvcrt
+
+        mode = ctypes.c_uint32()
+        return bool(ctypes.windll.kernel32.GetConsoleMode(msvcrt.get_osfhandle(stream.fileno()), ctypes.byref(mode)))
+    except (AttributeError, OSError, ValueError):
+        return False
+
+
 def task_xml(command: str, arguments: str, working_dir: str, description: str) -> str:
     """A task that runs at the start of the machine as SYSTEM, whoever signs in or not, and keeps running.
 

@@ -65,7 +65,7 @@ def test_start_and_stop_the_master(tmp_path, monkeypatch):
     try:
         assert st.running and st.healthy, m.logs()
         assert m.pid_path.is_file() and m.health()
-        assert any("Uvicorn running" in line or "Application startup" in line for line in m.logs(200))
+        assert any("Uvicorn running" in line or "Application startup" in line for line in m.logs(200)), m.logs(200)
         with pytest.raises(RuntimeError):
             m.set_role("node")  # not while it runs
     finally:

@@ -638,7 +638,7 @@ class Manager:
             print("No role: tisma-cloud role master|node", file=sys.stderr)
             return 1
         os.chdir(self.home)
-        if not sys.stdout or not sys.stdout.isatty():
+        if not system.is_terminal(sys.stdout):
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
             log = open(self.log_path, "a", buffering=1, encoding="utf-8")
             os.dup2(log.fileno(), 1)

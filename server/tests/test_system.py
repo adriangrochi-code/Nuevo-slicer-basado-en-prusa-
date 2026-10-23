@@ -128,3 +128,12 @@ def test_firewall_is_windows_only(tmp_path):
     assert all(c.name != "Firewall de Windows" for c in m.checks())
     with pytest.raises(RuntimeError):
         m.set_firewall(True)
+
+
+def test_the_null_device_is_no_terminal():
+    # The output of the service started in the background (Windows takes NUL for a terminal in isatty()).
+    import os
+
+    with open(os.devnull, "w") as null:
+        assert not system.is_terminal(null)
+    assert not system.is_terminal(None)
