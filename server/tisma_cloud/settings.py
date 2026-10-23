@@ -118,6 +118,10 @@ class Settings:
     reports_per_hour: int = field(default_factory=lambda: _int("TISMA_REPORTS_PER_HOUR", 20))
     anonymous_reports_per_hour: int = field(default_factory=lambda: _int("TISMA_ANONYMOUS_REPORTS_PER_HOUR", 5))
     report_days: int = field(default_factory=lambda: _int("TISMA_REPORT_DAYS", 365))
+    # The reward of a useful report (given by an administrator): days of the plan of its author; at most this many
+    # rewards per account in a year.
+    report_reward_days: int = field(default_factory=lambda: _int("TISMA_REPORT_REWARD_DAYS", 7))
+    report_rewards_per_year: int = field(default_factory=lambda: _int("TISMA_REPORT_REWARDS_PER_YEAR", 4))
 
     def __post_init__(self) -> None:
         self.storage_dir = Path(self.storage_dir)

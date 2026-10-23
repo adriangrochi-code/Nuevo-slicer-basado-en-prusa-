@@ -161,3 +161,55 @@ def test_catalog_from_the_console(client, settings, monkeypatch, capsys, tmp_pat
     assert admin_cli.main(["reports", "--format", "jsonl", "--app", "android"]) == 0
     assert [json.loads(x)["title"] for x in capsys.readouterr().out.splitlines()] == ["The camera does not open"]
     assert admin_cli.main(["reports", "--status", "nope"]) == 2
+
+
+def test_a_useful_report_is_rewarded_by_hand(client, f, settings):
+    services = client.app.state.services
+    admin = f.user("admin@x.com", admin=True)
+    ana = f.user("ana@x.com", paid_days=None)
+    client.post("/v1/reports", json=report(title="Without account"))
+    first = client.post("/v1/reports", json=report(), headers=ana).json()
+    client.post("/v1/reports", json=report(), headers=f.user("bob@x.com", paid_days=10))
+    sig = first["signature"]
+
+    # The first one who told it with an account: Ana (the anonymous report is older but has nobody to reward).
+    r = client.post(f"/v1/admin/report-groups/{sig}/reward", json={}, headers=admin)
+    assert r.status_code == 200, r.text
+    assert r.json()["report"] == first["id"] and r.json()["days"] == settings.report_reward_days
+    me = f.me(ana)
+    assert me["paid"] and me["paid_until"] is not None
+    mine = client.get("/v1/me/reports", headers=ana).json()["reports"][0]
+    assert mine["reward_days"] == settings.report_reward_days and mine["status"] == "confirmed"
+    sent = services.mailer.sent[-1]
+    assert sent[0] == "ana@x.com" and "7 días" in sent[2]
+
+    # Once per report; the next reward of the group goes to the next one (Bob, whose paid days are extended).
+    assert client.post(f"/v1/admin/reports/{first['id']}/reward", json={}, headers=admin).status_code == 409
+    with services.db.session() as s:
+        from tisma_cloud.models import User
+        from tisma_cloud import crypto
+        bob_until = s.query(User).filter_by(email_index=crypto.index("bob@x.com")).one().paid_until
+    r = client.post(f"/v1/admin/report-groups/{sig}/reward", json={"days": 3}, headers=admin)
+    assert r.json()["days"] == 3
+    with services.db.session() as s:
+        assert s.query(User).filter_by(email_index=crypto.index("bob@x.com")).one().paid_until == bob_until + timedelta(days=3)
+    # Nobody left with an account; an anonymous report has nobody to reward.
+    assert client.post(f"/v1/admin/report-groups/{sig}/reward", json={}, headers=admin).status_code == 404
+    with services.db.session() as s:
+        anonymous = s.query(BugReport).filter(BugReport.user_id.is_(None)).one().id
+    assert client.post(f"/v1/admin/reports/{anonymous}/reward", json={}, headers=admin).status_code == 409
+    groups = client.get("/v1/admin/reports", headers=admin).json()["groups"]
+    assert (groups[0]["with_account"], groups[0]["rewarded"]) == (2, 2)
+    # Only administrators reward.
+    assert client.post(f"/v1/admin/report-groups/{sig}/reward", json={}, headers=ana).status_code == 403
+
+
+def test_rewards_are_limited_per_year(client, f, settings):
+    settings.report_rewards_per_year = 2
+    admin = f.user("admin@x.com", admin=True)
+    ana = f.user("ana@x.com")
+    ids = [client.post("/v1/reports", json=report(title=f"Problem number {w}", log=""), headers=ana).json()["id"]
+           for w in ("one", "two", "three")]
+    codes = [client.post(f"/v1/admin/reports/{i}/reward", json={}, headers=admin).status_code for i in ids]
+    assert codes == [200, 200, 409]
+    assert client.post(f"/v1/admin/reports/{ids[2]}/reward", json={"days": 500}, headers=admin).status_code == 422

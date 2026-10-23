@@ -80,6 +80,13 @@ def code_message(purpose: str, code: str) -> tuple[str, str]:
             "Vence en 15 minutos. Si no lo pediste, ignorá este correo: tu contraseña no cambia.\n\nTisma Cloud")
 
 
+def reward_message(title: str, days: int, until: str) -> tuple[str, str]:
+    """A report of the user helped to improve Tisma: the days of the plan it earned."""
+    return ("Gracias por tu informe: ganaste días de Tisma Cloud",
+            f"Hola:\n\nTu informe «{title}» nos ayudó a mejorar Tisma. Como agradecimiento sumamos {days} días a tu plan "
+            f"de Tisma Cloud: ahora está pago hasta el {until}.\n\nGracias por avisarnos.\n\nTisma Cloud")
+
+
 def exists_message() -> tuple[str, str]:
     """Someone tried to make an account with an address that has one (the page answers the same in both cases, so
     that it does not tell which addresses have an account)."""

@@ -568,6 +568,14 @@ python -m tisma_cloud.admin reports --out problemas.md            # los abiertos
 python -m tisma_cloud.admin reports --format jsonl --app android
 ```
 
+- **Premio a quien informa**: cuando el equipo ve que un informe sirvió, lo premia a mano («Premiar» en el panel,
+  `POST /v1/admin/report-groups/{signature}/reward` para el primero que lo informó con cuenta, o
+  `POST /v1/admin/reports/{id}/reward`): su plan queda pago `TISMA_REPORT_REWARD_DAYS` días más (7; el administrador
+  puede dar otros, hasta 90), sumados al final de lo ya pago, y le llega un correo. Una vez por informe, solo con
+  cuenta y como mucho `TISMA_REPORT_REWARDS_PER_YEAR` (4) por cuenta en un año: informar no es una forma de tener el
+  plan gratis. Quien informó lo ve en sus informes (`reward_days`). Si la página web fija `paid_until` con
+  `PUT /v1/site/users`, la fecha que manda reemplaza los días premiados: la página tiene que sumar sobre la del servicio.
+
 ## API
 
 | Quién | Método y ruta | Qué hace |
@@ -581,6 +589,7 @@ python -m tisma_cloud.admin reports --format jsonl --app android
 | todos | `POST /v1/reports` `{app, kind, title, description, steps, expected, actual, app_version, os, log}` | informar un problema (con o sin token); responde su `signature` y cuántos `similar` hay |
 | usuario | `GET /v1/me/reports` | los problemas informados con la cuenta y su estado |
 | administrador | `GET /v1/admin/reports`, `GET /v1/admin/reports/catalog?format=md\|jsonl`, `GET\|PATCH /v1/admin/reports/{id}`, `PATCH /v1/admin/report-groups/{signature}` `{status, note}` | problemas agrupados, catálogo, estado |
+| administrador | `POST /v1/admin/reports/{id}/reward`, `POST /v1/admin/report-groups/{signature}/reward` `{days}` | premiar un informe útil con días del plan |
 | usuario | `POST /v1/me/delete/code`, `POST /v1/me/delete` `{password}` o `{code}` | borrar la cuenta y sus datos |
 | usuario | `GET /v1/billing/play/account`, `POST /v1/billing/play/purchase` `{purchase_token}` | suscripción de Google Play (app) |
 | Google | `POST /v1/billing/play/notify` | avisos de Google Play (Pub/Sub, con token de Google) |

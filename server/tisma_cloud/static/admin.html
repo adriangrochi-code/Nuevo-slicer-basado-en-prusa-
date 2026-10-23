@@ -348,6 +348,19 @@ async function setGroup(g, status) {
   } catch (e) { if (e.message !== "auth") alert(e.message); }
 }
 
+// The team found the problem useful: days of the plan for the first one who told it with an account (by hand, once per
+// report, a few times a year per account).
+async function rewardGroup(g) {
+  const days = prompt(`Días del plan para quien informó primero «${g.title}» (vacío: los de siempre)`, "");
+  if (days === null) return;
+  try {
+    const r = await api(`/v1/admin/report-groups/${encodeURIComponent(g.signature)}/reward`, { method: "POST",
+      body: JSON.stringify(days.trim() ? { days: parseInt(days, 10) } : {}) });
+    alert(`Premiado con ${r.days} días: su plan queda pago hasta ${new Date(r.paid_until).toLocaleDateString()}.`);
+    refreshReports();
+  } catch (e) { if (e.message !== "auth") alert(e.message); }
+}
+
 async function refreshReports() {
   try {
     const groups = (await api("/v1/admin/reports")).groups;
@@ -355,12 +368,14 @@ async function refreshReports() {
       ...(groups.length ? groups.map((g) => el("tr", {},
         el("td", {}, g.reports), el("td", {}, g.app), el("td", {}, g.kinds.map((k) => KINDS[k] || k).join(", ")),
         el("td", {}, g.title, g.first_error ? el("div", { class: "muted" }, g.first_error) : null,
-          el("div", { class: "muted" }, Object.entries(g.statuses).map(([k, v]) => `${REPORT_STATUS[k] || k}: ${v}`).join(" · "))),
+          el("div", { class: "muted" }, Object.entries(g.statuses).map(([k, v]) => `${REPORT_STATUS[k] || k}: ${v}`).join(" · "),
+            ` · con cuenta: ${g.with_account}` + (g.rewarded ? ` · premiados: ${g.rewarded}` : ""))),
         el("td", { class: "muted" }, g.versions.join(", ") || "–"),
         el("td", { class: "muted" }, ago(g.last_seen)),
         el("td", {}, el("button", { type: "button", onclick: () => setGroup(g, "confirmed") }, "Confirmar"), " ",
           el("button", { type: "button", onclick: () => setGroup(g, "fixed") }, "Arreglado"), " ",
-          el("button", { type: "button", onclick: () => setGroup(g, "wontfix") }, "No se arregla"))))
+          el("button", { type: "button", onclick: () => setGroup(g, "wontfix") }, "No se arregla"),
+          g.with_account > g.rewarded ? [" ", el("button", { type: "button", onclick: () => rewardGroup(g) }, "Premiar")] : null)))
       : [el("tr", {}, el("td", { colspan: 7, class: "muted" }, "Ninguno abierto"))]));
   } catch (e) {
     if (e.message !== "auth") $("app-error").textContent = `No se pudieron leer los problemas: ${e.message}`;

@@ -28,7 +28,7 @@ from sqlalchemy.exc import IntegrityError
 
 from . import __version__, alerts, billing, codes, crypto, google_play, remote, reports, scheduler
 from .google_auth import GoogleError, GoogleVerifier
-from .mail import code_message, exists_message, mailer_for
+from .mail import code_message, exists_message, mailer_for, reward_message
 from .db import Database
 from .jobs import (ESTIMATE_MAX_TRIANGLES, JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles,
                    estimate_seconds, plan_job)
@@ -433,10 +433,16 @@ class ReportUpdateBody(BaseModel):
     note: str | None = Field(default=None, max_length=2000)
 
 
+class RewardBody(BaseModel):
+    # Days of the plan; the default of the service (TISMA_REPORT_REWARD_DAYS) without them.
+    days: int | None = Field(default=None, ge=1, le=90)
+
+
 def report_view(r: BugReport, texts: bool = False) -> dict[str, Any]:
     out = {"id": r.id, "app": r.app, "kind": r.kind, "title": r.title, "status": r.status, "signature": r.signature,
            "app_version": r.app_version, "os": r.os, "created_at": r.created_at.isoformat() + "Z",
-           "updated_at": r.updated_at.isoformat() + "Z"}
+           "updated_at": r.updated_at.isoformat() + "Z",
+           "rewarded_at": r.rewarded_at.isoformat() + "Z" if r.rewarded_at else None, "reward_days": r.reward_days}
     if texts:
         out.update(description=r.description, steps=r.steps, expected=r.expected, actual=r.actual, log=r.log)
     return out
@@ -1994,6 +2000,56 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 r.note = body.note
             r.updated_at = utcnow()
             return {**report_view(r), "note": r.note}
+
+    def reward_report(s, r: BugReport, days: int | None) -> dict:  # noqa: ANN001
+        """Days of the plan for the author of a useful report: by hand, once per report, a few times a year per account
+        (the limit keeps the reports from being a way to get the plan free)."""
+        if r.user_id is None:
+            raise HTTPException(409, "The report was sent without an account: there is nobody to reward")
+        if r.rewarded_at is not None:
+            raise HTTPException(409, "The report was rewarded already")
+        now = utcnow()
+        # One reward at a time per account (the row is locked in PostgreSQL), counted with the others of the year.
+        s.execute(select(User.id).where(User.id == r.user_id).with_for_update())
+        user = s.get(User, r.user_id)
+        given = s.execute(select(func.count()).select_from(BugReport).where(
+            BugReport.user_id == user.id, BugReport.rewarded_at > now - timedelta(days=365))).scalar()
+        if given >= cfg.report_rewards_per_year:
+            raise HTTPException(409, f"The account was rewarded {given} times this year (the limit of "
+                                     "TISMA_REPORT_REWARDS_PER_YEAR)")
+        days = days or cfg.report_reward_days
+        start = user.paid_until if user.paid_until and user.paid_until > now else now
+        user.paid_until = start + timedelta(days=days)
+        r.rewarded_at, r.reward_days, r.updated_at = now, days, now
+        if r.status == "new":
+            r.status = "confirmed"
+        subject, text = reward_message(r.title, days, user.paid_until.strftime("%d/%m/%Y"))
+        try:
+            services.mailer.send(user.email, subject, text)
+        except Exception:  # noqa: BLE001 (the reward stays; the e-mail is only a notice)
+            log.exception("Could not send the notice of a reward")
+        return {"report": r.id, "days": days, "paid_until": user.paid_until.isoformat() + "Z"}
+
+    @app.post("/v1/admin/reports/{report_id}/reward")
+    def admin_reward_report(_admin: AdminDep, report_id: str, body: RewardBody) -> dict:
+        """The team found the report useful: days of the plan for its author."""
+        with db.session() as s:
+            r = s.get(BugReport, report_id)
+            if r is None:
+                raise HTTPException(404, "No such report")
+            return reward_report(s, r, body.days)
+
+    @app.post("/v1/admin/report-groups/{signature}/reward")
+    def admin_reward_report_group(_admin: AdminDep, signature: str, body: RewardBody) -> dict:
+        """The same for the first report of a problem that came with an account and was not rewarded (the first one
+        who told it)."""
+        with db.session() as s:
+            r = s.execute(select(BugReport).where(BugReport.signature == signature, BugReport.user_id.is_not(None),
+                                                  BugReport.rewarded_at.is_(None))
+                          .order_by(BugReport.created_at).limit(1)).scalar_one_or_none()
+            if r is None:
+                raise HTTPException(404, "No report of this problem with an account left to reward")
+            return reward_report(s, r, body.days)
 
     @app.patch("/v1/admin/report-groups/{signature}")
     def admin_update_report_group(_admin: AdminDep, signature: str, body: ReportUpdateBody) -> dict:

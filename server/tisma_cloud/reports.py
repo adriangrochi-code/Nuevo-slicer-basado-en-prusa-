@@ -147,6 +147,9 @@ class Group:
     examples: list[dict] = field(default_factory=list)
     log_excerpt: str = ""
     ids: list[str] = field(default_factory=list)
+    # Reports sent with an account (their authors can be rewarded) and the ones rewarded.
+    with_account: int = 0
+    rewarded: int = 0
 
     def as_dict(self) -> dict:
         return {
@@ -156,7 +159,7 @@ class Group:
             "first_seen": self.first_seen.isoformat(timespec="seconds") + "Z" if self.first_seen else None,
             "last_seen": self.last_seen.isoformat(timespec="seconds") + "Z" if self.last_seen else None,
             "first_error": self.error, "examples": self.examples, "log_excerpt": self.log_excerpt,
-            "report_ids": self.ids,
+            "report_ids": self.ids, "with_account": self.with_account, "rewarded": self.rewarded,
         }
 
 
@@ -176,6 +179,8 @@ def catalog(reports, max_examples: int = 3) -> list[Group]:  # noqa: ANN001  (Bu
         g.statuses[r.status] = g.statuses.get(r.status, 0) + 1
         g.last_seen = r.created_at
         g.ids.append(r.id)
+        g.with_account += r.user_id is not None
+        g.rewarded += r.rewarded_at is not None
         if not g.error and r.log:
             g.error = first_error(r.log)
         if r.log:

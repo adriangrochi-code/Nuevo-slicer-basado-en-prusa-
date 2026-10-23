@@ -354,5 +354,8 @@ class BugReport(Base):
     status: Mapped[str] = mapped_column(String(10), default="new", index=True)
     # Of the programmers: what was found, the commit that fixed it.
     note: Mapped[str] = mapped_column(Text, default="")
+    # The team found the report useful and rewarded its author with days of their plan (by hand, once per report).
+    rewarded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    reward_days: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
