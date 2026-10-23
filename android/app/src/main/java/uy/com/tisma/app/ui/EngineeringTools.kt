@@ -205,8 +205,8 @@ fun RequirementsPanel(c: EngineeringController, filament: String) {
         { key -> if (key.isEmpty()) fromFilament else c.materials.firstOrNull { it.key == key }?.name ?: key }) { k ->
         c.setup { it.copy(material = k) }
     }
-    Choices(stringResource(R.string.eng_safety_factor), listOf(1.5, 2.0, 3.0, 4.0), req.safetyFactor, { num(it) }) { v ->
-        c.setup { it.copy(safetyFactor = v) }
+    NumberChoices(stringResource(R.string.eng_safety_factor), listOf(1.5, 2.0, 3.0, 4.0), req.safetyFactor, "", 1.0..20.0) { v ->
+        if (v != null) c.setup { it.copy(safetyFactor = v) }
     }
     NumberField(stringResource(R.string.eng_temperature), req.temperature, "°C", Modifier.fillMaxWidth()) { v ->
         c.setup { it.copy(temperature = v) }

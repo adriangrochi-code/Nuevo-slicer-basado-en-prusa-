@@ -51,7 +51,7 @@
     <string name="filament_hint">Valores de los filamentos genéricos de Tisma; usá los de tu bobina si son otros.</string>
     <string name="section_quality">Calidad</string>
     <string name="layer_height">Altura de capa</string>
-    <string name="infill">Relleno: %1$d %%</string>
+    <string name="infill_density">Relleno</string>
     <string name="walls">Paredes</string>
     <string name="supports">Soportes donde hagan falta</string>
     <string name="brim">Borde (mejor adherencia)</string>

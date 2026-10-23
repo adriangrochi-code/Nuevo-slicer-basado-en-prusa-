@@ -53,7 +53,7 @@
     <string name="filament_hint">Values of Tisma\'s generic filaments; use those of your spool if they differ.</string>
     <string name="section_quality">Quality</string>
     <string name="layer_height">Layer height</string>
-    <string name="infill">Infill: %1$d %%</string>
+    <string name="infill_density">Infill</string>
     <string name="walls">Walls</string>
     <string name="supports">Supports where needed</string>
     <string name="brim">Brim (better adhesion)</string>

@@ -11,7 +11,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -74,9 +73,10 @@ fun PrinterPage(workspace: Workspace, modifier: Modifier = Modifier) {
                     NumberField("Y", s.bedY, "mm", Modifier.weight(1f)) { update(s.copy(bedY = it)) }
                     NumberField("Z", s.maxHeight, "mm", Modifier.weight(1f)) { update(s.copy(maxHeight = it)) }
                 }
-                Choices(stringResource(R.string.nozzle), listOf(0.2, 0.4, 0.6, 0.8), s.nozzle, { "${num(it)} mm" }) { n ->
+                NumberChoices(stringResource(R.string.nozzle), listOf(0.2, 0.4, 0.6, 0.8), s.nozzle, "mm", 0.1..1.2) { n ->
                     // A layer the new nozzle can print.
-                    update(s.copy(nozzle = n, layerHeight = minOf(s.layerHeight, SliceSettings.layerChoices(n).last())))
+                    if (n != null)
+                        update(s.copy(nozzle = n, layerHeight = minOf(s.layerHeight, 0.75 * n)))
                 }
                 Choices(stringResource(R.string.firmware), GcodeFlavor.entries, s.flavor, { it.label }) { update(s.copy(flavor = it)) }
             }
@@ -126,13 +126,13 @@ fun PrintPage(workspace: Workspace, modifier: Modifier = Modifier) {
     val update = workspace::update
     SettingsPage(modifier) {
         Group(stringResource(R.string.section_quality)) {
-            Choices(stringResource(R.string.layer_height), SliceSettings.layerChoices(s.nozzle), s.layerHeight, { "${num(it)} mm" }) {
-                update(s.copy(layerHeight = it))
-            }
-            Text(stringResource(R.string.infill, s.infillPercent), style = MaterialTheme.typography.labelLarge)
-            Slider(value = s.infillPercent.toFloat(), onValueChange = { update(s.copy(infillPercent = (it / 5).toInt() * 5)) },
-                valueRange = 0f..100f, steps = 19)
-            Choices(stringResource(R.string.walls), listOf(1, 2, 3, 4, 5), s.perimeters, { "$it" }) { update(s.copy(perimeters = it)) }
+            // Any layer the nozzle prints (up to three quarters of it), typed or one of the usual ones.
+            NumberChoices(stringResource(R.string.layer_height), SliceSettings.layerChoices(s.nozzle), s.layerHeight, "mm",
+                0.04..0.75 * s.nozzle) { it?.let { h -> update(s.copy(layerHeight = h)) } }
+            NumberChoices(stringResource(R.string.infill_density), listOf(0.0, 10.0, 15.0, 20.0, 30.0, 50.0, 100.0),
+                s.infillPercent.toDouble(), "%", 0.0..100.0, whole = true) { it?.let { p -> update(s.copy(infillPercent = p.toInt())) } }
+            NumberChoices(stringResource(R.string.walls), listOf(1.0, 2.0, 3.0, 4.0, 5.0), s.perimeters.toDouble(), "", 1.0..30.0,
+                whole = true) { it?.let { n -> update(s.copy(perimeters = n.toInt())) } }
         }
         Group(stringResource(R.string.group_supports)) {
             SwitchRow(stringResource(R.string.supports), s.supports) { update(s.copy(supports = it)) }
@@ -158,12 +158,11 @@ private fun AdvancedGroup(s: SliceSettings, update: (SliceSettings) -> Unit) {
         (if (s.supportsOnBedOnly) 1 else 0) + (if (s.ironing) 1 else 0)
     Group(stringResource(R.string.section_advanced),
         if (changed == 0) stringResource(R.string.advanced_summary_none) else stringResource(R.string.advanced_summary, changed)) {
-        Choices(stringResource(R.string.top_layers), listOf(null, 3, 4, 5, 6, 8), s.topLayers, { it?.toString() ?: profile }) {
-            update(s.copy(topLayers = it))
-        }
-        Choices(stringResource(R.string.bottom_layers), listOf(null, 3, 4, 5, 6, 8), s.bottomLayers, { it?.toString() ?: profile }) {
-            update(s.copy(bottomLayers = it))
-        }
+        val layers = listOf(3.0, 4.0, 5.0, 6.0, 8.0)
+        NumberChoices(stringResource(R.string.top_layers), layers, s.topLayers?.toDouble(), "", 0.0..100.0, whole = true,
+            none = profile) { update(s.copy(topLayers = it?.toInt())) }
+        NumberChoices(stringResource(R.string.bottom_layers), layers, s.bottomLayers?.toDouble(), "", 0.0..100.0, whole = true,
+            none = profile) { update(s.copy(bottomLayers = it?.toInt())) }
         Choices(stringResource(R.string.infill_pattern), listOf<InfillPattern?>(null) + InfillPattern.entries, s.infillPattern,
             { it?.let { p -> stringResource(p.label()) } ?: profile }) { update(s.copy(infillPattern = it)) }
         Choices(stringResource(R.string.seam), listOf<SeamPosition?>(null) + SeamPosition.entries, s.seam,

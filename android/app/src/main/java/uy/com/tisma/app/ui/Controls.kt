@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -100,6 +101,55 @@ internal fun <T> Choices(label: String, options: List<T>, selected: T, text: @Co
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for (o in options)
             FilterChip(selected = o == selected, onClick = { onSelect(o) }, label = { Text(text(o)) })
+    }
+}
+
+/**
+ * A number chosen from the usual values (chips) or typed with the keyboard in the field beside the label, any value of
+ * [range]. [none]: a chip for no value (the profile's), also chosen by clearing the field. A typed number outside the
+ * range (or not whole when [whole]) is not taken: the field shows the error.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun NumberChoices(
+    label: String,
+    options: List<Double>,
+    value: Double?,
+    suffix: String,
+    range: ClosedFloatingPointRange<Double>,
+    whole: Boolean = false,
+    none: String? = null,
+    onValue: (Double?) -> Unit,
+) {
+    var text by remember(value) { mutableStateOf(value?.let(::num) ?: "") }
+    val typed = text.replace(',', '.').trim().toDoubleOrNull()
+    val valid = typed != null && typed in range && (!whole || typed % 1.0 == 0.0)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                text = it
+                val v = it.replace(',', '.').trim().toDoubleOrNull()
+                when {
+                    it.isBlank() && none != null -> onValue(null)
+                    v != null && v in range && (!whole || v % 1.0 == 0.0) -> onValue(v)
+                }
+            },
+            placeholder = none?.let { { Text(it) } },
+            suffix = { Text(suffix) },
+            singleLine = true,
+            isError = text.isNotBlank() && !valid,
+            keyboardOptions = KeyboardOptions(keyboardType = if (whole) KeyboardType.Number else KeyboardType.Decimal),
+            modifier = Modifier.width(132.dp),
+        )
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (none != null)
+            FilterChip(selected = value == null, onClick = { onValue(null) }, label = { Text(none) })
+        for (o in options)
+            FilterChip(selected = value != null && kotlin.math.abs(o - value) < 1e-9, onClick = { onValue(o) },
+                label = { Text(num(o) + if (suffix == "%") " %" else "") })
     }
 }
 
