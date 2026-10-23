@@ -145,11 +145,13 @@ def user_view(user: User) -> dict[str, Any]:
 def plan_view(plan: Plan) -> dict[str, Any]:
     return {"name": plan.name, "monthly_hours": plan.monthly_hours, "max_concurrent": plan.max_concurrent,
             "requests_per_minute": plan.requests_per_minute, "priority": plan.priority,
-            "price_cents": plan.price_cents, "currency": plan.currency, "public": plan.public}
+            "price_cents": plan.price_cents, "currency": plan.currency, "public": plan.public,
+            "remote_printers": plan.remote_printers, "extra_printer_cents": plan.extra_printer_cents}
 
 
 def payment_view(p: Payment) -> dict[str, Any]:
-    return {"id": p.id, "plan": p.plan_name, "months": p.months, "amount_cents": p.amount_cents, "currency": p.currency,
+    return {"id": p.id, "plan": p.plan_name, "months": p.months, "extra_printers": p.extra_printers,
+            "amount_cents": p.amount_cents, "currency": p.currency,
             "provider": p.provider, "status": p.status, "note": p.note,
             "created_at": p.created_at.isoformat() + "Z", "paid_at": p.paid_at.isoformat() + "Z" if p.paid_at else None}
 
@@ -238,6 +240,8 @@ class PlanBody(BaseModel):
     price_cents: int = Field(default=0, ge=0)
     currency: str = Field(default="USD", min_length=3, max_length=3)
     public: bool = False
+    remote_printers: int = Field(default=0, ge=0, le=remote.MAX_PRINTERS * remote.MAX_BRIDGES)
+    extra_printer_cents: int = Field(default=0, ge=0)
 
 
 class RegisterBody(BaseModel):
@@ -268,6 +272,8 @@ class GoogleBody(BaseModel):
 class CheckoutBody(BaseModel):
     plan: str = Field(min_length=1, max_length=50)
     months: int = Field(default=1, ge=1, le=12)
+    # Remote printers on top of those of the plan.
+    extra_printers: int = Field(default=0, ge=0, le=100)
 
 
 class PlayPurchaseBody(BaseModel):
@@ -280,6 +286,7 @@ class ManualPaymentBody(BaseModel):
     amount_cents: int = Field(ge=0)
     currency: str = Field(default="USD", min_length=3, max_length=3)
     note: str = Field(default="", max_length=200)
+    extra_printers: int = Field(default=0, ge=0, le=100)
 
 
 class UnlimitedBody(BaseModel):
@@ -483,7 +490,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def me(user: UserDep) -> dict:
         with db.session() as s:
             u = s.get(User, user.id)
-            return {"email": u.email, **scheduler.account(s, u, cfg.grace_days).as_dict()}
+            acc = scheduler.account(s, u, cfg.grace_days)
+            return {"email": u.email, **acc.as_dict(), "remote_printers": remote.printer_allowance(u, acc.paid),
+                    "extra_printers": u.extra_printers, "extra_printer_cents": u.plan.extra_printer_cents}
 
     @app.get("/v1/plans")
     def plans() -> dict:
@@ -649,7 +658,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if plan is None or not plan.public or plan.price_cents <= 0:
                 raise HTTPException(422, "No such plan")
             u = s.get(User, user.id)
-            payment = billing.start_payment(s, u, plan, provider.name, body.months)
+            try:
+                payment = billing.start_payment(s, u, plan, provider.name, body.months, body.extra_printers)
+            except billing.BillingError as ex:
+                raise HTTPException(422, str(ex)) from None
             return_url = (cfg.public_url or "") + "/cuenta"
             return {"payment": payment_view(payment), "url": provider.checkout(payment, plan, u, return_url)}
 
@@ -973,7 +985,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(404, "No such bridge")
         bridge = s.get(Bridge, bridge_id)
         if bridge is None and create:
-            if s.execute(select(func.count()).select_from(Bridge).where(Bridge.user_id == user.id)).scalar_one() >= 10:
+            if s.execute(select(func.count()).select_from(Bridge).where(Bridge.user_id == user.id)).scalar_one() >= remote.MAX_BRIDGES:
                 raise HTTPException(409, "Too many bridges: remove an old one")
             bridge = Bridge(id=bridge_id, user_id=user.id)
             s.add(bridge)
@@ -988,6 +1000,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if action is not None and action not in printer["actions"]:
             raise HTTPException(422, f"The printer cannot {action} from afar")
         return printer
+
+    def remote_allowance(s, user: User) -> tuple[int, set[tuple[str, str]]]:  # noqa: ANN001
+        """How many printers the plan lets use from afar, and which ones."""
+        u = s.get(User, user.id)
+        allowance = remote.printer_allowance(u, scheduler.account(s, u, cfg.grace_days).paid)
+        return allowance, remote.allowed_printers(s, u, allowance)
+
+    def check_allowed(s, user: User, bridge: Bridge, printer_id: str) -> None:  # noqa: ANN001
+        allowance, allowed = remote_allowance(s, user)
+        if (bridge.id, printer_id) not in allowed:
+            raise HTTPException(402, "Remote printers are not in your plan: choose one on the account page" if allowance == 0
+                                else f"Your plan includes {allowance} remote printers: add more on the account page")
 
     def new_command(s, bridge: Bridge, printer_id: str, action: str, file_name: str = "") -> RemoteCommand:  # noqa: ANN001
         if not remote.is_online(bridge):
@@ -1079,8 +1103,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def remote_printers(user: RemoteDep) -> dict:
         now = utcnow()
         with db.session() as s:
+            allowance, allowed = remote_allowance(s, user)
             bridges = s.execute(select(Bridge).where(Bridge.user_id == user.id).order_by(Bridge.created_at)).scalars()
-            return {"bridges": [remote.bridge_view(b, now) for b in bridges]}
+            return {"allowance": allowance, "bridges": [remote.bridge_view(b, now, allowed) for b in bridges]}
 
     @app.delete("/v1/remote/bridges/{bridge_id}")
     def remote_remove_bridge(user: RemoteDep, bridge_id: str) -> dict:
@@ -1106,6 +1131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with db.session() as s:
             bridge = own_bridge(s, user, bridge_id)
             bridge_printer(bridge, printer_id, "print")
+            check_allowed(s, user, bridge, printer_id)
             command = new_command(s, bridge, printer_id, "print", name)
             # Saved before the command is visible to the bridge (the session commits at the end).
             try:
@@ -1123,6 +1149,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with db.session() as s:
             bridge = own_bridge(s, user, bridge_id)
             bridge_printer(bridge, printer_id, action)
+            check_allowed(s, user, bridge, printer_id)
             return remote.command_view(new_command(s, bridge, printer_id, action))
 
     @app.get("/v1/remote/commands/{command_id}")
@@ -1142,6 +1169,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             printer = bridge_printer(bridge, printer_id)
             if not printer["camera"]:
                 raise HTTPException(409, "The printer has no camera the bridge can relay")
+            check_allowed(s, user, bridge, printer_id)
             remote.watch(bridge, printer_id)
         path = services.remote_files.image(bridge_id, printer_id)
         if not path.exists() or time.time() - path.stat().st_mtime > remote.WATCH_S:
@@ -1210,7 +1238,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             plan = s.get(Plan, body.plan or user.plan_name)
             if plan is None:
                 raise HTTPException(422, "No such plan")
-            payment = billing.record_manual(s, user, plan, body.months, body.amount_cents, body.currency, body.note)
+            try:
+                payment = billing.record_manual(s, user, plan, body.months, body.amount_cents, body.currency, body.note,
+                                                body.extra_printers)
+            except billing.BillingError as ex:
+                raise HTTPException(422, str(ex)) from None
             return {"payment": payment_view(payment), "user": user_view(user)}
 
     @app.get("/v1/admin/payments")
@@ -1233,6 +1265,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         plan.price_cents = body.price_cents
         plan.currency = body.currency.upper()
         plan.public = body.public
+        plan.remote_printers = body.remote_printers
+        plan.extra_printer_cents = body.extra_printer_cents
         return plan
 
     @app.put("/v1/site/plans/{name}")

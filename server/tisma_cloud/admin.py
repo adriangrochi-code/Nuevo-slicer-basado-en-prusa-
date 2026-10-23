@@ -65,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--concurrent", type=int, required=True, help="jobs waiting or running at the same time")
     p.add_argument("--rpm", type=int, default=60, help="requests to the API per minute")
     p.add_argument("--priority", type=int, default=0)
+    p.add_argument("--remote-printers", type=int, default=0, help="printers of the account usable from afar")
+    p.add_argument("--extra-printer-cents", type=int, default=0,
+                   help="monthly price in cents of each remote printer more (0: no more)")
     sub.add_parser("plan-list")
 
     for name in ("user-add", "user-set"):
@@ -113,13 +116,16 @@ def main(argv: list[str] | None = None) -> int:
             plan = s.get(Plan, args.name) or Plan(name=args.name)
             plan.monthly_hours, plan.max_concurrent = args.hours, max(1, args.concurrent)
             plan.requests_per_minute, plan.priority = max(1, args.rpm), args.priority
+            plan.remote_printers, plan.extra_printer_cents = max(0, args.remote_printers), max(0, args.extra_printer_cents)
             s.add(plan)
             print(f"Plan {plan.name}: {plan.monthly_hours:g} h/month, {plan.max_concurrent} at a time, "
-                  f"{plan.requests_per_minute} requests/min, priority {plan.priority}")
+                  f"{plan.requests_per_minute} requests/min, priority {plan.priority}, "
+                  f"{plan.remote_printers} remote printers (+{plan.extra_printer_cents} cents each one more)")
         elif args.command == "plan-list":
             for plan in s.execute(select(Plan).order_by(Plan.monthly_hours)).scalars():
                 print(f"{plan.name:15} {plan.monthly_hours:8g} h/month  {plan.max_concurrent:3} at a time  "
-                      f"{plan.requests_per_minute:5} req/min  priority {plan.priority}")
+                      f"{plan.requests_per_minute:5} req/min  priority {plan.priority}  "
+                      f"{plan.remote_printers} remote printers (+{plan.extra_printer_cents} cents)")
         elif args.command in ("user-add", "user-set"):
             email = args.email.strip().lower()
             if args.plan and s.get(Plan, args.plan) is None:

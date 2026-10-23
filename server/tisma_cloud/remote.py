@@ -20,12 +20,13 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Bridge, RemoteCommand, utcnow
+from .models import Bridge, RemoteCommand, User, utcnow
 
 ACTIONS = ("print", "pause", "resume", "stop")
 # Ids made by the bridge (its own, those of its printers): plain, so that they can name files.
 ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 MAX_PRINTERS = 32
+MAX_BRIDGES = 10
 # The files a printer prints (Bambu Lab printers get the G-code packed by the bridge).
 PRINT_EXTENSIONS = (".gcode", ".bgcode")
 # A bridge is online while it asked for commands or sent its state this recently.
@@ -63,15 +64,40 @@ def clean_printers(printers: object) -> list[dict]:
     return out
 
 
+def printer_allowance(user: User, paid: bool) -> int:
+    """How many printers of the account can be used from afar: those of the plan and the ones paid for on top, while
+    the plan is paid (a free plan: its own). Administrators and internal accounts: all of them."""
+    if user.is_unlimited:
+        return MAX_PRINTERS * MAX_BRIDGES
+    if user.plan.price_cents <= 0:
+        return user.plan.remote_printers
+    return user.plan.remote_printers + user.extra_printers if paid else 0
+
+
+def allowed_printers(session: Session, user: User, allowance: int) -> set[tuple[str, str]]:
+    """The (bridge, printer) pairs that can be used from afar: the first ones of the oldest bridges."""
+    out: set[tuple[str, str]] = set()
+    for bridge in session.execute(select(Bridge).where(Bridge.user_id == user.id).order_by(Bridge.created_at)).scalars():
+        for printer in bridge.printer_list:
+            if len(out) >= allowance:
+                return out
+            out.add((bridge.id, printer["id"]))
+    return out
+
+
 def is_online(bridge: Bridge, now: datetime | None = None) -> bool:
     now = now or utcnow()
     return bridge.last_seen is not None and (now - bridge.last_seen).total_seconds() < ONLINE_S
 
 
-def bridge_view(bridge: Bridge, now: datetime | None = None) -> dict:
+def bridge_view(bridge: Bridge, now: datetime | None = None, allowed: set[tuple[str, str]] | None = None) -> dict:
+    """The bridge as the phone shows it; with allowed, the printers beyond the plan are locked."""
+    printers = bridge.printer_list
+    if allowed is not None:
+        printers = [{**p, "locked": (bridge.id, p["id"]) not in allowed} for p in printers]
     return {"id": bridge.id, "name": bridge.name, "online": is_online(bridge, now),
             "last_seen": bridge.last_seen.isoformat() + "Z" if bridge.last_seen else None,
-            "printers": bridge.printer_list}
+            "printers": printers}
 
 
 def command_view(c: RemoteCommand) -> dict:

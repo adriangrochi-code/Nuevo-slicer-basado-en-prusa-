@@ -81,6 +81,7 @@
         <span class="stat"><span class="muted">Plan</span><b id="plan"></b></span>
         <span class="stat"><span class="muted">Horas este mes</span><b id="hours"></b></span>
         <span class="stat"><span class="muted">Pagado hasta</span><b id="until"></b></span>
+        <span class="stat"><span class="muted">Impresoras remotas</span><b id="remote"></b></span>
       </p>
     </div>
     <h2>Planes</h2>
@@ -216,10 +217,10 @@ function setupGoogle(clientId) {
 
 $("logout").onclick = async () => { try { await api("/v1/auth/logout", { method: "POST" }); } catch (e) {} setToken(null); show(); };
 
-async function pay(plan) {
+async function pay(plan, extra_printers) {
   $("pay-error").textContent = "";
   try {
-    const r = await api("/v1/billing/checkout", { method: "POST", body: JSON.stringify({ plan: plan.name, months: 1 }) });
+    const r = await api("/v1/billing/checkout", { method: "POST", body: JSON.stringify({ plan: plan.name, months: 1, extra_printers }) });
     // Only the pages of the payment provider (https) or the test provider of this server.
     const url = new URL(r.url, location.href);
     if (url.protocol !== "https:" && url.origin !== location.origin) throw new Error("Dirección de pago no válida.");
@@ -227,12 +228,31 @@ async function pay(plan) {
   } catch (e) { $("pay-error").textContent = e.message; }
 }
 
+// A plan card: its price, what it includes and, if it sells them, how many remote printers to add (the price follows).
+function planCard(p) {
+  const current = me && me.plan === p.name;
+  const extra = p.extra_printer_cents > 0 ? el("input", { type: "number", min: 0, max: 100, value: current ? me.extra_printers : 0,
+    style: "width:5em", "aria-label": "Impresoras remotas de más" }) : null;
+  const price = el("span", { class: "price" });
+  const update = () => {
+    const n = extra ? Math.max(0, Math.min(100, parseInt(extra.value || "0", 10) || 0)) : 0;
+    price.replaceChildren(money(p.price_cents + n * p.extra_printer_cents, p.currency), el("span", { class: "muted", style: "font-size:14px" }, " / mes"));
+    return n;
+  };
+  if (extra) extra.addEventListener("input", update);
+  update();
+  return el("div", { class: "plan" + (current ? " current" : "") },
+    el("b", {}, p.name), price,
+    p.monthly_hours > 0 ? el("span", { class: "muted" }, `${p.monthly_hours} h de cálculo por mes · ${p.max_concurrent} trabajo${p.max_concurrent > 1 ? "s" : ""} a la vez`) : null,
+    p.remote_printers > 0 ? el("span", { class: "muted" }, `Impresoras y cámaras a distancia: ${p.remote_printers} incluidas` +
+      (p.extra_printer_cents > 0 ? `, ${money(p.extra_printer_cents, p.currency)} por mes cada una más` : "")) : null,
+    extra ? el("label", { class: "muted" }, "Impresoras de más: ", extra) : null,
+    el("button", { type: "button", class: "primary", disabled: !payments, onclick: () => pay(p, update()) },
+      current && me.paid ? "Pagar un mes más" : "Pagar"));
+}
+
 function renderPlans() {
-  $("plans").replaceChildren(...plans.map((p) => el("div", { class: "plan" + (me && me.plan === p.name ? " current" : "") },
-    el("b", {}, p.name), el("span", { class: "price" }, money(p.price_cents, p.currency), el("span", { class: "muted", style: "font-size:14px" }, " / mes")),
-    el("span", { class: "muted" }, `${p.monthly_hours} h de cálculo por mes · ${p.max_concurrent} trabajo${p.max_concurrent > 1 ? "s" : ""} a la vez`),
-    el("button", { type: "button", class: "primary", disabled: !payments, onclick: () => pay(p) },
-      me && me.plan === p.name && me.paid ? "Pagar un mes más" : "Pagar")))
+  $("plans").replaceChildren(...plans.map(planCard)
     .concat(plans.length ? [] : [el("p", { class: "muted" }, "Todavía no hay planes publicados.")]));
   $("pay-note").textContent = [payments ? "" : "El pago en línea todavía no está abierto: escribinos para pagar por transferencia.",
     playPayments ? "También podés suscribirte desde la app de Android con Google Play: el plan vale en esta cuenta, en la app y en Tisma." : ""]
@@ -256,6 +276,7 @@ async function show() {
     $("plan").textContent = me.plan;
     $("hours").textContent = `${me.hours_used.toFixed(1)} de ${me.hours_included} h`;
     $("until").textContent = fmtDate(me.paid_until);
+    $("remote").textContent = String(me.remote_printers);
     renderPlans();
     $("payments").replaceChildren(el("tr", {}, ["Fecha", "Plan", "Importe", "Estado"].map((h) => el("th", {}, h))),
       ...(pays.payments.length ? pays.payments.map((p) => el("tr", {}, el("td", {}, fmtDate(p.created_at)), el("td", {}, `${p.plan} · ${p.months} mes${p.months > 1 ? "es" : ""}`),

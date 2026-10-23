@@ -73,10 +73,11 @@ class Factory:
         self.db = client.app.state.services.db
 
     def plan(self, name: str = "pro", hours: float = 10., concurrent: int = 3, rpm: int = 1000,
-             priority: int = 0) -> str:
+             priority: int = 0, remote_printers: int = 3) -> str:
         with self.db.session() as s:
             plan = s.get(Plan, name) or Plan(name=name)
             plan.monthly_hours, plan.max_concurrent, plan.requests_per_minute, plan.priority = hours, concurrent, rpm, priority
+            plan.remote_printers = remote_printers
             s.add(plan)
         return name
 

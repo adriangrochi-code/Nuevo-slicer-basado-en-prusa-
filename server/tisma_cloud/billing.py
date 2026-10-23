@@ -69,11 +69,17 @@ def provider_for(name: str, public_url: str) -> Provider | None:
     return None
 
 
-def start_payment(session: Session, user: User, plan: Plan, provider: str, months: int = 1) -> Payment:
+def start_payment(session: Session, user: User, plan: Plan, provider: str, months: int = 1,
+                  extra_printers: int = 0) -> Payment:
     if months < 1 or months > 12:
         raise BillingError("Between 1 and 12 months")
-    payment = Payment(user_id=user.id, plan_name=plan.name, months=months, amount_cents=plan.price_cents * months,
-                      currency=plan.currency, provider=provider)
+    if extra_printers < 0 or extra_printers > 100:
+        raise BillingError("Between 0 and 100 more printers")
+    if extra_printers and plan.extra_printer_cents <= 0:
+        raise BillingError("The plan has no more remote printers")
+    monthly = plan.price_cents + extra_printers * plan.extra_printer_cents
+    payment = Payment(user_id=user.id, plan_name=plan.name, months=months, extra_printers=extra_printers,
+                      amount_cents=monthly * months, currency=plan.currency, provider=provider)
     session.add(payment)
     session.flush()
     return payment
@@ -103,14 +109,15 @@ def approve(session: Session, payment: Payment) -> None:
     start = user.paid_until if user.paid_until and user.paid_until > now else now
     user.paid_until = start + MONTH * payment.months
     user.plan_name = payment.plan_name
+    user.extra_printers = payment.extra_printers
     payment.status = "approved"
     payment.paid_at = now
 
 
 def record_manual(session: Session, user: User, plan: Plan, months: int, amount_cents: int, currency: str,
-                  note: str) -> Payment:
+                  note: str, extra_printers: int = 0) -> Payment:
     """A payment received outside the provider (transfer, cash), recorded by the administrator."""
-    payment = start_payment(session, user, plan, "manual", months)
+    payment = start_payment(session, user, plan, "manual", months, extra_printers)
     payment.amount_cents = amount_cents
     payment.currency = currency.upper()[:3]
     payment.note = note[:200]

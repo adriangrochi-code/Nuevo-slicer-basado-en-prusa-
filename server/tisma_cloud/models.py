@@ -38,6 +38,10 @@ class Plan(Base):
     price_cents: Mapped[int] = mapped_column(Integer, default=0)
     currency: Mapped[str] = mapped_column(String(3), default="USD")
     public: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Remote printers (remote.py): how many printers of the account the plan lets use from afar, and the monthly price
+    # in cents of each one more (0: the plan has no more).
+    remote_printers: Mapped[int] = mapped_column(Integer, default=0)
+    extra_printer_cents: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class User(Base):
@@ -68,6 +72,8 @@ class User(Base):
     store_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     # Random id of the account given to Google Play with each purchase (obfuscatedAccountId), to know whose it is.
     play_account: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    # Remote printers paid for on top of those of the plan (set by the last payment).
+    extra_printers: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     plan: Mapped[Plan] = relationship(lazy="joined")
@@ -93,6 +99,8 @@ class Payment(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     plan_name: Mapped[str] = mapped_column(ForeignKey("plans.name"))
     months: Mapped[int] = mapped_column(Integer, default=1)
+    # Remote printers paid for on top of those of the plan.
+    extra_printers: Mapped[int] = mapped_column(Integer, default=0)
     # The amount expected (set by the master from the plan, never by the buyer) and its currency.
     amount_cents: Mapped[int] = mapped_column(Integer, default=0)
     currency: Mapped[str] = mapped_column(String(3), default="USD")

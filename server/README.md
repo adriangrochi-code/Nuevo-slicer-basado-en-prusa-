@@ -430,6 +430,20 @@ imágenes solo mientras alguien mira. No hace falta abrir puertos en la casa: el
   empaqueta para las Bambu Lab.
 - Estas llamadas tienen su propio límite por cuenta, `TISMA_REMOTE_REQUESTS_PER_MINUTE` (600), aparte del plan.
 - Cada cuenta ve y controla solo sus puentes (hasta 10).
+- **Plan**: cada plan dice cuántas impresoras de la cuenta se usan a distancia (`remote_printers`) y cuánto cuesta por
+  mes cada una más (`extra_printer_cents`, 0 = no vende más). Las de más se eligen al pagar en la página de la cuenta
+  y valen mientras ese pago está al día; el pago siguiente decide cuántas quedan. Sin el plan pago no se usa ninguna
+  (un plan gratis da las suyas). Las que pasan del plan se listan con `locked: true` y sus órdenes y su cámara
+  responden 402. Cuentan las primeras impresoras de los puentes más viejos. Por ejemplo, el plan pedido de 2 USD con
+  3 impresoras y 1 USD cada una más, y el de 10 USD que las incluye:
+
+  ```
+  python -m tisma_cloud.admin plan-set remoto --hours 0 --concurrent 1 --remote-printers 3 --extra-printer-cents 100
+  python -m tisma_cloud.admin plan-set completo --hours 20 --concurrent 2 --remote-printers 3 --extra-printer-cents 100
+  ```
+
+  (el precio y si se muestra en la página van por `PUT /v1/site/plans/{nombre}` con `price_cents` 200 y 1000).
+  Las suscripciones de Google Play no venden impresoras de más todavía.
 
 ## Tests
 

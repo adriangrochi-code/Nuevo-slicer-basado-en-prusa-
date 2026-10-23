@@ -30,13 +30,13 @@ def test_bridge_state_is_cleaned_and_listed(client, f):
     assert len(bridges) == 1 and bridges[0]["online"] and bridges[0]["name"] == "PC del taller"
     printers = {p["id"]: p for p in bridges[0]["printers"]}
     # Unknown fields, wrong kinds, bad ids and unknown actions are dropped; long texts are cut.
-    assert set(printers) == {"a1", "ender"}
+    assert set(printers) == {"a1", "ender"} and not printers["a1"]["locked"] and not printers["ender"]["locked"]
     assert printers["a1"]["state"] == {"state": "idle", "nozzle_temp": 25.5, "bed_temp": 24, "percent": -1,
                                        "job_name": "x" * 200}
     assert printers["ender"]["actions"] == ["print"] and printers["ender"]["state"] == {}
     # Another account sees nothing and cannot take the bridge.
     bruno = f.user("bruno@x.com")
-    assert client.get("/v1/remote/printers", headers=bruno).json() == {"bridges": []}
+    assert client.get("/v1/remote/printers", headers=bruno).json()["bridges"] == []
     assert client.put(f"/v1/bridges/{BRIDGE}", headers=bruno, json={"printers": []}).status_code == 404
     assert client.put("/v1/bridges/bad.id", headers=ana, json={"printers": []}).status_code == 404
 
@@ -132,7 +132,7 @@ def test_remove_a_bridge(client, f):
     command = client.post(f"/v1/remote/bridges/{BRIDGE}/printers/a1/print", headers=ana,
                           files={"file": ("p.gcode", b"G28\n")}).json()
     assert client.delete(f"/v1/remote/bridges/{BRIDGE}", headers=ana).json() == {"ok": True}
-    assert client.get("/v1/remote/printers", headers=ana).json() == {"bridges": []}
+    assert client.get("/v1/remote/printers", headers=ana).json()["bridges"] == []
     assert not client.app.state.services.remote_files.print_file(command["id"]).exists()
     assert client.get(f"/v1/remote/commands/{command['id']}", headers=ana).status_code == 404
 

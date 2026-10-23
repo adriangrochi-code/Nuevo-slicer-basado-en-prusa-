@@ -134,3 +134,37 @@ def test_manual_payments_from_the_panel(client, f):
     with TestClient(client.app, client=INTERNET) as internet:
         assert internet.post("/v1/admin/users/eva@x.com/payments", headers=admin,
                              json={"months": 1, "amount_cents": 0}).status_code == 404
+
+
+def test_remote_printers_plan(shop):
+    """Remote printers: a plan of 2 USD with 3 printers and 1 USD each one more; without payment, none."""
+    assert shop.put("/v1/site/plans/remoto", headers=SITE, json={
+        "monthly_hours": 0, "max_concurrent": 1, "price_cents": 200, "public": True,
+        "remote_printers": 3, "extra_printer_cents": 100}).status_code == 200
+    plan = [p for p in shop.get("/v1/plans").json()["plans"] if p["name"] == "remoto"][0]
+    assert plan["remote_printers"] == 3 and plan["extra_printer_cents"] == 100
+    user = register(shop, plan="remoto")
+    bridge = {"name": "PC", "printers": [{"id": f"p{i}", "name": f"P{i}", "actions": ["pause"]} for i in range(5)]}
+    assert shop.put("/v1/bridges/casa", headers=user, json=bridge).status_code == 200
+    # Not paid yet: the printers are listed, locked.
+    listed = shop.get("/v1/remote/printers", headers=user).json()
+    assert listed["allowance"] == 0 and all(p["locked"] for p in listed["bridges"][0]["printers"])
+    assert shop.post("/v1/remote/bridges/casa/printers/p0/pause", headers=user).status_code == 402
+    # Paid with two printers more: 2 USD + 2 x 1 USD.
+    r = shop.post("/v1/billing/checkout", headers=user, json={"plan": "remoto", "extra_printers": 2})
+    assert r.status_code == 200 and r.json()["payment"]["amount_cents"] == 400
+    assert r.json()["payment"]["extra_printers"] == 2
+    shop.post(f"/billing/test/{r.json()['payment']['id']}/approved", follow_redirects=False)
+    me = shop.get("/v1/me", headers=user).json()
+    assert me["remote_printers"] == 5 and me["extra_printers"] == 2 and me["extra_printer_cents"] == 100
+    assert not any(p["locked"] for p in shop.get("/v1/remote/printers", headers=user).json()["bridges"][0]["printers"])
+    assert shop.post("/v1/remote/bridges/casa/printers/p4/pause", headers=user).status_code == 201
+    # The next month without them: the first three printers only.
+    pid = shop.post("/v1/billing/checkout", headers=user, json={"plan": "remoto"}).json()["payment"]["id"]
+    shop.post(f"/billing/test/{pid}/approved", follow_redirects=False)
+    locked = [p["locked"] for p in shop.get("/v1/remote/printers", headers=user).json()["bridges"][0]["printers"]]
+    assert locked == [False, False, False, True, True]
+    r = shop.post("/v1/remote/bridges/casa/printers/p4/pause", headers=user)
+    assert r.status_code == 402 and "3 remote printers" in r.json()["detail"]
+    # A plan without more printers does not sell them.
+    assert shop.post("/v1/billing/checkout", headers=user, json={"plan": "pro", "extra_printers": 1}).status_code == 422
