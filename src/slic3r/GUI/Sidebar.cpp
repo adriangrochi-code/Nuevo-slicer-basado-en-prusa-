@@ -322,8 +322,8 @@ class SlicedInfo : public InfoCard
 public:
     SlicedInfo(wxWindow *parent);
     void SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label="");
-    // The names and values shown, but the estimated time.
-    std::vector<std::pair<std::string, std::string>> rows() const;
+    // The names and values shown, with the estimated time or without it.
+    std::vector<std::pair<std::string, std::string>> rows(bool with_time) const;
 
 private:
     std::vector<std::pair<wxStaticText*, wxStaticText*>> info_vec;
@@ -361,11 +361,11 @@ SlicedInfo::SlicedInfo(wxWindow *parent) : InfoCard(parent, _L("Sliced Info"))
     this->Show(false);
 }
 
-std::vector<std::pair<std::string, std::string>> SlicedInfo::rows() const
+std::vector<std::pair<std::string, std::string>> SlicedInfo::rows(bool with_time) const
 {
     std::vector<std::pair<std::string, std::string>> out;
     for (size_t i = 0; i < info_vec.size(); ++ i)
-        if (i != siEstimatedTime && info_vec[i].first->IsShown()) {
+        if ((with_time || i != siEstimatedTime) && info_vec[i].first->IsShown()) {
             // The names end with a colon only when values of parts follow.
             std::string name = into_u8(info_vec[i].first->GetLabelText());
             if (name.find('\n') == std::string::npos && (name.empty() || name.back() != ':'))
@@ -1900,13 +1900,13 @@ void Sidebar::update_sliced_info_sizer()
             if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
                 coast = c->get_at(0);
             m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
+        }
 
-            // Shown with the legend of the preview.
-            m_sliced_info_rows = m_sliced_info->rows();
-            if (GLCanvas3D *canvas = m_plater->get_current_canvas3D()) {
-                canvas->set_as_dirty();
-                canvas->request_extra_frame();
-            }
+        // Shown with the legend of the preview, the estimated time too for a resin print (its legend has no times).
+        m_sliced_info_rows = m_sliced_info->rows(m_plater->printer_technology() == ptSLA);
+        if (GLCanvas3D *canvas = m_plater->get_current_canvas3D()) {
+            canvas->set_as_dirty();
+            canvas->request_extra_frame();
         }
     }
 
@@ -1921,10 +1921,10 @@ void Sidebar::show_sliced_info_sizer(const bool show)
 
     wxWindowUpdateLocker freeze_guard(this);
 
-    // Tisma: the information of a filament print is shown with the legend of the preview, on the left, so that it is not
-    // shown twice (the legend has the times and the filament of each feature); a resin print has no legend.
+    // Tisma: the information is shown with the legend of the preview, on the left, not in the panel, so that it is not
+    // shown twice (the legend of a filament print has the times and the filament of each feature).
     m_sliced_info_shown = show;
-    m_sliced_info->Show(show && m_plater->printer_technology() == ptSLA);
+    m_sliced_info->Show(false);
     m_sliced_info_rows.clear();
     if (show)
         update_sliced_info_sizer();
