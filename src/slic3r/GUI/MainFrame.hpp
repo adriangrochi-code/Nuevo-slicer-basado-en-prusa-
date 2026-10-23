@@ -278,9 +278,13 @@ public:
     void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;
-    DiffPresetDialog      diff_dialog;
+    // Tisma Slicer: made the first time it is shown (it copies all the presets, which took a second at every start).
+    DiffPresetDialog&     diff_dialog();
+    DiffPresetDialog*     diff_dialog_if_created() { return m_diff_dialog; }
+    DiffPresetDialog*     m_diff_dialog { nullptr };
     wxWindow*             m_plater_page{ nullptr };
 //    wxProgressDialog*     m_progress_dialog { nullptr };
+    // Made the first time the preferences are opened (GUI_App::open_preferences()).
     PreferencesDialog*    preferences_dialog { nullptr };
     PrintHostQueueDialog* m_printhost_queue_dlg;
     GalleryDialog*        m_gallery_dialog{ nullptr };

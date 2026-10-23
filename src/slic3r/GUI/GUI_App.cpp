@@ -2261,8 +2261,10 @@ void GUI_App::update_ui_from_settings()
     if (m_force_colors_update) {
         m_force_colors_update = false;
         mainframe->force_color_changed();
-        mainframe->diff_dialog.force_color_changed();
-        mainframe->preferences_dialog->force_color_changed();
+        if (DiffPresetDialog *diff = mainframe->diff_dialog_if_created())
+            diff->force_color_changed();
+        if (mainframe->preferences_dialog)
+            mainframe->preferences_dialog->force_color_changed();
         mainframe->printhost_queue_dlg()->force_color_changed();
 #ifdef _MSW_DARK_MODE
         update_scrolls(mainframe);
@@ -2884,6 +2886,9 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
 
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
 {
+    // Tisma Slicer: made the first time (building it took a second at every start).
+    if (mainframe->preferences_dialog == nullptr)
+        mainframe->preferences_dialog = new PreferencesDialog(mainframe);
     mainframe->preferences_dialog->show(highlight_option, tab_name);
 
     if (mainframe->preferences_dialog->recreate_GUI())

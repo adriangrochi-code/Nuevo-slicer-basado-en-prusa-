@@ -153,7 +153,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     m_printhost_queue_dlg(new PrintHostQueueDialog(this))
     , m_recent_projects(9)
     , m_settings_dialog(this)
-    , diff_dialog(this)
 {
     // Fonts were created by the DPIFrame constructor for the monitor, on which the window opened.
     wxGetApp().update_fonts(this);
@@ -326,7 +325,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 #endif // ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
         m_plater->show_action_buttons(true);
 
-        preferences_dialog = new PreferencesDialog(this);
     }
 
     if (wxGetApp().is_editor()) {
@@ -507,6 +505,13 @@ void MainFrame::update_layout()
 
     Layout();
     Thaw();
+}
+
+DiffPresetDialog& MainFrame::diff_dialog()
+{
+    if (m_diff_dialog == nullptr)
+        m_diff_dialog = new DiffPresetDialog(this);
+    return *m_diff_dialog;
 }
 
 // Called when closing the application and when switching the application language.
@@ -1899,7 +1904,7 @@ void MainFrame::init_menubar_as_editor()
 
         windowMenu->AppendSeparator();
         append_menu_item(windowMenu, wxID_ANY, _L("Compare Presets")/* + "\tCtrl+F"*/, _L("Compare presets"), 
-            [this](wxCommandEvent&) { diff_dialog.show();}, "compare", nullptr, []() {return true; }, this);
+            [this](wxCommandEvent&) { diff_dialog().show();}, "compare", nullptr, []() {return true; }, this);
     }
 
     // View menu

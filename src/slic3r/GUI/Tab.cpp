@@ -4347,7 +4347,7 @@ void Tab::OnKeyDown(wxKeyEvent& event)
 
 void Tab::compare_preset()
 {
-    wxGetApp().mainframe->diff_dialog.show(m_type);
+    wxGetApp().mainframe->diff_dialog().show(m_type);
 }
 
 void Tab::transfer_options(const std::string &name_from, const std::string &name_to, std::vector<std::string> options)
@@ -4475,8 +4475,9 @@ void Tab::save_preset(std::string name /*= ""*/, bool detach)
             wxGetApp().get_tab(preset_type)->update_tab_ui();
     }
 
-    // update preset comboboxes in DiffPresetDlg
-    wxGetApp().mainframe->diff_dialog.update_presets(m_type);
+    // update preset comboboxes in DiffPresetDlg (Tisma Slicer: if it was made, see MainFrame::diff_dialog())
+    if (DiffPresetDialog *diff = wxGetApp().mainframe->diff_dialog_if_created())
+        diff->update_presets(m_type);
 
     if (detach)
         update_description_lines();

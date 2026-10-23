@@ -33612,6 +33612,9 @@ msgid_plural "%1% printers selected. Finish installs them with their settings an
 msgstr[0] "%1% impresora elegida. Finalizar la instala con su configuración y sus filamentos."
 msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración y sus filamentos."
 
+msgid "Another nozzle can be chosen later, next to the printer."
+msgstr "Otra boquilla se puede elegir después, junto a la impresora."
+
 msgid "Split to fit the printer"
 msgstr "Dividir para que entre en la impresora"
 
