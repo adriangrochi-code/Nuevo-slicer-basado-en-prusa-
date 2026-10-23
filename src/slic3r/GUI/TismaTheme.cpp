@@ -79,6 +79,18 @@ void apply_to_toolkit()
     if (mode != Appearance::System)
         if (GtkSettings *settings = gtk_settings_get_default())
             g_object_set(settings, "gtk-application-prefer-dark-theme", mode == Appearance::Dark ? TRUE : FALSE, nullptr);
+    // Compact text entries: the fields of the settings (TextInput) are as high as their entry, which the GTK themes
+    // pad for touch screens.
+    static bool css_added = false;
+    if (! css_added) {
+        if (GdkScreen *screen = gdk_screen_get_default()) {
+            GtkCssProvider *css = gtk_css_provider_new();
+            gtk_css_provider_load_from_data(css, "entry { min-height: 0; padding-top: 2px; padding-bottom: 2px; }", -1, nullptr);
+            gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            g_object_unref(css);
+            css_added = true;
+        }
+    }
 #elif defined(__APPLE__)
     mac_set_appearance(int(mode));
 #else

@@ -1,5 +1,5 @@
 ///|/ Tisma Slicer: widgets of the interface of Tisma (the look of the Android app): chips, titles of groups, options
-///|/ as chips.
+///|/ as chips, the list of the pages of the settings.
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -13,7 +13,9 @@
 #include <wx/bmpbndl.h>
 #include <wx/colour.h>
 #include <wx/panel.h>
+#include <wx/scrolwin.h>
 #include <wx/stattext.h>
+#include <wx/treebase.h>
 
 namespace Slic3r {
 namespace GUI {
@@ -81,6 +83,52 @@ private:
     std::vector<TismaChip*>  m_chips;
     int                      m_selection { -1 };
     std::function<void(int)> m_on_select;
+};
+
+// The list of the pages of a settings tab: an icon and a title on each row, the page shown on a rounded accent
+// background, as the navigation of the modern slicers. It replaces the tree of PrusaSlicer with the same calls (the part
+// of the wxTreeCtrl interface the tabs use): a hidden root, its items, and wxEVT_TREE_SEL_CHANGED when another page is
+// selected, by a click, the keyboard or SelectItem().
+class TismaPageList : public wxScrolledWindow
+{
+public:
+    TismaPageList(wxWindow* parent, const wxSize& size);
+
+    wxTreeItemId AddRoot(const wxString& text);
+    wxTreeItemId GetRootItem() const;
+    wxTreeItemId AppendItem(const wxTreeItemId& parent, const wxString& text, int image = -1);
+    void         DeleteChildren(const wxTreeItemId& item);
+    void         SetImages(const wxVector<wxBitmapBundle>& images);
+    void         SetIndent(unsigned int) {}
+
+    wxTreeItemId GetFirstVisibleItem() const;
+    wxTreeItemId GetNextVisible(const wxTreeItemId& item) const;
+    bool         IsVisible(const wxTreeItemId& item) const { return index(item) >= 0; }
+    wxString     GetItemText(const wxTreeItemId& item) const;
+    void         SetItemTextColour(const wxTreeItemId& item, const wxColour& colour);
+    void         SetItemFont(const wxTreeItemId&, const wxFont&) {}
+
+    wxTreeItemId GetSelection() const;
+    void         SelectItem(const wxTreeItemId& item, bool select = true);
+
+private:
+    struct Item {
+        wxString text;
+        int      image;
+        wxColour colour;
+    };
+    std::vector<Item>           m_items;
+    std::vector<wxBitmapBundle> m_images;
+    int                         m_selection { -1 };
+    int                         m_hover     { -1 };
+
+    int  index(const wxTreeItemId& item) const;
+    static wxTreeItemId id(int index);
+    int  row_height() const;
+    int  row_at(const wxPoint& pos) const;
+    void select(int idx, bool send_event);
+    void update_virtual_size();
+    void on_paint(wxPaintEvent&);
 };
 
 } // namespace GUI

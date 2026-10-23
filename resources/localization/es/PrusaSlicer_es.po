@@ -34158,3 +34158,9 @@ msgstr "La cama (placa de impresión) que se usa: se usan las temperaturas de ca
 
 msgid "The nozzle on the printer: the printer profile of the model for it, or its diameter set on the printer. The print profiles for that nozzle can be chosen."
 msgstr "La boquilla puesta en la impresora: el perfil de impresora del modelo para ella, o su diámetro puesto en la impresora. Se pueden elegir los perfiles de impresión para esa boquilla."
+
+msgid "Default bed type"
+msgstr "Cama predeterminada"
+
+msgid "The bed chosen when this printer is selected."
+msgstr "La cama que se elige al seleccionar esta impresora."

@@ -1740,7 +1740,9 @@ bool GUI_App::dark_mode()
 
 const wxColour GUI_App::get_label_default_clr_system()
 {
-    return dark_mode() ? wxColour(115, 220, 103) : wxColour(26, 132, 57);
+    // Tisma: the values of the system profiles in the color of the text (green in PrusaSlicer); the modified ones in
+    // the accent color.
+    return dark_mode() ? wxColour(0xEC, 0xEC, 0xF0) : wxColour(0x1A, 0x1A, 0x1F);
 }
 
 const wxColour GUI_App::get_label_default_clr_modified()

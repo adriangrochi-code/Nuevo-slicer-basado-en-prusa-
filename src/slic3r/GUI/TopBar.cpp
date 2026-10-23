@@ -249,7 +249,8 @@ void TopBarItemsCtrl::CreateSearch()
     m_search->SetMaxSize(wxSize(/*42*/30*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
     // Tisma: a rounded search field, as the chips of the bar.
-    m_search->SetCornerRadius(1.4 * em_unit(this));
+    // Rounded as a pill; the fields are compact (no more than half of their height).
+    m_search->SetCornerRadius(1.1 * em_unit(this));
 
     m_search->Bind(wxEVT_TEXT, [](wxEvent& e)
     {

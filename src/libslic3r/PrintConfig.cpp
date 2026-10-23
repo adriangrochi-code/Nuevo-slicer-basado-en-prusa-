@@ -4374,8 +4374,8 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("support_multi_bed_types", coBool);
     def->label = L("Choose the bed type");
-    def->tooltip = L("The printer has interchangeable beds (build plates): the bed is chosen in the sidebar and the "
-                     "filaments give a bed temperature for each one.");
+    // Tisma: the bed is chosen for every printer now; kept for the profiles of OrcaSlicer.
+    def->tooltip = L("The printer has interchangeable beds (build plates), as in the profiles of OrcaSlicer.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 

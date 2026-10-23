@@ -1426,6 +1426,14 @@ void TabPresetComboBox::OnSelect(wxCommandEvent &evt)
 
 wxString TabPresetComboBox::get_preset_name(const Preset& preset)
 {
+    // Tisma: the print and filament profiles by their short names (their aliases, as in the plate panel), unless the
+    // incompatible ones are listed too (several of them have the same alias then).
+    if (! show_incompatible && ! preset.alias.empty() && (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_FILAMENT) &&
+        ! (preset.vendor && preset.vendor->templates_profile)) {
+        const wxString label = from_u8(preset.alias + suffix(preset));
+        m_label_presets[label] = preset.name;
+        return label;
+    }
     return from_u8(preset.name + suffix(preset));
 }
 
@@ -1437,6 +1445,7 @@ void TabPresetComboBox::update()
     Freeze();
     Clear();
     invalidate_selection();
+    m_label_presets.clear();
 
     const ExtruderFilaments& extruder_filaments = m_preset_bundle->extruders_filaments[m_extruder_idx];
 

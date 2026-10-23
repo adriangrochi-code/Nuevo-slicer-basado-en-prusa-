@@ -146,6 +146,11 @@ public:
 	const wxBitmapBundle&	undo_to_sys_bitmap()	const { return m_undo_ui.undo_to_sys_bitmap->bmp(); }
 	const wxString*			undo_to_sys_tooltip()	const { return m_undo_ui.undo_to_sys_tooltip; }
 	const wxColour*			label_color()			const { return m_undo_ui.label_color; }
+	// Tisma: whether the icons tell something, as in the modern slicers: a value which differs from the system one (an
+	// open lock) or from the saved one (an undo arrow). The closed lock and the dot of the values as saved are not drawn.
+	bool					undo_to_sys_shown()		const { return m_undo_ui.undo_to_sys_bitmap != nullptr &&
+		m_undo_ui.undo_to_sys_bitmap->name() != "lock_closed" && m_undo_ui.undo_to_sys_bitmap->name() != "dot"; }
+	bool					undo_shown()			const { return m_undo_ui.undo_bitmap != nullptr && m_undo_ui.undo_bitmap->name() != "dot"; }
 
 	// Extentions
 
