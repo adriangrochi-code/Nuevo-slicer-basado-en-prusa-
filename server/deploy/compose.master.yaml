@@ -23,6 +23,14 @@ services:
     ulimits:
       nofile: { soft: 65536, hard: 65536 }
     depends_on: [db]
+  # Antivirus for every file uploaded (threats.py). ClamAV needs 3 GiB of memory or more
+  # (https://docs.clamav.net/manual/Installing/Docker.html): only with --profile antivirus and TISMA_CLAMD=clamav:3310
+  # in .env. Its signatures are updated inside the container once a day.
+  clamav:
+    image: clamav/clamav:1.5
+    profiles: ["antivirus"]
+    restart: unless-stopped
+    volumes: ["clamav:/var/lib/clamav"]
   db:
     image: postgres:16
     restart: unless-stopped
@@ -51,6 +59,7 @@ services:
       - ${BACKUP_DIR:-./backups}:/backups
     depends_on: [db]
 volumes:
+  clamav:
   caddy-data:
   storage:
   db:

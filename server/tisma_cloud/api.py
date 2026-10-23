@@ -13,6 +13,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from importlib import resources
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
@@ -36,6 +37,7 @@ from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, Busy, hash_password, hash_token, needs_rehash, new_token, verify_password
 from .settings import Settings
 from .storage import ALLOWED_RESULTS, Storage, TooLarge, safe_filename
+from .threats import Clamd, ScanUnavailable, Threat, ThreatLog, check_gcode, check_project
 from .wakeup import Wakeup
 
 log = logging.getLogger("tisma_cloud")
@@ -101,6 +103,9 @@ class Services:
         self.presence = Presence()
         self.images = remote.Images()
         self.tokens = TokenCache()
+        # Uploads checked before they are kept (threats.py), and the ones refused lately for the alerts.
+        self.clamd = Clamd(settings.clamd) if settings.clamd else None
+        self.refused = ThreatLog()
         self.limiter = RateLimiter()
         # The long polls of the bridges and the nodes, woken by the commands and jobs created here.
         self.wakeup = Wakeup()
@@ -224,10 +229,34 @@ class Services:
                 s.execute(update(Bridge).where(Bridge.id == bridge_id).values(
                     name=name, printers=json.dumps(printers), last_seen=seen.get(bridge_id) or utcnow()))
 
+    def inspect(self, path: Path, kind: str, text_gcode: bool = True) -> list:
+        """Checks an uploaded file: "project" (3MF), "gcode" (sent to a printer; text_gcode: ASCII, read) or "result"
+        (of a node), and with ClamAV when set. Raises Threat or ScanUnavailable (both counted for the alerts); returns
+        the commands of a G-code that are only reported."""
+        findings: list = []
+        try:
+            if kind == "project":
+                check_project(path)
+            elif kind == "gcode" and text_gcode:
+                findings = check_gcode(path)
+            if self.clamd is not None:
+                found = self.clamd.scan(path)
+                if found:
+                    raise Threat(f"The antivirus found {found} in the file", "virus")
+        except Threat as ex:
+            self.refused.add(ex.kind)
+            log.warning("Upload refused (%s): %s", ex.kind, ex)
+            raise
+        except ScanUnavailable:
+            self.refused.add("scanner")
+            log.exception("The antivirus did not check an upload")
+            raise
+        return findings
+
     def check_alerts(self, now: datetime | None = None) -> list[Alert]:
         """Opens, repeats and closes the alerts (one check at a time, so that an alert is never opened twice)."""
         with self._alerts_lock, self.db.session() as s:
-            return alerts.update(s, self.settings, self.storage.root, self.mailer, now)
+            return alerts.update(s, self.settings, self.storage.root, self.mailer, now, self.refused.recent())
 
 
 def job_view(job: Job) -> dict[str, Any]:
@@ -642,6 +671,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     AdminDep = Annotated[User, Depends(current_admin)]
     NodeDep = Annotated[Node, Depends(current_node)]
     SiteDep = Annotated[None, Depends(current_site)]
+
+    def inspected(path: Path, kind: str, cleanup, text_gcode: bool = True) -> list:  # noqa: ANN001
+        """services.inspect, answered as HTTP errors (cleanup() removes the file when it is refused)."""
+        try:
+            return services.inspect(path, kind, text_gcode)
+        except Threat as ex:
+            cleanup()
+            raise HTTPException(422, str(ex)) from None
+        except ScanUnavailable:
+            cleanup()
+            raise HTTPException(503, "The file could not be checked for viruses: try again in a few minutes",
+                                headers={"Retry-After": "60"}) from None
 
     def own_job(s, user: User, job_id: str) -> Job:  # noqa: ANN001
         job = s.get(Job, job_id)
@@ -1180,6 +1221,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except TooLarge:
                 services.storage.remove_job(job.id)
                 raise HTTPException(413, f"The project is larger than {cfg.max_upload_mb} MB") from None
+            # Checked before it is queued (the job is not kept when it is refused).
+            inspected(services.storage.input_path(job.id), "project", lambda: services.storage.remove_job(job.id))
             view = job_view(job)
         # After the commit: a node woken before it would not see the job.
         services.wakeup.notify(JOBS)
@@ -1296,18 +1339,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ext = "." + name.rsplit(".", 1)[-1].lower() if "." in name else ""
         if ext not in ALLOWED_RESULTS:
             raise HTTPException(422, f"Results are {', '.join(ALLOWED_RESULTS)} files")
+        refused: HTTPException | None = None
         with db.session() as s:
             job = node_job(s, node, job_id)
+            path = services.storage.result_path(job.id, ext)
             try:
-                services.storage.save_stream(file.file, services.storage.result_path(job.id, ext), cfg.max_result_mb << 20)
+                services.storage.save_stream(file.file, path, cfg.max_result_mb << 20)
+                # A node is ours, but what it gives the users is checked too (with ClamAV, when set).
+                inspected(path, "result", lambda: path.unlink(missing_ok=True))
             except TooLarge:
+                refused = HTTPException(413, "The result is too large")
                 scheduler.fail(s, job, f"The result is larger than {cfg.max_result_mb} MB")
-                services.storage.remove_input(job.id)
-                raise HTTPException(413, "The result is too large") from None
-            stem = job.input_name.rsplit(".", 1)[0] if job.input_name else "result"
-            scheduler.finish(s, job, safe_filename(stem + ext, "result" + ext), summary_dict)
+            except HTTPException as ex:
+                refused = ex
+                scheduler.fail(s, job, "The result was refused: " + str(ex.detail))
+            else:
+                stem = job.input_name.rsplit(".", 1)[0] if job.input_name else "result"
+                scheduler.finish(s, job, safe_filename(stem + ext, "result" + ext), summary_dict)
             services.storage.remove_input(job.id)
-            return {"ok": True}
+        # Raised once the session is committed: the job stays failed.
+        if refused is not None:
+            raise refused
+        return {"ok": True}
 
     @app.post("/v1/node/jobs/{job_id}/fail")
     def node_fail(node: NodeDep, job_id: str, body: FailBody) -> dict:
@@ -1549,7 +1602,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except TooLarge:
                 services.remote_files.remove_command(command.id)
                 raise HTTPException(413, f"The file is larger than {cfg.max_upload_mb} MB") from None
+            # The commands that change the printer itself are refused; some only reported (threats.py).
+            findings = inspected(services.remote_files.print_file(command.id), "gcode",
+                                 lambda: services.remote_files.remove_command(command.id),
+                                 text_gcode=name.lower().endswith(".gcode"))
             view = remote.command_view(command)
+            view["warnings"] = [{"command": x.command, "line": x.line, "what": x.what} for x in findings]
         command_made(bridge_id)
         return view
 

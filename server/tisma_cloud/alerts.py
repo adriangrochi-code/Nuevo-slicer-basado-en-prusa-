@@ -26,9 +26,20 @@ class Problem:
     message: str      # for people (Spanish, like the panel)
 
 
-def find_problems(session: Session, settings, storage_dir: Path, now: datetime | None = None) -> list[Problem]:  # noqa: ANN001
+def find_problems(session: Session, settings, storage_dir: Path, now: datetime | None = None,  # noqa: ANN001
+                  refused: dict[str, int] | None = None) -> list[Problem]:
     now = now or utcnow()
     problems: list[Problem] = []
+    # Files refused in the last hour (threats.py): projects, G-code, found by the antivirus, antivirus not answering.
+    refused = refused or {}
+    if refused.get("scanner"):
+        problems.append(Problem("scanner", "El antivirus (ClamAV) no responde: no se aceptan archivos hasta que vuelva."))
+    names = {"project": "proyectos", "gcode": "G-code", "virus": "con virus"}
+    found = {k: v for k, v in refused.items() if k in names}
+    if found:
+        detail = ", ".join(f"{names[k]}: {v}" for k, v in found.items())
+        problems.append(Problem("threats", f"En la última hora se rechazaron {sum(found.values())} archivo(s) "
+                                           f"peligrosos ({detail})."))
     # Nodes seen at least once (a node never connected is not installed yet) and silent for a while.
     silent = now - timedelta(minutes=settings.alert_node_minutes)
     for node in session.execute(select(Node).where(Node.enabled.is_(True), Node.last_seen.is_not(None),
@@ -61,11 +72,12 @@ def recipients(session: Session, settings) -> list[str]:  # noqa: ANN001
     return list(session.execute(select(User.email).where(User.is_admin.is_(True), User.enabled.is_(True))).scalars())
 
 
-def update(session: Session, settings, storage_dir: Path, mailer: Mailer, now: datetime | None = None) -> list[Alert]:  # noqa: ANN001
+def update(session: Session, settings, storage_dir: Path, mailer: Mailer, now: datetime | None = None,  # noqa: ANN001
+           refused: dict[str, int] | None = None) -> list[Alert]:
     """Compares the problems now with the open alerts: opens, repeats and closes them, and e-mails each change.
     Returns the open alerts."""
     now = now or utcnow()
-    current = {p.key: p for p in find_problems(session, settings, storage_dir, now)}
+    current = {p.key: p for p in find_problems(session, settings, storage_dir, now, refused)}
     open_alerts = {a.key: a for a in session.execute(select(Alert).where(Alert.resolved_at.is_(None))).scalars()}
     to_send: list[tuple[str, str]] = []
     repeat = timedelta(hours=settings.alert_repeat_h)

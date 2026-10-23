@@ -39,6 +39,9 @@ class Settings:
     # The log of every request (with the address of each visitor): off, so that the master does not keep who connected
     # from where. 1: on (to look into a problem for a while).
     access_log: bool = field(default_factory=lambda: os.environ.get("TISMA_ACCESS_LOG", "0") == "1")
+    # ClamAV (clamd) that checks every file uploaded, "host:port" (the clamav service of compose.master.yaml:
+    # clamav:3310). Empty: no antivirus (the projects and G-code are still checked, threats.py).
+    clamd: str = field(default_factory=lambda: os.environ.get("TISMA_CLAMD", ""))
     # A session (a device logged in) not used for this long is closed [days].
     session_days: int = field(default_factory=lambda: _int("TISMA_SESSION_DAYS", 90))
     # The list of the jobs of an account (names of the files, times) is kept this long after they ended [days]; the

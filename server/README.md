@@ -223,6 +223,27 @@ JSON) y borrar la cuenta (con la contraseña, o con un código por correo si ent
 sesiones, trabajos y sus archivos, impresoras remotas y órdenes, compras de la tienda y el uso; quedan los pagos sin
 nada personal.
 
+**Archivos peligrosos** (`threats.py`): todo lo que se sube se revisa antes de guardarlo, y los administradores
+reciben una alerta con lo rechazado en la última hora (solo cuántos y de qué tipo).
+
+- **Proyectos (3MF)**: solo se aceptan si son eso. Se rechazan rutas que salen de la carpeta, archivos cifrados, «zip
+  bombs» (más de 1000 veces su tamaño al descomprimir), programas adentro (por extensión o por contenido: Windows,
+  Linux, macOS, scripts) y XML con declaraciones de entidades (XXE, «billion laughs»), que Tisma nunca escribe.
+  Además el nodo quita los scripts de post-procesado y lamina en un entorno aislado (ver «Seguridad de los nodos»).
+- **G-code para imprimir a distancia**: se rechaza el que cambia la impresora en vez de imprimir y que ningún perfil de
+  impresora usa: `M997` (actualizar el firmware), `M28`/`M29`/`M30`/`M32` (escribir, borrar o ejecutar archivos de la
+  tarjeta), `SAVE_CONFIG`, `FORCE_MOVE` (Klipper) y `RUN_SHELL_COMMAND` (ejecuta programas en la computadora de la
+  impresora). Fuentes: [Marlin](https://marlinfw.org/docs/gcode/), [Klipper](https://www.klipper3d.org/G-Codes.html),
+  [G-Code Shell Command](https://docs.kalico.gg/G-Code_Shell_Command.html). Los que algunos fabricantes usan en su
+  G-code inicial (`M500`, `M502`, `SET_KINEMATIC_POSITION`, `RESTART`) no se rechazan: la orden vuelve con
+  `warnings` para que el teléfono los muestre. El G-code binario (`.bgcode`) va comprimido y solo lo revisa el antivirus.
+- **Antivirus** (opcional): con `TISMA_CLAMD` cada proyecto, G-code y resultado pasa por
+  [ClamAV](https://docs.clamav.net/) (servicio aparte, `docker compose --profile antivirus up -d`; pide 3 GiB de
+  memoria). Si ClamAV no contesta, no se acepta nada sin revisar (503) y se avisa a los administradores. Probado con
+  ClamAV 1.5.4 y sus firmas: encuentra el archivo de prueba EICAR dentro de un 3MF comprimido. Cuesta: un proyecto de
+  2,4 MB (18 MB de XML adentro) tarda de 2,4 a 3,5 s la primera vez (en un Xeon de 2,1 GHz; el mismo archivo de nuevo,
+  17 ms), en el proceso de ClamAV, no en el del maestro.
+
 **Lo que depende de la instalación** (no lo puede hacer el programa):
 
 - Disco cifrado en el central (LUKS en Linux, BitLocker en Windows): si alguien se lleva el disco, la base y las

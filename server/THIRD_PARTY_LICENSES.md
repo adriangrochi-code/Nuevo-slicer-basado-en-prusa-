@@ -41,6 +41,7 @@ Programs run as separate processes (not linked):
 | Tisma Slicer (`tisma-slicer`, `tisma-fea`) | AGPL-3.0 | The source of the version used by the service, with every change, must stay published (AGPL §13). |
 | PostgreSQL 16 | PostgreSQL License | Database (Docker image `postgres:16`). |
 | Caddy 2.8 | Apache-2.0 | HTTPS proxy (Docker image `caddy:2.8`). |
+| ClamAV 1.5 (optional) | GPL-2.0 | Antivirus of the uploads (Docker image `clamav/clamav:1.5`, `--profile antivirus`); the master only talks to it over its TCP protocol (clamd INSTREAM), nothing is linked. Its signatures come from Cisco Talos under their own terms. |
 | Google Identity Services (`accounts.google.com/gsi/client`) | Google's terms | Loaded by the account page from Google only when `TISMA_GOOGLE_CLIENT_IDS` is set; not distributed with the server. |
 
 This is a technical summary, not legal advice.
