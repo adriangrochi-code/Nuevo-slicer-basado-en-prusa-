@@ -115,6 +115,8 @@ public:
         if (access.url.empty()) {
             caption(_L("Tisma Cloud server"));
             m_server = single("https://cloud.example.com");
+            // The server of the Tisma team, as the app has it (CloudStore.DEFAULT_SERVER).
+            m_server->GetTextCtrl()->SetValue("https://tismaservidores.net");
         }
 
         m_attach = new wxCheckBox(this, wxID_ANY, _L("Attach the version, the system, the printer in use and the log of this session"));
