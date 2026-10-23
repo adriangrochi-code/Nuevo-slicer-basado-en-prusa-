@@ -56,6 +56,8 @@ class CheckBox;
 namespace Slic3r {
 namespace GUI {
 
+class TismaPageList;
+
 class TabPresetComboBox;
 class OG_CustomCtrl;
 
@@ -195,7 +197,8 @@ protected:
 	wxBoxSizer*			m_h_buttons_sizer;
 	wxBoxSizer*			m_left_sizer;
 	wxBoxSizer*			m_simple_mode_hint {nullptr};
-	wxTreeCtrl*			m_treectrl;
+	// Tisma: the list of the pages (TismaWidgets) instead of the tree of PrusaSlicer.
+	TismaPageList*		m_treectrl;
 
 	wxScrolledWindow*	m_page_view {nullptr};
 	wxBoxSizer*			m_page_sizer {nullptr};
@@ -524,8 +527,6 @@ private:
 	ogStaticText* m_machine_limits_description_line {nullptr};
 	void 		update_machine_limits_description(const MachineLimitsUsage usage);
 
-	ogStaticText*	m_fff_print_host_upload_description_line {nullptr};
-	ogStaticText*	m_sla_print_host_upload_description_line {nullptr};
 
     std::vector<PageShp>			m_pages_fff;
     std::vector<PageShp>			m_pages_sla;
@@ -544,7 +545,6 @@ public:
 	~TabPrinter() {}
 
 	void		build() override;
-	void		build_print_host_upload_group(Page* page);
     void		build_fff();
     void		build_sla();
 	void		reload_config() override;

@@ -39,6 +39,10 @@ public:
 
     static wxColor GetParentBackgroundColor(wxWindow * parent);
 
+    // Tisma: the wheel over a field that is not being edited scrolls the panel of the field instead of changing its
+    // value. True if a scrolled parent took the event.
+    static bool ForwardWheelToScrolledParent(wxWindow * win, wxMouseEvent & event);
+
 protected:
     void paintEvent(wxPaintEvent& evt);
 

@@ -9,6 +9,7 @@
 #include "Preferences.hpp"
 #include "OptionsGroup.hpp"
 #include "GUI_App.hpp"
+#include "TismaTheme.hpp"
 #include "Plater.hpp"
 #include "MsgDialog.hpp"
 #include "I18N.hpp"
@@ -16,6 +17,9 @@
 #include "libslic3r/AppConfig.hpp"
 #include <wx/notebook.h>
 #include "Notebook.hpp"
+#include <wx/treectrl.h>
+#include <wx/simplebook.h>
+#include "TismaWidgets.hpp"
 #include "ButtonsDescription.hpp"
 #include "OG_CustomCtrl.hpp"
 #include "GLCanvas3D.hpp"
@@ -74,6 +78,14 @@ namespace Slic3r {
 
 	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaRenderQualityMode)
 
+	static const t_config_enum_values s_keys_map_TismaAppearanceMode = {
+		{"system",      TismaAppearanceSystem},
+		{"light",       TismaAppearanceLight},
+		{"dark",        TismaAppearanceDark},
+	};
+
+	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TismaAppearanceMode)
+
 namespace GUI {
 
 PreferencesDialog::PreferencesDialog(wxWindow* parent) :
@@ -123,8 +135,10 @@ void PreferencesDialog::show(const std::string& highlight_opt_key /*= std::strin
 	for ( ; selected_tab < int(tabs->GetPageCount()); selected_tab++)
 		if (tabs->GetPageText(selected_tab) == _(tab_name))
 			break;
-	if (selected_tab < int(tabs->GetPageCount()))
+	if (selected_tab < int(tabs->GetPageCount())) {
 		tabs->SetSelection(selected_tab);
+		m_sections->SetSelectionIndex(selected_tab);
+	}
 
 	if (!highlight_opt_key.empty())
 		init_highlighter(highlight_opt_key);
@@ -278,17 +292,8 @@ void PreferencesDialog::build()
 
 	auto app_config = get_app_config();
 
-#ifdef _MSW_DARK_MODE
-	tabs = new Notebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME | wxNB_DEFAULT);
-#else
-    tabs = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL  |wxNB_NOPAGETHEME | wxNB_DEFAULT );
-#ifdef __linux__
-	tabs->Bind(wxEVT_NOTEBOOK_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
-		e.Skip();
-		CallAfter([this]() { tabs->GetCurrentPage()->Layout(); });
-    });
-#endif
-#endif
+	// Tisma: a book without tabs; its sections are chosen in the list at the left (m_sections).
+	tabs = new wxSimplebook(this, wxID_ANY);
 
 	// Add "General" tab
 	m_optgroup_general = create_options_tab(L("General"), tabs);
@@ -533,6 +538,15 @@ void PreferencesDialog::build()
 	// Add "GUI" tab
 	m_optgroup_gui = create_options_tab(L("GUI"), tabs);
 	m_optgroup_gui->on_change = [this](t_config_option_key opt_key, boost::any value) {
+		if (opt_key == "appearance") {
+			const int val_int = boost::any_cast<int>(value);
+			for (const auto& item : s_keys_map_TismaAppearanceMode)
+				if (item.second == val_int)
+					m_values[opt_key] = item.first;
+			if (m_values[opt_key] == get_app_config()->get("appearance"))
+				m_values.erase(opt_key);
+			return;
+		}
 		if (opt_key == "notify_release") {
 			int val_int = boost::any_cast<int>(value);
 			for (const auto& item : s_keys_map_NotifyReleaseMode) {
@@ -560,6 +574,19 @@ void PreferencesDialog::build()
 		else*/
 			m_values[opt_key] = boost::any_cast<bool>(value) ? "1" : "0";
 	};
+
+	// Tisma: light, dark or the mode of the operating system.
+	append_enum_option<TismaAppearanceMode>(m_optgroup_gui, "appearance",
+		L("Appearance"),
+		L("Colors of the interface: those of the operating system (light or dark, as it is set), or always light, or "
+		  "always dark."),
+		new ConfigOptionEnum<TismaAppearanceMode>(static_cast<TismaAppearanceMode>(
+			s_keys_map_TismaAppearanceMode.count(app_config->get("appearance")) ? s_keys_map_TismaAppearanceMode.at(app_config->get("appearance")) : 0)),
+		{ { "system", L("Like the system") },
+		  { "light",  L("Light") },
+		  { "dark",   L("Dark") }
+		});
+	m_optgroup_gui->append_separator();
 
 	append_bool_option(m_optgroup_gui, "seq_top_layer_only",
 		L("Sequential slider applied only to top layer"),
@@ -611,11 +638,6 @@ void PreferencesDialog::build()
 
 		m_optgroup_gui->append_separator();
 */
-		append_bool_option(m_optgroup_gui, "show_hints",
-			L("Show \"Tip of the day\" notification after start"),
-			L("If enabled, useful hints are displayed at startup."),
-			app_config->get_bool("show_hints"));
-
 		append_enum_option<NotifyReleaseMode>(m_optgroup_gui, "notify_release",
 			L("Notify about new releases"),
 			L("You will be notified about new release after startup acordingly: All = Regular release and alpha / beta releases. Release only = regular release."),
@@ -725,11 +747,6 @@ void PreferencesDialog::build()
 			m_values[opt_key] = boost::any_cast<bool>(value) ? "1" : "0";
 		};
 
-		append_bool_option(m_optgroup_dark_mode, "dark_color_mode",
-			L("Enable dark mode"),
-			L("If enabled, UI will use Dark mode colors. If disabled, old UI will be used."),
-			app_config->get_bool("dark_color_mode"));
-
 		if (wxPlatformInfo::Get().GetOSMajorVersion() >= 10) // Use system menu just for Window newer then Windows 10
 															 // Use menu with ownerdrawn items by default on systems older then Windows 10
 		{
@@ -746,8 +763,36 @@ void PreferencesDialog::build()
 	// update alignment of the controls for all tabs
 	update_ctrls_alignment();
 
+	// The sections, with the icons of the pages of Tisma.
+	m_sections = new TismaPageList(this, wxSize(16 * em_unit(), -1));
+	{
+		static const std::map<std::string, std::string> icons = {
+			{ "General", "cog" }, { "Camera", "tisma_view" }, { "GUI", "tisma_more" }, { "Other", "tisma_folder" },
+			{ "Render", "tisma_view_top" }, { "Dark mode", "eye_open" } };
+		wxVector<wxBitmapBundle> images;
+		for (size_t i = 0; i < tabs->GetPageCount(); ++i) {
+			std::string icon = "cog";
+			for (const auto& [name, file] : icons)
+				if (tabs->GetPageText(i) == _(name))
+					icon = file;
+			images.push_back(*get_bmp_bundle(icon));
+			m_sections->AppendItem(m_sections->GetRootItem(), tabs->GetPageText(i), int(i));
+		}
+		m_sections->SetImages(images);
+		m_sections->SetSelectionIndex(0);
+	}
+	m_sections->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent&) {
+		if (const int idx = m_sections->GetSelectionIndex(); idx >= 0 && idx < int(tabs->GetPageCount())) {
+			tabs->SetSelection(idx);
+			CallAfter([this]() { tabs->GetCurrentPage()->Layout(); });
+		}
+	});
+	auto body = new wxBoxSizer(wxHORIZONTAL);
+	body->Add(m_sections, 0, wxEXPAND | wxRIGHT, em_unit());
+	body->Add(tabs, 1, wxEXPAND);
+
 	auto sizer = new wxBoxSizer(wxVERTICAL);
-	sizer->Add(tabs, 1, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, 5);
+	sizer->Add(body, 1, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, 5);
 
 	auto buttons = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
 	wxGetApp().SetWindowVariantForButton(buttons->GetAffirmativeButton());
@@ -807,7 +852,8 @@ void PreferencesDialog::accept(wxEvent&)
 #endif //(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
 	}
 
-	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "sys_menu_enabled", "font_pt_size", "suppress_round_corners" };
+	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "sys_menu_enabled", "font_pt_size", "suppress_round_corners",
+														 "appearance" };
 
 	for (const std::string& option : options_to_recreate_GUI) {
 		if (m_values.find(option) != m_values.end()) {
@@ -853,6 +899,11 @@ void PreferencesDialog::accept(wxEvent&)
 
 	for (std::map<std::string, std::string>::iterator it = m_values.begin(); it != m_values.end(); ++it)
 		app_config->set(it->first, it->second);
+	// Tisma: the native controls in the new appearance (on Windows it sets dark_color_mode, applied below).
+	if (m_values.find("appearance") != m_values.end()) {
+		GUI::TismaTheme::apply_to_toolkit();
+		m_values["dark_color_mode"] = app_config->get("dark_color_mode");
+	}
 
 	if (wxGetApp().is_editor()) {
 		wxGetApp().set_label_clr_sys(m_sys_colour->GetColour());
@@ -907,6 +958,11 @@ void PreferencesDialog::revert(wxEvent&)
 		}
 		if (key == "notify_release") {
 			m_optgroup_gui->set_value(key, s_keys_map_NotifyReleaseMode.at(app_config->get(key)));
+			continue;
+		}
+		if (key == "appearance") {
+			m_optgroup_gui->set_value(key, s_keys_map_TismaAppearanceMode.count(app_config->get(key)) ?
+				s_keys_map_TismaAppearanceMode.at(app_config->get(key)) : 0);
 			continue;
 		}
 		if (key == GUI::TismaShading::CONFIG_KEY) {

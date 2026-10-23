@@ -43,6 +43,16 @@
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp> // IWYU pragma: keep
+#include <boost/log/sinks/basic_sink_backend.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/make_shared.hpp>
+#include <algorithm>
+#include <deque>
+#include <iostream>
+#include <mutex>
+#include <sstream>
+#include <thread>
 
 #include <boost/locale.hpp>
 
@@ -122,6 +132,59 @@ unsigned get_logging_level()
     case boost::log::trivial::trace : return 5;
     default: return 1;
     }
+}
+
+namespace {
+
+std::mutex              g_recent_log_mutex;
+std::deque<std::string> g_recent_log;
+size_t                  g_recent_log_lines = 0;
+
+// Writes each record to the console as the default sink of Boost.Log does (it stops writing once a sink is added) and
+// keeps it in g_recent_log.
+class RecentLogBackend : public boost::log::sinks::basic_sink_backend<boost::log::sinks::synchronized_feeding>
+{
+public:
+    void consume(const boost::log::record_view &rec)
+    {
+        std::string time = boost::posix_time::to_iso_extended_string(boost::posix_time::microsec_clock::local_time());
+        std::replace(time.begin(), time.end(), 'T', ' ');
+        std::ostringstream line;
+        line << '[' << time << "] [" << std::this_thread::get_id() << "] [";
+        if (auto severity = rec[boost::log::trivial::severity])
+            line << *severity;
+        line << "]   ";
+        if (auto message = rec[boost::log::expressions::smessage])
+            line << *message;
+        std::clog << line.str() << std::endl;
+        std::lock_guard<std::mutex> lock(g_recent_log_mutex);
+        g_recent_log.emplace_back(line.str());
+        while (g_recent_log.size() > g_recent_log_lines)
+            g_recent_log.pop_front();
+    }
+};
+
+} // namespace
+
+void keep_recent_log(size_t lines)
+{
+    {
+        std::lock_guard<std::mutex> lock(g_recent_log_mutex);
+        if (g_recent_log_lines > 0)
+            return;
+        g_recent_log_lines = std::max<size_t>(lines, 1);
+    }
+    using Sink = boost::log::sinks::synchronous_sink<RecentLogBackend>;
+    boost::log::core::get()->add_sink(boost::make_shared<Sink>(boost::make_shared<RecentLogBackend>()));
+}
+
+std::string recent_log()
+{
+    std::lock_guard<std::mutex> lock(g_recent_log_mutex);
+    std::string out;
+    for (const std::string &line : g_recent_log)
+        out += line + "\n";
+    return out;
 }
 
 // Force set_logging_level(<=error) after loading of the DLL.

@@ -252,6 +252,16 @@ void msw_buttons_rescale(wxDialog* dlg, const int em_unit, const std::vector<int
  * but for DPIDialogs it's its own value. 
  * This value will be used to correct rescale after moving between 
  * Displays with different HDPI */
+wxSize spin_ctrl_size(wxWindow* win, double width_em)
+{
+    const int em = em_unit(win);
+    int width = int(width_em * em);
+#ifdef __WXGTK3__
+    width += 7 * em;
+#endif
+    return wxSize(width, -1);
+}
+
 int em_unit(wxWindow* win)
 {
     if (win)

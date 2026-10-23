@@ -50,6 +50,7 @@ class GalleryDialog;
 class ConnectWebViewPanel; 
 class PrinterWebViewPanel;
 class PrintablesWebViewPanel;
+class MorePage;
 class DevicesPanel;
 class ThingiverseWebViewPanel;
 
@@ -111,6 +112,10 @@ class MainFrame : public DPIFrame
     ThingiverseWebViewPanel* m_thingiverse_webview{ nullptr };
     // Tisma: Devices workspace (USB and network printers, their web interface).
     DevicesPanel*           m_devices_panel{ nullptr };
+    // The Printer section opens the devices (true) or the printer settings, the one used last.
+    bool                    m_printer_section_devices{ false };
+    // Tisma: the More page of the navigation (instead of the menus of PrusaSlicer).
+    MorePage*               m_more_page{ nullptr };
     bool                    m_printables_webview_added{ false };
     PrinterWebViewPanel*    m_printer_webview{ nullptr };
     bool                    m_printer_webview_added{ false };
@@ -241,6 +246,9 @@ public:
     void    show_printables_tab(const std::string& url);
     // Tisma: the Device page with the USB printer.
     void    show_usb_printer();
+    // The two pages of the Printer section of the top bar: the settings of the printer and the devices.
+    void    select_printer_settings();
+    void    select_devices();
     void    on_printables_secret_token(const std::string& data);
 
     void    add_printables_webview_tab();
@@ -275,9 +283,13 @@ public:
     void                  create_nav_rail();
     TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;
-    DiffPresetDialog      diff_dialog;
+    // Tisma Slicer: made the first time it is shown (it copies all the presets, which took a second at every start).
+    DiffPresetDialog&     diff_dialog();
+    DiffPresetDialog*     diff_dialog_if_created() { return m_diff_dialog; }
+    DiffPresetDialog*     m_diff_dialog { nullptr };
     wxWindow*             m_plater_page{ nullptr };
 //    wxProgressDialog*     m_progress_dialog { nullptr };
+    // Made the first time the preferences are opened (GUI_App::open_preferences()).
     PreferencesDialog*    preferences_dialog { nullptr };
     PrintHostQueueDialog* m_printhost_queue_dlg;
     GalleryDialog*        m_gallery_dialog{ nullptr };

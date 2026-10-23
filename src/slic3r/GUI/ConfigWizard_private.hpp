@@ -35,6 +35,7 @@
 #include "SavePresetDialog.hpp"
 #include "wxExtensions.hpp"
 
+#include "Widgets/Button.hpp"
 #include "Widgets/SpinInput.hpp"
 
 namespace fs = boost::filesystem;
@@ -331,6 +332,18 @@ struct PageMaterials: ConfigWizardPage
     void sort_list_data(StringList* list, bool add_All_item, bool material_type_ordering);
     void sort_list_data(PresetList* list, const std::vector<ProfilePrintData>& data);
 
+    // Tisma Slicer: how common each type and brand is in the profiles of all the vendors (OrcaSlicer, Cura, PrusaSlicer
+    // and the others that come with Tisma): the lists show the most common first, the brands of the printers chosen
+    // before them. There are no sales figures to sort by; the number of vendors with profiles of a brand is the
+    // measure: brand -> (vendors, products), type -> products.
+    std::map<std::string, std::pair<size_t, size_t>> m_brand_rank;
+    std::map<std::string, size_t>                    m_type_rank;
+    std::map<std::string, std::string>               m_alias_brand;
+    std::map<std::string, std::string>               m_alias_type;
+    void update_ranks();
+    // a goes before b in the list of brands.
+    bool brand_before(const std::string &a, const std::string &b) const;
+
     void on_paint();
     void on_mouse_move_on_profiles(wxMouseEvent& evt);
     void on_mouse_enter_profiles(wxMouseEvent& evt);
@@ -391,10 +404,12 @@ struct Materials
         for (auto preset : presets) {
             const Preset& prst = *(preset);
             const Preset& prntr = *printer;
+            // Tisma Slicer: the filaments of the templates (the library of brands that fit every printer: Bambu Lab,
+            // Polymaker, eSUN...) are offered with all the printers too, as in OrcaSlicer.
             if (((printer == nullptr && printer_name == PageMaterials::EMPTY) || (printer != nullptr && is_compatible_with_printer(PresetWithVendorProfile(prst, prst.vendor), PresetWithVendorProfile(prntr, prntr.vendor)))) &&
                 (type.empty() || get_type(preset) == type) &&
                 (vendor.empty() || get_vendor(preset) == vendor) &&
-                prst.vendor && !prst.vendor->templates_profile) {
+                prst.vendor) {
 
                 cb(preset);
             }
@@ -528,6 +543,7 @@ private:
     wxStaticText       *m_preview_name;
     wxStaticText       *m_nozzles_label;
     wxBoxSizer         *m_nozzles_sizer;
+    wxStaticText       *m_nozzles_hint;
     std::vector<wxCheckBox*> m_nozzle_boxes; // the nozzles of the model shown in the preview
     wxStaticText       *m_summary;
     wxCheckBox         *m_custom { nullptr };
@@ -677,6 +693,8 @@ struct ConfigWizard::priv
     bool any_fff_selected { false };        // Used to decide whether to display Filaments page
     bool any_sla_selected { false };        // Used to decide whether to display SLA Materials page
     bool custom_printer_selected { false }; // New custom printer is requested
+    // Tisma Slicer: the wizard opened to add filaments (T_FFF) or resins (T_SLA) shows only their page; 0 otherwise.
+    int only_materials { 0 };
     bool custom_printer_in_bundle { false }; // Older custom printer already exists when wizard starts
     // Set to true if there are none FFF printers on the main FFF page. If true, only SLA printers are shown (not even custom printers)
     bool only_sla_mode { false };
@@ -688,10 +706,11 @@ struct ConfigWizard::priv
     ConfigWizardPage *page_current = nullptr;
     ConfigWizardIndex *index = nullptr;
     wxButton *btn_sel_all = nullptr;
-    wxButton *btn_prev = nullptr;
-    wxButton *btn_next = nullptr;
-    wxButton *btn_finish = nullptr;
-    wxButton *btn_cancel = nullptr;
+    // Tisma: the buttons of Tisma.
+    ::Button *btn_prev = nullptr;
+    ::Button *btn_next = nullptr;
+    ::Button *btn_finish = nullptr;
+    ::Button *btn_cancel = nullptr;
 
     PageWelcome      *page_welcome = nullptr;
     PageBrands       *page_brands = nullptr;

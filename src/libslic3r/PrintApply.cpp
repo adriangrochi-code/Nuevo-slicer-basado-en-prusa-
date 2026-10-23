@@ -1187,6 +1187,13 @@ Print::ApplyStatus Print::apply(const Model &model_in, DynamicPrintConfig new_fu
     const Model &model = belt_model ? *belt_model : model_in;
     // Tisma: the bed temperatures of the filaments for the plate chosen.
     apply_bed_type(new_full_config);
+    // Tisma: a temperature tower heats up to the temperature of its first band before the print, not to the first layer
+    // temperature of the filament (the first band was then printed while the nozzle was still heating up).
+    if (const auto *mode = new_full_config.option<ConfigOptionEnum<CalibMode>>("calib_mode"); mode != nullptr && mode->value == CalibMode::Temperature)
+        if (const auto *start = new_full_config.option<ConfigOptionFloat>("calib_start"); start != nullptr && start->value > 0.)
+            if (auto *temperatures = new_full_config.option<ConfigOptionInts>("first_layer_temperature"); temperatures != nullptr)
+                for (int &t : temperatures->values)
+                    t = int(std::round(start->value));
 
 #ifdef _DEBUG
     check_model_ids_validity(model);

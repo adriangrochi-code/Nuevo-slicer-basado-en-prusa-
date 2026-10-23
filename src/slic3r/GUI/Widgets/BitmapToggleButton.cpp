@@ -49,5 +49,14 @@ void BitmapToggleButton::update_size()
 #ifndef __WXGTK3__
     wxSize best_sz = GetBestSize();
     SetSize(best_sz);
+#else
+    // Tisma: GTK kept the size of the button created without a bitmap, smaller than the switch drawn in it: a switch
+    // aligned to the right of its settings was cut.
+    if (GetLabel().IsEmpty()) {
+        InvalidateBestSize();
+        const wxSize best_sz = GetBestSize();
+        SetMinSize(best_sz);
+        SetSize(best_sz);
+    }
 #endif
 }

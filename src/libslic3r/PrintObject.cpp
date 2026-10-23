@@ -794,6 +794,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "extra_perimeters_on_overhangs"
             || opt_key == "overhang_arcs"
             || opt_key == "overhang_arcs_max_distance"
+            || opt_key == "overhang_arcs_overlap"
             || opt_key == "first_layer_extrusion_width"
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"
@@ -841,7 +842,8 @@ bool PrintObject::invalidate_state_by_config_options(
 		} else if (
                opt_key == "elefant_foot_compensation"
             || opt_key == "support_material_contact_distance" 
-            || opt_key == "xy_size_compensation") {
+            || opt_key == "xy_size_compensation"
+            || opt_key == "xy_hole_compensation") {
             steps.emplace_back(posSlice);
         } else if (opt_key == "support_material") {
             steps.emplace_back(posSupportMaterial);

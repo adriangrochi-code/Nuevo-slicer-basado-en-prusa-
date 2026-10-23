@@ -8,6 +8,7 @@
 ///|/
 #include "libslic3r/Technologies.hpp"
 #include "GUI_App.hpp"
+#include "TismaTheme.hpp"
 #include "GUI_Init.hpp" // IWYU pragma: keep
 #include "GUI_ObjectList.hpp"
 #include "GUI_ObjectManipulation.hpp"
@@ -840,9 +841,7 @@ void GUI_App::post_init()
         }
     }
 
-    // show "Did you know" notification
-    if (app_config->get_bool("show_hints") && ! is_gcode_viewer())
-        plater_->get_notification_manager()->push_hint_notification(true);
+    // Tisma: no "Did you know" tips at start (PrusaSlicer's tips speak of its interface, which Tisma replaced).
 
     // The extra CallAfter() is needed because of Mac, where this is the only way
     // to popup a modal dialog on start without screwing combo boxes.
@@ -1354,6 +1353,9 @@ bool GUI_App::on_init_inner()
     m_log_gui = new LogGui();
     wxLog::SetActiveTarget(m_log_gui);
 
+    // Tisma Slicer: the last lines of the log, for the problem reports (Help > Report a problem).
+    keep_recent_log();
+
 #if defined(_WIN32) && ! defined(_WIN64)
     // Win32 32bit build.
     if (wxPlatformInfo::Get().GetArchName().substr(0, 2) == "64") {
@@ -1400,6 +1402,8 @@ bool GUI_App::on_init_inner()
 
     // If load_language() fails, the application closes.
     load_language(wxString(), true);
+    // Tisma: the appearance chosen (light, dark or the one of the system) before the first window.
+    TismaTheme::apply_to_toolkit();
 #ifdef _MSW_DARK_MODE
     bool init_dark_color_mode = app_config->get_bool("dark_color_mode");
     bool init_sys_menu_enabled = app_config->get_bool("sys_menu_enabled");
@@ -1733,22 +1737,15 @@ unsigned GUI_App::get_colour_approx_luma(const wxColour &colour)
 
 bool GUI_App::dark_mode()
 {
-#if __APPLE__
-    // The check for dark mode returns false positive on 10.12 and 10.13,
-    // which allowed setting dark menu bar and dock area, which is
-    // is detected as dark mode. We must run on at least 10.14 where the
-    // proper dark mode was first introduced.
-    return wxPlatformInfo::Get().CheckOSVersion(10, 14) && mac_dark_mode();
-#else
-    if (wxGetApp().app_config->has("dark_color_mode"))
-        return wxGetApp().app_config->get_bool("dark_color_mode");
-    return check_dark_mode();
-#endif
+    // Tisma: the appearance of Preferences (light, dark or the one of the system, see TismaTheme.cpp).
+    return TismaTheme::dark();
 }
 
 const wxColour GUI_App::get_label_default_clr_system()
 {
-    return dark_mode() ? wxColour(115, 220, 103) : wxColour(26, 132, 57);
+    // Tisma: the values of the system profiles in the color of the text (green in PrusaSlicer); the modified ones in
+    // the accent color.
+    return dark_mode() ? wxColour(0xEC, 0xEC, 0xF0) : wxColour(0x1A, 0x1A, 0x1F);
 }
 
 const wxColour GUI_App::get_label_default_clr_modified()
@@ -2067,7 +2064,8 @@ void GUI_App::set_mode_palette(const std::vector<wxColour>& palette)
 
 bool GUI_App::suppress_round_corners() const
 {
-    return true;// app_config->get("suppress_round_corners") == "1";
+    // Tisma: rounded fields and switches instead of check boxes, the look of the interface of Tisma.
+    return false;
 }
 
 wxSize GUI_App::get_min_size(wxWindow* display_win) const
@@ -2266,8 +2264,10 @@ void GUI_App::update_ui_from_settings()
     if (m_force_colors_update) {
         m_force_colors_update = false;
         mainframe->force_color_changed();
-        mainframe->diff_dialog.force_color_changed();
-        mainframe->preferences_dialog->force_color_changed();
+        if (DiffPresetDialog *diff = mainframe->diff_dialog_if_created())
+            diff->force_color_changed();
+        if (mainframe->preferences_dialog)
+            mainframe->preferences_dialog->force_color_changed();
         mainframe->printhost_queue_dlg()->force_color_changed();
 #ifdef _MSW_DARK_MODE
         update_scrolls(mainframe);
@@ -2889,6 +2889,9 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
 
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
 {
+    // Tisma Slicer: made the first time (building it took a second at every start).
+    if (mainframe->preferences_dialog == nullptr)
+        mainframe->preferences_dialog = new PreferencesDialog(mainframe);
     mainframe->preferences_dialog->show(highlight_option, tab_name);
 
     if (mainframe->preferences_dialog->recreate_GUI())

@@ -2083,7 +2083,8 @@ void GCodeViewer::render_legend(float& legend_height)
     const float max_height = 0.75f * static_cast<float>(cnv_size.get_height());
     const float child_height = 0.3333f * max_height;
     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, max_height });
-    ImGuiPureWrap::begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    // Tisma: the title translated; "###Legend" keeps the identity of the window.
+    ImGuiPureWrap::begin(_u8L("Legend") + "###Legend", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
     enum class EItemType : unsigned char
     {

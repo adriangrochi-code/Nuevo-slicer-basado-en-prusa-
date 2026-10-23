@@ -703,6 +703,34 @@ void PresetBundle::load_selections(AppConfig &config, const PresetPreferences& p
     // exist.
     this->update_compatible(PresetSelectCompatibleType::Always);
 
+    // Tisma Slicer: when the filament saved was not kept (none saved yet, or not for the printer just installed), the
+    // filament the printer profile names (default_filament_profile, e.g. the PLA of its vendor), else a PLA, instead of
+    // the first one in alphabetical order.
+    if (printers.get_selected_preset().printer_technology() == ptFFF && ! this->extruders_filaments.empty() &&
+        this->extruders_filaments.front().get_selected_preset_name() != initial_filament_profile_name) {
+        ExtruderFilaments &extruder = this->extruders_filaments.front();
+        auto usable = [&extruder](const std::string &name) {
+            auto it = extruder.find_filament_internal(name);
+            return it != extruder.end() && it->preset->name == name && it->preset->is_visible && it->is_compatible;
+        };
+        std::string chosen;
+        if (const auto *names = printers.get_selected_preset().config.option<ConfigOptionStrings>("default_filament_profile"))
+            for (const std::string &name : names->values)
+                if (usable(name)) {
+                    chosen = name;
+                    break;
+                }
+        if (chosen.empty())
+            for (const Preset &preset : filaments)
+                if (const auto *type = preset.config.option<ConfigOptionStrings>("filament_type");
+                    type != nullptr && ! type->values.empty() && type->values.front() == "PLA" && usable(preset.name)) {
+                    chosen = preset.name;
+                    break;
+                }
+        if (! chosen.empty() && extruder.select_filament(chosen))
+            filaments.select_preset_by_name_strict(chosen);
+    }
+
     if (initial_printer != nullptr && (preferred_printer == nullptr || initial_printer == preferred_printer)) {
         // Don't run the following code, as we want to activate default filament / SLA material profiles when installing and selecting a new printer.
         // Only run this code if just a filament / SLA material was installed by Config Wizard for an active Printer.

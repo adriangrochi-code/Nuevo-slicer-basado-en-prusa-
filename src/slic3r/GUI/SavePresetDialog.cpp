@@ -19,6 +19,9 @@
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "Tab.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
 
 using Slic3r::GUI::format_wxstr;
 
@@ -383,14 +386,8 @@ void SavePresetDialog::build(std::vector<Preset::Type> types, std::string suffix
 {
     this->SetFont(wxGetApp().normal_font());
 
-#if defined(__WXMSW__)
-    // ys_FIXME! temporary workaround for correct font scaling
-    // Because of from wxWidgets 3.1.3 auto rescaling is implemented for the Fonts,
-    // From the very beginning set dialog font to the wxSYS_DEFAULT_GUI_FONT
-//    this->SetFont(wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT));
-#else
-    SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-#endif // __WXMSW__
+    // Tisma: the background of the cards of Tisma (Windows sets the colors of its dark mode at the end).
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
 
     if (suffix.empty())
         // TRN Suffix for the preset name. Have to be a noun.
@@ -398,19 +395,29 @@ void SavePresetDialog::build(std::vector<Preset::Type> types, std::string suffix
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
 
+    // Tisma: the title of the dialog over its fields, as the pages of Tisma.
+    topSizer->Add(new TismaTitle(this, GetTitle()), 0, wxLEFT | wxRIGHT | wxTOP, 2 * BORDER_W);
+
     m_presets_sizer = new wxBoxSizer(wxVERTICAL);
 
     const bool is_for_multiple_save = types.size() > 1;
     for (const Preset::Type& type : types)
         AddItem(type, suffix, is_for_multiple_save);
 
-    // Add dialog's buttons
-    wxStdDialogButtonSizer* btns = this->CreateStdDialogButtonSizer(wxOK | wxCANCEL);
-    wxButton* btnOK = static_cast<wxButton*>(this->FindWindowById(wxID_OK, this));
+    // Add dialog's buttons (Tisma: the buttons of Tisma, Save filled with the accent color)
+    ::Button* btnCancel = tisma_dialog_button(this, wxID_CANCEL);
+    btnCancel->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_CANCEL); });
+    ::Button* btnOK = tisma_dialog_button(this, wxID_OK, m_use_for_rename ? _L("Rename") : _L("Save"), true);
     btnOK->Bind(wxEVT_BUTTON,    [this](wxCommandEvent&)        { accept(); });
     btnOK->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)   { evt.Enable(enable_ok_btn()); });
+    SetDefaultItem(btnOK);
+    tisma_dialog_keys(this);
+    wxBoxSizer* btns = new wxBoxSizer(wxHORIZONTAL);
+    btns->AddStretchSpacer();
+    btns->Add(btnCancel, 0, wxRIGHT, BORDER_W);
+    btns->Add(btnOK);
 
-    topSizer->Add(m_presets_sizer,  0, wxEXPAND | wxALL, BORDER_W);
+    topSizer->Add(m_presets_sizer,  0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 2 * BORDER_W);
     
     // Add checkbox for Template filament saving
     if (template_filament && types.size() == 1 && *types.begin() == Preset::Type::TYPE_FILAMENT) {
@@ -420,7 +427,7 @@ void SavePresetDialog::build(std::vector<Preset::Type> types, std::string suffix
         topSizer->Add(check_sizer, 0, wxEXPAND | wxALL, BORDER_W);
     }
 
-    topSizer->Add(btns,             0, wxEXPAND | wxALL, BORDER_W);
+    topSizer->Add(btns,             0, wxEXPAND | wxALL, 2 * BORDER_W);
 
     SetSizer(topSizer);
     topSizer->SetSizeHints(this);
@@ -539,7 +546,9 @@ void SavePresetDialog::on_dpi_changed(const wxRect& suggested_rect)
 {
     const int& em = em_unit();
 
-    msw_buttons_rescale(this, em, { wxID_OK, wxID_CANCEL });
+    for (wxWindowID id : { wxID_OK, wxID_CANCEL })
+        if (auto* btn = dynamic_cast<::Button*>(FindWindowById(id, this)))
+            btn->Rescale();
 
     for (Item* item : m_items)
         item->update_valid_bmp();

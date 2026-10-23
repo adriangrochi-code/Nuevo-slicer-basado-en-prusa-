@@ -44,6 +44,9 @@
 #include "BitmapCache.hpp"
 #include "BonjourDialog.hpp"
 #include "MsgDialog.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -96,7 +99,12 @@ PresetForPrinter::PresetForPrinter(PhysicalPrinterDialog* parent, const std::str
     m_info_line = new wxStaticText(parent, wxID_ANY, _L("This printer will be shown in the presets list as") + ":");
 
     m_full_printer_name = new wxStaticText(parent, wxID_ANY, "");
-    m_full_printer_name->SetFont(wxGetApp().bold_font());
+    // Tisma: the line under the profile small and muted, as the captions of Tisma.
+    const bool dark = wxGetApp().dark_mode();
+    m_info_line->SetFont(wxGetApp().small_font());
+    m_info_line->SetForegroundColour(TismaTheme::text_muted(dark));
+    m_full_printer_name->SetFont(wxGetApp().small_font().Bold());
+    m_full_printer_name->SetForegroundColour(TismaTheme::text_muted(dark));
 
     wxBoxSizer* preset_sizer = new wxBoxSizer(wxHORIZONTAL);
     preset_sizer->Add(m_presets_list        , 1, wxEXPAND);
@@ -107,7 +115,7 @@ PresetForPrinter::PresetForPrinter(PhysicalPrinterDialog* parent, const std::str
     name_sizer->Add(m_full_printer_name, 0, wxEXPAND | wxLEFT, BORDER_W);
 
     m_sizer->Add(preset_sizer   , 0, wxEXPAND);
-    m_sizer->Add(name_sizer, 0, wxEXPAND);
+    m_sizer->Add(name_sizer, 0, wxEXPAND | wxTOP, BORDER_W / 3);
 }
 
 PresetForPrinter::~PresetForPrinter()
@@ -128,7 +136,12 @@ void PresetForPrinter::update_full_printer_name()
     wxString printer_name   = m_parent->get_printer_name();
     wxString preset_name    = m_presets_list->GetString(m_presets_list->GetSelection());
 
-    m_full_printer_name->SetLabelText(printer_name + from_u8(PhysicalPrinter::separator()) + preset_name);
+    // Tisma: as the list of the printers shows it, by the model of a system profile (PlaterPresetComboBox::update()).
+    const Preset* preset = wxGetApp().preset_bundle->printers.find_preset(Preset::remove_suffix_modified(into_u8(preset_name)));
+    if (const std::string model = preset != nullptr && preset->is_system ? printer_model_name(*preset) : std::string(); ! model.empty())
+        m_full_printer_name->SetLabelText(printer_name + " (" + from_u8(model) + ")");
+    else
+        m_full_printer_name->SetLabelText(printer_name + from_u8(PhysicalPrinter::separator()) + preset_name);
 }
 
 std::string PresetForPrinter::get_preset_name()
@@ -243,9 +256,9 @@ PhysicalPrinterDialog::PhysicalPrinterDialog(wxWindow* parent, wxString printer_
     m_printer("", wxGetApp().preset_bundle->physical_printers.default_config())
 {
     SetFont(wxGetApp().normal_font());
-#ifndef _WIN32
-    SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-#endif
+    // Tisma: the background of the cards of Tisma.
+    const bool dark = wxGetApp().dark_mode();
+    SetBackgroundColour(TismaTheme::card_bg(dark));
     m_default_name = _L("Type here the name of your printer device");
     bool new_printer = true;
 
@@ -257,10 +270,19 @@ PhysicalPrinterDialog::PhysicalPrinterDialog(wxWindow* parent, wxString printer_
         new_printer = false;
     }
 
-    wxStaticText* label_top = new wxStaticText(this, wxID_ANY, _L("Descriptive name for the printer") + ":");
+    // Tisma: a header as the pages of Tisma, and the captions over the fields.
+    auto* title = new TismaTitle(this, _L("Printer on the network"));
+    auto* intro = new wxStaticText(this, wxID_ANY,
+        _L("Tisma sends the prints to this printer: the main button offers it when the printer answers, and Devices shows it."));
+    intro->SetForegroundColour(TismaTheme::text_muted(dark));
+    intro->Wrap(55 * wxGetApp().em_unit());
+    auto* label_top     = new TismaTitle(this, _L("Name"), TismaTitle::Style::Caption);
+    auto* label_presets = new TismaTitle(this, _L("Printer profile"), TismaTitle::Style::Caption);
 
-    m_add_preset_btn = new ScalableButton(this, wxID_ANY, "add_copies");
+    m_add_preset_btn = new ::Button(this, "+ " + _L("Add a printer profile"));
     m_add_preset_btn->SetFont(wxGetApp().normal_font());
+    m_add_preset_btn->SetPaddingSize(wxSize(wxGetApp().em_unit(), wxGetApp().em_unit() / 3));
+    style_tisma_button(m_add_preset_btn, false);
     m_add_preset_btn->SetToolTip(_L("Add preset for this printer device")); 
     m_add_preset_btn->Bind(wxEVT_BUTTON, &PhysicalPrinterDialog::AddPreset, this);
 
@@ -305,31 +327,40 @@ PhysicalPrinterDialog::PhysicalPrinterDialog(wxWindow* parent, wxString printer_
 
     m_config = &m_printer.config;
 
-    m_optgroup = new ConfigOptionsGroup(this, _L("Print Host upload"), m_config);
+    m_optgroup = new ConfigOptionsGroup(this, _L("Connection"), m_config);
     build_printhost_settings(m_optgroup);
 
-    wxStdDialogButtonSizer* btns = this->CreateStdDialogButtonSizer(wxOK | wxCANCEL);
-    wxButton* btnOK = static_cast<wxButton*>(this->FindWindowById(wxID_OK, this));
-    wxGetApp().UpdateDarkUI(btnOK);
-    btnOK->Bind(wxEVT_BUTTON, &PhysicalPrinterDialog::OnOK, this);
-
-    wxGetApp().UpdateDarkUI(static_cast<wxButton*>(this->FindWindowById(wxID_CANCEL, this)));
-
-    wxBoxSizer* nameSizer = new wxBoxSizer(wxHORIZONTAL);
-    nameSizer->Add(m_printer_name, 1, wxEXPAND);
-    nameSizer->Add(m_add_preset_btn, 0, wxEXPAND | wxLEFT, BORDER_W);
+    // Tisma: the buttons of Tisma, Save filled with the accent color.
+    ::Button* btn_cancel = tisma_dialog_button(this, wxID_CANCEL);
+    btn_cancel->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { EndModal(wxID_CANCEL); });
+    ::Button* btn_ok = tisma_dialog_button(this, wxID_OK, _L("Save"), true);
+    btn_ok->Bind(wxEVT_BUTTON, &PhysicalPrinterDialog::OnOK, this);
+    SetDefaultItem(btn_ok);
+    tisma_dialog_keys(this);
+    wxBoxSizer* btns = new wxBoxSizer(wxHORIZONTAL);
+    btns->AddStretchSpacer();
+    btns->Add(btn_cancel, 0, wxRIGHT, BORDER_W);
+    btns->Add(btn_ok);
 
     m_presets_sizer = new wxBoxSizer(wxVERTICAL);
     for (PresetForPrinter* preset : m_presets)
-        m_presets_sizer->Add(preset->sizer(), 1, wxEXPAND | wxTOP, BORDER_W);
+        m_presets_sizer->Add(preset->sizer(), 1, wxEXPAND | wxTOP, BORDER_W / 2);
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
 
-    topSizer->Add(label_top           , 0, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, BORDER_W);
-    topSizer->Add(nameSizer           , 0, wxEXPAND | wxLEFT | wxRIGHT, BORDER_W);
-    topSizer->Add(m_presets_sizer     , 0, wxEXPAND | wxLEFT | wxRIGHT, BORDER_W);
-    topSizer->Add(m_optgroup->sizer   , 1, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, BORDER_W);
-    topSizer->Add(btns                , 0, wxEXPAND | wxALL, BORDER_W); 
+    const int border = 2 * BORDER_W;
+    topSizer->Add(title               , 0, wxLEFT | wxTOP | wxRIGHT, border);
+    topSizer->AddSpacer(border / 4);
+    topSizer->Add(intro               , 0, wxLEFT | wxRIGHT, border);
+    topSizer->AddSpacer(border / 4);
+    topSizer->Add(label_top           , 0, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, border);
+    topSizer->AddSpacer(border / 4);
+    topSizer->Add(m_printer_name      , 0, wxEXPAND | wxLEFT | wxRIGHT, border);
+    topSizer->Add(label_presets       , 0, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, border);
+    topSizer->Add(m_presets_sizer     , 0, wxEXPAND | wxLEFT | wxRIGHT, border);
+    topSizer->Add(m_add_preset_btn    , 0, wxLEFT | wxTOP | wxRIGHT, border);
+    topSizer->Add(m_optgroup->sizer   , 1, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, border);
+    topSizer->Add(btns                , 0, wxEXPAND | wxALL, border); 
 
     SetSizer(topSizer);
     topSizer->SetSizeHints(this);
@@ -384,9 +415,12 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
 
     m_optgroup->append_single_option_line("host_type");
 
-    auto create_sizer_with_btn = [](wxWindow* parent, ScalableButton** btn, const std::string& icon_name, const wxString& label) {
-        *btn = new ScalableButton(parent, wxID_ANY, icon_name, label, wxDefaultSize, wxDefaultPosition, wxBU_LEFT | wxBU_EXACTFIT);
+    // Tisma: the small outlined buttons of Tisma beside the fields.
+    auto create_sizer_with_btn = [](wxWindow* parent, ::Button** btn, const std::string& /*icon_name*/, const wxString& label) {
+        *btn = new ::Button(parent, label);
         (*btn)->SetFont(wxGetApp().normal_font());
+        (*btn)->SetPaddingSize(wxSize(wxGetApp().em_unit(), wxGetApp().em_unit() / 4));
+        style_tisma_button(*btn, false);
 
         auto sizer = new wxBoxSizer(wxHORIZONTAL);
         sizer->Add(*btn);
@@ -441,8 +475,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
     auto print_host_printers = [this, create_sizer_with_btn](wxWindow* parent) {
         //add_scaled_button(parent, &m_printhost_port_browse_btn, "browse", _(L("Refresh Printers")), wxBU_LEFT | wxBU_EXACTFIT);
         auto sizer = create_sizer_with_btn(parent, &m_printhost_port_browse_btn, "browse", _(L("Refresh Printers")));
-        ScalableButton* btn = m_printhost_port_browse_btn;
-        btn->SetFont(Slic3r::GUI::wxGetApp().normal_font());
+        ::Button* btn = m_printhost_port_browse_btn;
         btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent e) { update_printers(); });
         return sizer;
     };
@@ -511,6 +544,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
         cafile_hint.full_width = 1;
         cafile_hint.widget = [ca_file_hint](wxWindow* parent) {
             auto txt = new wxStaticText(parent, wxID_ANY, ca_file_hint);
+            txt->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(txt);
             return sizer;
@@ -530,6 +564,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
             //auto txt = new wxStaticText(parent, wxID_ANY, from_u8((boost::format("%1%\n\n\t%2%") % info % ca_file_hint).str()));
             auto txt = new wxStaticText(parent, wxID_ANY, from_u8((boost::format("%1%\n\t%2%") % info % ca_file_hint).str()));
             txt->SetFont(wxGetApp().normal_font());
+            txt->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(txt, 1, wxEXPAND);
             return sizer;
@@ -547,6 +582,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
                 , GUI::format_wxstr(_L("On this system, %1% uses the system password store to safely store and read passwords and API keys."), SLIC3R_APP_NAME));
             auto txt = new wxStaticText(parent, wxID_ANY, info);
             txt->SetFont(wxGetApp().normal_font());
+            txt->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(txt, 1, wxEXPAND);
             return sizer;
@@ -562,6 +598,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
                 , _L("Passwords and API keys are stored in plain text."));
             auto txt = new wxStaticText(parent, wxID_ANY, info);
             txt->SetFont(wxGetApp().normal_font());
+            txt->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(txt, 1, wxEXPAND);
             return sizer;
@@ -588,6 +625,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
                    "on the printer (Settings > Network); API key = its access code, and the serial number. Older printers "
                    "need only the IP address."));
             m_flashforge_hint->Wrap(50 * wxGetApp().em_unit());
+            m_flashforge_hint->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(m_flashforge_hint, 1, wxEXPAND);
             return sizer;
@@ -603,6 +641,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
                    "Hostname = IP address of the printer, API key = access code shown there. "
                    "The serial number is read from the printer."));
             m_bambu_hint->Wrap(50 * wxGetApp().em_unit());
+            m_bambu_hint->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(m_bambu_hint, 1, wxEXPAND);
             return sizer;
@@ -955,7 +994,9 @@ void PhysicalPrinterDialog::on_dpi_changed(const wxRect& suggested_rect)
 
     m_optgroup->msw_rescale();
 
-    msw_buttons_rescale(this, em, { wxID_OK, wxID_CANCEL });
+    for (wxWindowID id : { wxID_OK, wxID_CANCEL })
+        if (auto* btn = dynamic_cast<::Button*>(FindWindowById(id, this)))
+            btn->Rescale();
 
     const wxSize& size = wxSize(45 * em, 35 * em);
     SetMinSize(size);
@@ -966,11 +1007,17 @@ void PhysicalPrinterDialog::on_dpi_changed(const wxRect& suggested_rect)
 
 void PhysicalPrinterDialog::on_sys_color_changed()
 {
-    m_add_preset_btn->sys_color_changed();
-    m_printhost_browse_btn->sys_color_changed();
-    m_printhost_test_btn->sys_color_changed();
-    if (m_printhost_cafile_browse_btn)
-        m_printhost_cafile_browse_btn->sys_color_changed();
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
+    std::function<void(wxWindow*)> restyle = [&restyle](wxWindow* win) {
+        for (wxWindow* child : win->GetChildren()) {
+            if (auto* btn = dynamic_cast<::Button*>(child))
+                style_tisma_button(btn, btn->GetId() == wxID_OK);
+            else if (auto* title = dynamic_cast<TismaTitle*>(child))
+                title->sys_color_changed();
+            restyle(child);
+        }
+    };
+    restyle(this);
 
     for (PresetForPrinter* preset : m_presets)
         preset->on_sys_color_changed();
@@ -1072,7 +1119,8 @@ void PhysicalPrinterDialog::OnOK(wxEvent& event)
     else
         wxGetApp().get_tab(Preset::TYPE_PRINTER)->update_preset_choice();
 
-    event.Skip();
+    // Tisma: the button of Tisma is not a native one that closes the dialog.
+    EndModal(wxID_OK);
 }
 
 void PhysicalPrinterDialog::AddPreset(wxEvent& event)
@@ -1081,7 +1129,7 @@ void PhysicalPrinterDialog::AddPreset(wxEvent& event)
     // enable DELETE button for the first preset, if was disabled
     m_presets.front()->AllowDelete();
 
-    m_presets_sizer->Add(m_presets.back()->sizer(), 1, wxEXPAND | wxTOP, BORDER_W);
+    m_presets_sizer->Add(m_presets.back()->sizer(), 1, wxEXPAND | wxTOP, BORDER_W / 2);
     update_full_printer_names();
     this->Fit();
 

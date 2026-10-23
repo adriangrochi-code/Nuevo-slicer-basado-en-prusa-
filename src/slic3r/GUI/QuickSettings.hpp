@@ -25,6 +25,8 @@ class DynamicPrintConfig;
 
 namespace GUI {
 
+class TismaTitle;
+
 class ConfigOptionsGroup;
 
 // Favorite settings shown in the sidebar, grouped by category (as the process panel of OrcaSlicer), editable by the
@@ -73,7 +75,7 @@ private:
     wxWindow*                                         m_parent       { nullptr };
     wxBoxSizer*                                       m_sizer        { nullptr };
     wxBoxSizer*                                       m_groups_sizer { nullptr };
-    wxStaticText*                                     m_title        { nullptr };
+    TismaTitle*                                       m_title        { nullptr };
     std::array<Button*, SECTIONS>                     m_section_btns { nullptr, nullptr, nullptr };
     Button*                                           m_add_btn      { nullptr };
     Button*                                           m_tab_btn      { nullptr };

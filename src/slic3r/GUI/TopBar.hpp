@@ -6,6 +6,7 @@
 #include "Widgets/TextInput.hpp"
 
 class TopBarMenus;
+namespace Slic3r { namespace GUI { class TismaChip; } }
 
 // custom message the TopBarItemsCtrl sends to its parent (TopBar) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
@@ -113,6 +114,10 @@ public:
     // stays in the window title) and a window (the printer chip) at the right end.
     void SetWorkspaceTabs(wxWindow* tabs);
     void AddRightWindow(wxWindow* win);
+    // A window after the workspace tabs taking the free width (the tools of the plate); shown or hidden with
+    // ShowCenterWindow (the search field then keeps its width).
+    void AddCenterWindow(wxWindow* win);
+    void ShowCenterWindow(bool show);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
@@ -124,11 +129,17 @@ private:
     ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_account_btn   {nullptr};
+    // Tisma: the settings mode and the Tisma Cloud account, instead of the two buttons above (hidden).
+    Slic3r::GUI::TismaChip*         m_mode_chip     {nullptr};
+    Slic3r::GUI::TismaChip*         m_cloud_chip    {nullptr};
+    void                            update_tisma_chips();
     Button*                         m_settings_btn  {nullptr};
     Button*                         m_project_btn   {nullptr};
     wxWindow*                       m_workspace_tabs{nullptr};
     wxBoxSizer*                     m_left_sizer    {nullptr};
     wxBoxSizer*                     m_right_sizer   {nullptr};
+    wxBoxSizer*                     m_search_sizer  {nullptr};
+    wxWindow*                       m_center_window {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

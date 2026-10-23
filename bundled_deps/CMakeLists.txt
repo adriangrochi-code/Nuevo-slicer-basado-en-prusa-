@@ -58,6 +58,9 @@ target_include_directories(volk PUBLIC volk vulkan/include)
 target_compile_definitions(volk PUBLIC VK_NO_PROTOTYPES)
 target_link_libraries(volk PRIVATE ${CMAKE_DL_LIBS})
 
+# Tisma Slicer: the USB cameras of the computer (UVC webcams) for the printers without one or with a slow one.
+add_subdirectory(openpnp-capture)
+
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(hidapi)

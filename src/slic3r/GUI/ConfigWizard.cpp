@@ -13,6 +13,7 @@
 #include "ConfigWizardWebViewPage.hpp"
 
 #include <algorithm>
+#include <thread>
 #include <sstream>
 #include <numeric>
 #include <utility>
@@ -21,6 +22,7 @@
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <tbb/parallel_for.h>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/nowide/convert.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
@@ -65,6 +67,8 @@
 #include "slic3r/Config/Snapshot.hpp"
 #include "format.hpp"
 #include "MsgDialog.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "UpdatesUIManager.hpp"
 #include "Plater.hpp" // #ysFIXME - implement getter for preset_archive_database from GetApp()???
@@ -146,15 +150,14 @@ BundleMap BundleMap::load()
         prusa_bundle_path = (rsrc_vendor_dir / PresetBundle::PRUSA_BUNDLE).replace_extension(".ini");
         prusa_bundle_loc = BundleLocation::IN_RESOURCES;
     }
-    {
-        Bundle prusa_bundle;
-        if (prusa_bundle.load(std::move(prusa_bundle_path), prusa_bundle_loc, true))
-            res.emplace(PresetBundle::PRUSA_BUNDLE, std::move(prusa_bundle)); 
-    }
-
     // Load the other bundles in the datadir/vendor directory
     // and then additionally from datadir/cache/vendor (archive) and resources/profiles.
     // Should we concider case where archive has older profiles than resources (shouldnt happen)? -> YES, it happens during re-configuration when running older PS after newer version
+    // Tisma Slicer: the bundles to load are found first (only their headers are read), then they are loaded at the same
+    // time on all the cores: there are more than two hundred, read one after the other they took seconds.
+    struct Pending { std::string id; fs::path path; BundleLocation location; bool prusa { false }; Bundle bundle; bool loaded { false }; };
+    std::vector<Pending> pending;
+    pending.push_back({ PresetBundle::PRUSA_BUNDLE, prusa_bundle_path, prusa_bundle_loc, true });
     typedef std::pair<const fs::path&, BundleLocation> DirData;
     std::vector<DirData> dir_list { {vendor_dir, BundleLocation::IN_VENDOR},  {archive_dir, BundleLocation::IN_ARCHIVE},  {rsrc_vendor_dir, BundleLocation::IN_RESOURCES} };
     for ( auto dir : dir_list) {
@@ -165,7 +168,9 @@ BundleMap BundleMap::load()
                 std::string id = dir_entry.path().stem().string();  // stem() = filename() without the trailing ".ini" part
 
                 // Don't load this bundle if we've already loaded it.
-                if (res.find(id) != res.end()) { continue; }
+                if (res.find(id) != res.end() ||
+                    std::find_if(pending.begin(), pending.end(), [&id](const Pending &p) { return p.id == id; }) != pending.end())
+                    continue;
 
                 // Fresh index should be in archive_dir, otherwise look for it in cache 
                 // Then if not in archive or cache - it could be 3rd party profile that user just copied to vendor folder (both ini and cache)
@@ -213,20 +218,23 @@ BundleMap BundleMap::load()
                 // Don't load
                 if (vp.config_version > recommended)
                     continue;
-                // Load full VP.
-                try {
-                    vp = VendorProfile::from_ini(dir_entry, true);
-                }
-                catch (const std::exception& e) {
-                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to corrupted profile file %2%. Message: %3%", id, dir_entry.path().string(), e.what());
-                    continue;
-                }
-                Bundle bundle;
-                if (bundle.load(dir_entry.path(), dir.second))
-                    res.emplace(std::move(id), std::move(bundle));
+                // Tisma Slicer: the whole bundle is read once below (it was also read here into a vendor profile that
+                // was not used).
+                pending.push_back({ std::move(id), dir_entry.path(), dir.second, false });
             }
         }
     }
+    tbb::parallel_for(size_t(0), pending.size(), [&pending](size_t i) {
+        Pending &p = pending[i];
+        try {
+            p.loaded = p.bundle.load(p.path, p.location, p.prusa);
+        } catch (const std::exception &e) {
+            BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to corrupted profile file %2%. Message: %3%", p.id, p.path.string(), e.what());
+        }
+    });
+    for (Pending &p : pending)
+        if (p.loaded)
+            res.emplace(std::move(p.id), std::move(p.bundle));
 
     return res;
 }
@@ -552,12 +560,16 @@ ConfigWizardPage::ConfigWizardPage(ConfigWizard *parent, wxString title, wxStrin
     , indent(indent)
 {
     wxGetApp().UpdateDarkUI(this);
+    // Tisma: the background of the cards and the title of the page as the titles of Tisma.
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
 
     auto *text = new wxStaticText(this, wxID_ANY, std::move(title), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT);
-    const auto font = GetFont().MakeBold().Scaled(1.5);
+    auto font = GetFont().Scaled(1.5);
+    font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
     text->SetFont(font);
+    text->SetForegroundColour(TismaTheme::accent_text(wxGetApp().dark_mode()));
     sizer->Add(text, 0, wxALIGN_LEFT, 0);
     sizer->AddSpacer(10);
 
@@ -1240,6 +1252,8 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 		sel_type = 0;
 		sel_type_prev = wxNOT_FOUND;
 		list_type->SetSelection(sel_type);
+		// Show "(All)": refilling the list keeps its scroll position.
+		list_type->SetFirstItem(0);
 		list_profile->Clear();
 	}
 	
@@ -1279,6 +1293,7 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 		sel_vendor = 0;
 		sel_vendor_prev = wxNOT_FOUND;
 		list_vendor->SetSelection(sel_vendor);
+		list_vendor->SetFirstItem(0);
 		list_profile->Clear();
 	}
          
@@ -1339,8 +1354,84 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
     wxGetApp().UpdateDarkUI(list_profile);
 }
 
+void PageMaterials::update_ranks()
+{
+    if (! m_brand_rank.empty())
+        return;
+    std::map<std::string, std::set<std::string>> brand_vendors, brand_products, type_products;
+    for (const auto &[vendor_id, bundle] : wizard_p()->bundles) {
+        const PresetCollection &presets = bundle.preset_bundle->get_presets(
+            materials->technology == T_FFF ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL);
+        for (const Preset &preset : presets) {
+            if (preset.is_default || preset.alias.empty())
+                continue;
+            const std::string &brand = materials->get_vendor(&preset);
+            brand_vendors[brand].insert(vendor_id);
+            brand_products[brand].insert(preset.alias);
+            type_products[materials->get_type(&preset)].insert(preset.alias);
+            m_alias_brand.emplace(preset.alias, brand);
+            m_alias_type.emplace(preset.alias, materials->get_type(&preset));
+        }
+    }
+    for (const auto &[brand, vendors] : brand_vendors)
+        m_brand_rank[brand] = { vendors.size(), brand_products[brand].size() };
+    for (const auto &[type, products] : type_products)
+        m_type_rank[type] = products.size();
+}
+
+bool PageMaterials::brand_before(const std::string &a, const std::string &b) const
+{
+    // The brands of the printers chosen first (an Anycubic printer: the Anycubic filaments).
+    auto own = [this](const std::string &brand) {
+        const std::wstring needle = boost::algorithm::to_lower_copy(boost::nowide::widen(brand));
+        for (const Preset *printer : materials->printers)
+            if (printer->vendor != nullptr &&
+                boost::algorithm::to_lower_copy(boost::nowide::widen(printer->vendor->name)).find(needle) != std::wstring::npos)
+                return true;
+        return false;
+    };
+    const bool own_a = own(a), own_b = own(b);
+    if (own_a != own_b)
+        return own_a;
+    const auto ra = m_brand_rank.find(a), rb = m_brand_rank.find(b);
+    const std::pair<size_t, size_t> rank_a = ra == m_brand_rank.end() ? std::pair<size_t, size_t>() : ra->second;
+    const std::pair<size_t, size_t> rank_b = rb == m_brand_rank.end() ? std::pair<size_t, size_t>() : rb->second;
+    if (rank_a != rank_b)
+        return rank_a > rank_b;
+    return boost::algorithm::to_lower_copy(boost::nowide::widen(a)) < boost::algorithm::to_lower_copy(boost::nowide::widen(b));
+}
+
 void PageMaterials::sort_list_data(StringList* list, bool add_All_item, bool material_type_ordering)
 {
+    // Tisma Slicer: the most common types and brands first.
+    if (wizard_p()->page_brands != nullptr) {
+        update_ranks();
+        std::vector<std::reference_wrapper<const std::string>> items;
+        bool templates = false;
+        for (int i = 0; i < list->size(); ++i) {
+            const std::string &data = list->get_data(i);
+            if (data == TEMPLATES)
+                templates = true;
+            else if (data != EMPTY)
+                items.emplace_back(data);
+        }
+        std::stable_sort(items.begin(), items.end(), [this, material_type_ordering](const std::string &a, const std::string &b) {
+            if (! material_type_ordering)
+                return brand_before(a, b);
+            const auto ra = m_type_rank.find(a), rb = m_type_rank.find(b);
+            const size_t na = ra == m_type_rank.end() ? 0 : ra->second, nb = rb == m_type_rank.end() ? 0 : rb->second;
+            return na != nb ? na > nb : a < b;
+        });
+        list->Clear();
+        if (add_All_item)
+            list->append(_L("(All)"), &EMPTY);
+        if (materials->technology == T_FFF && templates)
+            list->append(_L("(Templates)"), &TEMPLATES);
+        for (const auto &item : items)
+            list->append(item, &const_cast<std::string&>(item.get()));
+        return;
+    }
+
 // get data from list
 // sort data
 // first should be <all>
@@ -1407,6 +1498,41 @@ void PageMaterials::sort_list_data(StringList* list, bool add_All_item, bool mat
 
 void PageMaterials::sort_list_data(PresetList* list, const std::vector<ProfilePrintData>& data)
 {
+    // Tisma Slicer: by brand (the brands of the printers chosen, then the most common ones), then by type (the most
+    // common first: PLA, PETG...), then by name.
+    if (wizard_p()->page_brands != nullptr) {
+        update_ranks();
+        std::vector<ProfilePrintData> sorted = data;
+        auto brand = [this](const ProfilePrintData &d) -> const std::string& {
+            const auto it = m_alias_brand.find(d.name.get());
+            return it == m_alias_brand.end() ? Materials::UNKNOWN : it->second;
+        };
+        auto type_rank = [this](const ProfilePrintData &d) -> size_t {
+            const auto type = m_alias_type.find(d.name.get());
+            if (type == m_alias_type.end())
+                return 0;
+            const auto rank = m_type_rank.find(type->second);
+            return rank == m_type_rank.end() ? 0 : rank->second;
+        };
+        std::stable_sort(sorted.begin(), sorted.end(), [this, &brand, &type_rank](const ProfilePrintData &a, const ProfilePrintData &b) {
+            const std::string &ba = brand(a), &bb = brand(b);
+            if (ba != bb)
+                return brand_before(ba, bb);
+            const size_t ta = type_rank(a), tb = type_rank(b);
+            if (ta != tb)
+                return ta > tb;
+            return boost::algorithm::to_lower_copy(boost::nowide::widen(a.name.get())) <
+                   boost::algorithm::to_lower_copy(boost::nowide::widen(b.name.get()));
+        });
+        list->Clear();
+        for (size_t i = 0; i < sorted.size(); ++i) {
+            list->append(std::string(sorted[i].name) + (sorted[i].omnipresent || template_shown ? "" : " *"),
+                         &const_cast<std::string&>(sorted[i].name.get()));
+            list->Check(i, sorted[i].checked);
+        }
+        return;
+    }
+
     // sort data
     // then prusa profiles
     // then the rest
@@ -2093,11 +2219,15 @@ PageBrands::PageBrands(ConfigWizard *parent)
     m_preview_name->SetFont(m_preview_name->GetFont().Bold());
     preview_sizer->Add(m_preview_name, 0, wxEXPAND);
     // The nozzles of the model shown, as the nozzle selector of OrcaSlicer.
-    m_nozzles_label = new wxStaticText(this, wxID_ANY, _L("Nozzles"));
+    m_nozzles_label = new wxStaticText(this, wxID_ANY, _L("Nozzle"));
     m_nozzles_label->SetFont(m_nozzles_label->GetFont().Bold());
     preview_sizer->Add(m_nozzles_label, 0, wxTOP | wxBOTTOM, em);
     m_nozzles_sizer = new wxBoxSizer(wxVERTICAL);
     preview_sizer->Add(m_nozzles_sizer, 0, wxEXPAND);
+    // One printer per model: the other nozzles are a setting of the printer, chosen on the plate.
+    m_nozzles_hint = new wxStaticText(this, wxID_ANY, _L("Another nozzle can be chosen later, next to the printer."));
+    m_nozzles_hint->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
+    preview_sizer->Add(m_nozzles_hint, 0, wxTOP, em / 2);
     lists->Add(preview_sizer, 0);
 
     append(lists, 1, wxEXPAND | wxTOP | wxBOTTOM, 5);
@@ -2283,6 +2413,7 @@ void PageBrands::update_nozzles(const Entry *entry)
     // Resin printers and the printers with only one nozzle have nothing to choose.
     const bool show = entry != nullptr && entry->model->technology == ptFFF;
     m_nozzles_label->Show(show);
+    m_nozzles_hint->Show(show);
     if (! show)
         return;
     for (const VendorProfile::PrinterVariant &variant : entry->model->variants) {
@@ -2293,6 +2424,15 @@ void PageBrands::update_nozzles(const Entry *entry)
         box->Bind(wxEVT_CHECKBOX, [this, entry, name, box](wxCommandEvent &) {
             if (! pick(*entry, name, box->GetValue()))
                 box->SetValue(! box->GetValue());
+            else if (box->GetValue()) {
+                // One nozzle per printer: the one checked replaces the others.
+                for (const VendorProfile::PrinterVariant &other : entry->model->variants)
+                    if (other.name != name && is_selected(*entry, other.name))
+                        pick(*entry, other.name, false);
+                for (wxCheckBox *other_box : m_nozzle_boxes)
+                    if (other_box != box)
+                        other_box->SetValue(false);
+            }
             // The row of the model is checked while one of its nozzles is.
             const int row = m_printers_list->GetSelection();
             if (row != wxNOT_FOUND && row < int(m_shown_entries.size()) && &m_entries[m_shown_entries[row]] == entry)
@@ -2334,10 +2474,12 @@ void PageBrands::on_check(int row)
                 pick(entry, variant.name, false);
         m_printers_list->Check(row, is_selected(entry));
     }
-    // Show the nozzles of the model checked.
-    if (m_printers_list->GetSelection() != row)
-        m_printers_list->SetSelection(row);
-    update_preview();
+    // Show the nozzles of the model checked (after the click: GTK keeps the row selected before it otherwise).
+    CallAfter([this, row]() {
+        if (row < int(m_shown_entries.size()) && m_printers_list->GetSelection() != row)
+            m_printers_list->SetSelection(row);
+        update_preview();
+    });
     update_counts();
 }
 
@@ -2661,7 +2803,7 @@ void PageTemperatures::apply_custom_config(DynamicPrintConfig &config)
 
 ConfigWizardIndex::ConfigWizardIndex(wxWindow *parent)
     : wxPanel(parent)
-    , bg(ScalableBitmap(parent, "PrusaSlicer_192px_transparent.png", 192))
+    , bg(ScalableBitmap(parent, "PrusaSlicer_192px_transparent.png", 96))
     , bullet_black(ScalableBitmap(parent, "bullet_black.png"))
     , bullet_blue(ScalableBitmap(parent, "bullet_blue.png"))
     , bullet_white(ScalableBitmap(parent, "bullet_white.png"))
@@ -2672,6 +2814,8 @@ ConfigWizardIndex::ConfigWizardIndex(wxWindow *parent)
 #ifndef __WXOSX__ 
     SetDoubleBuffered(true);// SetDoubleBuffered exists on Win and Linux/GTK, but is missing on OSX
 #endif //__WXOSX__
+    // Tisma: the list of the steps on the background of the panels of Tisma.
+    SetBackgroundColour(TismaTheme::panel_bg(wxGetApp().dark_mode()));
     SetMinSize(bg.GetSize());
 
     const wxSize size = GetTextExtent("m");
@@ -2810,15 +2954,29 @@ void ConfigWizardIndex::on_paint(wxPaintEvent & evt)
         const Item& item = items[i];
         unsigned x = em_w/2 + item.indent * em_w;
 
-        if (i == item_active || (item_hover >= 0 && i == (size_t)item_hover)) {
-            dc.DrawBitmap(bullet_blue.get_bitmap(), x, y + yoff_icon, false);
+        // Tisma: a dot in the accent color for the step shown (filled) and the steps done (smaller), a ring for the
+        // steps to come; the step shown in the accent color.
+        const bool dark   = wxGetApp().dark_mode();
+        const bool active = i == item_active || (item_hover >= 0 && i == (size_t)item_hover);
+        const wxPoint center(x + bullet_w / 2, y + yoff_icon + bullet_h / 2);
+        const int     r = std::max(3, std::min(bullet_w, bullet_h) / 2 - 1);
+        if (active || i < item_active) {
+            dc.SetPen(wxPen(TismaTheme::accent()));
+            dc.SetBrush(wxBrush(TismaTheme::accent()));
+            dc.DrawCircle(center, active ? r : r * 2 / 3);
+        } else {
+            dc.SetPen(wxPen(TismaTheme::text_muted(dark)));
+            dc.SetBrush(*wxTRANSPARENT_BRUSH);
+            dc.DrawCircle(center, r * 2 / 3);
         }
-        else if (i < item_active)  { dc.DrawBitmap(bullet_black.get_bitmap(), x, y + yoff_icon, false); }
-        else if (i > item_active)  { dc.DrawBitmap(bullet_white.get_bitmap(), x, y + yoff_icon, false); }
 
         x += + bullet_w + em_w/2;
+        wxFont font = GetFont();
+        if (i == item_active)
+            font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+        dc.SetFont(font);
         const auto text_size = dc.GetTextExtent(item.label);
-        dc.SetTextForeground(wxGetApp().get_label_clr_default());
+        dc.SetTextForeground(i == item_active ? TismaTheme::accent_text(dark) : TismaTheme::text(dark));
         dc.DrawText(item.label, x, y + yoff_text);
 
         y += yinc;
@@ -2960,10 +3118,20 @@ void ConfigWizard::priv::load_pages()
 
     index->clear();
 
-    // Tisma Slicer: a short wizard, the list of all the printers and nothing else. The profiles come with Tisma
-    // (no configuration sources to choose and download), the filaments and resins are the defaults of the printers
-    // (installed on Finish), and the other settings keep their defaults (Preferences).
+    // Tisma Slicer: a short wizard, as OrcaSlicer: the printers, then the filaments (and the resins) to use with them,
+    // those of each printer already checked. The profiles come with Tisma (no configuration sources to choose and
+    // download) and the other settings keep their defaults (Preferences). Opened to add filaments or resins, only
+    // their page: the printers stay as they are.
     if (page_brands != nullptr) {
+        if (only_materials != 0) {
+            PageMaterials *page = only_materials == T_SLA ? page_sla_materials : page_filaments;
+            if (page != nullptr) {
+                index->add_page(page);
+                index->go_to(page);
+                q->Layout();
+                return;
+            }
+        }
         index->add_page(page_brands);
         if (page_custom && page_custom->custom_wanted()) {
             index->add_page(page_custom);
@@ -2973,6 +3141,11 @@ void ConfigWizard::priv::load_pages()
             index->add_page(page_diams);
             index->add_page(page_temps);
         }
+        if (page_filaments != nullptr && (any_fff_selected ||
+            ((custom_printer_selected || custom_printer_in_bundle) && wxGetApp().app_config->get("no_templates") == "0")))
+            index->add_page(page_filaments);
+        if (page_sla_materials != nullptr && any_sla_selected)
+            index->add_page(page_sla_materials);
         index->go_to(former_active);
         if (index->active_page() == nullptr)
             index->go_to(page_brands);
@@ -2981,7 +3154,8 @@ void ConfigWizard::priv::load_pages()
     }
 
     index->add_page(page_welcome);
-    index->add_page(page_login);
+    if (page_login)
+        index->add_page(page_login);
     index->add_page(page_update_manager);
 
     if (is_config_from_archive) {
@@ -3213,10 +3387,18 @@ void ConfigWizard::priv::set_start_page(ConfigWizard::StartPage start_page)
             }
             break;
         case ConfigWizard::SP_FILAMENTS:
+            // Tisma Slicer: adding filaments shows only their page (the pages are maybe not made yet: run() makes
+            // them next, and load_pages() reads this).
+            only_materials = T_FFF;
+            if (page_brands != nullptr)
+                load_pages();
             index->go_to(page_filaments);
             btn_finish->SetFocus();
             break;
         case ConfigWizard::SP_MATERIALS:
+            only_materials = T_SLA;
+            if (page_brands != nullptr)
+                load_pages();
             index->go_to(page_sla_materials);
             btn_finish->SetFocus();
             break;
@@ -3329,8 +3511,14 @@ void ConfigWizard::priv::update_materials(Technology technology)
                         add_material(filaments, aliases_fff, filament, &printer);
 				}
                 // template filament bundle has no printers - filament would be never added
-                if(bundle.vendor_profile && bundle.vendor_profile->templates_profile && bundle.preset_bundle->printers.begin() == bundle.preset_bundle->printers.end())
+                // Tisma Slicer: they fit every printer chosen (so they are not marked as incompatible with some).
+                if(bundle.vendor_profile && bundle.vendor_profile->templates_profile && bundle.preset_bundle->printers.begin() == bundle.preset_bundle->printers.end()) {
                     add_material(filaments, aliases_fff, filament);
+                    for (const auto &[other_name, other] : bundles)
+                        for (const auto &printer : other.preset_bundle->printers)
+                            if (printer.is_visible && printer.printer_technology() == ptFFF)
+                                add_material(filaments, aliases_fff, filament, &printer);
+                }
             }
         }
     }
@@ -3721,7 +3909,7 @@ bool ConfigWizard::priv::check_and_install_missing_materials(Technology technolo
 
     const auto ask_and_select_default_materials = [this](const wxString &message, const std::set<const VendorProfile::PrinterModel*> &printer_models, Technology technology)
     {
-        // Tisma Slicer: there are no pages of filaments and resins, the defaults of the printers are installed.
+        // Tisma Slicer: a printer left without filaments (or resins) gets its defaults, without asking.
         if (page_brands != nullptr) {
             select_default_materials_for_printer_models(technology, printer_models);
             return;
@@ -3879,13 +4067,14 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
 
     // Install bundles from resources or cache / vendor if needed:
     std::vector<std::string> install_bundles;
+    bool install_prusa = false;
     for (const auto &pair : bundles) {
         if (pair.second.location == BundleLocation::IN_VENDOR) { continue; }
 
         if (pair.second.is_prusa_bundle) {
-            // Always install Prusa bundle, because it has a lot of filaments/materials
-            // likely to be referenced by other profiles.
-            install_bundles.emplace_back(pair.first);
+            // Tisma Slicer: decided below. PrusaSlicer always installed it (it has a lot of filaments and materials
+            // likely to be referenced by other profiles), but its thousands of profiles are read at every start.
+            install_prusa = true;
             continue;
         }
 
@@ -3906,6 +4095,37 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
             // This vendor needs to be installed
             install_bundles.emplace_back(pair.first);
         }
+    }
+    // Tisma Slicer: the Prusa bundle only when it is used: a printer of Prusa, or a filament or resin chosen that no other
+    // bundle installed has.
+    if (install_prusa) {
+        bool needed = false;
+        if (const auto vendor = enabled_vendors.find(PresetBundle::PRUSA_BUNDLE); vendor != enabled_vendors.end())
+            for (const auto &model : vendor->second)
+                needed |= ! model.second.empty();
+        const Bundle &prusa = bundles.prusa_bundle();
+        auto installed = [&install_bundles](const std::pair<const std::string, Bundle> &pair) {
+            return ! pair.second.is_prusa_bundle && (pair.second.location == BundleLocation::IN_VENDOR ||
+                std::find(install_bundles.begin(), install_bundles.end(), pair.first) != install_bundles.end());
+        };
+        auto only_in_prusa = [&](const std::string &section, Preset::Type type) {
+            if (! appconfig_new.has_section(section))
+                return false;
+            for (const auto &entry : appconfig_new.get_section(section)) {
+                // Not a structured binding: C++17 lambdas cannot capture those (Clang refuses).
+                const std::string &name = entry.first;
+                if (entry.second != "1" || prusa.preset_bundle->get_presets(type).find_preset(name) == nullptr)
+                    continue;
+                if (std::none_of(bundles.begin(), bundles.end(), [&](const auto &pair) {
+                        return installed(pair) && pair.second.preset_bundle->get_presets(type).find_preset(name) != nullptr; }))
+                    return true;
+            }
+            return false;
+        };
+        needed = needed || only_in_prusa(AppConfig::SECTION_FILAMENTS, Preset::TYPE_FILAMENT) ||
+                 only_in_prusa(AppConfig::SECTION_MATERIALS, Preset::TYPE_SLA_MATERIAL);
+        if (needed)
+            install_bundles.emplace_back(PresetBundle::PRUSA_BUNDLE);
     }
     if (!check_unsaved_preset_changes)
         if ((check_unsaved_preset_changes = install_bundles.size() > 0))
@@ -4445,9 +4665,8 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     : DPIDialog(parent, wxID_ANY, wxString(SLIC3R_APP_NAME) + " - " + _(name()), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , p(new priv(this))
 {
-#ifdef __APPLE__
-    this->SetBackgroundColour(wxGetApp().get_window_default_clr());
-#endif
+    // Tisma: the background of the cards of Tisma.
+    this->SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     wxBusyCursor wait;
 
     this->SetFont(wxGetApp().normal_font());
@@ -4461,12 +4680,12 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     auto *vsizer = new wxBoxSizer(wxVERTICAL);
     auto *topsizer = new wxBoxSizer(wxHORIZONTAL);
-    auto* hline = new StaticLine(this);
     p->btnsizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Initially we _do not_ SetScrollRate in order to figure out the overall width of the Wizard  without scrolling.
     // Later, we compare that to the size of the current screen and set minimum width based on that (see below).
     p->hscroll = new wxScrolledWindow(this);
+    p->hscroll->SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     p->hscroll_sizer = new wxBoxSizer(wxHORIZONTAL);
     p->hscroll->SetSizer(p->hscroll_sizer);
 
@@ -4479,30 +4698,25 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     // Tisma Slicer: the printers are chosen in the list of all the printers.
     p->btn_sel_all->Hide();
 
-    p->btn_prev = new wxButton(this, wxID_ANY, _L("< &Back"));
-    p->btn_next = new wxButton(this, wxID_ANY, _L("&Next >"));
-    p->btn_finish = new wxButton(this, wxID_APPLY, _L("&Finish"));
-    p->btn_cancel = new wxButton(this, wxID_CANCEL, _L("Cancel"));   // Note: The label needs to be present, otherwise we get accelerator bugs on Mac
+    // Tisma: the buttons of Tisma, Next and Finish filled with the accent color; Cancel at the left.
+    p->btn_prev = tisma_dialog_button(this, wxID_ANY, _L("Back"));
+    p->btn_next = tisma_dialog_button(this, wxID_ANY, _L("Next"), true);
+    p->btn_finish = tisma_dialog_button(this, wxID_APPLY, _L("Finish"), true);
+    p->btn_cancel = tisma_dialog_button(this, wxID_CANCEL);
+    p->btn_cancel->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) { this->EndModal(wxID_CANCEL); });
+    tisma_dialog_keys(this);
+    p->btnsizer->Add(p->btn_cancel, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->AddStretchSpacer();
     p->btnsizer->Add(p->btn_prev, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->Add(p->btn_next, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->Add(p->btn_finish, 0, wxLEFT, BTN_SPACING);
-    p->btnsizer->Add(p->btn_cancel, 0, wxLEFT, BTN_SPACING);
 
     wxGetApp().UpdateDarkUI(p->btn_sel_all);
-    wxGetApp().UpdateDarkUI(p->btn_prev);
-    wxGetApp().UpdateDarkUI(p->btn_next);
-    wxGetApp().UpdateDarkUI(p->btn_finish);
-    wxGetApp().UpdateDarkUI(p->btn_cancel);
 
     wxGetApp().SetWindowVariantForButton(p->btn_sel_all);
-    wxGetApp().SetWindowVariantForButton(p->btn_prev);
-    wxGetApp().SetWindowVariantForButton(p->btn_next);
-    wxGetApp().SetWindowVariantForButton(p->btn_finish);
-    wxGetApp().SetWindowVariantForButton(p->btn_cancel);
 
     p->add_page(p->page_welcome = new PageWelcome(this));
-    p->add_page(p->page_login = new ConfigWizardWebViewPage(this));
+    // Tisma Slicer: no page to log in to Prusa Account (its web view took seconds to create, and Tisma does not show it).
     p->add_page(p->page_update_manager = new PageUpdateManager(this));
 
     // other pages will be loaded later after confirm repositories selection
@@ -4524,7 +4738,6 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     p->add_page(p->page_temps    = new PageTemperatures(this));
 
     vsizer->Add(topsizer, 1, wxEXPAND | wxALL, DIALOG_MARGIN);
-    vsizer->Add(hline, 0, wxEXPAND | wxLEFT | wxRIGHT, VERTICAL_SPACING);
     vsizer->Add(p->btnsizer, 0, wxEXPAND | wxALL, DIALOG_MARGIN);
 
     SetSizer(vsizer);
@@ -4541,7 +4754,8 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     p->btn_prev->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)
     {
-        evt.Enable(p->can_go_next());
+        // Nothing before the first page (adding filaments shows only theirs).
+        evt.Enable(p->can_go_next() && p->index->active_item() > 0);
     });
 
     p->btn_next->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &)
@@ -4623,7 +4837,16 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     */
 }
 
-ConfigWizard::~ConfigWizard() {}
+ConfigWizard::~ConfigWizard()
+{
+    // Tisma Slicer: the profiles of all the vendors (more than two hundred bundles) are freed apart: freeing them here
+    // kept the program busy for seconds after the wizard closed. Nothing else points to them once the wizard is gone.
+    if (p) {
+        auto bundles = std::make_shared<BundleMap>(std::move(p->bundles));
+        p->bundles.clear();
+        std::thread([bundles]() mutable { bundles.reset(); }).detach();
+    }
+}
 
 bool ConfigWizard::run(RunReason reason, StartPage start_page)
 {
@@ -4690,11 +4913,9 @@ void ConfigWizard::on_dpi_changed(const wxRect &suggested_rect)
 
     const int em = em_unit();
 
-    msw_buttons_rescale(this, em, { wxID_APPLY, 
-                                    wxID_CANCEL,
-                                    p->btn_sel_all->GetId(),
-                                    p->btn_next->GetId(),
-                                    p->btn_prev->GetId() });
+    msw_buttons_rescale(this, em, { p->btn_sel_all->GetId() });
+    for (::Button *btn : { p->btn_prev, p->btn_next, p->btn_finish, p->btn_cancel })
+        btn->Rescale();
 
     for (auto page : p->pages_fff)
         for (auto printer_picker : page->printer_pickers)

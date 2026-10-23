@@ -471,7 +471,7 @@ std::string Preset::trim_vendor_repo_prefix(const std::string& id, const VendorP
 static std::vector<std::string> s_Preset_print_options {
     "layer_height", "first_layer_height", "perimeters", "spiral_vase", "nonplanar_mode", "nonplanar_pattern", "nonplanar_amplitude", "nonplanar_wavelength", "nonplanar_angle", "nonplanar_twist", "nonplanar_cone_angle", "nonplanar_flat_below", "nonplanar_ramp_height", "nonplanar_flat_top", "nonplanar_fit_head", "nonplanar_overhang_threshold", "zaa_enabled", "zaa_min_thickness", "interlock_infill", "interlock_infill_amplitude", "interlock_infill_wavelength", "nonplanar_max_slope", "nonplanar_segment_length", "nonplanar_flow_policy", "nonplanar_uniform_flow", "slice_closing_radius", "slicing_mode",
     "top_solid_layers", "top_solid_min_thickness", "bottom_solid_layers", "bottom_solid_min_thickness",
-    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs", "overhang_arcs_speed", "overhang_arcs_max_distance", "stagger_perimeters",
+    "ensure_vertical_shell_thickness", "extra_perimeters", "extra_perimeters_on_overhangs", "overhang_arcs", "overhang_arcs_speed", "overhang_arcs_max_distance", "overhang_arcs_overlap", "stagger_perimeters",
     "avoid_crossing_curled_overhangs", "avoid_crossing_perimeters", "thin_walls", "overhangs",
     "seam_position", "staggered_inner_seams", "seam_gap_distance",
     "external_perimeters_first", "fill_density", "infill_dense", "infill_dense_density", "fill_pattern", "top_fill_pattern", "bottom_fill_pattern",
@@ -503,7 +503,7 @@ static std::vector<std::string> s_Preset_print_options {
     "ooze_prevention", "standby_temperature_delta", "interface_shells", "extrusion_width", "first_layer_extrusion_width",
     "perimeter_extrusion_width", "external_perimeter_extrusion_width", "infill_extrusion_width", "solid_infill_extrusion_width",
     "top_infill_extrusion_width", "support_material_extrusion_width", "infill_overlap", "infill_anchor", "infill_anchor_max", "bridge_flow_ratio",
-    "elefant_foot_compensation", "xy_size_compensation", "resolution", "gcode_resolution", "arc_fitting",
+    "elefant_foot_compensation", "xy_size_compensation", "xy_hole_compensation", "resolution", "gcode_resolution", "arc_fitting",
     "wipe_tower",
     "wipe_tower_width", "wipe_tower_cone_angle", "wipe_tower_brim_width", "wipe_tower_bridging", "single_extruder_multi_material_priming", "mmu_segmented_region_max_width",
     "mmu_segmented_region_interlocking_depth", "wipe_tower_extruder", "wipe_tower_no_sparse_layers", "wipe_tower_extra_flow", "wipe_tower_extra_spacing", "compatible_printers", "compatible_printers_condition", "inherits",

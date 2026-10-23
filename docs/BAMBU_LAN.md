@@ -28,6 +28,17 @@ El número de serie no se pide: es el nombre (CN) del certificado de la impresor
 El perfil de impresora debe generar **G-code de texto** (no binario) y con el G-code de inicio de Bambu (los perfiles
 convertidos de OrcaSlicer ya lo traen).
 
+### Enviar desde el botón principal
+
+Como con una impresora USB: si la impresora en uso (su perfil, o el de otra boquilla del mismo modelo del mismo
+fabricante) tiene una impresora de red guardada (cualquier tipo de host salvo Prusa Connect) y esa impresora responde en
+la red, después de laminar el botón principal pasa a «Enviar a la impresora», sin tener que elegir la impresora en red en
+la lista. La lista de impresoras muestra cada impresora en red por su nombre y su modelo, por ejemplo «Kobra LAN
+(Anycubic Kobra 3)». Tisma prueba cada 20 s si se puede abrir una conexión
+TCP con su dirección (el puerto de la dirección, o el del tipo de host: 8883 Bambu Lab, 8899 Flashforge, 8080 MKS, 80 los
+servidores web); si deja de responder, el botón vuelve a «Exportar». Con varias impresoras de red para el mismo perfil
+se usa la última a la que se envió (`Plater::priv::find_network_target()`, `Utils/PrinterProbe`).
+
 ## Cómo funciona
 
 - **Estado** (página Dispositivos y botón Probar): MQTT 3.1.1 sobre TLS (puerto 8883, usuario `bblp`, contraseña =

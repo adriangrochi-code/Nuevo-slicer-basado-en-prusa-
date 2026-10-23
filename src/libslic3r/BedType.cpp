@@ -63,8 +63,10 @@ bool apply_bed_type(DynamicPrintConfig &config)
             curr->value = def->value;
             changed = true;
         }
+    // Tisma: for every printer, as the bed is chosen for every one: a filament without temperatures for the bed (0)
+    // keeps its own.
     const BedType *type = find_bed_type(curr->value);
-    if (type == nullptr || ! supports_bed_types(config))
+    if (type == nullptr)
         return changed;
     auto apply = [&config, &changed](const char *plate_key, const char *key) {
         const ConfigOptionInts *plate = config.option<ConfigOptionInts>(plate_key);

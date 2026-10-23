@@ -149,12 +149,22 @@ set(SLIC3R_GUI_SOURCES
     GUI/FeaMaterialsDialog.hpp
     GUI/TismaCloudDialog.cpp
     GUI/TismaCloudDialog.hpp
+    GUI/ProblemReportDialog.cpp
+    GUI/ProblemReportDialog.hpp
     GUI/FragmentDialog.cpp
     GUI/FragmentDialog.hpp
     GUI/NavRail.cpp
     GUI/NavRail.hpp
+    GUI/PlateTools.cpp
+    GUI/PlateTools.hpp
+    GUI/TismaWidgets.cpp
+    GUI/MorePage.cpp
+    GUI/MorePage.hpp
+    GUI/TismaWidgets.hpp
     GUI/QuickSettings.cpp
     GUI/QuickSettings.hpp
+    GUI/TismaTheme.cpp
+    GUI/TismaTheme.hpp
     GUI/Sidebar.cpp
     GUI/Sidebar.hpp
     GUI/Plater.cpp
@@ -246,6 +256,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/Serial.cpp
     Utils/USBPrinter.cpp
     Utils/USBPrinter.hpp
+    Utils/PrinterProbe.cpp
+    Utils/PrinterProbe.hpp
     Utils/Serial.hpp
     GUI/ConfigWizard.cpp
     GUI/ConfigWizard.hpp
@@ -258,6 +270,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UpdateDialogs.hpp
     GUI/FirmwareDialog.cpp
     GUI/USBMonitorPanel.cpp
+    GUI/CameraView.cpp
+    GUI/CameraView.hpp
     GUI/DevicesPanel.cpp
     GUI/DevicesPanel.hpp
     GUI/USBMonitorPanel.hpp
@@ -385,6 +399,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/Moonraker.cpp
     Utils/Moonraker.hpp
     Utils/BambuLan.cpp
+    Utils/UsbCamera.cpp
+    Utils/UsbCamera.hpp
     Utils/BambuLan.hpp
     Utils/BambuLanClient.cpp
     Utils/BambuLanClient.hpp
@@ -493,6 +509,7 @@ target_link_libraries(
     GLEW::GLEW
     OpenGL::GL
     hidapi
+    openpnp_capture
     libcurl
     ${wxWidgets_LIBRARIES}
     NanoSVG::nanosvg

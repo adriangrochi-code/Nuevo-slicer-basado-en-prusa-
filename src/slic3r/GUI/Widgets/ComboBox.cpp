@@ -295,6 +295,8 @@ void ComboBox::mouseDown(wxMouseEvent &event)
 void ComboBox::mouseWheelMoved(wxMouseEvent &event)
 {
     if (drop_down) return;
+    if (wxWindow::FindFocus() != GetTextCtrl() && ForwardWheelToScrolledParent(this, event))
+        return;
     auto delta = ((event.GetWheelRotation() < 0) == event.IsWheelInverted()) ? -1 : 1;
     unsigned int n = GetSelection() + delta;
     if (n < GetCount()) {
@@ -311,6 +313,10 @@ void ComboBox::keyDown(wxKeyEvent& event)
             if (drop_down) {
                 drop.DismissAndNotify();
                 sendComboBoxEvent();
+            }
+            else if (! HasFlag(wxCB_READONLY)) {
+                // Enter confirms the typed value (wxEVT_TEXT_ENTER) instead of opening the list.
+                event.Skip();
             }
             else if (drop.HasDismissLongTime()) {
                 drop.autoPosition();

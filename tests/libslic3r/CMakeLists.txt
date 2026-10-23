@@ -19,6 +19,7 @@ add_executable(${_TEST_NAME}_tests
 	test_elephant_foot_compensation.cpp
 	test_expolygon.cpp
 	test_fragment.cpp
+	test_dimensional_correction.cpp
 	test_geometry.cpp
 	test_placeholder_parser.cpp
 	test_polygon.cpp

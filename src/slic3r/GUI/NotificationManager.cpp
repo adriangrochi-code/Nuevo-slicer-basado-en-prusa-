@@ -536,10 +536,10 @@ void NotificationManager::PopNotification::render_hypertext(const float text_x, 
 	}
 	ImGui::PopStyleColor(3);
 
-	//hover color
-	ImVec4 orange_color = ImVec4(.99f, .313f, .0f, 1.0f);
+	//hover color (Tisma: the light accent color instead of the orange of Prusa)
+	ImVec4 orange_color = ImVec4(.79f, .64f, .96f, 1.0f);
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly))
-		orange_color.y += 0.2f;
+		orange_color = ImVec4(.90f, .82f, 1.0f, 1.0f);
 
 	//text
 	push_style_color(ImGuiCol_Text, orange_color, m_state == EState::FadingOut, m_current_fade_opacity);
@@ -941,7 +941,8 @@ void NotificationManager::ProgressBarNotification::render_text(const float win_s
 
 void NotificationManager::ProgressBarNotification::render_bar(const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
 {
-	ImVec4 orange_color			= ImVec4(.99f, .313f, .0f, 1.0f);
+	// Tisma: the bar in the accent color.
+	ImVec4 orange_color			= ImVec4(.616f, .251f, .914f, 1.0f);
 	ImVec4 gray_color			= ImVec4(.34f, .34f, .34f, 1.0f);
 	ImVec2 lineEnd				= ImVec2(win_pos_x - m_window_width_offset, win_pos_y + win_size_y / 2 + (m_multiline ? m_line_height / 2 : 0));
 	ImVec2 lineStart			= ImVec2(win_pos_x - win_size_x + m_left_indentation, win_pos_y + win_size_y / 2 + (m_multiline ? m_line_height / 2 : 0));

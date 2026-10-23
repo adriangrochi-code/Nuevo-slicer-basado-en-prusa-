@@ -39,6 +39,7 @@
 #include "libslic3r/PresetBundle.hpp"
 
 #include "Tab.hpp"
+#include "PresetComboBoxes.hpp"
 #include "3DScene.hpp"
 #include "PrintHostDialogs.hpp"
 #include "wxExtensions.hpp"
@@ -63,7 +64,9 @@
 #include "NavRail.hpp"
 #include "USBMonitorPanel.hpp"
 #include "DevicesPanel.hpp"
+#include "MorePage.hpp"
 #include "CalibrationDialog.hpp"
+#include "PlateTools.hpp"
 #include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -73,6 +76,7 @@
 #include "WebViewPanel.hpp"
 #include "UserAccount.hpp"
 #include "TismaCloudDialog.hpp"
+#include "ProblemReportDialog.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
@@ -151,7 +155,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     m_printhost_queue_dlg(new PrintHostQueueDialog(this))
     , m_recent_projects(9)
     , m_settings_dialog(this)
-    , diff_dialog(this)
 {
     // Fonts were created by the DPIFrame constructor for the monitor, on which the window opened.
     wxGetApp().update_fonts(this);
@@ -191,24 +194,20 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 
 #ifndef __APPLE__
     std::vector<wxAcceleratorEntry*>& entries_cache = accelerator_entries_cache();
-    assert(entries_cache.size() + 6 < 100);
-    wxAcceleratorEntry entries[100];
-
-    int id = 0;
-    //for (const auto* entry : entries_cache)
-    //    entries[id++].Set(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
+    std::vector<wxAcceleratorEntry> entries;
+    // Tisma: without a menu bar, the shortcuts of its menus (now in More) are in the table of the window.
+    if (wxGetApp().is_editor())
+        for (const wxAcceleratorEntry* entry : entries_cache)
+            if (entry->GetMenuItem() != nullptr)
+                entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
 
 #if _WIN32
     // This is needed on Windows to fake the CTRL+# of the window menu when using the numpad
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD1, wxID_HIGHEST + 1);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD2, wxID_HIGHEST + 2);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD3, wxID_HIGHEST + 3);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD4, wxID_HIGHEST + 4);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD5, wxID_HIGHEST + 5);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD6, wxID_HIGHEST + 6);
+    for (int i = 1; i <= 6; ++i)
+        entries.emplace_back(wxACCEL_CTRL, WXK_NUMPAD0 + i, wxID_HIGHEST + i);
 #endif // _WIN32
 
-    wxAcceleratorTable accel(id, entries);
+    wxAcceleratorTable accel(int(entries.size()), entries.data());
     SetAcceleratorTable(accel);
 
     // clear cache with wxAcceleratorEntry, because it's no need anymore
@@ -328,7 +327,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 #endif // ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
         m_plater->show_action_buttons(true);
 
-        preferences_dialog = new PreferencesDialog(this);
     }
 
     if (wxGetApp().is_editor()) {
@@ -509,6 +507,13 @@ void MainFrame::update_layout()
 
     Layout();
     Thaw();
+}
+
+DiffPresetDialog& MainFrame::diff_dialog()
+{
+    if (m_diff_dialog == nullptr)
+        m_diff_dialog = new DiffPresetDialog(this);
+    return *m_diff_dialog;
 }
 
 // Called when closing the application and when switching the application language.
@@ -731,6 +736,15 @@ void MainFrame::init_tabpanel()
 
         wxWindow* panel = m_tabpanel->GetCurrentPage();
         Tab* tab = dynamic_cast<Tab*>(panel);
+        // The tools of the plate are in the top bar while the plate is shown.
+        if (m_plater && m_plater->plate_tools() && m_plater->plate_tools()->IsShown() != (panel == m_plater))
+            m_tabpanel->GetTopBarItemsCtrl()->ShowCenterWindow(panel == m_plater);
+        // The Printer section of the top bar opens again the page of the two used last (also when it was opened from
+        // the plate panel or the printer chip).
+        if (m_devices_panel && panel == m_devices_panel)
+            m_printer_section_devices = true;
+        else if (tab && tab->type() == Preset::TYPE_PRINTER)
+            m_printer_section_devices = false;
 
         // There shouldn't be a case, when we try to select a tab, which doesn't support a printer technology
         if (panel == nullptr || (tab != nullptr && !tab->supports_printer_technology(m_plater->printer_technology())))
@@ -833,6 +847,9 @@ void MainFrame::register_win32_callbacks()
 }
 #endif // _WIN32
 
+// A copy of a menu for a popup: the same ids, labels, kinds, states and submenus. The events of the copy go to the
+// window which shows it (the main frame, where the menu items have their handlers); the handlers bound to the menu
+// itself get them through it.
 void MainFrame::create_nav_rail()
 {
     // Órbita Pro: the workspaces are tabs of the top bar.
@@ -846,94 +863,89 @@ void MainFrame::create_nav_rail()
             m_tabpanel->SetSelection(idx);
     };
 
-    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering (with Structures), Configuration.
-    NavRail::Item prepare;
-    prepare.label       = _L("Prepare");
-    prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
-    prepare.icon        = "plater";
-    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); m_plater->close_engineering(); update_nav_rail(); };
-    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && !m_plater->is_engineering_open(); };
-    m_nav_rail->add_item(prepare);
-
-    NavRail::Item slice;
-    slice.label       = _L("Slice");
-    slice.tooltip     = _L("Layers, toolpaths and G-code preview");
-    slice.icon        = "layers";
-    slice.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("Preview"); };
-    slice.is_selected = [this, current_page]() { return current_page() == m_plater && m_plater->is_preview_shown(); };
-    m_nav_rail->add_item(slice);
-
-    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5). The
-    // structures (lightest infill, reinforcements, lattice: phase 6) are sections of the same view, so they share
-    // its button.
-    NavRail::Item engineering;
-    engineering.label       = _L("Engineering");
-    engineering.tooltip     = _L("Structural analysis at the working temperature (supports, loads and material) and "
-                                 "structures: lightest infill, reinforcements and lattice");
-    engineering.icon        = "wrench";
-    engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
-    engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    // In every mode (it is a main function of Tisma) and with every printer technology: with a resin printer it
-    // analyzes the solid or hollowed part and searches its walls and interior infill.
-    m_nav_rail->add_item(engineering);
-
-    NavRail::Item calib;
-    calib.label    = _L("Calibration");
-    calib.tooltip  = _L("Calibration tests: temperature, pressure advance, retraction, speeds, ...");
-    calib.icon     = "test";
-    calib.on_click = [this]() { show_calibration_menu(this); };
-    m_nav_rail->add_item(calib);
-
-    NavRail::Item usb;
-    usb.label       = _L("Device");
-    usb.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
-    usb.icon        = "plug";
-    usb.on_click    = [this, select_page]() {
-        if (m_devices_panel)
-            select_page(m_devices_panel);
+    // The sections, as in the Android app: the plate (its groups of tools are at the left of the 3D view: file, view,
+    // arrange, engineering, slice), the print, filament and printer settings, the devices and the rest.
+    auto is_sla = [is_fff]() { return ! is_fff(); };
+    auto tab_item = [this, current_page](const wxString& label, const wxString& tooltip, const std::string& icon,
+                                         Preset::Type type, std::function<bool()> is_visible) {
+        NavRail::Item item;
+        item.label       = label;
+        item.tooltip     = tooltip;
+        item.icon        = icon;
+        item.on_click    = [this, type]() { select_tab(wxGetApp().get_tab(type)); update_nav_rail(); };
+        item.is_selected = [current_page, type]() { Tab* tab = wxGetApp().get_tab(type); return tab && current_page() == tab; };
+        item.is_visible  = std::move(is_visible);
+        return item;
     };
-    usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
-    m_nav_rail->add_item(usb);
 
-    // Thingiverse instead of Printables (whose page needs the Prusa account of PrusaSlicer).
-    if (m_thingiverse_webview) {
-        NavRail::Item thingiverse;
-        thingiverse.label       = "Thingiverse";
-        thingiverse.tooltip     = _L("Find models on Thingiverse and download them into the plater");
-        thingiverse.icon        = "open_browser";
-        thingiverse.on_click    = [select_page, this]() { select_page(m_thingiverse_webview); };
-        thingiverse.is_selected = [this, current_page]() { return current_page() == m_thingiverse_webview; };
-        m_nav_rail->add_item(thingiverse);
-    }
+    NavRail::Item plate;
+    plate.label       = _L("Plate");
+    plate.tooltip     = _L("The models on the bed: open, view, arrange, analyze and slice them");
+    plate.icon        = "tisma_plate";
+    plate.on_click    = [this]() { select_tab(size_t(0)); update_nav_rail(); };
+    plate.is_selected = [this, current_page]() { return current_page() == m_plater; };
+    m_nav_rail->add_item(plate);
 
-    // Configuration: printer, filament and process profiles, preferences.
-    NavRail::Item config;
-    config.label       = _L("Configuration");
-    config.tooltip     = _L("Printer, filament and process profiles; preferences");
-    config.icon        = "settings";
-    config.bottom      = true;
-    config.is_selected = [current_page]() { return dynamic_cast<Tab*>(current_page()) != nullptr; };
-    config.on_click    = [this, is_fff]() {
-        wxMenu menu;
-        auto add = [this, &menu](const wxString& label, std::function<void()> action) {
-            const int id = wxWindow::NewControlId();
-            menu.Append(id, label);
-            menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
-        };
-        add(_L("Printer"),  [this]()         { select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER)); });
-        add(is_fff() ? _L("Filament") : _L("Material"),
-                            [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL)); });
-        add(_L("Process"),  [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT)); });
-        menu.AppendSeparator();
-        add(_L("Preferences") + dots, []()   { wxGetApp().open_preferences(); });
-        add(_(ConfigWizard::name()) + dots, []() { wxGetApp().run_wizard(ConfigWizard::RR_USER); });
-        PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
+    m_nav_rail->add_item(tab_item(_CTX("Print", "Section"), _L("Print settings: layers, walls, infill, supports, speeds..."), "tisma_print",
+                                  Preset::TYPE_PRINT, is_fff));
+    m_nav_rail->add_item(tab_item(_CTX("Print", "Section"), _L("Print settings of the resin printer: layers, supports, pad, hollowing..."),
+                                  "tisma_print", Preset::TYPE_SLA_PRINT, is_sla));
+    // The filament (or resin) settings are opened from the plate panel (its gear and the quick settings), not from here.
+    // The printer: its settings and the devices (the printers connected over USB and the network, their cameras) in one
+    // section, which opens the one of the two used last; each page switches to the other one.
+    NavRail::Item printer;
+    printer.label       = _CTX("Printer", "Section");
+    printer.tooltip     = _L("Printer settings (bed, extruders, firmware, custom G-code, limits) and the devices: the printers "
+                             "over USB and the network, their cameras, sending the G-code");
+    printer.icon        = "tisma_printer";
+    printer.on_click    = [this]() {
+        if (m_printer_section_devices)
+            select_devices();
+        else
+            select_printer_settings();
     };
-    m_nav_rail->add_item(config);
+    printer.is_selected = [this, current_page]() {
+        wxWindow* page = current_page();
+        Tab*      tab  = wxGetApp().get_tab(Preset::TYPE_PRINTER);
+        return page != nullptr && ((tab && page == tab) || (m_devices_panel && page == m_devices_panel));
+    };
+    m_nav_rail->add_item(printer);
+
+    // More: a page with the actions of Tisma (Thingiverse instead of Printables, whose page needs the Prusa account of
+    // PrusaSlicer; the Tisma Cloud account; preferences) and the cards made from the menus of the program (File, Edit,
+    // Window, View, Configuration, Calibration, Help).
+    NavRail::Item more;
+    more.label       = _L("More");
+    more.tooltip     = _L("Calibration, Thingiverse, Tisma Cloud account, preferences");
+    more.icon        = "tisma_more";
+    more.is_selected = [this, current_page]() {
+        return (m_more_page && current_page() == m_more_page) || (m_thingiverse_webview && current_page() == m_thingiverse_webview);
+    };
+    more.on_click    = [this, select_page]() {
+        if (m_more_page == nullptr)
+            return;
+        std::vector<MorePage::Action> actions;
+        if (m_thingiverse_webview)
+            actions.push_back({ "Thingiverse", _L("Models to print from Thingiverse"),
+                                [this, select_page]() { select_page(m_thingiverse_webview); update_nav_rail(); } });
+        actions.push_back({ _L("Tisma Cloud account") + dots, _L("Tisma Cloud account: slicing and analysis on the servers"),
+                            [this]() { show_cloud_account_dialog(this); } });
+        actions.push_back({ _L("Preferences") + dots, wxEmptyString, []() { wxGetApp().open_preferences(); } });
+        m_more_page->set_actions(std::move(actions));
+        m_more_page->update(m_menubar, this);
+        select_page(m_more_page);
+    };
+    m_nav_rail->add_item(more);
 
     // The pages are selected from the workspace tabs.
     top_bar->ShowPageButtons(false);
     top_bar->SetWorkspaceTabs(m_nav_rail);
+    // The groups of tools of the plate after them, while the plate is shown (the 3D view keeps the whole width).
+    if (PlateTools* tools = m_plater->plate_tools()) {
+        tools->Reparent(top_bar);
+        top_bar->AddCenterWindow(tools);
+        top_bar->ShowCenterWindow(m_tabpanel->GetCurrentPage() == m_plater);
+    }
 
     // Current printer and whether it has a connection (physical printer with a host).
     m_printer_chip = new PrinterChip(top_bar,
@@ -942,7 +954,10 @@ void MainFrame::create_nav_rail()
             PresetBundle* bundle = wxGetApp().preset_bundle;
             if (bundle == nullptr)
                 return st;
-            st.name = from_u8(bundle->printers.get_selected_preset_name());
+            // The model of the printer, without its nozzle (chosen apart in the plate panel).
+            const Preset& printer = bundle->printers.get_selected_preset();
+            const std::string model = printer_model_name(printer);
+            st.name = from_u8(model.empty() ? printer.name : model);
             PhysicalPrinterCollection& ph = bundle->physical_printers;
             if (ph.has_selection()) {
                 st.name = from_u8(ph.get_selected_printer_name());
@@ -955,10 +970,7 @@ void MainFrame::create_nav_rail()
             st.tooltip += "\n" + _L("Click to open Device");
             return st;
         },
-        [this, select_page]() {
-            if (m_devices_panel)
-                select_page(m_devices_panel);
-        });
+        [this]() { select_devices(); });
     top_bar->AddRightWindow(m_printer_chip);
 }
 
@@ -986,6 +998,8 @@ void MainFrame::create_preset_tabs()
     m_tabpanel->AddNewPage(m_devices_panel, _L("Devices"), "");
     m_thingiverse_webview = new ThingiverseWebViewPanel(m_tabpanel);
     m_tabpanel->AddNewPage(m_thingiverse_webview, "Thingiverse", "");
+    m_more_page = new MorePage(m_tabpanel);
+    m_tabpanel->AddNewPage(m_more_page, _L("More"), "");
     // The browser is created and the site loaded the first time the page is shown.
     m_thingiverse_webview->set_create_browser();
     add_printables_webview_tab();
@@ -1063,6 +1077,23 @@ void MainFrame::show_connect_tab(const wxString& url)
     m_connect_webview->set_load_default_url_on_next_error(true);
     m_connect_webview->load_url(url);
 }
+void MainFrame::select_printer_settings()
+{
+    m_printer_section_devices = false;
+    select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER));
+    update_nav_rail();
+}
+
+void MainFrame::select_devices()
+{
+    if (m_devices_panel == nullptr)
+        return;
+    m_printer_section_devices = true;
+    if (int idx = m_tabpanel->FindPage(m_devices_panel); idx != wxNOT_FOUND)
+        m_tabpanel->SetSelection(idx);
+    update_nav_rail();
+}
+
 void MainFrame::show_usb_printer()
 {
     if (m_devices_panel == nullptr)
@@ -1500,6 +1531,8 @@ void MainFrame::on_sys_color_changed()
         m_printer_webview->sys_color_changed();
     if (m_devices_panel)
         m_devices_panel->sys_color_changed();
+    if (m_more_page)
+        m_more_page->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 
@@ -1557,22 +1590,14 @@ static wxMenu* generate_help_menu()
 {
     wxMenu* helpMenu = new wxMenu();
 
+    // Tisma: the pages of Tisma (its repository); the pages of Prusa (website, quick start, samples, drivers) are not
+    // listed.
+    static const std::string repository = "https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-";
     append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("%s &Website"), SLIC3R_APP_NAME),
         wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_web_page_localized("https://www.prusa3d.com/slicerweb"); });
-    // TRN Item from "Help" menu
-    append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("&Quick Start"), SLIC3R_APP_NAME),
-        wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://help.prusa3d.com/article/first-print-with-prusaslicer_1753", nullptr, false); });
-    // TRN Item from "Help" menu
-    append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("Sample &G-codes and Models"), SLIC3R_APP_NAME),
-        wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://help.prusa3d.com/article/sample-g-codes_529630", nullptr, false); });
-    helpMenu->AppendSeparator();
-    append_menu_item(helpMenu, wxID_ANY, _L("Prusa 3D &Drivers"), _L("Open the Prusa3D drivers download page in your browser"),
-        [](wxCommandEvent&) { wxGetApp().open_web_page_localized("https://www.prusa3d.com/downloads"); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository, nullptr, false); });
     append_menu_item(helpMenu, wxID_ANY, _L("Software &Releases"), _L("Open the software releases page in your browser"),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/PrusaSlicer/releases", nullptr, false); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository + "/releases", nullptr, false); });
 //#        my $versioncheck = $self->_append_menu_item($helpMenu, "Check for &Updates...", "Check for new Slic3r versions", sub{
 //#            wxTheApp->check_version(1);
 //#        });
@@ -1585,17 +1610,12 @@ static wxMenu* generate_help_menu()
         [](wxCommandEvent&) { wxGetApp().system_info(); });
     append_menu_item(helpMenu, wxID_ANY, _L("Show &Configuration Folder"), _L("Show user configuration folder (datadir)"),
         [](wxCommandEvent&) { Slic3r::GUI::desktop_open_datadir_folder(); });
-    append_menu_item(helpMenu, wxID_ANY, _L("Report an I&ssue"), wxString::Format(_L("Report an issue on %s"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/slic3r/issues/new", nullptr, false); });
+    // Tisma Slicer: the report goes to the Tisma team through Tisma Cloud (ProblemReportDialog).
+    append_menu_item(helpMenu, wxID_ANY, _L("Report a problem") + dots, _L("Send a problem or a suggestion to the Tisma team"),
+        [](wxCommandEvent&) { show_problem_report_dialog(wxGetApp().mainframe); });
 #ifndef __APPLE__
     append_about_menu_item(helpMenu);
 #endif // __APPLE__
-    append_menu_item(helpMenu, wxID_ANY, _L("Show Tip of the Day")
-#if 0//debug
-        + "\tCtrl+Shift+T"
-#endif
-        ,_L("Opens Tip of the day notification in bottom right corner or shows another tip if already opened."),
-        [](wxCommandEvent&) { wxGetApp().plater()->get_notification_manager()->push_hint_notification(false); });
     helpMenu->AppendSeparator();
     append_menu_item(helpMenu, wxID_ANY, _L("Keyboard Shortcuts") + sep + "&?", _L("Show the list of the keyboard shortcuts"),
         [](wxCommandEvent&) { wxGetApp().keyboard_shortcuts(); });
@@ -1919,7 +1939,7 @@ void MainFrame::init_menubar_as_editor()
 
         windowMenu->AppendSeparator();
         append_menu_item(windowMenu, wxID_ANY, _L("Compare Presets")/* + "\tCtrl+F"*/, _L("Compare presets"), 
-            [this](wxCommandEvent&) { diff_dialog.show();}, "compare", nullptr, []() {return true; }, this);
+            [this](wxCommandEvent&) { diff_dialog().show();}, "compare", nullptr, []() {return true; }, this);
     }
 
     // View menu
@@ -1988,7 +2008,11 @@ void MainFrame::init_menubar_as_editor()
     m_menubar->Append(m_calibration_menu, _L("C&alibration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
+#ifdef __APPLE__
     SetMenuBar(m_menubar);
+#else
+    // Tisma: no menu bar; its menus are in More, in the top bar, and their shortcuts in the accelerator table.
+#endif
     // With an SLA printer at start, without the FFF only menus.
     update_technology_ui();
 
@@ -2518,6 +2542,9 @@ MainFrame::~MainFrame()
     for (wxMenu* menu : { m_calibration_menu, m_resin_calibration_menu })
         if (menu != nullptr && menu->GetMenuBar() == nullptr)
             delete menu;
+    // Without a menu bar in the window (Tisma, outside macOS) the menu bar and its menus are deleted here.
+    if (m_menubar != nullptr && GetMenuBar() != m_menubar)
+        delete m_menubar;
 }
 
 // Tisma Slicer: the Calibration menu has the tests of the printer technology.

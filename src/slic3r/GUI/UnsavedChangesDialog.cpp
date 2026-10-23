@@ -29,6 +29,9 @@
 #include "MsgDialog.hpp"
 
 #include "PresetComboBoxes.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
 
 using boost::optional;
 
@@ -887,16 +890,18 @@ void UnsavedChangesDialog::build(Preset::Type type, PresetCollection* dependent_
     if (add_new_value_column)
         m_tree->AppendBmpTextColumn(_L("New value"), DiffModel::colNewValue, 12);
 
-    // Add Buttons 
-    wxFont      btn_font = this->GetFont().Scaled(1.4f);
+    // Add Buttons (Tisma: the buttons of Tisma at the right, Save filled with the accent color)
+    // Tisma: the background of the cards of Tisma.
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     wxBoxSizer* buttons  = new wxBoxSizer(wxHORIZONTAL);
+    buttons->AddStretchSpacer();
 
-    auto add_btn = [this, buttons, btn_font, dependent_presets](ScalableButton** btn, int& btn_id, const std::string& icon_name, Action close_act, const wxString& label, bool process_enable = true)
+    auto add_btn = [this, buttons, dependent_presets](::Button** btn, int& btn_id, const std::string& /*icon_name*/, Action close_act, const wxString& label, bool process_enable = true)
     {
-        *btn = new ScalableButton(this, btn_id = NewControlId(), icon_name, label, wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, 24);
+        *btn = tisma_dialog_button(this, wxID_ANY, label, close_act == Action::Save);
+        (*btn)->SetId(btn_id = NewControlId());
 
-        buttons->Add(*btn, 1, wxLEFT, 5);
-        (*btn)->SetFont(btn_font);
+        buttons->Add(*btn, 0, wxLEFT, 5);
 
         (*btn)->Bind(wxEVT_BUTTON, [this, close_act, dependent_presets](wxEvent&) {
             update_config(close_act);
@@ -928,13 +933,15 @@ void UnsavedChangesDialog::build(Preset::Type type, PresetCollection* dependent_
     }
 
     // "Save" button
-    if (ActionButtons::SAVE & m_buttons) 
+    if (ActionButtons::SAVE & m_buttons) {
         add_btn(&m_save_btn, m_save_btn_id, "save", Action::Save, _L("Save"));
+        SetDefaultItem(m_save_btn);
+    }
 
-    ScalableButton* cancel_btn = new ScalableButton(this, wxID_CANCEL, "cross", _L("Cancel"), wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, 24);
-    buttons->Add(cancel_btn, 1, wxLEFT|wxRIGHT, 5);
-    cancel_btn->SetFont(btn_font);
+    ::Button* cancel_btn = tisma_dialog_button(this, wxID_CANCEL);
+    buttons->Add(cancel_btn, 0, wxLEFT, 5);
     cancel_btn->Bind(wxEVT_BUTTON, [this](wxEvent&) { this->EndModal(wxID_CANCEL); });
+    tisma_dialog_keys(this);
 
     m_info_line = new wxStaticText(this, wxID_ANY, "");
 //    m_info_line->SetFont(wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT).Bold());
@@ -1380,7 +1387,9 @@ void UnsavedChangesDialog::on_dpi_changed(const wxRect& suggested_rect)
 {
     int em = em_unit();
 
-    msw_buttons_rescale(this, em, { wxID_CANCEL, m_save_btn_id, m_move_btn_id, m_continue_btn_id }, 1.5);
+    for (int id : { int(wxID_CANCEL), m_save_btn_id, m_move_btn_id, m_continue_btn_id })
+        if (auto* btn = dynamic_cast<::Button*>(FindWindowById(id, this)))
+            btn->Rescale();
 
     const wxSize& size = wxSize(70 * em, 30 * em);
     SetMinSize(size);
@@ -1393,8 +1402,12 @@ void UnsavedChangesDialog::on_dpi_changed(const wxRect& suggested_rect)
 
 void UnsavedChangesDialog::on_sys_color_changed()
 {
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     for (auto btn : { m_save_btn, m_transfer_btn, m_discard_btn } )
-        btn->sys_color_changed();
+        if (btn)
+            style_tisma_button(btn, btn == m_save_btn);
+    if (auto* cancel = dynamic_cast<::Button*>(FindWindowById(wxID_CANCEL, this)))
+        style_tisma_button(cancel, false);
     // msw_rescale updates just icons, so use it
     m_tree->Rescale();
 

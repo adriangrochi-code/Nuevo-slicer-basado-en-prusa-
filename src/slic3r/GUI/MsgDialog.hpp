@@ -16,6 +16,8 @@
 #include <wx/textctrl.h>
 #include <wx/statline.h>
 
+#include "Widgets/Button.hpp"
+
 class wxBoxSizer;
 class CheckBox;
 class wxStaticBitmap;
@@ -56,10 +58,10 @@ protected:
 	};
 
 	MsgDialog(wxWindow *parent, const wxString &title, const wxString &headline, long style = wxOK, wxBitmap bitmap = wxNullBitmap);
-	// returns pointer to created button
-	wxButton* add_button(wxWindowID btn_id, bool set_focus = false, const wxString& label = wxString());
+	// returns pointer to created button (Tisma: the buttons of Tisma, the one with the focus filled with the accent color)
+	::Button* add_button(wxWindowID btn_id, bool set_focus = false, const wxString& label = wxString());
 	// returns pointer to found button or NULL
-	wxButton* get_button(wxWindowID btn_id);
+	::Button* get_button(wxWindowID btn_id);
 	void apply_style(long style);
 	void finalize();
 

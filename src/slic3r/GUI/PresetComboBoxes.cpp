@@ -258,6 +258,29 @@ wxString PresetComboBox::get_preset_name(const Preset & preset)
     return from_u8(preset.name);
 }
 
+std::string printer_model_name(const Preset& preset)
+{
+    if (preset.type != Preset::TYPE_PRINTER || preset.vendor == nullptr)
+        return std::string();
+    const std::string model = preset.config.opt_string("printer_model");
+    if (model.empty())
+        return std::string();
+    for (const VendorProfile::PrinterModel& m : preset.vendor->models)
+        if (m.id == model)
+            return m.name;
+    return std::string();
+}
+
+std::string PresetComboBox::preset_name_of(int item) const
+{
+    if (item < 0 || item >= int(GetCount()))
+        return std::string();
+    const wxString label = GetString(item);
+    if (auto it = m_label_presets.find(label); it != m_label_presets.end())
+        return it->second;
+    return Preset::remove_suffix_modified(into_u8(label));
+}
+
 static wxString get_preset_name_with_suffix(const Preset & preset)
 {
     return from_u8(preset.name + Preset::suffix_modified());
@@ -423,7 +446,8 @@ void PresetComboBox::edit_physical_printer()
     if (!m_preset_bundle->physical_printers.has_selection())
         return;
 
-    PhysicalPrinterDialog dlg(this->GetParent(),this->GetString(this->GetSelection()));
+    // Tisma: the full name, the label can be the name of the printer and its model.
+    PhysicalPrinterDialog dlg(this->GetParent(), from_u8(m_preset_bundle->physical_printers.get_selected_full_printer_name()));
     if (dlg.ShowModal() == wxID_OK) {
         update();
         wxGetApp().show_printer_webview_tab();
@@ -528,7 +552,8 @@ void PresetComboBox::fill_width_height()
 
 wxString PresetComboBox::separator(const std::string& label)
 {
-    return wxString::FromUTF8(separator_head()) + _(label) + wxString::FromUTF8(separator_tail());
+    // Tisma: the title of a section of the list, drawn by the drop-down list instead of "------- label -------".
+    return DropDown::section_title(_(label));
 }
 
 
@@ -624,7 +649,8 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
     if (m_type != Preset::TYPE_PRINTER)
         return false;
 
-    const std::string           selected_string     = into_u8(this->GetString(this->GetSelection()));
+    // Tisma: the full name of the physical printer behind its label (preset_name_of()).
+    const std::string           selected_string     = preset_name_of(this->GetSelection());
     PhysicalPrinterCollection&  physical_printers   = m_preset_bundle->physical_printers;
     Tab*                        tab                 = wxGetApp().get_tab(Preset::TYPE_PRINTER);
 
@@ -632,10 +658,11 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
         if (!physical_printers.has_selection())
             return false;
 
-        const bool is_changed = selected_string == physical_printers.get_selected_printer_preset_name();
+        const std::string preset_name = preset_name_of(this->GetSelection());
+        const bool is_changed = preset_name == physical_printers.get_selected_printer_preset_name();
         physical_printers.unselect_printer();
         if (is_changed)
-            tab->select_preset(selected_string);
+            tab->select_preset(preset_name);
         return is_changed;
     }
 
@@ -1118,6 +1145,24 @@ void PlaterPresetComboBox::update()
         }
     }
 
+    // Tisma: the printers of a vendor are listed by the name of their model, unless two shown models have the same name.
+    m_label_presets.clear();
+    std::map<std::string, int> model_names;
+    if (m_type == Preset::TYPE_PRINTER)
+        for (size_t i = 0; i < presets.size(); ++i)
+            if (const Preset &p = presets[i]; p.is_system && p.is_visible && other_nozzles.count(i) == 0)
+                if (const std::string model = printer_model_name(p); ! model.empty())
+                    ++model_names[model];
+    auto label_of = [this, &model_names](const Preset &preset) {
+        if (m_type == Preset::TYPE_PRINTER && preset.is_system)
+            if (const std::string model = printer_model_name(preset); ! model.empty() && model_names[model] == 1) {
+                const wxString label = from_u8(model + suffix(preset));
+                m_label_presets[label] = preset.name;
+                return label;
+            }
+        return get_preset_name(preset);
+    };
+
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i) 
     {
         const Preset& preset = presets[i];
@@ -1174,9 +1219,10 @@ void PlaterPresetComboBox::update()
                     }
                 }
             } else {
-                system_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp });
+                const wxString label = label_of(preset);
+                system_presets.push_back({ label, label.Lower(), bmp });
                 if (is_selected) {
-                    selected_user_preset = get_preset_name(preset);
+                    selected_user_preset = label;
                     tooltip = from_u8(preset.name);
                 }
             }
@@ -1244,17 +1290,31 @@ void PlaterPresetComboBox::update()
                 std::string name; // preset_name
                 std::string fullname; // full name
                 bool selected; // is selected
+                std::string label; // Tisma: the name shown
             };
             std::vector<PhysicalPrinterPresetData> preset_data;
             bool is_selected_some_ph_printer{ false };
             for (PhysicalPrinterCollection::ConstIterator it = ph_printers.begin(); it != ph_printers.end(); ++it) {
                 for (const std::string& preset_name : it->get_preset_names()) {
                     bool is_selected = ph_printers.is_selected(it, preset_name);
-                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), is_selected });
+                    // Tisma: the printer by its name and the model of its profile, "Kobra LAN (Anycubic Kobra 3)", as the
+                    // printers of a vendor are listed by their model.
+                    std::string label = it->get_full_name(preset_name);
+                    if (const Preset* preset = m_collection->find_preset(preset_name); preset != nullptr && preset->is_system)
+                        if (const std::string model = printer_model_name(*preset); ! model.empty())
+                            label = it->name + " (" + model + ")";
+                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), is_selected, label });
                     if (is_selected)
                         is_selected_some_ph_printer = true;
                 }
             }
+            // Two profiles of the same model on a printer (two nozzles): their full names.
+            std::map<std::string, int> labels;
+            for (const PhysicalPrinterPresetData& data : preset_data)
+                ++labels[data.label];
+            for (PhysicalPrinterPresetData& data : preset_data)
+                if (labels[data.label] > 1)
+                    data.label = data.fullname;
             if (is_selected_some_ph_printer)
                 connect_info_sizer->Show(false);
             std::sort(preset_data.begin(), preset_data.end(), [](const PhysicalPrinterPresetData& a, const PhysicalPrinterPresetData& b) {
@@ -1271,7 +1331,10 @@ void PlaterPresetComboBox::update()
                 auto bmp = get_bmp(main_icon_name, main_icon_name, "", true, true, false);
                 assert(bmp);
 
-                set_label_marker(Append(from_u8(data.fullname + suffix(preset)), *bmp), LABEL_ITEM_PHYSICAL_PRINTER);
+                const wxString label = from_u8(data.label + suffix(preset));
+                if (data.label != data.fullname)
+                    m_label_presets[label] = data.fullname;
+                set_label_marker(Append(label, *bmp), LABEL_ITEM_PHYSICAL_PRINTER);
                 validate_selection(data.selected);
             }
         }
@@ -1282,11 +1345,11 @@ void PlaterPresetComboBox::update()
         assert(bmp);
 
         if (m_type == Preset::TYPE_FILAMENT)
-            set_label_marker(Append(separator(L("Add/Remove filaments")), *bmp), LABEL_ITEM_WIZARD_FILAMENTS);
+            set_label_marker(Append(_L("Add/Remove filaments"), *bmp), LABEL_ITEM_WIZARD_FILAMENTS);
         else if (m_type == Preset::TYPE_SLA_MATERIAL)
-            set_label_marker(Append(separator(L("Add/Remove materials")), *bmp), LABEL_ITEM_WIZARD_MATERIALS);
+            set_label_marker(Append(_L("Add/Remove materials"), *bmp), LABEL_ITEM_WIZARD_MATERIALS);
         else
-            set_label_marker(Append(separator(L("Add/Remove printers")), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
+            set_label_marker(Append(_L("Add/Remove printers"), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
     }
 
     update_selection();
@@ -1383,6 +1446,14 @@ void TabPresetComboBox::OnSelect(wxCommandEvent &evt)
 
 wxString TabPresetComboBox::get_preset_name(const Preset& preset)
 {
+    // Tisma: the print and filament profiles by their short names (their aliases, as in the plate panel), unless the
+    // incompatible ones are listed too (several of them have the same alias then).
+    if (! show_incompatible && ! preset.alias.empty() && (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_FILAMENT) &&
+        ! (preset.vendor && preset.vendor->templates_profile)) {
+        const wxString label = from_u8(preset.alias + suffix(preset));
+        m_label_presets[label] = preset.name;
+        return label;
+    }
     return from_u8(preset.name + suffix(preset));
 }
 
@@ -1394,6 +1465,7 @@ void TabPresetComboBox::update()
     Freeze();
     Clear();
     invalidate_selection();
+    m_label_presets.clear();
 
     const ExtruderFilaments& extruder_filaments = m_preset_bundle->extruders_filaments[m_extruder_idx];
 
@@ -1557,7 +1629,7 @@ void TabPresetComboBox::update()
         auto bmp = get_bmp("edit_preset_list, tab,", icon_name, "");
         assert(bmp);
 
-        set_label_marker(Append(separator(L("Add/Remove printers")), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
+        set_label_marker(Append(_L("Add/Remove printers"), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
     }
 
     update_selection();

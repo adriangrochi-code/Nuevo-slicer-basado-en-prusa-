@@ -124,7 +124,8 @@ wxPoint OG_CustomCtrl::get_pos(const Line& line, Field* field_in/* = nullptr*/)
     auto correct_horiz_pos = [this](int& h_pos, Field* field) {
         if (m_max_win_width > 0 && field->getWindow()) {
             int win_width = field->getWindow()->GetSize().GetWidth();
-            if (dynamic_cast<CheckBox*>(field))
+            // The half of a check box (its window has room for a label); a switch is as wide as it is drawn.
+            if (dynamic_cast<CheckBox*>(field) && wxGetApp().suppress_round_corners())
                 win_width *= 0.5;
             h_pos += m_max_win_width - win_width;
         }
@@ -180,7 +181,6 @@ wxPoint OG_CustomCtrl::get_pos(const Line& line, Field* field_in/* = nullptr*/)
                     // those two parameter names require localization with context
                     label = (option.label == "Top" || option.label == "Bottom") ?
                         _CTX(option.label, "Layers") : _(option.label);
-                    label += ":";
 
                     wxCoord label_w, label_h;
 #ifdef __WXMSW__
@@ -627,7 +627,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
     const bool suppress_hyperlinks = get_app_config()->get_bool("suppress_hyperlinks");
     if (draw_just_act_buttons) {
         if (field) {
-            const wxPoint pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap(), field->undo_bitmap(), field->blink());
+            const wxPoint pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), *field, field->blink());
             // Add edit button, if it exists
             if (field->has_edit_ui())
                 draw_edit_bmp(dc, pos, field->edit_bitmap());
@@ -645,13 +645,14 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
     if (ctrl->opt_group->label_width != 0 && !label.IsEmpty()) {
         const wxColour* text_clr = (option_set.size() == 1 && field ? field->label_color() : og_line.label_color());
         is_url_string = !suppress_hyperlinks && !og_line.label_path.empty();
-        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label + ":", text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
+        // Tisma: the labels without the colon of PrusaSlicer, as in the modern slicers.
+        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label, text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
     }
 
     // If there's a widget, build it and set result to the correct position.
     if (og_line.widget != nullptr) {
         if (og_line.has_undo_ui())
-            draw_act_bmps(dc, wxPoint(h_pos, v_pos), og_line.undo_to_sys_bitmap(), og_line.undo_bitmap(), og_line.blink());
+            draw_act_bmps(dc, wxPoint(h_pos, v_pos), og_line, og_line.blink());
         else
             draw_blinking_bmp(dc, wxPoint(h_pos, v_pos), og_line.blink());
         return;
@@ -665,7 +666,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
         option_set.front().side_widget == nullptr && og_line.get_extra_widgets().size() == 0)
     {
         if (field && field->has_undo_ui())
-            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap(), field->undo_bitmap(), field->blink()).x + ctrl->m_h_gap;
+            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), *field, field->blink()).x + ctrl->m_h_gap;
         else if (field && !field->has_undo_ui() && field->blink())
             draw_blinking_bmp(dc, wxPoint(h_pos, v_pos), field->blink());
         // update width for full_width fields
@@ -684,7 +685,6 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
             // those two parameter names require localization with context
             label = (option.label == "Top" || option.label == "Bottom") ?
                 _CTX(option.label, "Layers") : _(option.label);
-            label += ":";
 
             if (is_url_string)
                 is_url_string = false;
@@ -694,7 +694,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
         }
 
         if (field && field->has_undo_ui()) {
-            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap(), field->undo_bitmap(), field->blink(), bmp_rect_id++).x;
+            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), *field, field->blink(), bmp_rect_id++).x;
             if (field->getSizer())
             {
                 auto children = field->getSizer()->GetChildren();
@@ -729,8 +729,8 @@ wxCoord OG_CustomCtrl::CtrlLine::draw_mode_bmp(wxDC& dc, wxCoord v_pos)
     wxBitmapBundle* bmp = get_bmp_bundle("mode", pix_cnt, pix_cnt, wxGetApp().get_mode_btn_color(mode));
     wxCoord y_draw = v_pos + lround((height - get_bitmap_size(bmp, ctrl).GetHeight()) / 2);
 
-    if (og_line.get_options().front().opt.gui_type != ConfigOptionDef::GUIType::legend)
-        dc.DrawBitmap(bmp->GetBitmapFor(ctrl), 0, y_draw);
+    // Tisma: no colored bullet of the mode before each setting (its place stays); the mode is chosen in the top bar.
+    (void)y_draw;
 
     return get_bitmap_size(bmp, ctrl).GetWidth() + ctrl->m_h_gap;
 }
@@ -806,19 +806,23 @@ wxPoint OG_CustomCtrl::CtrlLine::draw_blinking_bmp(wxDC& dc, wxPoint pos, bool i
     return wxPoint(h_pos, v_pos);
 }
 
-wxPoint OG_CustomCtrl::CtrlLine::draw_act_bmps(wxDC& dc, wxPoint pos, const wxBitmapBundle& bmp_undo_to_sys, const wxBitmapBundle& bmp_undo, bool is_blinking, size_t rect_id)
+wxPoint OG_CustomCtrl::CtrlLine::draw_act_bmps(wxDC& dc, wxPoint pos, const UndoValueUIManager& ui, bool is_blinking, size_t rect_id)
 {
+    const wxBitmapBundle& bmp_undo_to_sys = ui.undo_to_sys_bitmap();
+    const wxBitmapBundle& bmp_undo        = ui.undo_bitmap();
     pos = draw_blinking_bmp(dc, pos, is_blinking);
     wxCoord h_pos = pos.x;
     wxCoord v_pos = pos.y;
 
-    dc.DrawBitmap(bmp_undo_to_sys.GetBitmapFor(ctrl), h_pos, v_pos);
+    if (ui.undo_to_sys_shown())
+        dc.DrawBitmap(bmp_undo_to_sys.GetBitmapFor(ctrl), h_pos, v_pos);
 
     int bmp_dim = get_bitmap_size(&bmp_undo_to_sys, ctrl).GetWidth();
     rects_undo_to_sys_icon[rect_id] = wxRect(h_pos, v_pos, bmp_dim, bmp_dim);
 
     h_pos += bmp_dim + ctrl->m_h_gap;
-    dc.DrawBitmap(bmp_undo.GetBitmapFor(ctrl), h_pos, v_pos);
+    if (ui.undo_shown())
+        dc.DrawBitmap(bmp_undo.GetBitmapFor(ctrl), h_pos, v_pos);
 
     bmp_dim = get_bitmap_size(&bmp_undo, ctrl).GetWidth();
     rects_undo_icon[rect_id] = wxRect(h_pos, v_pos, bmp_dim, bmp_dim);

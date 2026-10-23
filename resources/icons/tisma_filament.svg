@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same drawing as the Android app (android/app/src/main/res/drawable/ic_filament.xml). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12,3a9,9 0 1,0 0.01,0Z"/>
+  <path fill="#808080" d="M12,9a3,3 0 1,0 0.01,0Z"/>
+  <path fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21,12h2"/>
+</svg>

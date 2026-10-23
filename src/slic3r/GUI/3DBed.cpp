@@ -607,6 +607,11 @@ void Bed3D::init_internal_model_from_file()
 
         // move the model so that its origin (0.0, 0.0, 0.0) goes into the bed shape center and a bit down to avoid z-fighting with the texture quad
         m_model_offset = to_3d(m_build_volume.bounding_volume2d().center(), -0.03);
+        // Tisma Slicer: the bed models of the Bambu Lab printers (bbl-3dp-*.stl, from OrcaSlicer) are in the coordinates
+        // of the bed, their origin at its corner (OrcaSlicer, 3DBed.cpp, Bed3D::update_model_offset, moves them back by
+        // half the bed).
+        if (boost::starts_with(boost::filesystem::path(m_model_filename).filename().string(), "bbl-3dp-"))
+            m_model_offset = to_3d(m_build_volume.bounding_volume2d().min, -0.03);
 
         // register for picking
         const std::vector<std::shared_ptr<SceneRaycasterItem>>* const raycaster = wxGetApp().plater()->canvas3D()->get_raycasters_for_picking(SceneRaycaster::EType::Bed);

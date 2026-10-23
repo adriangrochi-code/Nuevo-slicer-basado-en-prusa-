@@ -16,6 +16,8 @@
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/Plater.hpp"
 #include "slic3r/GUI/I18N.hpp"
+#include "slic3r/GUI/TismaTheme.hpp"
+#include "libslic3r/Utils.hpp"
 
 
 // To show a message box if GUI initialization ends up with an exception thrown.
@@ -68,6 +70,8 @@ int GUI_Run(GUI_InitParams &params)
 
         GUI::GUI_App::SetInstance(gui);
         gui->init_params = &params;
+        // Tisma: the light or dark appearance forced in Preferences, before GTK reads its theme.
+        TismaTheme::set_gtk_theme_env((boost::filesystem::path(Slic3r::data_dir()) / (SLIC3R_APP_KEY ".ini")).string());
         return wxEntry(params.argc, params.argv);
     } catch (const Slic3r::Exception &ex) {
         boost::nowide::cerr << ex.what() << std::endl;

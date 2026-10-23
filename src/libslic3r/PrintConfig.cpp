@@ -304,6 +304,10 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "coasting",         int(CalibMode::Coasting) },
     { "arc_overhang_speed", int(CalibMode::ArcOverhangSpeed) },
     { "arc_overhang_distance", int(CalibMode::ArcOverhangDistance) },
+    { "arc_overhang_overlap", int(CalibMode::ArcOverhangOverlap) },
+    { "ironing_flow",     int(CalibMode::IroningFlow) },
+    { "ironing_spacing",  int(CalibMode::IroningSpacing) },
+    { "ironing_speed",    int(CalibMode::IroningSpeed) },
     { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
@@ -1276,6 +1280,19 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("overhang_arcs_overlap", coPercent);
+    def->label = L("Arc overhangs overlap");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("How much each arc overlaps the previous one, as a percentage of the extrusion width: more overlap "
+                    "gives each arc more to rest on, with more material and time (Calibration > Arc overhang overlap). "
+                    "Zero lays the arcs side by side, one extrusion width apart.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 50;
+    def->mode = comExpert;
+    // About the overlap of the perimeters (spacing = width - layer height * (1 - pi/4): 9.5 % for 0.45 x 0.2 mm).
+    def->set_default_value(new ConfigOptionPercent(10));
 
     def = this->add("stagger_perimeters", coBool);
     def->label = L("Staggered perimeters (Experimental)");
@@ -4345,6 +4362,10 @@ void PrintConfigDef::init_fff_params()
         { "coasting",         L("Coasting distance") },
         { "arc_overhang_speed", L("Arc overhang speed") },
         { "arc_overhang_distance", L("Arc overhang maximum distance") },
+        { "arc_overhang_overlap", L("Arc overhang overlap") },
+        { "ironing_flow",     L("Ironing flow") },
+        { "ironing_spacing",  L("Ironing spacing") },
+        { "ironing_speed",    L("Ironing speed") },
         { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
@@ -4374,8 +4395,8 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("support_multi_bed_types", coBool);
     def->label = L("Choose the bed type");
-    def->tooltip = L("The printer has interchangeable beds (build plates): the bed is chosen in the sidebar and the "
-                     "filaments give a bed temperature for each one.");
+    // Tisma: the bed is chosen for every printer now; kept for the profiles of OrcaSlicer.
+    def->tooltip = L("The printer has interchangeable beds (build plates), as in the profiles of OrcaSlicer.");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
@@ -4513,6 +4534,18 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("The object will be grown/shrunk in the XY plane by the configured value "
                    "(negative = inwards, positive = outwards). This might be useful "
                    "for fine-tuning hole sizes.");
+    def->sidetext = L("mm");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    // Tisma: the holes apart (the same key and meaning as in Bambu Studio and OrcaSlicer, so their projects keep it).
+    def = this->add("xy_hole_compensation", coFloat);
+    def->label = L("XY hole compensation");
+    def->category = L("Advanced");
+    def->tooltip = L("The holes of the object are grown or shrunk in the XY plane by this value, after the XY size "
+                     "compensation: positive makes the holes bigger, negative smaller. Printed holes usually come out "
+                     "smaller than designed (Calibration > Dimensional correction measures it). With several parts or "
+                     "modifiers on a layer, holes are only grown.");
     def->sidetext = L("mm");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));

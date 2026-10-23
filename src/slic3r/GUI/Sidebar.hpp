@@ -36,7 +36,10 @@ class ScalableButton;
 class ModeSizer;
 
 class Button;
+class SwitchButton;
 class wxStaticText;
+
+class StaticBox;
 
 namespace Slic3r {
 
@@ -53,6 +56,7 @@ class ObjectSettings;
 class ObjectLayers;
 class ObjectList;
 class PlaterPresetComboBox;
+class TismaTitle;
 class Plater;
 class BitmapComboBox;
 
@@ -82,14 +86,32 @@ class Sidebar : public wxPanel
     BitmapComboBox*                     m_workflow          { nullptr };
     std::vector<sla::Workflow>          m_available_workflows;
     std::vector<PlaterPresetComboBox*>  m_combos_filament;
-    // Tisma: the nozzle and the bed of the printer, chosen apart from the printer as in OrcaSlicer. The printer combo
-    // lists a model once, the nozzle combo switches between the printer presets of the model.
+    // Tisma: the sections of the presets as cards (rounded panels), as in OrcaSlicer: printer (with its nozzle and its
+    // bed), filaments, print settings, SLA print settings, SLA material.
+    std::vector<::StaticBox*>           m_cards;
+    ::StaticBox*                        m_card_printer          { nullptr };
+    wxBoxSizer*                         m_card_printer_sizer    { nullptr };
+    ::StaticBox*                        m_card_filament         { nullptr };
+    wxBoxSizer*                         m_card_filament_sizer   { nullptr };
+    // The cards of the print settings hold the chips of the settings changed most often (FreqChangedParams).
+    ::StaticBox*                        m_card_print            { nullptr };
+    wxBoxSizer*                         m_card_print_sizer      { nullptr };
+    ::StaticBox*                        m_card_sla_print        { nullptr };
+    wxBoxSizer*                         m_card_sla_print_sizer  { nullptr };
+    // Tisma: the nozzle and the bed of the printer, chosen apart from the printer as in OrcaSlicer and Bambu Studio.
+    // The printer combo lists a model once (by its name); the nozzle combo offers the nozzles of the model (its printer
+    // presets) and the usual diameters, which are set on the printer.
     wxStaticText*                       m_label_nozzle      { nullptr };
     BitmapComboBox*                     m_combo_nozzle      { nullptr };
     wxStaticText*                       m_label_bed         { nullptr };
     BitmapComboBox*                     m_combo_bed         { nullptr };
     wxSizerItem*                        m_printer_parts_row { nullptr };
-    std::vector<std::string>            m_nozzle_presets;   // item of the nozzle combo -> printer preset
+    struct NozzleChoice {
+        double      diameter;
+        // The printer preset of the vendor for this nozzle; empty: the diameter is set on the edited printer.
+        std::string preset;
+    };
+    std::vector<NozzleChoice>           m_nozzles;          // item of the nozzle combo -> nozzle
     // Rows of the preset chooser shown for the filament (FFF) and the resin (SLA) printers, and for the Prusa SLX.
     std::vector<wxSizerItem*>           m_fff_rows, m_sla_rows, m_slx_rows;
     wxSizerItem*                        m_full_spectrum_row { nullptr };
@@ -123,6 +145,11 @@ class Sidebar : public wxPanel
     ::Button*       m_btn_compact               { nullptr };
     bool            m_compact                   { false };
     void            set_compact(bool compact);
+    // Tisma: slice right after every change (the background processing of PrusaSlicer, as a switch above the slice
+    // button).
+    TismaTitle*     m_auto_slice_label          { nullptr };
+    ::SwitchButton* m_auto_slice                { nullptr };
+    void            set_auto_slice(bool on);
     void            slice_now();
     // Sets whether an output action is available; true if it changed.
     bool            set_available(OutputAction action, bool available) const;
@@ -151,12 +178,16 @@ class Sidebar : public wxPanel
     void init_printer_parts();
     void update_printer_parts();
     void on_select_nozzle();
+    // Tisma: a diameter typed in the nozzle field.
+    void on_type_nozzle();
+    void apply_nozzle(const NozzleChoice &nozzle);
     void on_select_bed();
 
     void show_preset_comboboxes();
     // Tisma colors of the panel and of the action buttons.
     void apply_tisma_theme();
-    std::vector<wxStaticText*> m_preset_captions;
+    // The titles of the cards.
+    std::vector<TismaTitle*> m_titles;
     void on_select_preset(wxCommandEvent& evt);
 
 public:
@@ -172,8 +203,9 @@ public:
     ObjectSettings*         obj_settings();
     ObjectLayers*           obj_layers();
 
-    ConfigOptionsGroup*     og_freq_chng_params(const bool is_fff);
-    wxButton*               get_wiping_dialog_button();
+    wxWindow*               get_wiping_dialog_button();
+    // The chips of the supports, infill, brim and pad show the values of the edited print settings.
+    void                    update_frequently_changed_parameters();
     QuickSettings*          quick_settings();
 
     void show_info_sizer();

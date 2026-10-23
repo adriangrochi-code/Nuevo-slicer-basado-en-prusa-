@@ -19,8 +19,10 @@
 ///|/
 #include "Plater.hpp"
 #include "slic3r/GUI/BitmapCache.hpp"
+#include "slic3r/GUI/CalibrationDialog.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
 #include "slic3r/GUI/USBMonitorPanel.hpp"
+#include "slic3r/Utils/PrinterProbe.hpp"
 #include "slic3r/Utils/PrusaConnect.hpp"
 
 #include <cstddef>
@@ -31,6 +33,8 @@
 #include <string>
 #include <regex>
 #include <future>
+#include <atomic>
+#include <thread>
 #include <utility>
 #include <boost/algorithm/string.hpp>
 #include <boost/nowide/cstdio.hpp>
@@ -85,6 +89,7 @@
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "NavRail.hpp"
+#include "PlateTools.hpp"
 #include "libslic3r/SLA/Workflows.hpp"
 
 // For stl export
@@ -336,6 +341,8 @@ struct Plater::priv
 
     // GUI elements
     wxSizer* panel_sizer{ nullptr };
+    // Tisma: the groups of tools of the plate, at the left of the 3D view.
+    PlateTools* plate_tools{ nullptr };
     wxPanel* current_panel{ nullptr };
     std::vector<wxPanel*> panels;
     Sidebar *sidebar;
@@ -454,6 +461,7 @@ struct Plater::priv
 
     void update(unsigned int flags = 0);
     void select_view(const std::string& direction);
+    PlateTools* create_plate_tools();
     void select_view_3D(const std::string& name);
     void select_next_view_3D();
 
@@ -646,6 +654,18 @@ struct Plater::priv
 
     // Caching last value of show_action_buttons parameter for show_action_buttons(), so that a callback which does not know this state will not override it.
     mutable bool    			ready_to_slice = { false };
+    // Tisma: the network printer of the printer in use (a physical printer of its profile with a network address) when
+    // no physical printer is selected, and whether it answers, probed in the background: after slicing, the main button
+    // sends to it, as it prints on a USB printer.
+    mutable std::string         network_target;
+    mutable bool                network_target_answers { false };
+    mutable bool                network_probe_running  { false };
+    std::thread                 network_probe_thread;
+    // Cleared when the plater goes, for the answers posted after.
+    std::shared_ptr<std::atomic<bool>> network_probe_alive { std::make_shared<std::atomic<bool>>(true) };
+    std::unique_ptr<wxTimer>    network_probe_timer;
+    std::string                 find_network_target() const;
+    void                        probe_network_target() const;
     // Flag indicating that the G-code export targets a removable device, therefore the show_action_buttons() needs to be called at any case when the background processing finishes.
     ExportingStatus             exporting_status { NOT_EXPORTING };
     std::string                 last_output_path;
@@ -781,9 +801,18 @@ void Plater::priv::init()
     panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
-    // The 3D view with the status bar under it.
+    // The 3D view with the status bar under it, the tools of the plate at its left.
     auto *center_sizer = new wxBoxSizer(wxVERTICAL);
-    center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    if (wxGetApp().is_editor()) {
+        // The tools of the plate go to the top bar (MainFrame): the 3D view takes the whole width.
+        plate_tools = create_plate_tools();
+        plate_tools->Hide();
+        // Their actions are the tools of the plate.
+        view3D->get_canvas3d()->hide_toolbars(true);
+        preview->get_canvas3d()->hide_toolbars(true);
+        center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
+    } else
+        center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
     if (wxGetApp().is_editor()) {
         auto *status = new StatusStrip(q, [this]() {
             StatusStrip::State st;
@@ -1256,6 +1285,11 @@ void Plater::priv::init()
 
 Plater::priv::~priv()
 {
+    *network_probe_alive = false;
+    if (network_probe_timer)
+        network_probe_timer->Stop();
+    if (network_probe_thread.joinable())
+        network_probe_thread.join();
     if (config != nullptr)
         delete config;
     // Saves the database of visited (already shown) hints into hints.ini.
@@ -1277,6 +1311,212 @@ void Plater::priv::update(unsigned int flags)
         this->restart_background_process(update_status);
     else
         this->schedule_background_process();
+}
+
+// The groups of tools of the plate (the arrangement of the Android app): File, View, Arrange, Paint, Engineering,
+// Calibrate, Slice.
+PlateTools* Plater::priv::create_plate_tools()
+{
+    auto *tools = new PlateTools(q, true);
+    auto canvas3d    = [this]() { return view3D->get_canvas3d(); };
+    auto has_objects = [this]() { return ! model.objects.empty(); };
+    auto has_selection = [this, canvas3d]() { return ! canvas3d()->get_selection().is_empty(); };
+    // The plate (not the preview), without the structural analysis open.
+    auto to_plate = [this]() {
+        if (q->is_preview_shown())
+            q->select_view_3D("3D");
+        q->close_engineering();
+    };
+    auto tool = [](const wxString& label, const wxString& tooltip, const std::string& icon, std::function<void()> on_click,
+                   std::function<bool()> is_enabled = nullptr, std::function<bool()> is_selected = nullptr,
+                   std::function<bool()> is_visible = nullptr) {
+        PlateTools::Tool t;
+        t.label       = label;
+        t.tooltip     = tooltip;
+        t.icon        = icon;
+        t.on_click    = std::move(on_click);
+        t.is_enabled  = std::move(is_enabled);
+        t.is_selected = std::move(is_selected);
+        t.is_visible  = std::move(is_visible);
+        return t;
+    };
+    auto is_fff = [this]() { return printer_technology == ptFFF; };
+    auto is_sla = [this]() { return printer_technology == ptSLA; };
+
+    PlateTools::Group file;
+    file.label     = _L("File");
+    file.tooltip   = _L("Open, remove and save the models of the plate");
+    file.icon      = "tisma_folder";
+    file.on_select = to_plate;
+    file.tools = {
+        tool(_L("Open"), _L("Add models to the plate (STL, 3MF, STEP, OBJ...)"), "tisma_folder", [this]() { q->add_model(); }),
+        tool(_L("Remove"), _L("Remove the selected objects"), "delete", [this]() { q->remove_selected(); },
+             [this]() { return q->can_delete(); }),
+        tool(_L("Remove all"), _L("Remove all the objects of the plate"), "delete_all", [this]() { q->reset_with_confirm(); },
+             [this]() { return q->can_delete_all(); }),
+        tool(_L("Save"), _L("Save the project (3MF)"), "tisma_save", []() { wxGetApp().mainframe->save_project(); }, has_objects),
+        tool(_L("Undo"), _L("Undo (Ctrl+Z)"), "undo", [this]() { q->undo(); }, [this]() { return q->can_undo(); }),
+        tool(_L("Redo"), _L("Redo (Ctrl+Y)"), "redo", [this]() { q->redo(); }, [this]() { return q->can_redo(); }),
+    };
+    tools->add_group(std::move(file));
+
+    // The views act on the plate or on the preview, whichever is shown.
+    auto zoom = [this](double delta) {
+        q->get_camera().update_zoom(delta);
+        if (GLCanvas3D *c = q->get_current_canvas3D())
+            c->set_as_dirty();
+    };
+    PlateTools::Group view;
+    view.label   = _L("View");
+    view.tooltip = _L("Views of the printer and zoom");
+    view.icon    = "tisma_view";
+    view.neutral = true;
+    view.tools = {
+        tool(_L("3D"), _L("Isometric view"), "tisma_view", [this]() { q->select_view("iso"); }),
+        tool(_L("Top"), _L("View from above"), "tisma_view_top", [this]() { q->select_view("top"); }),
+        tool(_L("Front"), _L("View from the front"), "tisma_view_front", [this]() { q->select_view("front"); }),
+        tool(_L("Left"), _L("View from the left"), "tisma_view_left", [this]() { q->select_view("left"); }),
+        tool(_L("Right"), _L("View from the right"), "tisma_view_right", [this]() { q->select_view("right"); }),
+        tool(_L("Back"), _L("View from the back"), "tisma_view_back", [this]() { q->select_view("rear"); }),
+        tool(_L("Zoom in"), _L("Zoom in (or the mouse wheel)"), "tisma_zoom_in", [zoom]() { zoom(1.); }),
+        tool(_L("Zoom out"), _L("Zoom out (or the mouse wheel)"), "tisma_zoom_out", [zoom]() { zoom(-1.); }),
+        tool(_L("Frame"), _L("Frame the objects, or the bed when there are none (Z)"), "tisma_zoom_fit", [this, has_objects]() {
+            if (GLCanvas3D *c = q->get_current_canvas3D()) {
+                if (has_objects()) c->zoom_to_volumes(); else c->zoom_to_bed();
+            }
+        }),
+    };
+    tools->add_group(std::move(view));
+
+    // The gizmos of the 3D view; each one is selected while it is open.
+    auto gizmo = [this, canvas3d](GLGizmosManager::EType type) {
+        return [this, canvas3d, type]() {
+            if (q->is_preview_shown())
+                q->select_view_3D("3D");
+            canvas3d()->get_gizmos_manager().open_gizmo(type);
+            canvas3d()->set_as_dirty();
+        };
+    };
+    auto gizmo_open = [canvas3d](GLGizmosManager::EType type) {
+        return [canvas3d, type]() { return canvas3d()->get_gizmos_manager().get_current_type() == type; };
+    };
+    PlateTools::Group arrange;
+    arrange.label     = _L("Arrange");
+    arrange.tooltip   = _L("Arrange, move, rotate, scale and cut the objects");
+    arrange.icon      = "move";
+    arrange.on_select = to_plate;
+    arrange.tools = {
+        tool(_L("Arrange"), _L("Arrange the objects on the plate (A)"), "arrange", [this]() { q->arrange(false); },
+             [this]() { return q->can_arrange(); }),
+        tool(_L("Move"), _L("Move the selection (M)"), "move", gizmo(GLGizmosManager::Move), has_selection, gizmo_open(GLGizmosManager::Move)),
+        tool(_L("Rotate"), _L("Rotate the selection, or optimize its orientation (R)"), "rotate", gizmo(GLGizmosManager::Rotate),
+             has_selection, gizmo_open(GLGizmosManager::Rotate)),
+        tool(_L("Scale"), _L("Scale the selection (S)"), "scale", gizmo(GLGizmosManager::Scale), has_selection,
+             gizmo_open(GLGizmosManager::Scale)),
+        tool(_L("Lay on face"), _L("Place the selection on one of its faces (F)"), "place", gizmo(GLGizmosManager::Flatten),
+             has_selection, gizmo_open(GLGizmosManager::Flatten)),
+        tool(_L("Cut"), _L("Cut the selection (C)"), "cut", gizmo(GLGizmosManager::Cut), has_selection,
+             gizmo_open(GLGizmosManager::Cut)),
+        tool(_L("Add copy"), _L("Add a copy of the selected object (+)"), "add_copies", [this]() { q->increase_instances(); },
+             [this]() { return q->can_increase_instances(); }),
+        tool(_L("Remove copy"), _L("Remove a copy of the selected object (-)"), "remove_copies", [this]() { q->decrease_instances(); },
+             [this]() { return q->can_decrease_instances(); }),
+        tool(_L("Split"), _L("Split the selected object into its parts"), "split_objects", [this]() { q->split_object(); },
+             [this]() { return q->can_split_to_objects(); }),
+        tool(_L("Measure"), _L("Measure distances and angles (U)"), "measure", gizmo(GLGizmosManager::Measure), has_selection,
+             gizmo_open(GLGizmosManager::Measure)),
+        tool(_L("Layer heights"), _L("Variable layer height: thinner layers where the surface needs them"), "layers",
+             [this]() {
+                 if (q->is_preview_shown())
+                     q->select_view_3D("3D");
+                 SimpleEvent evt(EVT_GLTOOLBAR_LAYERSEDITING);
+                 on_action_layersediting(evt);
+             },
+             [this, has_objects, is_fff]() { return has_objects() && is_fff() && q->can_layers_editing(); },
+             [this, canvas3d]() { return canvas3d()->is_layers_editing_enabled(); }, is_fff),
+    };
+    tools->add_group(std::move(arrange));
+
+    // Painting on the parts: supports, seam, fuzzy skin and colors; resin printers: hollowing and supports.
+    PlateTools::Group paint;
+    paint.label     = _L("Paint");
+    paint.tooltip   = _L("Paint supports, seam, fuzzy skin and colors on the parts");
+    paint.icon      = "fdm_supports";
+    paint.on_select = to_plate;
+    paint.tools = {
+        tool(_L("Supports"), _L("Paint where supports go, or where they must not (L)"), "fdm_supports",
+             gizmo(GLGizmosManager::FdmSupports), has_selection, gizmo_open(GLGizmosManager::FdmSupports), is_fff),
+        tool(_L("Seam"), _L("Paint where the seam goes (P)"), "seam", gizmo(GLGizmosManager::Seam), has_selection,
+             gizmo_open(GLGizmosManager::Seam), is_fff),
+        tool(_L("Fuzzy skin"), _L("Paint the surfaces with fuzzy skin"), "fuzzy_skin_painting", gizmo(GLGizmosManager::FuzzySkin),
+             has_selection, gizmo_open(GLGizmosManager::FuzzySkin), is_fff),
+        tool(_L("Colors"), _L("Paint the colors of a multi-material print (N)"), "mmu_segmentation",
+             gizmo(GLGizmosManager::MmSegmentation), has_selection, gizmo_open(GLGizmosManager::MmSegmentation), is_fff),
+        tool(_L("Hollow"), _L("Hollow the part and add drain holes (H)"), "hollow", gizmo(GLGizmosManager::Hollow), has_selection,
+             gizmo_open(GLGizmosManager::Hollow), is_sla),
+        tool(_L("Supports"), _L("Edit the support points (L)"), "sla_supports", gizmo(GLGizmosManager::SlaSupports), has_selection,
+             gizmo_open(GLGizmosManager::SlaSupports), is_sla),
+    };
+    tools->add_group(std::move(paint));
+
+    // The structural analysis is a gizmo of the 3D view, with its own panel of tools.
+    PlateTools::Group engineering;
+    engineering.label     = _L("Engineering");
+    engineering.tooltip   = _L("Structural analysis at the working temperature (supports, loads and material) and "
+                               "structures: lightest infill, reinforcements and lattice");
+    engineering.icon      = "tisma_engineering";
+    engineering.on_select = [this]() { q->open_engineering(); };
+    engineering.is_active = [this]() { return q->is_engineering_open(); };
+    engineering.tools = {
+        tool(_L("Analysis"), _L("Open the structural analysis of the selected object"), "tisma_engineering",
+             [this]() { q->open_engineering(); }, has_objects, [this]() { return q->is_engineering_open(); }),
+        tool(_L("Close"), _L("Close the structural analysis"), "cross", [this]() { q->close_engineering(); },
+             [this]() { return q->is_engineering_open(); }),
+    };
+    tools->add_group(std::move(engineering));
+
+    // The calibrations, each one a tool (the tests of the printer in use: filament or resin), and applying a result.
+    PlateTools::Group calibrate;
+    calibrate.label     = _L("Calibrate");
+    calibrate.tooltip   = _L("Calibration prints: temperature, flow, pressure advance, retraction, vibrations (input shaping), "
+                             "first layer... and writing the value read on the print to its setting");
+    calibrate.icon      = "tisma_calibrate";
+    calibrate.on_select = to_plate;
+    for (const bool resin : { false, true })
+        for (CalibrationAction &action : calibration_actions(q, resin)) {
+            // Only the tests of the technology of the printer, and those it needs and can run.
+            std::function<bool()> technology = resin ? std::function<bool()>(is_sla) : std::function<bool()>(is_fff);
+            std::function<bool()> visible    = action.available ?
+                std::function<bool()>([technology, available = action.available]() { return technology() && available(); }) : technology;
+            calibrate.tools.push_back(tool(action.label, action.tooltip, action.icon, std::move(action.run), nullptr, nullptr,
+                                           std::move(visible)));
+        }
+    tools->add_group(std::move(calibrate));
+
+    // Slice: the preview by layers, the G-code and where it goes.
+    auto has_host = [this]() {
+        const DynamicPrintConfig *cfg = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
+        const auto *host = cfg ? cfg->option<ConfigOptionString>("print_host") : nullptr;
+        // Tisma: or the network printer of the printer in use, when it answers.
+        return (host != nullptr && ! host->value.empty()) || (! network_target.empty() && network_target_answers);
+    };
+    PlateTools::Group slice;
+    slice.label     = _L("Slice");
+    slice.tooltip   = _L("Slice, see the layers and toolpaths, export or send the G-code");
+    slice.icon      = "tisma_slice";
+    slice.on_select = [this]() { q->close_engineering(); q->select_view_3D("Preview"); };
+    slice.is_active = [this]() { return q->is_preview_shown(); };
+    slice.tools = {
+        tool(_L("Slice now"), _L("Slice the plate (Ctrl+R)"), "tisma_slice", [this]() { q->select_view_3D("Preview"); q->reslice(); },
+             has_objects),
+        tool(_L("Export"), _L("Export the G-code to a file (Ctrl+G)"), "export_gcode", [this]() { q->export_gcode(false); }, has_objects),
+        tool(_L("Send"), _L("Send the G-code to the printer over the network"), "tisma_send", [this]() { q->send_gcode(); },
+             [has_objects, has_host]() { return has_objects() && has_host(); }),
+        tool(_L("USB"), _L("Print over USB"), "plug", [this]() { q->usb_print(); },
+             [this, has_objects]() { return has_objects() && printer_technology == ptFFF && USBMonitorPanel::has_printer(); }),
+    };
+    tools->add_group(std::move(slice));
+    return tools;
 }
 
 void Plater::priv::select_view(const std::string& direction)
@@ -3737,8 +3977,11 @@ void Plater::priv::on_right_click(RBtnEvent& evt)
         if (evt.data.second) { // right button was clicked on empty space
             if (!get_selection().is_empty()) // several objects are selected in 3DScene
                 return;
-            if (s_multiple_beds.get_last_hovered_bed() != -1)
+            if (s_multiple_beds.get_last_hovered_bed() != -1) {
+                // Tisma Slicer: its calibration models are those of the printer selected now.
+                menus.update_default_menu();
                 menu = menus.default_menu();
+            }
         }
         else
             menu = menus.multi_selection_menu();
@@ -4250,7 +4493,14 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
-    const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
+    // Tisma: also the network printer of the printer in use when it answers (find_network_target()).
+    if (const std::string target = find_network_target(); target != network_target) {
+        network_target         = target;
+        network_target_answers = false;
+        probe_network_target();
+    }
+    const bool send_gcode_shown = (print_host_opt != nullptr && !print_host_opt->value.empty()) ||
+                                  (! network_target.empty() && network_target_answers);
     const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // Tisma: a USB printer was connected once.
     const bool usb_print_shown = printer_technology == ptFFF && USBMonitorPanel::has_printer();
@@ -4279,6 +4529,114 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
+}
+
+namespace {
+// Defined with send_gcode().
+bool load_secret(const std::string& id, const std::string& opt, std::string& usr, std::string& psswd);
+}
+
+std::string Plater::priv::find_network_target() const
+{
+    const PresetBundle &bundle = *wxGetApp().preset_bundle;
+    // A selected physical printer is the one the G-code is sent to.
+    if (bundle.physical_printers.has_selection())
+        return std::string();
+    const std::string preset = bundle.printers.get_selected_preset_name();
+    const std::string last   = wxGetApp().app_config->get("tisma_send_printer");
+    // The printer of the network is the machine, whatever nozzle is on it: a profile of the same model of the same vendor
+    // (the profile of another nozzle) is the same printer.
+    const Preset            &selected = bundle.printers.get_selected_preset();
+    const std::string        model    = selected.config.opt_string("printer_model");
+    const VendorProfile     *vendor   = bundle.printers.get_preset_with_vendor_profile(selected).vendor;
+    auto same_printer = [&](const std::string &name) {
+        if (name == preset)
+            return true;
+        const Preset *other = model.empty() || vendor == nullptr ? nullptr : bundle.printers.find_preset(name);
+        return other != nullptr && other->config.opt_string("printer_model") == model &&
+               bundle.printers.get_preset_with_vendor_profile(*other).vendor == vendor;
+    };
+    std::string found;
+    for (PhysicalPrinterCollection::ConstIterator it = bundle.physical_printers.begin(); it != bundle.physical_printers.end(); ++it) {
+        const PhysicalPrinter &printer = *it;
+        const auto *type = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
+        // Prusa Connect is a service on the internet, not a printer of the network.
+        if (printer.config.opt_string("print_host").empty() ||
+            (type != nullptr && (type->value == htPrusaConnect || type->value == htPrusaConnectNew)))
+            continue;
+        const std::set<std::string> &names = printer.get_preset_names();
+        if (std::none_of(names.begin(), names.end(), same_printer))
+            continue;
+        if (found.empty() || printer.name == last)
+            found = printer.name;
+    }
+    return found;
+}
+
+void Plater::priv::probe_network_target() const
+{
+    if (network_target.empty() || network_probe_running)
+        return;
+    const PhysicalPrinter *printer = wxGetApp().preset_bundle->physical_printers.find_printer(network_target);
+    if (printer == nullptr)
+        return;
+    const auto *type = printer->config.option<ConfigOptionEnum<PrintHostType>>("host_type");
+    const auto [host, port] = print_host_endpoint(printer->config.opt_string("print_host"), type ? type->value : htOctoPrint);
+    if (host.empty())
+        return;
+    auto *self = const_cast<Plater::priv*>(this);
+    if (self->network_probe_thread.joinable())
+        self->network_probe_thread.join();
+    network_probe_running = true;
+    self->network_probe_thread = std::thread([name = network_target, host = host, port = port, alive = network_probe_alive]() {
+        const bool answers = network_printer_answers(host, port, std::chrono::milliseconds(1500));
+        wxTheApp->CallAfter([name, answers, alive]() {
+            if (*alive)
+                if (Plater *plater = wxGetApp().plater())
+                    plater->network_printer_probed(name, answers);
+        });
+    });
+    // Probed again from time to time: a printer turned on later gets the button, one turned off loses it.
+    if (! network_probe_timer) {
+        struct Timer : wxTimer {
+            const Plater::priv *p;
+            explicit Timer(const Plater::priv *p) : p(p) {}
+            void Notify() override { p->probe_network_target(); }
+        };
+        self->network_probe_timer = std::make_unique<Timer>(this);
+        self->network_probe_timer->Start(20000);
+    }
+}
+
+void Plater::network_printer_probed(const std::string &physical_printer, bool answers)
+{
+    p->network_probe_running = false;
+    if (physical_printer != p->network_target) {
+        // Another printer got in use meanwhile.
+        p->probe_network_target();
+        return;
+    }
+    if (answers != p->network_target_answers) {
+        p->network_target_answers = answers;
+        p->show_action_buttons(p->ready_to_slice);
+    }
+}
+
+void Plater::send_gcode_to(const std::string &physical_printer)
+{
+    const PhysicalPrinter *printer = wxGetApp().preset_bundle->physical_printers.find_printer(physical_printer);
+    if (printer == nullptr || p->model.objects.empty())
+        return;
+    DynamicPrintConfig config = printer->config;
+    // Passwords stored secretly, as send_gcode().
+    if (config.opt_string("printhost_password") == "stored") {
+        std::string username, password;
+        const bool loaded = load_secret(printer->name, "printhost_password", username, password);
+        config.opt_string("printhost_user")     = loaded ? username : std::string();
+        config.opt_string("printhost_password") = loaded ? password : std::string();
+    }
+    wxGetApp().app_config->set("tisma_send_printer", printer->name);
+    send_gcode_inner(&config);
 }
 
 void Plater::priv::show_autoslicing_action_buttons() const {
@@ -4589,6 +4947,7 @@ void Plater::render_project_state_debug_window() const { p->render_project_state
 #endif // ENABLE_PROJECT_DIRTY_STATE_DEBUG_WINDOW
 
 Sidebar&        Plater::sidebar()           { return *p->sidebar; }
+PlateTools*     Plater::plate_tools()       { return p->plate_tools; }
 const Model&    Plater::model() const       { return p->model; }
 Model&          Plater::model()             { return p->model; }
 
@@ -7186,7 +7545,13 @@ void Plater::send_gcode()
 {
     // if physical_printer is selected, send gcode for this printer
     DynamicPrintConfig* physical_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
-    if (! physical_printer_config || p->model.objects.empty())
+    if (! physical_printer_config) {
+        // Tisma: no physical printer selected: the network printer of the printer in use.
+        if (const std::string target = p->find_network_target(); ! target.empty())
+            send_gcode_to(target);
+        return;
+    }
+    if (p->model.objects.empty())
         return;
 
     // Passwords and API keys
@@ -7738,9 +8103,9 @@ public:
         m_vase->SetSelection(int(plate.spiral_vase));
         add(_L("Spiral vase") + ":", m_vase);
 
-        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
+        m_first_layer_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10), wxSP_ARROW_KEYS, 0, 200, plate.first_layer_bed_temperature);
         add(_L("First layer bed temperature (°C)") + ":", m_first_layer_bed);
-        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(10 * em, -1), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
+        m_bed = new wxSpinCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10), wxSP_ARROW_KEYS, 0, 200, plate.bed_temperature);
         add(_L("Bed temperature (°C)") + ":", m_bed);
 
         m_locked = new wxCheckBox(this, wxID_ANY, _L("Lock the plate: arrange does not move its objects or put others on it"));

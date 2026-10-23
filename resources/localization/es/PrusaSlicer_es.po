@@ -72,7 +72,7 @@ msgstr "Relleno del hueco"
 #: src/libslic3r/ExtrusionRole.cpp:52 src/libslic3r/ExtrusionRole.cpp:82
 #: src/slic3r/GUI/GCodeViewer.cpp:419
 msgid "Skirt/Brim"
-msgstr "Falda/Balsa"
+msgstr "Falda/Borde"
 
 #: src/libslic3r/ExtrusionRole.cpp:53 src/libslic3r/ExtrusionRole.cpp:84
 #: src/libslic3r/PrintConfig.cpp:1057 src/libslic3r/PrintConfig.cpp:2694
@@ -780,7 +780,7 @@ msgstr ""
 
 #: src/libslic3r/Print.cpp:951
 msgid "Generating skirt and brim"
-msgstr "Generando falda y balsa"
+msgstr "Generando falda y borde"
 
 #: src/libslic3r/Print.cpp:1014
 msgid "Exporting G-code"
@@ -843,7 +843,7 @@ msgstr "Considera habilitar soportes."
 
 #: src/libslic3r/Print.cpp:1380
 msgid "Also consider enabling brim."
-msgstr "También considera activar la balsa."
+msgstr "También considera activar el borde."
 
 #. TRN Alert message for detected print issues. first argument is a list of detected issues.
 #: src/libslic3r/Print.cpp:1384
@@ -1693,13 +1693,13 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:894
 msgid "Brim width"
-msgstr "Ancho de la balsa"
+msgstr "Ancho del borde"
 
 #: src/libslic3r/PrintConfig.cpp:895 src/libslic3r/PrintConfig.cpp:906
 #: src/libslic3r/PrintConfig.cpp:919 src/slic3r/GUI/GUI_Factories.cpp:170
 #: src/slic3r/GUI/Tab.cpp:1537
 msgid "Skirt and brim"
-msgstr "Falda y balsa"
+msgstr "Falda y borde"
 
 #: src/libslic3r/PrintConfig.cpp:896
 msgid ""
@@ -1713,7 +1713,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:905
 msgid "Brim type"
-msgstr "Tipo de balsa"
+msgstr "Tipo de borde"
 
 #: src/libslic3r/PrintConfig.cpp:907
 msgid ""
@@ -4862,7 +4862,7 @@ msgstr ""
 "simple para eliminar cualquier costura visible. Esta opción requiere un "
 "perímetro único, sin relleno, sin capas sólidas superiores y sin material de "
 "soporte. Puedes establecer cualquier cantidad de capas sólidas inferiores, "
-"así como los bucles de falda/balsa. No funcionará al imprimir más de un "
+"así como los bucles de falda/borde. No funcionará al imprimir más de un "
 "objeto."
 
 #: src/libslic3r/PrintConfig.cpp:3156
@@ -5646,7 +5646,7 @@ msgstr "Número de capas sólidas para generar en las superficies superiores."
 
 #: src/libslic3r/PrintConfig.cpp:3762
 msgid "Top solid layers"
-msgstr "Capas solidas superiores"
+msgstr "Capas sólidas superiores"
 
 #: src/libslic3r/PrintConfig.cpp:3769
 msgid ""
@@ -5797,7 +5797,7 @@ msgstr "Ancho de la torre de limpieza"
 
 #: src/libslic3r/PrintConfig.cpp:3870 src/libslic3r/PrintConfig.cpp:3871
 msgid "Wipe tower brim width"
-msgstr "Ancho de la balsa de la torre de limpieza"
+msgstr "Ancho del borde de la torre de limpieza"
 
 #: src/libslic3r/PrintConfig.cpp:3878
 msgid "Stabilization cone apex angle"
@@ -10680,14 +10680,14 @@ msgstr "Solo para forzado de soportes"
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:157
 #: src/slic3r/GUI/Tab.cpp:1546
 msgid "Brim"
-msgstr "Balsa"
+msgstr "Borde"
 
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:159
 msgid ""
 "This flag enables the brim that will be printed around each object on the "
 "first layer."
 msgstr ""
-"Esta opción activa la balsa que se imprimirá alrededor del objeto en la "
+"Esta opción activa el borde que se imprimirá alrededor del objeto en la "
 "primera capa."
 
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:167
@@ -13939,7 +13939,7 @@ msgstr "Ajustes de impresión SLA"
 #: src/slic3r/GUI/MainFrame.cpp:971
 #: src/slic3r/GUI/PhysicalPrinterDialog.cpp:241
 msgid "Physical Printer"
-msgstr "Impresora Física"
+msgstr "Impresora en red"
 
 #: src/slic3r/GUI/GUI.cpp:232
 msgid ""
@@ -18610,7 +18610,7 @@ msgid ""
 msgstr ""
 "Si esta opción está activada, Slic3r emitirá alertas cuando detecte "
 "problemas en el objeto laminado, que pueden ser resueltos con soportes (y "
-"balsa). Ejemplos de estos problemas son partes flotantes del objeto, "
+"borde). Ejemplos de estos problemas son partes flotantes del objeto, "
 "extrusiones sin soporte y baja adherencia de la base calefactable."
 
 #: src/slic3r/GUI/Preferences.cpp:323
@@ -19203,7 +19203,7 @@ msgstr "¿Estás seguro de que quieres borrar la impresora \"%1%\"?"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:458
 msgid "Delete Physical Printer"
-msgstr "Eliminar Impresora Física"
+msgstr "Eliminar la impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:711
 msgid "Click to edit preset"
@@ -19235,7 +19235,7 @@ msgstr "Añadir/Quitar ajustes preestablecidos"
 #: src/slic3r/GUI/PresetComboBoxes.cpp:877
 #: src/slic3r/GUI/PresetComboBoxes.cpp:926 src/slic3r/GUI/Tab.cpp:3905
 msgid "Add physical printer"
-msgstr "Añadir impresora física"
+msgstr "Añadir impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:889
 msgid "Edit preset"
@@ -19251,20 +19251,20 @@ msgstr "Mostrar/Ocultar plantillas de configuración"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:906 src/slic3r/GUI/Tab.cpp:3905
 msgid "Edit physical printer"
-msgstr "Editar impresora física"
+msgstr "Editar impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:912
 msgid "Open the physical printer URL"
-msgstr "Abre el URL de la impresora física"
+msgstr "Abrir la página de la impresora"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:917
 msgid "Delete physical printer"
-msgstr "Eliminar impresora física"
+msgstr "Eliminar impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1206
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1489
 msgid "Physical printers"
-msgstr "Impresoras físicas"
+msgstr "Impresoras en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1254
 msgid "Add/Remove filaments"
@@ -19656,22 +19656,22 @@ msgstr "El nombre no puede ser el mismo que un nombre de alias preestablecido."
 #. TRN Settings Tab: tooltip for toolbar button
 #: src/slic3r/GUI/SavePresetDialog.cpp:361 src/slic3r/GUI/Tab.cpp:199
 msgid "Save preset"
-msgstr "Guardar ajuste inicial"
+msgstr "Guardar perfil"
 
 #: src/slic3r/GUI/SavePresetDialog.cpp:361
 msgid "Save presets"
-msgstr "Guardar ajustes"
+msgstr "Guardar perfiles"
 
 #. TRN Settings Tab: tooltip for toolbar button
 #: src/slic3r/GUI/SavePresetDialog.cpp:369 src/slic3r/GUI/Tab.cpp:201
 msgid "Rename preset"
-msgstr "Renombrar ajuste"
+msgstr "Renombrar perfil"
 
 #. TRN Suffix for the preset name. Have to be a noun.
 #: src/slic3r/GUI/SavePresetDialog.cpp:397
 msgctxt "PresetName"
 msgid "Copy"
-msgstr "Copiar"
+msgstr "Copia"
 
 #: src/slic3r/GUI/SavePresetDialog.cpp:417
 msgid "Save as profile derived from current printer only."
@@ -21518,7 +21518,7 @@ msgstr "No instalar"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:342
 msgid "Yes"
-msgstr "Si"
+msgstr "Sí"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:343
 msgid "No"
@@ -32291,10 +32291,6 @@ msgid "Select the settings to show in the sidebar."
 msgstr "Elige los ajustes que se muestran en la barra lateral."
 
 msgctxt "Section"
-msgid "Print"
-msgstr "Impresión"
-
-msgctxt "Section"
 msgid "Filament"
 msgstr "Filamento"
 
@@ -33616,6 +33612,24 @@ msgid_plural "%1% printers selected. Finish installs them with their settings an
 msgstr[0] "%1% impresora elegida. Finalizar la instala con su configuración y sus filamentos."
 msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración y sus filamentos."
 
+msgid "Another nozzle can be chosen later, next to the printer."
+msgstr "Otra boquilla se puede elegir después, junto a la impresora."
+
+msgid "Slice automatically"
+msgstr "Laminar automáticamente"
+
+msgid "Add calibration model"
+msgstr "Agregar modelo de calibración"
+
+msgid "Prints a tower of blocks, one per temperature, with the temperature written on the front of each block. Each block has a bridge, two pillars and a pin for the strings, an overhang going from vertical to 75° and a pin to snap off to compare how well the layers stick."
+msgstr "Imprime una torre de bloques, uno por temperatura, con la temperatura escrita al frente de cada bloque. Cada bloque tiene un puente, dos pilares y una espiga para ver los hilos, un voladizo que va de vertical a 75° y una espiga para quebrar y comparar qué tan bien se pegan las capas."
+
+msgid "Compare the blocks: the bridge should not sag, the gap should be free of strings and the overhang on the right should stay clean as high as possible: the marks on the pillar next to it are at 30°, 45° and 60° (its top is 75°). Then push the pin on the left of each block sideways until it snaps: the harder it is to break, the better the layers stick. Choose the temperature written on the best block."
+msgstr "Compará los bloques: el puente no debe colgar, el hueco no debe tener hilos y el voladizo de la derecha debe quedar limpio lo más arriba posible: las marcas del pilar de al lado están a 30°, 45° y 60° (su parte de arriba es 75°). Después empujá de costado la espiga de la izquierda de cada bloque hasta quebrarla: cuanto más cuesta romperla, mejor se pegan las capas. Elegí la temperatura escrita en el mejor bloque."
+
+msgid "Slice again right after any change of the objects or of the settings."
+msgstr "Vuelve a laminar apenas cambia algún objeto o algún ajuste."
+
 msgid "Split to fit the printer"
 msgstr "Dividir para que entre en la impresora"
 
@@ -33903,3 +33917,580 @@ msgstr "El plan no está pagado: pagalo en la página web (el enlace está en Co
 
 msgid "Confirm your e-mail first with the code we sent to it (the link below opens the account page)."
 msgstr "Primero confirmá tu correo con el código que te mandamos (el enlace de abajo abre la página de la cuenta)."
+
+msgid "3D"
+msgstr "3D"
+
+msgid "Add models to the plate (STL, 3MF, STEP, OBJ...)"
+msgstr "Agregar modelos a la placa (STL, 3MF, STEP, OBJ...)"
+
+msgid "Analysis"
+msgstr "Análisis"
+
+msgid "Arrange the objects on the plate (A)"
+msgstr "Ordenar los objetos en la placa (A)"
+
+msgid "Arrange, move, rotate, scale and cut the objects"
+msgstr "Ordenar, mover, rotar, escalar y cortar los objetos"
+
+msgid "Close the structural analysis"
+msgstr "Cerrar el análisis estructural"
+
+msgid "Cut the selection (C)"
+msgstr "Cortar la selección (C)"
+
+msgid "Export the G-code to a file (Ctrl+G)"
+msgstr "Exportar el G-code a un archivo (Ctrl+G)"
+
+msgid "Frame"
+msgstr "Encuadrar"
+
+msgid "Frame the objects, or the bed when there are none (Z)"
+msgstr "Encuadrar los objetos, o la cama si no hay ninguno (Z)"
+
+msgid "Isometric view"
+msgstr "Vista isométrica"
+
+msgid "Lay on face"
+msgstr "Apoyar en cara"
+
+msgid "Move the selection (M)"
+msgstr "Mover la selección (M)"
+
+msgid "Open the structural analysis of the selected object"
+msgstr "Abrir el análisis estructural del objeto seleccionado"
+
+msgid "Open, remove and save the models of the plate"
+msgstr "Abrir, quitar y guardar los modelos de la placa"
+
+msgid "Place the selection on one of its faces (F)"
+msgstr "Apoyar la selección sobre una de sus caras (F)"
+
+msgid "Print over USB"
+msgstr "Imprimir por USB"
+
+msgid "Remove all"
+msgstr "Quitar todo"
+
+msgid "Remove all the objects of the plate"
+msgstr "Quitar todos los objetos de la placa"
+
+msgid "Remove the selected objects"
+msgstr "Quitar los objetos seleccionados"
+
+msgid "Rotate the selection, or optimize its orientation (R)"
+msgstr "Rotar la selección u optimizar su orientación (R)"
+
+msgid "Save the project (3MF)"
+msgstr "Guardar el proyecto (3MF)"
+
+msgid "Scale the selection (S)"
+msgstr "Escalar la selección (S)"
+
+msgid "Send the G-code to the printer over the network"
+msgstr "Enviar el G-code a la impresora por la red"
+
+msgid "Slice the plate (Ctrl+R)"
+msgstr "Laminar la placa (Ctrl+R)"
+
+msgid "Slice, see the layers and toolpaths, export or send the G-code"
+msgstr "Laminar, ver las capas y trayectorias, exportar o enviar el G-code"
+
+msgid "USB"
+msgstr "USB"
+
+msgid "View"
+msgstr "Vista"
+
+msgid "View from above"
+msgstr "Vista desde arriba"
+
+msgid "View from the back"
+msgstr "Vista desde atrás"
+
+msgid "View from the front"
+msgstr "Vista desde el frente"
+
+msgid "View from the left"
+msgstr "Vista desde la izquierda"
+
+msgid "View from the right"
+msgstr "Vista desde la derecha"
+
+msgid "Views of the printer and zoom"
+msgstr "Vistas de la impresora y zoom"
+
+msgid "Zoom in (or the mouse wheel)"
+msgstr "Acercar (o la rueda del ratón)"
+
+msgid "Zoom out (or the mouse wheel)"
+msgstr "Alejar (o la rueda del ratón)"
+
+msgid "Calibration, Thingiverse, Tisma Cloud account, preferences"
+msgstr "Calibración, Thingiverse, cuenta de Tisma Cloud, preferencias"
+
+msgid "Filament settings: temperatures, cooling, flow..."
+msgstr "Ajustes del filamento: temperaturas, ventilación, flujo..."
+
+msgid "Plate"
+msgstr "Placa"
+
+msgid "Print settings of the resin printer: layers, supports, pad, hollowing..."
+msgstr "Ajustes de impresión de la impresora de resina: capas, soportes, base, vaciado..."
+
+msgid "Print settings: layers, walls, infill, supports, speeds..."
+msgstr "Ajustes de impresión: capas, paredes, relleno, soportes, velocidades..."
+
+msgid "Printer settings: bed, extruders, firmware, custom G-code, limits..."
+msgstr "Ajustes de la impresora: cama, extrusores, firmware, G-code personalizado, límites..."
+
+msgid "Resin settings: exposure times, shrinkage..."
+msgstr "Ajustes de la resina: tiempos de exposición, contracción..."
+
+msgid "The models on the bed: open, view, arrange, analyze and slice them"
+msgstr "Los modelos en la cama: abrirlos, verlos, ordenarlos, analizarlos y laminarlos"
+
+msgctxt "Section"
+msgid "Print"
+msgstr "Impresión"
+
+msgid "Add a copy of the selected object (+)"
+msgstr "Agregar una copia del objeto seleccionado (+)"
+
+msgid "Add copy"
+msgstr "Agregar copia"
+
+msgid "Colors"
+msgstr "Colores"
+
+msgid "Edit the support points (L)"
+msgstr "Editar los puntos de soporte (L)"
+
+msgid "Fuzzy skin"
+msgstr "Piel difusa"
+
+msgid "Hollow"
+msgstr "Vaciar"
+
+msgid "Hollow the part and add drain holes (H)"
+msgstr "Vaciar la pieza y agregar agujeros de drenaje (H)"
+
+msgid "Layer heights"
+msgstr "Alturas de capa"
+
+msgid "Measure distances and angles (U)"
+msgstr "Medir distancias y ángulos (U)"
+
+msgid "Paint"
+msgstr "Pintar"
+
+msgid "Paint supports, seam, fuzzy skin and colors on the parts"
+msgstr "Pintar soportes, costura, piel difusa y colores en las piezas"
+
+msgid "Paint the colors of a multi-material print (N)"
+msgstr "Pintar los colores de una impresión multimaterial (N)"
+
+msgid "Paint the surfaces with fuzzy skin"
+msgstr "Pintar las superficies con piel difusa"
+
+msgid "Paint where supports go, or where they must not (L)"
+msgstr "Pintar dónde van los soportes, o dónde no deben ir (L)"
+
+msgid "Paint where the seam goes (P)"
+msgstr "Pintar dónde va la costura (P)"
+
+msgid "Redo (Ctrl+Y)"
+msgstr "Rehacer (Ctrl+Y)"
+
+msgid "Remove a copy of the selected object (-)"
+msgstr "Quitar una copia del objeto seleccionado (-)"
+
+msgid "Remove copy"
+msgstr "Quitar copia"
+
+msgid "Split the selected object into its parts"
+msgstr "Separar el objeto seleccionado en sus partes"
+
+msgid "Undo (Ctrl+Z)"
+msgstr "Deshacer (Ctrl+Z)"
+
+msgid "Variable layer height: thinner layers where the surface needs them"
+msgstr "Altura de capa variable: capas más finas donde la superficie las necesita"
+
+msgid "All the settings"
+msgstr "Todos los ajustes"
+
+msgid "More settings"
+msgstr "Más ajustes"
+
+msgid "Settings shown: simple, advanced or expert"
+msgstr "Ajustes visibles: simple, avanzado o experto"
+
+msgid "The settings most prints need"
+msgstr "Los ajustes que necesitan casi todas las impresiones"
+
+msgid "Tisma Cloud account: slicing and analysis on the servers"
+msgstr "Cuenta de Tisma Cloud: laminado y análisis en los servidores"
+
+msgid "Build plate only"
+msgstr "Solo sobre la cama"
+
+msgid "Infill density, in percent:"
+msgstr "Densidad del relleno, en porcentaje:"
+
+msgid "Painted only"
+msgstr "Solo lo pintado"
+
+msgid "Bed type"
+msgstr "Tipo de cama"
+
+msgid "Bed temperature by bed type"
+msgstr "Temperatura de la cama según la cama"
+
+msgid "Bed temperature of the first layer on this bed. 0: the first layer bed temperature of the filament."
+msgstr "Temperatura de la primera capa en esta cama. 0: la temperatura de la cama en la primera capa del filamento."
+
+msgid "Bed temperature of the layers after the first one on this bed. 0: the bed temperature of the filament."
+msgstr "Temperatura de la cama en las capas después de la primera en esta cama. 0: la temperatura de la cama del filamento."
+
+msgid "Cool Plate (SuperTack)"
+msgstr "Placa fría (SuperTack)"
+
+msgid "Engineering Plate"
+msgstr "Placa de ingeniería"
+
+msgid "Smooth Cool Plate"
+msgstr "Placa fría lisa"
+
+msgid "Smooth High Temp Plate"
+msgstr "Placa lisa de alta temperatura"
+
+msgid "Textured Cool Plate"
+msgstr "Placa fría texturada"
+
+msgid "Textured PEI Plate"
+msgstr "Placa PEI texturada"
+
+msgid "The bed (build plate) used: the bed temperatures of the filaments for it are used."
+msgstr "La cama (placa de impresión) que se usa: se usan las temperaturas de cama de los filamentos para ella."
+
+msgid "The nozzle on the printer: the printer profile of the model for it, or its diameter set on the printer. The print profiles for that nozzle can be chosen."
+msgstr "La boquilla puesta en la impresora: el perfil de impresora del modelo para ella, o su diámetro puesto en la impresora. Se pueden elegir los perfiles de impresión para esa boquilla."
+
+msgid "Default bed type"
+msgstr "Cama predeterminada"
+
+msgid "The bed chosen when this printer is selected."
+msgstr "La cama que se elige al seleccionar esta impresora."
+
+msgid "Legend"
+msgstr "Leyenda"
+
+msgid "Change access code"
+msgstr "Cambiar el código de acceso"
+
+msgid "When the printer shows a new access code or API key: type it here, Tisma tests the connection and saves it."
+msgstr "Cuando la impresora muestra un código de acceso o una clave API nuevos: escribilos acá, Tisma prueba la conexión y los guarda."
+
+msgid "Printer on the network"
+msgstr "Impresora en red"
+
+msgid "Tisma sends the prints to this printer: the main button offers it when the printer answers, and Devices shows it."
+msgstr "Tisma le envía las impresiones a esta impresora: el botón principal la ofrece cuando la impresora responde, y Dispositivos la muestra."
+
+msgid "Printer profile"
+msgstr "Perfil de impresora"
+
+msgid "Add a printer profile"
+msgstr "Añadir un perfil de impresora"
+
+msgid "Finish"
+msgstr "Terminar"
+
+msgid "Nozzles"
+msgstr "Boquillas"
+
+msgid "A USB camera plugged into this computer and pointed at the printer: for the printers without a camera (most Marlin printers) or with a slow one (Bambu Lab A1 and P1 series)."
+msgstr "Una cámara USB conectada a esta computadora y apuntada a la impresora: para las impresoras sin cámara (la mayoría de las Marlin) o con una lenta (series A1 y P1 de Bambu Lab)."
+
+msgid "The camera of the printer"
+msgstr "La cámara de la impresora"
+
+msgid "No camera"
+msgstr "Sin cámara"
+
+msgid "Looking for USB cameras..."
+msgstr "Buscando cámaras USB..."
+
+msgid "USB camera (not connected)"
+msgstr "Cámara USB (no conectada)"
+
+msgid "The USB camera chosen for this printer is not connected. Plug it in and select the printer again."
+msgstr "La cámara USB elegida para esta impresora no está conectada. Conectala y volvé a seleccionar la impresora."
+
+msgid "No USB camera connected to this computer."
+msgstr "No hay ninguna cámara USB conectada a esta computadora."
+
+msgid "Opening %1%..."
+msgstr "Abriendo %1%..."
+
+msgid "%1% x %2% %3%, %4% images per second (the camera gives %5%)"
+msgstr "%1% x %2% %3%, %4% imágenes por segundo (la cámara da %5%)"
+
+msgid "The USB camera is not connected. Plug it in and select the printer again."
+msgstr "La cámara USB no está conectada. Conectala y volvé a seleccionar la impresora."
+
+msgid "The USB camera could not be opened: another program may be using it."
+msgstr "No se pudo abrir la cámara USB: puede que otro programa la esté usando."
+
+msgid "The USB camera was disconnected. Plug it in and select the printer again."
+msgstr "Se desconectó la cámara USB. Conectala y volvé a seleccionar la impresora."
+
+msgid "The USB camera sends no images. Unplug it, plug it in again and select the printer again."
+msgstr "La cámara USB no manda imágenes. Desconectala, volvé a conectarla y seleccioná la impresora de nuevo."
+
+msgid "Could not show the USB camera: %1%"
+msgstr "No se pudo mostrar la cámara USB: %1%"
+
+msgid "Calibrate"
+msgstr "Calibrar"
+
+msgid "Calibration prints: temperature, flow, pressure advance, retraction, vibrations (input shaping), first layer... and writing the value read on the print to its setting"
+msgstr "Impresiones de calibración: temperatura, flujo, avance de presión, retracción, vibraciones (input shaping), primera capa... y escribir el valor leído en la impresión en su ajuste"
+
+msgid "Max flow"
+msgstr "Caudal máx."
+
+msgid "Acceleration"
+msgstr "Aceleración"
+
+msgid "Corners"
+msgstr "Esquinas"
+
+msgid "Vibrations"
+msgstr "Vibraciones"
+
+msgid "Arc speed"
+msgstr "Vel. arcos"
+
+msgid "Arc length"
+msgstr "Largo arcos"
+
+msgid "Strength"
+msgstr "Resistencia"
+
+msgid "Apply result"
+msgstr "Aplicar resultado"
+
+msgid "Correction"
+msgstr "Corrección"
+
+msgid "Report a problem"
+msgstr "Informar de un problema"
+
+msgid "Send a problem or a suggestion to the Tisma team"
+msgstr "Enviar un problema o una sugerencia al equipo de Tisma"
+
+msgid "Tell what went wrong, or what you would like Tisma to do. It goes to the Tisma team, which groups the reports of the same problem to fix the most frequent ones first. E-mails, addresses, the user name in the paths, keys and serial numbers are removed before it is kept."
+msgstr "Cuenta qué salió mal o qué te gustaría que haga Tisma. Llega al equipo de Tisma, que agrupa los informes del mismo problema para arreglar primero los más frecuentes. Los correos, las direcciones, el usuario en las rutas, las claves y los números de serie se quitan antes de guardarlo."
+
+msgid "Kind"
+msgstr "Tipo"
+
+msgid "Something does not work"
+msgstr "Algo no funciona"
+
+msgid "Tisma closed"
+msgstr "Tisma se cerró"
+
+msgid "Suggestion"
+msgstr "Sugerencia"
+
+msgid "In a few words"
+msgstr "En pocas palabras"
+
+msgid "e.g. The supports are missing under the overhang"
+msgstr "p. ej.: Faltan los soportes bajo el voladizo"
+
+msgid "What happened"
+msgstr "Qué pasó"
+
+msgid "Steps to make it happen again"
+msgstr "Pasos para que vuelva a pasar"
+
+msgid "What you expected"
+msgstr "Qué esperabas"
+
+msgid "Tisma Cloud server"
+msgstr "Servidor de Tisma Cloud"
+
+msgid "Attach the version, the system, the printer in use and the log of this session"
+msgstr "Adjuntar la versión, el sistema, la impresora en uso y el registro de esta sesión"
+
+msgid "See what is attached"
+msgstr "Ver lo que se adjunta"
+
+msgid "Sent with the account %1%: its reports and their state are in the copy of its data."
+msgstr "Se envía con la cuenta %1%: sus informes y su estado están en la copia de sus datos."
+
+msgid "Sent without an account."
+msgstr "Se envía sin cuenta."
+
+msgid "What is attached"
+msgstr "Lo que se adjunta"
+
+msgid "Write in a few words what happened."
+msgstr "Escribe en pocas palabras qué pasó."
+
+msgid "Enter the address of the Tisma Cloud server."
+msgstr "Escribe la dirección del servidor de Tisma Cloud."
+
+msgid "The report could not be sent: %1%"
+msgstr "No se pudo enviar el informe: %1%"
+
+msgid "Thank you: the report was sent to the Tisma team."
+msgstr "Gracias: el informe se envió al equipo de Tisma."
+
+msgid "The same problem was reported %1% times before: it is among the ones to fix."
+msgstr "El mismo problema se informó %1% veces antes: está entre los que hay que arreglar."
+
+msgid "Arc overhangs overlap"
+msgstr "Solape de los arc overhangs"
+
+msgid "How much each arc overlaps the previous one, as a percentage of the extrusion width: more overlap gives each arc more to rest on, with more material and time (Calibration > Arc overhang overlap). Zero lays the arcs side by side, one extrusion width apart."
+msgstr "Cuánto se superpone cada arco al anterior, en porcentaje del ancho de extrusión: más solape le da a cada arco más donde apoyarse, con más material y tiempo (Calibración > Arc overhang overlap). Con cero los arcos quedan uno al lado del otro, a un ancho de extrusión de distancia."
+
+msgid "Arc overhang overlap"
+msgstr "Solape de arc overhang"
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. The first layer of each slab is printed with arc overhangs, each arc overlapping the previous one by a different percentage of the extrusion width for each column (from left to right)."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale 15 mm hacia atrás sin nada debajo. La primera capa de cada losa se imprime con arc overhangs, cada arco superpuesto al anterior en un porcentaje del ancho de extrusión distinto en cada columna (de izquierda a derecha)."
+
+msgid "Look at the slabs from below and from above: choose the column with the least overlap whose arcs are joined to each other without gaps, before they start to pile up or bulge. Its overlap is start + step × column number (from the left, starting at 0): it is the arc overhangs overlap (Calibration > Apply a calibration result). Calibrate the arc speed first."
+msgstr "Mirá las losas desde abajo y desde arriba: elegí la columna con menos solape cuyos arcos queden unidos entre sí sin huecos, antes de que empiecen a amontonarse o abultarse. Su solape es inicio + paso × número de columna (desde la izquierda, empezando en 0): es el solape de los arc overhangs (Calibración > Aplicar un resultado de calibración). Calibrá primero la velocidad de los arcos."
+
+msgid "Arc overlap"
+msgstr "Solape arcos"
+
+msgid "XY hole compensation"
+msgstr "Compensación de agujeros XY"
+
+msgid "The holes of the object are grown or shrunk in the XY plane by this value, after the XY size compensation: positive makes the holes bigger, negative smaller. Printed holes usually come out smaller than designed (Calibration > Dimensional correction measures it). With several parts or modifiers on a layer, holes are only grown."
+msgstr "Los agujeros del objeto se agrandan o achican en el plano XY en este valor, después de la compensación de tamaño XY: positivo los agranda, negativo los achica. Los agujeros impresos suelen salir más chicos que en el diseño (Calibración > Corrección dimensional lo mide). Con varias partes o modificadores en una capa, los agujeros solo se agrandan."
+
+msgid "A block of four square steps (80, 50, 30 and 10 mm wide, 3 mm high each) with four holes (4, 6, 8 and 10 mm) in the widest one, the smallest at the front left.\n\nPrint it with the filament and the settings to correct. Let it cool down on the bed, then measure with a caliper, in the middle of each side and away from the first layers: the width of each step from left to right (X) and from front to back (Y), the diameter of each hole, and the height of the top of each step. Enter the values in Calibration > Dimensional correction."
+msgstr "Un bloque de cuatro escalones cuadrados (de 80, 50, 30 y 10 mm de ancho y 3 mm de alto cada uno) con cuatro agujeros (de 4, 6, 8 y 10 mm) en el más ancho, el más chico adelante a la izquierda.\n\nImprimilo con el filamento y los ajustes a corregir. Dejalo enfriar sobre la cama y después medí con un calibre, en el medio de cada lado y lejos de las primeras capas: el ancho de cada escalón de izquierda a derecha (X) y de adelante hacia atrás (Y), el diámetro de cada agujero y la altura de la parte de arriba de cada escalón. Cargá los valores en Calibración > Corrección dimensional."
+
+msgid "Dimensional accuracy block"
+msgstr "Bloque de precisión dimensional"
+
+msgid "Dimensional correction"
+msgstr "Corrección dimensional"
+
+msgid "Width X"
+msgstr "Ancho X"
+
+msgid "Width Y"
+msgstr "Ancho Y"
+
+msgid "Step %1%"
+msgstr "Escalón %1%"
+
+msgid "Enter at least two widths in X and two in Y."
+msgstr "Cargá al menos dos anchos en X y dos en Y."
+
+msgid "Scale: X %1%, Y %2% of the designed size."
+msgstr "Escala: X %1%, Y %2% de la medida del diseño."
+
+msgid "X and Y differ: that is the printer (belts, steps per mm), not the filament. The correction uses their mean."
+msgstr "X e Y difieren: eso es la impresora (correas, pasos por mm), no el filamento. La corrección usa el promedio."
+
+msgid "Shrinkage compensation XY: %1% (now %2%)"
+msgstr "Compensación de contracción XY: %1% (ahora %2%)"
+
+msgid "XY size compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de tamaño XY: %1% mm (ahora %2% mm)"
+
+msgid "XY hole compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de agujeros XY: %1% mm (ahora %2% mm)"
+
+msgid "Elephant foot compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de pata de elefante: %1% mm (ahora %2% mm)"
+
+msgid "Shrinkage compensation Z: %1% (now %2%)"
+msgstr "Compensación de contracción Z: %1% (ahora %2%)"
+
+msgid "The first layers add %1% mm to every height: correct it with the Z offset or the first layer calibration (not applied here)."
+msgstr "Las primeras capas suman %1% mm a todas las alturas: corregilo con el desfase Z o la calibración de primera capa (no se aplica acá)."
+
+msgid "Left after the correction (noise of the printer and of the measures): XY %1% mm%2%%3%"
+msgstr "Lo que queda después de la corrección (ruido de la impresora y de las mediciones): XY %1% mm%2%%3%"
+
+msgid ", holes %1% mm"
+msgstr ", agujeros %1% mm"
+
+msgid ", Z %1% mm"
+msgstr ", Z %1% mm"
+
+msgid "Steps and holes of several sizes to measure how much the prints grow or shrink."
+msgstr "Escalones y agujeros de varios tamaños para medir cuánto se agrandan o achican las impresiones."
+
+msgid "Calculates the shrinkage and the size, hole and elephant foot compensations from the measured block."
+msgstr "Calcula la contracción y las compensaciones de tamaño, de agujeros y de pata de elefante a partir del bloque medido."
+
+msgid "Ironing flow"
+msgstr "Flujo de alisado"
+
+msgid "Ironing spacing"
+msgstr "Separación del alisado"
+
+msgid "Ironing speed"
+msgstr "Velocidad de alisado"
+
+msgid "Look at the top surfaces against the light, at a low angle: choose the smoothest patch, without the lines of the top layer, grooves between the ironing passes, ridges or a dull, scraped surface."
+msgstr "Mirá las superficies superiores a contraluz, en ángulo bajo: elegí el parche más liso, sin las líneas de la capa superior, surcos entre las pasadas de alisado, crestas ni una superficie opaca o raspada."
+
+msgid "Prints a row of solid patches in one go and irons their top, with a different ironing flow for each patch (from left to right): the plastic the nozzle lays while it irons, in percent of a normal layer."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior, con un flujo de alisado distinto en cada parche (de izquierda a derecha): el plástico que deja la boquilla mientras alisa, en porcentaje de una capa normal."
+
+msgid "Too little flow leaves the grooves of the top layer; too much leaves ridges and blobs at the edges. Its flow is start + step × patch number (from the left, starting at 0): it is the ironing flow rate (Calibration > Apply a calibration result). Calibrate the flow of the filament first."
+msgstr "Con poco flujo quedan los surcos de la capa superior; con mucho quedan crestas y gotas en los bordes. Su flujo es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la tasa de flujo del alisado (Calibración > Aplicar un resultado de calibración). Calibrá primero el flujo del filamento."
+
+msgid "Prints a row of solid patches in one go and irons their top, with a different distance between the ironing passes for each patch (from left to right)."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior, con una distancia entre pasadas de alisado distinta en cada parche (de izquierda a derecha)."
+
+msgid "Too wide leaves grooves between the passes; closer than needed takes longer for nothing. Choose the widest spacing that leaves the surface smooth. Its spacing is start + step × patch number (from the left, starting at 0): it is the spacing between ironing passes (Calibration > Apply a calibration result)."
+msgstr "Muy separadas quedan surcos entre las pasadas; más juntas de lo necesario tarda más sin ganar nada. Elegí la separación más grande que deje la superficie lisa. Su separación es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la separación entre pasadas de alisado (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Prints a row of solid patches in one go and irons their top at a different speed for each patch (from left to right)."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior a una velocidad distinta en cada parche (de izquierda a derecha)."
+
+msgid "Too fast does not melt the top enough and leaves its lines; too slow can scrape it or leave it dull. Choose the fastest patch that is smooth. Its speed is start + step × patch number (from the left, starting at 0): it is the ironing speed (Calibration > Apply a calibration result)."
+msgstr "Muy rápido no funde lo suficiente la cara superior y quedan sus líneas; muy lento puede rasparla o dejarla opaca. Elegí el parche más rápido que quede liso. Su velocidad es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la velocidad de alisado (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Iron flow"
+msgstr "Flujo alisado"
+
+msgid "Iron spacing"
+msgstr "Sep. alisado"
+
+msgid "Iron speed"
+msgstr "Vel. alisado"
+
+msgid "Sizes measured on the dimensional accuracy block, printed with the settings in use now, in mm (a point or a comma). Each field shows the designed size in grey; leave it empty if you did not measure it. Two widths are enough for the scale and the outer sizes; the more sizes, the better the noise of the measures is seen."
+msgstr "Medidas del bloque de precisión dimensional, impreso con los ajustes que están en uso ahora, en mm (con punto o coma). Cada campo muestra en gris la medida del diseño; dejalo vacío si no lo mediste. Con dos anchos alcanza para la escala y las medidas exteriores; con más medidas se ve mejor el ruido de las mediciones."
+
+msgid "Block step"
+msgstr "Escalón"
+
+msgid "Height of its top"
+msgstr "Altura de arriba"
+
+msgid "Holes (diameter)"
+msgstr "Agujeros (diámetro)"
+
+msgid "Step 1 at the first layer (X)"
+msgstr "Escalón 1 en la primera capa (X)"
+
+msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
+msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."

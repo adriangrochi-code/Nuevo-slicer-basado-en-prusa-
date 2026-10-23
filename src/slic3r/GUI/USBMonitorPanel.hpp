@@ -15,6 +15,8 @@
 namespace Slic3r {
 namespace GUI {
 
+class CameraView;
+
 class USBMonitorPanel : public wxPanel
 {
 public:
@@ -32,6 +34,10 @@ public:
     static bool has_printer();
 
     void sys_color_changed();
+
+    // The view of a USB camera pointed at the printer (DevicesPanel streams it), shown in the right column.
+    CameraView* camera() const;
+    void        show_camera(bool show);
 
 private:
     struct priv;

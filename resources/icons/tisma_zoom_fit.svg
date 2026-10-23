@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same drawing as the Android app (android/app/src/main/res/drawable/ic_zoom_fit.xml). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3,8V3H8M16,3H21V8M21,16V21H16M8,21H3V16"/>
+  <path fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8,8H16V16H8Z"/>
+</svg>

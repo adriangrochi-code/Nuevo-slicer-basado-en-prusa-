@@ -21,6 +21,7 @@
 #include "format.hpp"
 #include "Gizmos/GLGizmoEmboss.hpp"
 #include "Gizmos/GLGizmoSVG.hpp"
+#include "CalibrationDialog.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include "slic3r/Utils/FixModelByWin10.hpp"
@@ -1190,6 +1191,11 @@ void MenuFactory::create_default_menu()
     wxMenu* sub_menu = append_submenu_add_generic(&m_default_menu, ModelVolumeType::INVALID);
     append_submenu(&m_default_menu, sub_menu, wxID_ANY, _L("Add Shape"), "", "add_part",
         []() {return true; }, m_parent);
+    // Tisma Slicer: the calibration models (of filament or of resin, as the printer) from the plate too.
+    const bool resin = wxGetApp().preset_bundle != nullptr &&
+                       wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA;
+    append_submenu(&m_default_menu, create_calibration_menu(m_parent, resin, true), wxID_ANY, _L("Add calibration model"), "",
+        "", []() { return true; }, m_parent);
 }
 
 void MenuFactory::create_common_object_menu(wxMenu* menu)
@@ -1486,9 +1492,9 @@ void MenuFactory::update_objects_menu()
 
 void MenuFactory::update_default_menu()
 {
-    const auto menu_item_id = m_default_menu.FindItem(_("Add Shape"));
-    if (menu_item_id != wxNOT_FOUND)
-        m_default_menu.Destroy(menu_item_id);
+    for (const wxString &label : { _L("Add Shape"), _L("Add calibration model") })
+        if (const int menu_item_id = m_default_menu.FindItem(label); menu_item_id != wxNOT_FOUND)
+            m_default_menu.Destroy(menu_item_id);
     create_default_menu();
 }
 

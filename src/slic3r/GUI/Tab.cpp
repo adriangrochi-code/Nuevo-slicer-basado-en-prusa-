@@ -21,6 +21,10 @@
 #include "slic3r/GUI/BedShapeDialog.hpp"
 #include "slic3r/Utils/Serial.hpp"
 #include "Tab.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/StateColor.hpp"
+#include "Widgets/Button.hpp"
+#include "TismaTheme.hpp"
 #include "QuickSettings.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -175,9 +179,8 @@ void Tab::create_preset_tab()
             if (m_type == Preset::TYPE_PRINTER && !m_presets_choice->is_selected_physical_printer())
                 m_preset_bundle->physical_printers.unselect_printer();
 
-            // select preset
-            std::string preset_name = m_presets_choice->GetString(selection).ToUTF8().data();
-            select_preset(Preset::remove_suffix_modified(preset_name));
+            // select preset (a profile may be listed by its alias)
+            select_preset(m_presets_choice->preset_name_of(selection));
         }
     });
 
@@ -242,7 +245,24 @@ void Tab::create_preset_tab()
 
     const float scale_factor = em_unit(this)*0.1;// GetContentScaleFactor();
     m_top_hsizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(m_top_hsizer, 0, wxEXPAND | wxBOTTOM, 3);
+    sizer->Add(m_top_hsizer, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.5 * m_em_unit));
+    // Tisma: the title of the page, big, as the groups of the phone; then its profile.
+    auto *page_title = new TismaTitle(panel, m_title);
+    m_top_hsizer->Add(page_title, 0, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, m_em_unit);
+    if (m_type == Preset::TYPE_PRINTER) {
+        // The Printer section of the top bar: its settings (this page) and the devices, one click apart.
+        auto holder = std::make_shared<TismaChoiceChips*>(nullptr);
+        auto *chips = new TismaChoiceChips(panel, { _L("Settings"), _L("Devices") }, [holder](int idx) {
+            if (idx != 1)
+                return;
+            wxGetApp().mainframe->select_devices();
+            // Back on this page later, its chip is the chosen one.
+            (*holder)->set_selection(0);
+        });
+        *holder = chips;
+        chips->set_selection(0);
+        m_top_hsizer->Add(chips, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, m_em_unit);
+    }
     m_top_hsizer->Add(m_presets_choice, 0, wxLEFT | wxRIGHT | wxTOP | wxALIGN_CENTER_VERTICAL, 3);
     m_top_hsizer->AddSpacer(int(4*scale_factor));
 
@@ -280,13 +300,8 @@ void Tab::create_preset_tab()
     m_left_sizer = new wxBoxSizer(wxVERTICAL);
     m_hsizer->Add(m_left_sizer, 0, wxEXPAND | wxLEFT | wxTOP | wxBOTTOM, 3);
 
-    // tree
-    m_treectrl = new wxTreeCtrl(panel, wxID_ANY, wxDefaultPosition, wxSize(20 * m_em_unit, -1),
-        wxTR_NO_BUTTONS | wxTR_HIDE_ROOT | wxTR_SINGLE | wxTR_NO_LINES | wxBORDER_SUNKEN | wxWANTS_CHARS);
-    m_treectrl->SetFont(wxGetApp().normal_font());
-#ifdef __linux__
-    m_treectrl->SetBackgroundColour(m_parent->GetBackgroundColour());
-#endif
+    // The list of the pages.
+    m_treectrl = new TismaPageList(panel, wxSize(20 * m_em_unit, -1));
     m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
 
     // Tisma: the Beginner mode hides most pages (speed, non-planar, advanced...). Say so and offer to show them all.
@@ -294,19 +309,28 @@ void Tab::create_preset_tab()
     auto simple_mode_text = new wxStaticText(panel, wxID_ANY,
         _L("Beginner mode: only the most common settings are shown. Speed, non-planar layers and the other settings "
            "are in the Normal and Expert modes."));
+    simple_mode_text->SetFont(wxGetApp().small_font());
+    simple_mode_text->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
     simple_mode_text->Wrap(19 * m_em_unit);
-    m_simple_mode_hint->Add(simple_mode_text, 0, wxBOTTOM, m_em_unit / 2);
-    auto show_all_btn = new wxButton(panel, wxID_ANY, _L("Show all settings"));
+    m_simple_mode_hint->Add(simple_mode_text, 0, wxLEFT | wxRIGHT | wxBOTTOM, m_em_unit / 2);
+    // A link in the accent color, as the other links of the interface of Tisma.
+    auto show_all_btn = new ::Button(panel, _L("Show all settings"));
     show_all_btn->SetToolTip(_L("Switch to the Expert mode"));
     show_all_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().save_mode(comExpert); });
-    m_simple_mode_hint->Add(show_all_btn, 0, wxEXPAND);
+    {
+        const bool dark = wxGetApp().dark_mode();
+        show_all_btn->SetBackgroundColor(StateColor(std::pair<wxColour, int>(TismaTheme::panel_bg(dark), StateColor::Hovered),
+                                                    std::pair<wxColour, int>(GetBackgroundColour(), StateColor::Normal)));
+        show_all_btn->SetBorderColor(StateColor(std::pair<wxColour, int>(TismaTheme::accent_text(dark), StateColor::Normal)));
+        show_all_btn->SetTextColor(StateColor(std::pair<wxColour, int>(TismaTheme::accent_text(dark), StateColor::Normal)));
+        show_all_btn->SetCornerRadius(0.6 * m_em_unit);
+    }
+    m_simple_mode_hint->Add(show_all_btn, 0, wxEXPAND | wxLEFT | wxRIGHT, m_em_unit / 2);
     m_left_sizer->Add(m_simple_mode_hint, 0, wxEXPAND | wxTOP, m_em_unit / 2);
     m_left_sizer->Show(m_simple_mode_hint, wxGetApp().get_mode() == comSimple);
     // Index of the last icon inserted into m_treectrl
     m_icon_count = -1;
     m_treectrl->AddRoot("root");
-    m_treectrl->SetIndent(0);
-    wxGetApp().UpdateDarkUI(m_treectrl);
 
     // Delay processing of the following handler until the message queue is flushed.
     // This helps to process all the cursor key events on Windows in the tree control,
@@ -461,30 +485,7 @@ void Tab::OnActivate()
     m_size_move *= -1;
 #endif // __WXOSX__
 
-#ifdef __WXMSW__
-    // Workaround for tooltips over Tree Controls displayed over excessively long
-    // tree control items, stealing the window focus.
-    //
-    // In case the Tab was reparented from the MainFrame to the floating dialog,
-    // the tooltip created by the Tree Control before reparenting is not reparented, 
-    // but it still points to the MainFrame. If the tooltip pops up, the MainFrame 
-    // is incorrectly focussed, stealing focus from the floating dialog.
-    //
-    // The workaround is to delete the tooltip control.
-    // Vojtech tried to reparent the tooltip control, but it did not work,
-    // and if the Tab was later reparented back to MainFrame, the tooltip was displayed
-    // at an incorrect position, therefore it is safer to just discard the tooltip control
-    // altogether.
-    HWND hwnd_tt = TreeView_GetToolTips(m_treectrl->GetHandle());
-    if (hwnd_tt) {
-	    HWND hwnd_toplevel 	= find_toplevel_parent(m_treectrl)->GetHandle();
-	    HWND hwnd_parent 	= ::GetParent(hwnd_tt);
-	    if (hwnd_parent != hwnd_toplevel) {
-	    	::DestroyWindow(hwnd_tt);
-			TreeView_SetToolTips(m_treectrl->GetHandle(), nullptr);
-	    }
-    }
-#endif
+    // Tisma: the list of the pages has no tooltip control of a Windows tree view to work around.
 
     // create controls on active page
     activate_selected_page([](){});
@@ -503,6 +504,9 @@ void Tab::OnActivate()
         // So, update visibility of each item according to the ui settings
         update_btns_enabling();
         m_btn_hide_incompatible_presets->Show(m_show_btn_incompatible_presets && m_type != Slic3r::Preset::TYPE_PRINTER);
+        // Tisma: no help button about the icons of PrusaSlicer; the undo buttons when they can do something.
+        m_question_btn->Hide();
+        update_undo_buttons();
         if (TabFilament* tab = dynamic_cast<TabFilament*>(this))
             tab->update_extruder_combobox_visibility();
 
@@ -818,6 +822,18 @@ void Tab::update_undo_buttons()
 
     m_undo_btn->SetToolTip(m_is_modified_values ? m_ttg_value_revert : m_ttg_white_bullet);
     m_undo_to_sys_btn->SetToolTip(m_is_nonsys_values ? *m_ttg_non_system : m_ttg_value_lock);
+
+    // Tisma: the buttons are shown when they can do something (values changed, values which differ from the system
+    // profile), as the icons of the settings. The top row is shown at the first activation (OnActivate()).
+    if (m_presets_choice->IsShown()) {
+        const bool undo        = m_is_modified_values;
+        const bool undo_to_sys = m_is_nonsys_values && m_bmp_non_system == &m_bmp_value_unlock;
+        if (m_undo_btn->IsShown() != undo || m_undo_to_sys_btn->IsShown() != undo_to_sys) {
+            m_undo_btn->Show(undo);
+            m_undo_to_sys_btn->Show(undo_to_sys);
+            m_h_buttons_sizer->Layout();
+        }
+    }
 }
 
 void Tab::on_roll_back_value(const bool to_sys /*= true*/)
@@ -1004,8 +1020,8 @@ void Tab::sys_color_changed()
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
     wxGetApp().UpdateDarkUI(this);
-    wxGetApp().UpdateDarkUI(m_treectrl);
 #endif
+    m_treectrl->Refresh();
     update_changed_tree_ui();
 
     // update options_groups
@@ -1080,27 +1096,6 @@ void Tab::load_key_value(const std::string& opt_key, const boost::any& value, bo
     update();
 }
 
-static wxString support_combo_value_for_config(const DynamicPrintConfig &config, bool is_fff)
-{
-    std::string slatree = is_fff ? "" : get_sla_suptree_prefix(config);
-
-    const std::string support         = is_fff ? "support_material"                 : "supports_enable";
-    const std::string buildplate_only = is_fff ? "support_material_buildplate_only" : slatree + "support_buildplate_only";
-
-    return
-        ! config.opt_bool(support) ?
-            _("None") :
-               ((is_fff && !config.opt_bool("support_material_auto")) || (!is_fff && config.opt_bool("support_enforcers_only"))) ?
-                _("For support enforcers only") :
-                (config.opt_bool(buildplate_only) ? _("Support on build plate only") :
-                                                    _("Everywhere"));
-}
-
-static wxString pad_combo_value_for_config(const DynamicPrintConfig &config)
-{
-    return config.opt_bool("pad_enable") ? (config.opt_bool("pad_around_object") ? _("Around object") : _("Below object")) : _("None");
-}
-
 void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
 {
     if (wxGetApp().plater() == nullptr) {
@@ -1112,33 +1107,15 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
     if (opt_key == "compatible_printers")
         this->compatible_widget_reload(m_compatible_printers);
 
-    const bool is_fff = supports_printer_technology(ptFFF);
-    ConfigOptionsGroup* og_freq_chng_params = wxGetApp().sidebar().og_freq_chng_params(is_fff);
-    if (opt_key == "fill_density" || opt_key == "pad_enable")
-    {
-        boost::any val = og_freq_chng_params->get_config_value(*m_config, opt_key);
-        og_freq_chng_params->set_value(opt_key, val);
-    }
-    
+    // Tisma: the chips of the supports, infill, brim and pad of the plate panel show the edited values.
+    if (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_SLA_PRINT)
+        wxGetApp().sidebar().update_frequently_changed_parameters();
+
     if (opt_key == "pad_around_object") {
         for (PageShp &pg : m_pages) {
             Field * fld = pg->get_field(opt_key); /// !!! ysFIXME ????
             if (fld) fld->set_value(value, false);
         }
-    }
-
-    if (is_fff ?
-            (opt_key == "support_material" || opt_key == "support_material_auto" || opt_key == "support_material_buildplate_only") :
-            (opt_key == "supports_enable"  || opt_key == "support_tree_type" || opt_key == get_sla_suptree_prefix(*m_config) + "support_buildplate_only" || opt_key == "support_enforcers_only"))
-        og_freq_chng_params->set_value("support", support_combo_value_for_config(*m_config, is_fff));
-
-    if (! is_fff && (opt_key == "pad_enable" || opt_key == "pad_around_object"))
-        og_freq_chng_params->set_value("pad", pad_combo_value_for_config(*m_config));
-
-    if (opt_key == "brim_width")
-    {
-        bool val = m_config->opt_float("brim_width") > 0.0 ? true : false;
-        og_freq_chng_params->set_value("brim", val);
     }
 
     if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
@@ -1418,28 +1395,16 @@ void Tab::update_preset_description_line()
 
 void Tab::update_frequently_changed_parameters()
 {
-    const bool is_fff = supports_printer_technology(ptFFF);
-    auto og_freq_chng_params = wxGetApp().sidebar().og_freq_chng_params(is_fff);
-    if (!og_freq_chng_params) return;
-
-    og_freq_chng_params->set_value("support", support_combo_value_for_config(*m_config, is_fff));
-    if (! is_fff)
-        og_freq_chng_params->set_value("pad", pad_combo_value_for_config(*m_config));
-
-    const std::string updated_value_key = is_fff ? "fill_density" : "pad_enable";
-
-    const boost::any val = og_freq_chng_params->get_config_value(*m_config, updated_value_key);
-    og_freq_chng_params->set_value(updated_value_key, val);
+    if (wxGetApp().plater() == nullptr)
+        return;
+    wxGetApp().sidebar().update_frequently_changed_parameters();
 
     if (m_type == Preset::TYPE_PRINT)
         if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
             quick_settings->reload_config();
 
-    if (is_fff)
-    {
-        og_freq_chng_params->set_value("brim", bool(m_config->opt_float("brim_width") > 0.0));
+    if (supports_printer_technology(ptFFF))
         update_wiping_button_visibility();
-    }
 }
 
 static void validate_custom_parameters(Tab* tab, const t_config_option_key& opt_key, const boost::any& value)
@@ -1497,6 +1462,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
         optgroup->append_single_option_line("overhang_arcs_max_distance");
+        optgroup->append_single_option_line("overhang_arcs_overlap");
         optgroup->append_single_option_line("stagger_perimeters");
         optgroup->append_single_option_line("zaa_enabled");
         optgroup->append_single_option_line("zaa_min_thickness");
@@ -1757,6 +1723,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("gcode_resolution");
         optgroup->append_single_option_line("arc_fitting");
         optgroup->append_single_option_line("xy_size_compensation");
+        optgroup->append_single_option_line("xy_hole_compensation");
         optgroup->append_single_option_line("elefant_foot_compensation", "elephant-foot-compensation_114487");
 
         optgroup = page->new_optgroup(L("Arachne perimeter generator"));
@@ -2294,7 +2261,7 @@ void TabFilament::build()
         line.append_option(optgroup->get_option("chamber_minimal_temperature"));
         optgroup->append_line(line);
 
-        // Tisma: the bed temperatures on each bed type, for the printers which let choose the bed (BedType.hpp).
+        // Tisma: the bed temperatures on each bed type, used with the bed chosen in the plate panel (BedType.hpp).
         optgroup = page->new_optgroup(L("Bed temperature by bed type"));
         for (const BedType &bed : bed_types()) {
             line = { wxString::FromUTF8(bed.label), "" };
@@ -2510,15 +2477,6 @@ void TabFilament::toggle_options()
 {
     if (!m_active_page)
         return;
-
-    if (m_active_page->title() == "Filament") {
-        // The bed temperatures by bed type are used by the printers which let choose the bed.
-        const bool beds = supports_bed_types(m_preset_bundle->printers.get_edited_preset().config);
-        for (const BedType &bed : bed_types()) {
-            toggle_option(bed.first_layer_temp_key, beds);
-            toggle_option(bed.temp_key, beds);
-        }
-    }
 
     if (m_active_page->title() == "Cooling")
     {
@@ -2747,27 +2705,6 @@ void TabPrinter::build()
     m_printer_technology == ptSLA ? build_sla() : build_fff();
 }
 
-void TabPrinter::build_print_host_upload_group(Page* page)
-{
-    ConfigOptionsGroupShp optgroup = page->new_optgroup(L("Print Host upload"));
-
-    wxString description_line_text = _L(""
-        "Note: All parameters from this group are moved to the Physical Printer settings (see changelog).\n\n"
-        "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
-        "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "
-        "also when clicking on the \"cog\" icon in the Printer settings tab. The Physical Printer profiles are being stored "
-        "into TismaSlicer/physical_printer directory.");
-
-    Line line = { "", "" };
-    line.full_width = 1;
-    line.widget = [this, description_line_text](wxWindow* parent) {
-        return description_line_widget(parent, m_presets->get_selected_preset().printer_technology() == ptFFF ?
-                                       &m_fff_print_host_upload_description_line : &m_sla_print_host_upload_description_line,
-                                       description_line_text);
-    };
-    optgroup->append_line(line);
-}
-
 static wxString get_info_klipper_string()
 {
     return _L("Emitting machine limits to G-code is not supported with Klipper G-code flavor.\n"
@@ -2799,8 +2736,8 @@ void TabPrinter::build_fff()
 
         optgroup->append_single_option_line("max_print_height");
         optgroup->append_single_option_line("z_offset");
-        // Tisma: interchangeable beds (build plates), chosen in the sidebar.
-        optgroup->append_single_option_line("support_multi_bed_types");
+        // Tisma: the bed chosen first for this printer. The bed is chosen in the plate panel for every printer;
+        // support_multi_bed_types is kept in the profiles of OrcaSlicer only.
         optgroup->append_single_option_line("default_bed_type");
 
         optgroup = page->new_optgroup(L("Capabilities"));
@@ -2882,8 +2819,8 @@ void TabPrinter::build_fff()
             });
         };
 
-        build_print_host_upload_group(page.get());
-
+        // Tisma: no note about the print host settings moved to the physical printers (PrusaSlicer 2.3): the
+        // connections are in Devices.
         optgroup = page->new_optgroup(L("Firmware"));
         optgroup->append_single_option_line("gcode_flavor");
 
@@ -3182,8 +3119,6 @@ void TabPrinter::build_sla()
     optgroup = page->new_optgroup(L("Output"));
     optgroup->append_single_option_line("sla_archive_format");
     optgroup->append_single_option_line("sla_output_precision");
-
-    build_print_host_upload_group(page.get());
 
     const int notes_field_height = 25; // 250
 
@@ -3725,8 +3660,6 @@ void TabPrinter::clear_pages()
     Tab::clear_pages();
 
     m_machine_limits_description_line           = nullptr;
-    m_fff_print_host_upload_description_line    = nullptr;
-    m_sla_print_host_upload_description_line    = nullptr;
 }
 
 void TabPrinter::toggle_options()
@@ -4430,7 +4363,7 @@ void Tab::OnKeyDown(wxKeyEvent& event)
 
 void Tab::compare_preset()
 {
-    wxGetApp().mainframe->diff_dialog.show(m_type);
+    wxGetApp().mainframe->diff_dialog().show(m_type);
 }
 
 void Tab::transfer_options(const std::string &name_from, const std::string &name_to, std::vector<std::string> options)
@@ -4558,8 +4491,9 @@ void Tab::save_preset(std::string name /*= ""*/, bool detach)
             wxGetApp().get_tab(preset_type)->update_tab_ui();
     }
 
-    // update preset comboboxes in DiffPresetDlg
-    wxGetApp().mainframe->diff_dialog.update_presets(m_type);
+    // update preset comboboxes in DiffPresetDlg (Tisma Slicer: if it was made, see MainFrame::diff_dialog())
+    if (DiffPresetDialog *diff = wxGetApp().mainframe->diff_dialog_if_created())
+        diff->update_presets(m_type);
 
     if (detach)
         update_description_lines();

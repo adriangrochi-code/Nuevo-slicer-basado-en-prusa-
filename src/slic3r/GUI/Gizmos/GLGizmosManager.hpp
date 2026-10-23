@@ -110,6 +110,7 @@ private:
 
     GLCanvas3D& m_parent;
     bool m_enabled;
+    bool m_toolbar_shown{ true };
     std::vector<std::unique_ptr<GLGizmoBase>> m_gizmos;
     GLTexture m_icons_texture;
     bool m_icons_texture_dirty;
@@ -181,6 +182,9 @@ public:
 
     bool is_enabled() const { return m_enabled; }
     void set_enabled(bool enable) { m_enabled = enable; }
+    // Tisma: the gizmos are opened from the tools of the plate; their toolbar is neither drawn nor clicked.
+    bool is_toolbar_shown() const { return m_toolbar_shown; }
+    void show_toolbar(bool show) { m_toolbar_shown = show; }
 
     void set_overlay_icon_size(float size);
     void set_overlay_scale(float scale);

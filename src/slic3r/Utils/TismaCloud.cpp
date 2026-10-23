@@ -167,6 +167,32 @@ bool TismaCloud::account(Account &account, std::string &error)
     return ok;
 }
 
+bool TismaCloud::report(const std::map<std::string, std::string> &fields, int &similar, std::string &error)
+{
+    bool ok = false;
+    nlohmann::json body = nlohmann::json::object();
+    for (const auto &[key, value] : fields)
+        body[key] = value;
+    auto http = Http::post(m_url + "/v1/reports");
+    if (! m_token.empty())
+        authorize(http);
+    http.timeout_connect(10)
+        .timeout_max(60)
+        .header("Content-Type", "application/json")
+        .set_post_body(body.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace))
+        .on_complete([&](std::string body, unsigned) {
+            try {
+                similar = nlohmann::json::parse(body).value("similar", 0);
+                ok = true;
+            } catch (const std::exception &) {
+                error = "Unexpected answer of the server";
+            }
+        })
+        .on_error([&](std::string body, std::string err, unsigned status) { error = api_error(body, err, status); })
+        .perform_sync();
+    return ok;
+}
+
 bool TismaCloud::submit(const std::string &kind, const std::string &params_json, const std::string &project_path, Job &job,
                         std::string &error)
 {

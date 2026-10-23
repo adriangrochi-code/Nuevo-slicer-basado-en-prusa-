@@ -3794,14 +3794,14 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
 #endif /* SLIC3R_DEBUG_MOUSE_EVENTS */
 	}
 
-    if (m_main_toolbar.on_mouse(evt, *this)) {
+    if (! m_toolbars_hidden && m_main_toolbar.on_mouse(evt, *this)) {
         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
             mouse_up_cleanup();
         m_mouse.set_start_position_3D_as_invalid();
         return;
     }
 
-    if (m_undoredo_toolbar.on_mouse(evt, *this)) {
+    if (! m_toolbars_hidden && m_undoredo_toolbar.on_mouse(evt, *this)) {
         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
             mouse_up_cleanup();
         m_mouse.set_start_position_3D_as_invalid();
@@ -3815,7 +3815,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         return;
     }
 
-    if (wxGetApp().plater()->get_view_toolbar().on_mouse(evt, *this)) {
+    if (! m_toolbars_hidden && wxGetApp().plater()->get_view_toolbar().on_mouse(evt, *this)) {
         if (evt.LeftUp() || evt.MiddleUp() || evt.RightUp())
             mouse_up_cleanup();
         m_mouse.set_start_position_3D_as_invalid();
@@ -6947,7 +6947,7 @@ void GLCanvas3D::_render_gizmos_overlay()
 
 void GLCanvas3D::_render_main_toolbar()
 {
-    if (!m_main_toolbar.is_enabled())
+    if (!m_main_toolbar.is_enabled() || m_toolbars_hidden)
         return;
 
     const Size cnv_size = get_canvas_size();
@@ -6965,7 +6965,7 @@ void GLCanvas3D::_render_main_toolbar()
 
 void GLCanvas3D::_render_undoredo_toolbar()
 {
-    if (!m_undoredo_toolbar.is_enabled())
+    if (!m_undoredo_toolbar.is_enabled() || m_toolbars_hidden)
         return;
 
     const Size cnv_size = get_canvas_size();
@@ -7001,6 +7001,8 @@ void GLCanvas3D::_render_collapse_toolbar() const
 
 void GLCanvas3D::_render_view_toolbar() const
 {
+    if (m_toolbars_hidden)
+        return;
     GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
 
     const Size cnv_size = get_canvas_size();

@@ -21,8 +21,11 @@
 #include "FrequentlyChangedParameters.hpp"
 #include "QuickSettings.hpp"
 #include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/StateColor.hpp"
+#include "Widgets/StaticBox.hpp"
+#include "Widgets/SwitchButton.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -162,7 +165,59 @@ renumber_virtual_extruders(Plater& plater, unsigned int num_physical, bool take_
     return true;
 }
 
-class ObjectInfo : public wxStaticBoxSizer
+// Tisma: the information about the object and about the slicing in cards with a title, as the other parts of the plate
+// panel. The sizer holds the card; the labels are children of the card.
+class InfoCard : public wxBoxSizer
+{
+public:
+    InfoCard(wxWindow *parent, const wxString &title);
+
+    ::StaticBox *card;
+    TismaTitle  *title;
+    wxBoxSizer  *content;
+    // The names of the values, in the muted color.
+    std::vector<wxStaticText*> captions;
+
+    wxStaticText *caption(const wxString &text);
+    void          sys_color_changed();
+};
+
+InfoCard::InfoCard(wxWindow *parent, const wxString &title_text) : wxBoxSizer(wxVERTICAL)
+{
+    const int em = wxGetApp().em_unit();
+    card = new ::StaticBox(parent);
+    card->SetCornerRadius(0.6 * em);
+    title = new TismaTitle(card, title_text);
+    content = new wxBoxSizer(wxVERTICAL);
+    auto *padding = new wxBoxSizer(wxVERTICAL);
+    padding->Add(title, 0, wxBOTTOM, int(0.5 * em));
+    padding->Add(content, 1, wxEXPAND);
+    auto *outer = new wxBoxSizer(wxVERTICAL);
+    outer->Add(padding, 1, wxEXPAND | wxALL, int(0.8 * em));
+    card->SetSizer(outer);
+    Add(card, 1, wxEXPAND);
+}
+
+wxStaticText *InfoCard::caption(const wxString &text)
+{
+    auto *label = new wxStaticText(card, wxID_ANY, text);
+    captions.push_back(label);
+    return label;
+}
+
+void InfoCard::sys_color_changed()
+{
+    const bool dark = wxGetApp().dark_mode();
+    card->SetBackgroundColorNormal(TismaTheme::card_bg(dark));
+    card->SetBorderColorNormal(TismaTheme::separator(dark));
+    card->SetBackgroundColour(TismaTheme::card_bg(dark));
+    title->sys_color_changed();
+    for (wxStaticText *label : captions)
+        label->SetForegroundColour(TismaTheme::text_muted(dark));
+    card->Refresh();
+}
+
+class ObjectInfo : public InfoCard
 {
     std::string m_warning_icon_name{ "exclamation" };
 public:
@@ -183,20 +238,14 @@ public:
     void        update_warning_icon(const std::string& warning_icon_name);
 };
 
-ObjectInfo::ObjectInfo(wxWindow *parent) :
-    wxStaticBoxSizer(new wxStaticBox(parent, wxID_ANY, _L("Info")), wxVERTICAL)
+ObjectInfo::ObjectInfo(wxWindow *parent) : InfoCard(parent, _L("Info"))
 {
-    GetStaticBox()->SetFont(wxGetApp().bold_font());
-    wxGetApp().UpdateDarkUI(GetStaticBox());
-
-    auto *grid_sizer = new wxFlexGridSizer(4, 5, 15);
+    auto *grid_sizer = new wxFlexGridSizer(2, int(0.4 * wxGetApp().em_unit()), int(1.5 * wxGetApp().em_unit()));
     grid_sizer->SetFlexibleDirection(wxHORIZONTAL);
 
-    auto init_info_label = [parent, grid_sizer](wxStaticText **info_label, wxString text_label, wxSizer* sizer_with_icon=nullptr) {
-        auto *text = new wxStaticText(parent, wxID_ANY, text_label + ":");
-        text->SetFont(wxGetApp().small_font());
-        *info_label = new wxStaticText(parent, wxID_ANY, "");
-        (*info_label)->SetFont(wxGetApp().small_font());
+    auto init_info_label = [this, grid_sizer](wxStaticText **info_label, wxString text_label, wxSizer* sizer_with_icon=nullptr) {
+        wxStaticText *text = caption(text_label);
+        *info_label = new wxStaticText(card, wxID_ANY, "");
         grid_sizer->Add(text, 0);
         if (sizer_with_icon) {
             sizer_with_icon->Insert(0, *info_label, 0);
@@ -209,7 +258,7 @@ ObjectInfo::ObjectInfo(wxWindow *parent) :
 
     init_info_label(&info_size, _L("Size"));
 
-    info_icon = new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("info"));
+    info_icon = new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle("info"));
     info_icon->SetToolTip(_L("For a multipart object, this value isn't accurate.\n"
                              "It doesn't take account of intersections and negative volumes."));
     auto* volume_info_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -217,15 +266,14 @@ ObjectInfo::ObjectInfo(wxWindow *parent) :
     label_volume = init_info_label(&info_volume, _L("Volume"), volume_info_sizer);
 
     init_info_label(&info_facets, _L("Facets"));
-    Add(grid_sizer, 0, wxEXPAND);
+    content->Add(grid_sizer, 0, wxEXPAND);
 
-    info_manifold = new wxStaticText(parent, wxID_ANY, "");
-    info_manifold->SetFont(wxGetApp().small_font());
-    manifold_warning_icon = new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle(m_warning_icon_name));
+    info_manifold = new wxStaticText(card, wxID_ANY, "");
+    manifold_warning_icon = new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle(m_warning_icon_name));
     auto *sizer_manifold = new wxBoxSizer(wxHORIZONTAL);
     sizer_manifold->Add(manifold_warning_icon, 0, wxLEFT, 2);
     sizer_manifold->Add(info_manifold, 0, wxLEFT, 2);
-    Add(sizer_manifold, 0, wxEXPAND | wxTOP, 4);
+    content->Add(sizer_manifold, 0, wxEXPAND | wxTOP, 4);
 
     sla_hidden_items = { label_volume, info_volume, };
 
@@ -269,7 +317,7 @@ enum SlicedInfoIdx
     siCount
 };
 
-class SlicedInfo : public wxStaticBoxSizer
+class SlicedInfo : public InfoCard
 {
 public:
     SlicedInfo(wxWindow *parent);
@@ -279,22 +327,16 @@ private:
     std::vector<std::pair<wxStaticText*, wxStaticText*>> info_vec;
 };
 
-SlicedInfo::SlicedInfo(wxWindow *parent) :
-    wxStaticBoxSizer(new wxStaticBox(parent, wxID_ANY, _L("Sliced Info")), wxVERTICAL)
+SlicedInfo::SlicedInfo(wxWindow *parent) : InfoCard(parent, _L("Sliced Info"))
 {
-    GetStaticBox()->SetFont(wxGetApp().bold_font());
-    wxGetApp().UpdateDarkUI(GetStaticBox());
-
-    auto *grid_sizer = new wxFlexGridSizer(2, 5, 15);
+    auto *grid_sizer = new wxFlexGridSizer(2, int(0.4 * wxGetApp().em_unit()), int(1.5 * wxGetApp().em_unit()));
     grid_sizer->SetFlexibleDirection(wxVERTICAL);
 
     info_vec.reserve(siCount);
 
-    auto init_info_label = [this, parent, grid_sizer](wxString text_label) {
-        auto *text = new wxStaticText(parent, wxID_ANY, text_label);
-        text->SetFont(wxGetApp().small_font());
-        auto info_label = new wxStaticText(parent, wxID_ANY, "N/A");
-        info_label->SetFont(wxGetApp().small_font());
+    auto init_info_label = [this, grid_sizer](wxString text_label) {
+        wxStaticText *text = caption(text_label);
+        auto info_label = new wxStaticText(card, wxID_ANY, "N/A");
         grid_sizer->Add(text, 0);
         grid_sizer->Add(info_label, 0);
         info_vec.push_back(std::pair<wxStaticText*, wxStaticText*>(text, info_label));
@@ -313,7 +355,7 @@ SlicedInfo::SlicedInfo(wxWindow *parent) :
     init_info_label(_L("Supports"));
     init_info_label(_L("Coasting"));
 
-    Add(grid_sizer, 0, wxEXPAND);
+    content->Add(grid_sizer, 0, wxEXPAND);
     this->Show(false);
 }
 
@@ -347,7 +389,6 @@ void Sidebar::show_preset_comboboxes()
         row->Show(showSLA);
     update_printer_parts();
 
-    m_frequently_changed_parameters->Show(!showSLA);
     m_quick_settings->Show(!showSLA);
 
     const Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER);
@@ -473,12 +514,30 @@ Sidebar::Sidebar(Plater *parent)
 
     const int margin_5 = int(0.5 * wxGetApp().em_unit());// 5;
 
-    auto init_combo = [this, margin_5](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
-        // Caption in the PrusaSlicer 3.0 style: small, upper case, muted.
-        auto *text = new wxStaticText(m_presets_panel, wxID_ANY, label.Upper());
-        text->SetFont(wxGetApp().small_font().Bold());
-        m_preset_captions.push_back(text);
-        *combo = new PlaterPresetComboBox(m_presets_panel, preset_type);
+    // Tisma: a section of the presets is a card: a rounded panel with its caption and its controls.
+    const int em = wxGetApp().em_unit();
+    auto make_card = [this, em](wxBoxSizer *&content) {
+        const bool dark = wxGetApp().dark_mode();
+        auto *card = new ::StaticBox(m_presets_panel);
+        card->SetCornerRadius(0.6 * em);
+        card->SetBackgroundColorNormal(TismaTheme::card_bg(dark));
+        card->SetBorderColorNormal(TismaTheme::separator(dark));
+        card->SetBackgroundColour(TismaTheme::card_bg(dark));
+        auto *padding = new wxBoxSizer(wxVERTICAL);
+        content = new wxBoxSizer(wxVERTICAL);
+        padding->Add(content, 1, wxEXPAND | wxALL, int(0.8 * em));
+        card->SetSizer(padding);
+        m_cards.push_back(card);
+        return card;
+    };
+
+    auto init_combo = [this, margin_5, em, make_card](PlaterPresetComboBox **combo, wxString label, Preset::Type preset_type, bool filament) {
+        wxBoxSizer *card_sizer = nullptr;
+        ::StaticBox *card = make_card(card_sizer);
+        // The title of the group, as in the phone.
+        auto *text = new TismaTitle(card, label);
+        m_titles.push_back(text);
+        *combo = new PlaterPresetComboBox(card, preset_type);
 
         auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
         combo_and_btn_sizer->Add(*combo, 1, wxEXPAND);
@@ -486,42 +545,41 @@ Sidebar::Sidebar(Plater *parent)
             combo_and_btn_sizer->Add((*combo)->edit_btn, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT,
                                     int(0.3*wxGetApp().em_unit()));
 
-        auto *sizer_presets = this->m_presets_sizer;
         auto *sizer_filaments = this->m_filaments_sizer;
-        // The rows shown for the filament or the resin printers only.
+        // The cards shown for the filament or the resin printers only.
         std::vector<wxSizerItem*> *rows = preset_type == Preset::TYPE_PRINT || filament ? &m_fff_rows :
             preset_type == Preset::TYPE_SLA_PRINT || preset_type == Preset::TYPE_SLA_MATERIAL ? &m_sla_rows : nullptr;
-        // Hide controls, which will be shown/hidden in respect to the printer technology
-        text->Show(preset_type == Preset::TYPE_PRINTER);
-        wxSizerItem *caption_row = sizer_presets->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxRIGHT | wxTOP, int(0.6 * wxGetApp().em_unit()));
-        if (rows)
-            rows->push_back(caption_row);
+        card_sizer->Add(text, 0, wxALIGN_LEFT | wxEXPAND | wxBOTTOM, int(0.5 * em));
         if (! filament) {
-            combo_and_btn_sizer->ShowItems(preset_type == Preset::TYPE_PRINTER);
-            wxSizerItem *combo_row = sizer_presets->Add(combo_and_btn_sizer, 0, wxEXPAND |
-#ifdef __WXGTK3__
-                wxRIGHT, margin_5);
-#else
-                wxBOTTOM, 1);
-                (void)margin_5; // supress unused capture warning
-#endif // __WXGTK3__
-            if (rows)
-                rows->push_back(combo_row);
+            card_sizer->Add(combo_and_btn_sizer, 0, wxEXPAND);
             if ((*combo)->connect_info_sizer) {
                 auto tmp_h_sizer = new wxBoxSizer(wxHORIZONTAL);
                 tmp_h_sizer->Add((*combo)->connect_info_sizer, 1, wxEXPAND);
-                sizer_presets->Add(tmp_h_sizer, 0, wxBOTTOM, int(0.3 * wxGetApp().em_unit()));
+                card_sizer->Add(tmp_h_sizer, 0, wxTOP, int(0.3 * em));
             }
         } else {
-            sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND |
-#ifdef __WXGTK3__
-                wxRIGHT, margin_5);
-#else
-                wxBOTTOM, 1);
-#endif // __WXGTK3__
+            sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND | wxBOTTOM, int(0.3 * em));
             (*combo)->set_extruder_idx(0);
-            sizer_filaments->ShowItems(false);
-            rows->push_back(sizer_presets->Add(sizer_filaments, 1, wxEXPAND));
+            card_sizer->Add(sizer_filaments, 1, wxEXPAND);
+        }
+        (void)margin_5;
+        // Hidden until the technology of the printer is known (show_preset_comboboxes()).
+        card->Show(preset_type == Preset::TYPE_PRINTER);
+        wxSizerItem *card_row = m_presets_sizer->Add(card, 0, wxEXPAND | wxBOTTOM, int(0.6 * em));
+        if (rows)
+            rows->push_back(card_row);
+        if (preset_type == Preset::TYPE_PRINTER) {
+            m_card_printer       = card;
+            m_card_printer_sizer = card_sizer;
+        } else if (filament) {
+            m_card_filament       = card;
+            m_card_filament_sizer = card_sizer;
+        } else if (preset_type == Preset::TYPE_PRINT) {
+            m_card_print          = card;
+            m_card_print_sizer    = card_sizer;
+        } else if (preset_type == Preset::TYPE_SLA_PRINT) {
+            m_card_sla_print       = card;
+            m_card_sla_print_sizer = card_sizer;
         }
     };
 
@@ -533,7 +591,7 @@ Sidebar::Sidebar(Plater *parent)
     m_combos_filament.push_back(nullptr);
     init_combo(&m_combos_filament[0],  _L("Filament"),           Preset::TYPE_FILAMENT,      true);
 
-    m_btn_full_spectrum = new wxButton(m_presets_panel, wxID_ANY,
+    m_btn_full_spectrum = new wxButton(m_card_filament, wxID_ANY,
                                        _L("Virtual Extruders - Color Mixing"),
                                        wxDefaultPosition, wxDefaultSize,
                                        wxBU_EXACTFIT);
@@ -594,7 +652,7 @@ Sidebar::Sidebar(Plater *parent)
         const int gear_col_width = m_combos_filament[0]->edit_btn->GetBestSize().GetWidth()
                                  + 2 * int(0.3 * wxGetApp().em_unit());
         btn_row_sizer->AddSpacer(gear_col_width);
-        m_full_spectrum_row = m_presets_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxBOTTOM, 2);
+        m_full_spectrum_row = m_card_filament_sizer->Add(btn_row_sizer, 0, wxEXPAND | wxTOP, int(0.3 * em));
     }
 
     init_combo(&m_combo_print,         _L("Print settings"),     Preset::TYPE_PRINT,         false);
@@ -603,15 +661,12 @@ Sidebar::Sidebar(Plater *parent)
 
     init_workflow_combo(margin_5);
 
-    wxBoxSizer* params_sizer = new wxBoxSizer(wxVERTICAL);
+    // Tisma: the supports, infill and brim (the pad of a resin print) as chips in the card of the print settings.
+    m_frequently_changed_parameters = std::make_unique<FreqChangedParams>(m_card_print, m_card_sla_print);
+    m_card_print_sizer->Add(m_frequently_changed_parameters->get_sizer(true), 0, wxEXPAND | wxTOP, int(0.6 * em));
+    m_card_sla_print_sizer->Add(m_frequently_changed_parameters->get_sizer(false), 0, wxEXPAND | wxTOP, int(0.6 * em));
 
-    // Frequently changed parameters
-    m_frequently_changed_parameters = std::make_unique<FreqChangedParams>(m_scrolled_panel);
-    params_sizer->Add(m_frequently_changed_parameters->get_sizer(), 0, wxEXPAND | wxTOP | wxBOTTOM
-#ifdef __WXGTK3__
-        | wxRIGHT
-#endif // __WXGTK3__
-        , wxOSX ? 1 : margin_5);
+    wxBoxSizer* params_sizer = new wxBoxSizer(wxVERTICAL);
 
     // Favorite print settings (Tisma)
     m_quick_settings = std::make_unique<QuickSettings>(m_scrolled_panel);
@@ -623,7 +678,10 @@ Sidebar::Sidebar(Plater *parent)
     if (m_full_spectrum_row)
         m_full_spectrum_row->Show(int(m_combos_filament.size()) >= 2);
 
-    // Object List
+    // Object List, under its title
+    auto *objects_title = new TismaTitle(m_scrolled_panel, _L("Objects"));
+    m_titles.push_back(objects_title);
+    params_sizer->Add(objects_title, 0, wxTOP | wxBOTTOM, int(0.6 * em));
     m_object_list = new ObjectList(m_scrolled_panel);
     params_sizer->Add(m_object_list->get_sizer(), 1, wxEXPAND);
 
@@ -645,6 +703,8 @@ Sidebar::Sidebar(Plater *parent)
     // Info boxes
     m_object_info = new ObjectInfo(m_scrolled_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
+    m_titles.push_back(m_object_info->title);
+    m_titles.push_back(m_sliced_info->title);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
 
@@ -726,6 +786,13 @@ Sidebar::Sidebar(Plater *parent)
     m_btn_compact->SetToolTip(_L("Hide the settings (the slice button stays)"));
     m_btn_compact->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
+    m_auto_slice_label = new TismaTitle(this, _L("Slice automatically"), TismaTitle::Style::Caption);
+    m_titles.push_back(m_auto_slice_label);
+    m_auto_slice = new ::SwitchButton(this);
+    m_auto_slice->SetToolTip(_L("Slice again right after any change of the objects or of the settings."));
+    m_auto_slice->SetValue(wxGetApp().app_config->get_bool("background_processing"));
+    // Skipped: the switch draws its new state in its own handler.
+    m_auto_slice->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &e) { set_auto_slice(e.IsChecked()); e.Skip(); });
 
     apply_tisma_theme();
     enable_buttons(false);
@@ -741,6 +808,10 @@ Sidebar::Sidebar(Plater *parent)
 
     // The arrow that hides the settings, at the left of the slice and output buttons.
     auto *actions_sizer = new wxBoxSizer(wxVERTICAL);
+    auto *auto_slice_row = new wxBoxSizer(wxHORIZONTAL);
+    auto_slice_row->Add(m_auto_slice_label, 1, wxALIGN_CENTER_VERTICAL);
+    auto_slice_row->Add(m_auto_slice, 0, wxALIGN_CENTER_VERTICAL);
+    actions_sizer->Add(auto_slice_row, 0, wxEXPAND | wxTOP, margin_5);
     actions_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
     actions_sizer->Add(complect_btns_sizer, 0, wxEXPAND | wxTOP, margin_5);
     auto *row_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -824,7 +895,7 @@ Sidebar::~Sidebar() {}
 
 void Sidebar::init_filament_combo(PlaterPresetComboBox** combo, int extr_idx)
 {
-    *combo = new PlaterPresetComboBox(m_presets_panel, Slic3r::Preset::TYPE_FILAMENT);
+    *combo = new PlaterPresetComboBox(m_card_filament, Slic3r::Preset::TYPE_FILAMENT);
     (*combo)->set_extruder_idx(extr_idx);
 
     auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -832,12 +903,7 @@ void Sidebar::init_filament_combo(PlaterPresetComboBox** combo, int extr_idx)
     combo_and_btn_sizer->Add((*combo)->edit_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
                             int(0.3*wxGetApp().em_unit()));
 
-    this->m_filaments_sizer->Add(combo_and_btn_sizer, 1, wxEXPAND |
-#ifdef __WXGTK3__
-        wxRIGHT, int(0.5 * wxGetApp().em_unit()));
-#else
-        wxBOTTOM, 1);
-#endif // __WXGTK3__
+    this->m_filaments_sizer->Add(combo_and_btn_sizer, 1, wxEXPAND | wxBOTTOM, int(0.3 * wxGetApp().em_unit()));
 }
 
 void Sidebar::remove_unused_filament_combos(const size_t current_extruder_count)
@@ -1003,8 +1069,7 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
     //! instead of
     //!     combo->GetStringSelection().ToUTF8().data());
 
-    std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias(preset_type,
-                              Preset::remove_suffix_modified(into_u8(combo->GetString(selection))), idx);
+    std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias(preset_type, combo->preset_name_of(selection), idx);
 
     std::string last_selected_ph_printer_name = combo->get_selected_ph_printer_name();
 
@@ -1117,21 +1182,31 @@ void Sidebar::init_workflow_combo(int margin_5)
 void Sidebar::init_printer_parts()
 {
     const int em = wxGetApp().em_unit();
-    auto *grid = new wxFlexGridSizer(0, 2, int(0.3 * em), em);
+    // As in OrcaSlicer and Bambu Studio: the nozzle and the bed side by side, each one under its caption.
+    auto *grid = new wxFlexGridSizer(2, 2, int(0.3 * em), em);
+    grid->AddGrowableCol(0, 1);
     grid->AddGrowableCol(1, 1);
-    auto add = [this, grid](wxStaticText **label, BitmapComboBox **combo, const wxString &text) {
-        *label = new wxStaticText(m_presets_panel, wxID_ANY, text);
-        *combo = new BitmapComboBox(m_presets_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
-                                    nullptr, wxCB_READONLY);
-        grid->Add(*label, 0, wxALIGN_CENTER_VERTICAL);
-        grid->Add(*combo, 1, wxEXPAND);
+    auto make = [this](wxStaticText **label, BitmapComboBox **combo, const wxString &text, long style) {
+        auto *title = new TismaTitle(m_card_printer, text, TismaTitle::Style::Caption);
+        m_titles.push_back(title);
+        *label = title;
+        *combo = new BitmapComboBox(m_card_printer, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
+                                    nullptr, style);
     };
-    add(&m_label_nozzle, &m_combo_nozzle, _L("Nozzle"));
-    add(&m_label_bed, &m_combo_bed, _L("Bed type"));
-    m_combo_nozzle->SetToolTip(_L("The nozzle of the printer: the printer profile for it is used."));
+    // The nozzle can also be typed: any diameter, not only the ones of the list.
+    make(&m_label_nozzle, &m_combo_nozzle, _L("Nozzle"), 0);
+    make(&m_label_bed, &m_combo_bed, _L("Bed type"), wxCB_READONLY);
+    grid->Add(m_label_nozzle, 0, wxALIGN_BOTTOM);
+    grid->Add(m_label_bed, 0, wxALIGN_BOTTOM);
+    grid->Add(m_combo_nozzle, 1, wxEXPAND);
+    grid->Add(m_combo_bed, 1, wxEXPAND);
+    m_combo_nozzle->SetToolTip(_L("The nozzle on the printer: the printer profile of the model for it, or its diameter "
+                                  "set on the printer. The print profiles for that nozzle can be chosen."));
     m_combo_bed->SetToolTip(_L("The bed (build plate) used: the bed temperatures of the filaments for it are used."));
     // Handled here, not by on_select_preset().
     m_combo_nozzle->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_nozzle(); });
+    m_combo_nozzle->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent &) { on_type_nozzle(); });
+    m_combo_nozzle->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent &e) { on_type_nozzle(); e.Skip(); });
     m_combo_bed->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_bed(); });
 
     // Aligned with the printer combo, which has its edit button on the right.
@@ -1139,8 +1214,11 @@ void Sidebar::init_printer_parts()
     row->Add(grid, 1, wxEXPAND);
     if (m_combo_printer->edit_btn)
         row->AddSpacer(m_combo_printer->edit_btn->GetBestSize().GetWidth() + 2 * int(0.3 * em));
-    m_printer_parts_row = m_presets_sizer->Add(row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.3 * em));
+    m_printer_parts_row = m_card_printer_sizer->Add(row, 0, wxEXPAND | wxTOP, int(0.6 * em));
 }
+
+// The usual nozzle diameters, offered for every printer.
+static const std::vector<double> USUAL_NOZZLES = { 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0 };
 
 void Sidebar::update_printer_parts()
 {
@@ -1150,41 +1228,47 @@ void Sidebar::update_printer_parts()
     const Preset &printer = bundle.printers.get_edited_preset();
     const bool    fff     = printer.printer_technology() == ptFFF;
 
-    // The nozzles: the printer presets of the model of the printer (of its parent for a user preset).
+    // The nozzles: the printer presets of the model of the printer (of its parent for a user preset), then the usual
+    // diameters.
     m_combo_nozzle->Clear();
-    m_nozzle_presets.clear();
-    int selection = 0;
+    m_nozzles.clear();
+    const auto *diameters = printer.config.option<ConfigOptionFloats>("nozzle_diameter");
+    const double current  = diameters && ! diameters->values.empty() ? diameters->values.front() : 0.;
     const Preset *sys = printer.is_system ? &bundle.printers.get_selected_preset() : bundle.printers.get_preset_parent(printer);
     const std::string model = sys ? sys->config.opt_string("printer_model") : std::string();
-    if (sys != nullptr && sys->vendor != nullptr && ! model.empty()) {
-        std::vector<std::pair<double, const Preset*>> nozzles;
+    if (fff && printer.is_system && sys != nullptr && sys->vendor != nullptr && ! model.empty())
         for (const Preset &preset : bundle.printers.get_presets())
             if (preset.is_system && preset.is_visible && preset.vendor == sys->vendor &&
                 preset.config.opt_string("printer_model") == model)
-                nozzles.emplace_back(std::atof(preset.config.opt_string("printer_variant").c_str()), &preset);
-        std::stable_sort(nozzles.begin(), nozzles.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
-        for (const auto &[diameter, preset] : nozzles) {
-            const std::string variant = preset->config.opt_string("printer_variant");
-            m_combo_nozzle->Append(variant.empty() ? from_u8(preset->name) : from_u8(variant) + " " + _L("mm"));
-            if (preset->name == sys->name)
-                selection = int(m_nozzle_presets.size());
-            m_nozzle_presets.push_back(preset->name);
-        }
+                if (const auto *d = preset.config.option<ConfigOptionFloats>("nozzle_diameter"); d && ! d->values.empty())
+                    m_nozzles.push_back({ d->values.front(), preset.name });
+    if (fff) {
+        auto has = [this](double d) {
+            return std::any_of(m_nozzles.begin(), m_nozzles.end(), [d](const NozzleChoice &n) { return std::abs(n.diameter - d) < 1e-6; });
+        };
+        for (double d : USUAL_NOZZLES)
+            if (! has(d))
+                m_nozzles.push_back({ d, std::string() });
+        if (current > 0. && ! has(current))
+            m_nozzles.push_back({ current, std::string() });
     }
-    if (m_nozzle_presets.empty() && fff) {
-        // A printer without nozzle variants: its nozzle diameter.
-        const auto *diameters = printer.config.option<ConfigOptionFloats>("nozzle_diameter");
-        if (diameters && ! diameters->values.empty())
-            m_combo_nozzle->Append(format_wxstr("%1% %2%", double_to_string(diameters->values.front()), _L("mm")));
+    std::stable_sort(m_nozzles.begin(), m_nozzles.end(), [](const NozzleChoice &a, const NozzleChoice &b) { return a.diameter < b.diameter; });
+    int selection = -1;
+    for (size_t i = 0; i < m_nozzles.size(); ++ i) {
+        const NozzleChoice &n = m_nozzles[i];
+        m_combo_nozzle->Append(format_wxstr("%1% %2%", double_to_string(n.diameter), _L("mm")));
+        // The preset of the printer, else the diameter set on it.
+        if (! n.preset.empty() && sys != nullptr && n.preset == sys->name && std::abs(n.diameter - current) < 1e-6)
+            selection = int(i);
+        else if (selection < 0 && std::abs(n.diameter - current) < 1e-6)
+            selection = int(i);
     }
-    if (m_combo_nozzle->GetCount() > 0)
+    if (selection >= 0)
         m_combo_nozzle->SetSelection(selection);
-    // A user preset of the printer is kept: its nozzle is changed in its settings.
-    m_combo_nozzle->Enable(printer.is_system && m_nozzle_presets.size() > 1);
+    m_combo_nozzle->Enable(! m_nozzles.empty());
 
-    // The beds, for the printers with interchangeable plates.
-    const bool beds = fff && supports_bed_types(printer.config);
-    if (beds) {
+    // The bed, for every filament printer: the temperatures of a filament for that bed when the filament has them.
+    if (fff) {
         std::string curr = bundle.project_config.opt_string("curr_bed_type");
         if (! find_bed_type(curr)) {
             // None chosen: the default bed of the printer, else the plate assumed by the converted profiles.
@@ -1203,29 +1287,84 @@ void Sidebar::update_printer_parts()
         m_combo_bed->SetSelection(bed_selection);
     }
     m_printer_parts_row->Show(fff);
-    m_label_bed->Show(beds);
-    m_combo_bed->Show(beds);
 }
 
 void Sidebar::on_select_nozzle()
 {
     const int selection = m_combo_nozzle->GetSelection();
-    if (selection < 0 || selection >= int(m_nozzle_presets.size()))
+    if (selection >= 0 && selection < int(m_nozzles.size()))
+        apply_nozzle(m_nozzles[size_t(selection)]);
+}
+
+void Sidebar::on_type_nozzle()
+{
+    // The number at the start of the text, with a comma or a point ("0,35", "0.6 mm").
+    wxString text = m_combo_nozzle->GetTextCtrl()->GetValue();
+    text.Replace(",", ".");
+    text.Trim(false);
+    size_t end = 0;
+    while (end < text.length() && wxString("0123456789.").Find(text[end]) != wxNOT_FOUND)
+        ++ end;
+    double diameter = 0.;
+    const auto *current = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    // Not a nozzle (or the one on the printer): the field shows the nozzle of the printer again.
+    if (end == 0 || ! text.Left(end).ToCDouble(&diameter) || diameter < 0.05 || diameter > 3. ||
+        (current != nullptr && ! current->values.empty() && std::abs(current->values.front() - diameter) < 1e-6)) {
+        update_printer_parts();
         return;
-    PresetBundle &bundle = *wxGetApp().preset_bundle;
-    const std::string name = m_nozzle_presets[size_t(selection)];
-    if (name == bundle.printers.get_selected_preset_name())
-        return;
-    // A physical printer selected with the preset of this nozzle stays selected.
-    std::string ph_name;
-    if (bundle.physical_printers.has_selection()) {
-        const PhysicalPrinter &ph = bundle.physical_printers.get_selected_printer();
-        if (ph.get_preset_names().count(name) > 0)
-            ph_name = ph.get_full_name(name);
     }
-    {
-        wxWindowUpdateLocker noUpdates(m_presets_panel);
-        wxGetApp().get_tab(Preset::TYPE_PRINTER)->select_preset(name, false, ph_name);
+    // A nozzle of the list (the profile of the model for it first), else this diameter on the printer.
+    NozzleChoice nozzle { diameter, std::string() };
+    for (const NozzleChoice &n : m_nozzles)
+        if (std::abs(n.diameter - diameter) < 1e-6 && (nozzle.preset.empty() || ! n.preset.empty()))
+            nozzle = n;
+    apply_nozzle(nozzle);
+}
+
+void Sidebar::apply_nozzle(const NozzleChoice &nozzle)
+{
+    PresetBundle &bundle = *wxGetApp().preset_bundle;
+    if (! nozzle.preset.empty()) {
+        // The printer preset of the vendor for this nozzle.
+        if (nozzle.preset == bundle.printers.get_selected_preset_name() && ! bundle.printers.current_is_dirty()) {
+            update_printer_parts();
+            return;
+        }
+        // A physical printer selected with the preset of this nozzle stays selected.
+        std::string ph_name;
+        if (bundle.physical_printers.has_selection()) {
+            const PhysicalPrinter &ph = bundle.physical_printers.get_selected_printer();
+            if (ph.get_preset_names().count(nozzle.preset) > 0)
+                ph_name = ph.get_full_name(nozzle.preset);
+        }
+        {
+            wxWindowUpdateLocker noUpdates(m_presets_panel);
+            wxGetApp().get_tab(Preset::TYPE_PRINTER)->select_preset(nozzle.preset, false, ph_name);
+        }
+    } else {
+        // Another nozzle on this printer: its diameter on every extruder, the highest layer at 75 % of it (the default of
+        // PrusaSlicer), then the print and filament profiles compatible with it.
+        DynamicPrintConfig new_conf = bundle.printers.get_edited_preset().config;
+        if (auto *d = new_conf.option<ConfigOptionFloats>("nozzle_diameter"); d != nullptr)
+            for (double &v : d->values)
+                v = nozzle.diameter;
+        if (auto *h = new_conf.option<ConfigOptionFloats>("max_layer_height"); h != nullptr)
+            for (double &v : h->values)
+                v = 0.75 * nozzle.diameter;
+        {
+            wxWindowUpdateLocker noUpdates(m_presets_panel);
+            wxGetApp().get_tab(Preset::TYPE_PRINTER)->load_config(new_conf);
+            // Profiles with changes not saved stay selected, even when they are not for this nozzle.
+            auto select = [](const PresetCollection &presets) {
+                return presets.current_is_dirty() ? PresetSelectCompatibleType::Never : PresetSelectCompatibleType::OnlyIfWasCompatible;
+            };
+            bundle.update_compatible(select(bundle.prints), select(bundle.filaments));
+            for (Preset::Type type : { Preset::TYPE_PRINT, Preset::TYPE_FILAMENT })
+                if (Tab *tab = wxGetApp().get_tab(type)) {
+                    tab->load_current_preset();
+                    update_presets(type);
+                }
+        }
     }
     m_plater->on_config_change(bundle.full_config());
     m_object_list->update_object_list_by_printer_technology();
@@ -1281,6 +1420,7 @@ void Sidebar::msw_rescale()
     m_btn_usb_print   ->SetMinSize(wxSize(-1, scaled_height));
     m_btn_more_actions->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     m_btn_compact     ->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
+    m_auto_slice->Rescale();
 
     m_scrolled_panel->Layout();
 }
@@ -1291,8 +1431,19 @@ void Sidebar::apply_tisma_theme()
     for (wxWindow* win : std::vector<wxWindow*>{ this, m_scrolled_panel, m_presets_panel })
         if (win)
             win->SetBackgroundColour(TismaTheme::panel_bg(dark));
-    for (wxStaticText* caption : m_preset_captions)
-        caption->SetForegroundColour(TismaTheme::text_muted(dark));
+    for (TismaTitle* title : m_titles)
+        title->sys_color_changed();
+    if (m_frequently_changed_parameters)
+        m_frequently_changed_parameters->sys_color_changed();
+    for (InfoCard *info : std::initializer_list<InfoCard*>{ m_object_info, m_sliced_info })
+        if (info)
+            info->sys_color_changed();
+    for (::StaticBox *card : m_cards) {
+        card->SetBackgroundColorNormal(TismaTheme::card_bg(dark));
+        card->SetBorderColorNormal(TismaTheme::separator(dark));
+        card->SetBackgroundColour(TismaTheme::card_bg(dark));
+        card->Refresh();
+    }
 
     // Slice and print via USB: filled accent buttons.
     for (::Button *btn : { m_btn_reslice, m_btn_usb_print, m_btn_compact }) {
@@ -1324,6 +1475,8 @@ void Sidebar::apply_tisma_theme()
         btn->Refresh();
     }
     m_btn_reslice->Refresh();
+    if (m_auto_slice)
+        m_auto_slice->SysColorChange();
 }
 
 void Sidebar::sys_color_changed()
@@ -1333,8 +1486,7 @@ void Sidebar::sys_color_changed()
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
 
-    for (wxWindow* win : std::vector<wxWindow*>{ this, m_sliced_info->GetStaticBox(), m_object_info->GetStaticBox() })
-        wxGetApp().UpdateDarkUI(win);
+    wxGetApp().UpdateDarkUI(this);
     for (wxWindow* win : std::vector<wxWindow*>{ m_scrolled_panel, m_presets_panel })
         wxGetApp().UpdateAllStaticTextDarkUI(win);
     for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_connect_gcode })
@@ -1343,7 +1495,6 @@ void Sidebar::sys_color_changed()
         wxGetApp().UpdateDarkUI(m_btn_full_spectrum, true);
     }
 
-    m_frequently_changed_parameters->sys_color_changed();
     m_object_settings              ->sys_color_changed();
 #endif
 
@@ -1388,9 +1539,9 @@ ObjectLayers* Sidebar::obj_layers()
     return m_object_layers.get();
 }
 
-ConfigOptionsGroup* Sidebar::og_freq_chng_params(const bool is_fff)
+void Sidebar::update_frequently_changed_parameters()
 {
-    return m_frequently_changed_parameters->get_og(is_fff);
+    m_frequently_changed_parameters->update_from_config();
 }
 
 QuickSettings* Sidebar::quick_settings()
@@ -1398,7 +1549,7 @@ QuickSettings* Sidebar::quick_settings()
     return m_quick_settings.get();
 }
 
-wxButton* Sidebar::get_wiping_dialog_button()
+wxWindow* Sidebar::get_wiping_dialog_button()
 {
     return m_frequently_changed_parameters->get_wiping_dialog_button();
 }
@@ -1868,7 +2019,7 @@ void Sidebar::update_mode()
     if (m_mode == comSimple)
         m_object_manipulation->set_coordinates_type(ECoordinatesType::World);
 
-    m_object_list->get_sizer()->Show(m_mode > comSimple);
+    // Tisma: the objects are listed in every mode.
 
     m_object_list->unselect_objects();
     m_object_list->update_selections();
@@ -2045,6 +2196,16 @@ void Sidebar::render_compact_actions(GLCanvas3D &canvas)
     ImGui::PopStyleVar(2);
 }
 
+void Sidebar::set_auto_slice(bool on)
+{
+    wxGetApp().app_config->set("background_processing", on ? "1" : "0");
+    // The plate is sliced now, then again after every change (Plater::priv::update_background_process()).
+    if (on && ! m_plater->model().objects.empty())
+        m_plater->reslice();
+    m_plater->show_action_buttons();
+    Layout();
+}
+
 void Sidebar::set_compact(bool compact)
 {
     m_compact = compact;
@@ -2078,6 +2239,7 @@ void Sidebar::collapse(bool collapse)
 
 void Sidebar::update_ui_from_settings()
 {
+    m_auto_slice->SetValue(wxGetApp().app_config->get_bool("background_processing"));
     m_object_manipulation->update_ui_from_settings();
     show_info_sizer();
     update_sliced_info_sizer();

@@ -37,6 +37,7 @@
 #include "libslic3r/Utils.hpp"
 #include "LocalesUtils.hpp"
 
+#include "CameraView.hpp"
 #include "DevicesPanel.hpp"
 #include "GUI.hpp"
 #include "GUI_App.hpp"
@@ -45,6 +46,8 @@
 #include "MsgDialog.hpp"
 #include "Plater.hpp"
 #include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
 #include "format.hpp"
 #include "../Utils/Serial.hpp"
 #include "../Utils/USBPrinter.hpp"
@@ -217,6 +220,9 @@ private:
 struct USBMonitorPanel::priv
 {
     USBMonitorPanel          *q;
+    // A USB camera pointed at the printer (chosen in the Devices page), hidden without one.
+    wxBoxSizer               *camera_box { nullptr };
+    CameraView               *camera { nullptr };
     USB::USBPrinterConnection connection;
     wxTimer                   timer;
 
@@ -243,7 +249,7 @@ struct USBMonitorPanel::priv
     // Controls.
     wxComboBox   *port { nullptr };
     wxComboBox   *baud { nullptr };
-    wxButton     *btn_connect { nullptr };
+    ::Button     *btn_connect { nullptr };
     wxCheckBox   *autoconnect { nullptr };
     wxStaticText *conn_status { nullptr };
     wxStaticText *hotend_now { nullptr };
@@ -259,10 +265,10 @@ struct USBMonitorPanel::priv
     wxStaticText *job { nullptr };
     wxStaticText *job_times { nullptr };
     wxGauge      *progress { nullptr };
-    wxButton     *btn_print_sliced { nullptr };
-    wxButton     *btn_print_file { nullptr };
-    wxButton     *btn_pause { nullptr };
-    wxButton     *btn_cancel { nullptr };
+    ::Button     *btn_print_sliced { nullptr };
+    ::Button     *btn_print_file { nullptr };
+    ::Button     *btn_pause { nullptr };
+    ::Button     *btn_cancel { nullptr };
     TempGraph    *graph { nullptr };
     wxTextCtrl   *console { nullptr };
     wxCheckBox   *hide_temps { nullptr };
@@ -663,14 +669,18 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
     const bool dark = wxGetApp().dark_mode();
     SetBackgroundColour(TismaTheme::panel_bg(dark));
 
+    // Tisma: a section is a title of Tisma over its controls, without the frame of a static box; the buttons of Tisma.
     auto section = [this](wxSizer *parent_sizer, const wxString &title, int proportion = 0) {
-        auto *box = new wxStaticBoxSizer(wxVERTICAL, this, title);
+        auto *box = new wxBoxSizer(wxVERTICAL);
+        box->Add(new TismaTitle(this, title), 0, wxLEFT | wxBOTTOM, wxGetApp().em_unit() / 2);
         parent_sizer->Add(box, proportion, wxEXPAND | wxBOTTOM, wxGetApp().em_unit());
         return box;
     };
     auto button = [this](const wxString &label, int width_em = 0) {
-        auto *b = new wxButton(this, wxID_ANY, label, wxDefaultPosition,
-                               width_em > 0 ? wxSize(width_em * wxGetApp().em_unit(), -1) : wxDefaultSize, width_em > 0 ? wxBU_EXACTFIT : 0);
+        auto *b = new ::Button(this, label);
+        if (width_em > 0)
+            b->SetMinSize(wxSize(width_em * wxGetApp().em_unit(), b->GetMinSize().GetHeight()));
+        style_tisma_button(b, false);
         return b;
     };
 
@@ -713,7 +723,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
         now_text = new wxStaticText(this, wxID_ANY, "-", wxDefaultPosition, wxSize(15 * em, -1), wxST_NO_AUTORESIZE);
         now_text->SetFont(wxGetApp().bold_font().Scaled(1.2f));
         r->Add(now_text, 1, wxALIGN_CENTER_VERTICAL);
-        target = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0, max, value);
+        target = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0, max, value);
         r->Add(target, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
         r->Add(new wxStaticText(this, wxID_ANY, "°C"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
         auto *on = button(_L("Pre-heat"));
@@ -787,7 +797,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
 
     row = new wxBoxSizer(wxHORIZONTAL);
     row->Add(new wxStaticText(this, wxID_ANY, _L("Extruder") + ":"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
-    p->extrude_len = new wxSpinCtrlDouble(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0.1, 200., 5., 1.);
+    p->extrude_len = new wxSpinCtrlDouble(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0.1, 200., 5., 1.);
     row->Add(p->extrude_len, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
     row->Add(new wxStaticText(this, wxID_ANY, "mm"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
     auto *btn_extrude = button(_L("Extrude"));
@@ -802,7 +812,7 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
 
     row = new wxBoxSizer(wxHORIZONTAL);
     row->Add(new wxStaticText(this, wxID_ANY, _L("Fan") + ":"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
-    p->fan = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, wxSize(7 * em, -1), wxSP_ARROW_KEYS, 0, 100, 100);
+    p->fan = new wxSpinCtrl(this, wxID_ANY, "", wxDefaultPosition, spin_ctrl_size(this, 7), wxSP_ARROW_KEYS, 0, 100, 100);
     row->Add(p->fan, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 4);
     row->Add(new wxStaticText(this, wxID_ANY, "%"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
     auto *fan_on = button(_L("Set"));
@@ -842,6 +852,15 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
     row->Add(p->btn_pause, 0, wxRIGHT, em / 4);
     row->Add(p->btn_cancel, 0);
     box->Add(row, 0, wxALL, em / 2);
+
+    // ---- Camera: a USB camera of this computer pointed at the printer, the larger part of this column when there is one.
+    p->camera_box = new wxBoxSizer(wxVERTICAL);
+    p->camera_box->Add(new TismaTitle(this, _L("Camera")), 0, wxLEFT | wxBOTTOM, em / 2);
+    p->camera = new CameraView(this);
+    p->camera->SetMinSize(wxSize(-1, 10 * em));
+    p->camera_box->Add(p->camera, 1, wxEXPAND | wxALL, em / 4);
+    right->Add(p->camera_box, 3, wxEXPAND | wxBOTTOM, em);
+    right->Hide(p->camera_box);
 
     // ---- Temperature graph
     box = section(right, _L("Temperature"));
@@ -925,10 +944,32 @@ void USBMonitorPanel::print_file(const std::string &path, const std::string &nam
     p.update();
 }
 
+CameraView* USBMonitorPanel::camera() const
+{
+    return p->camera;
+}
+
+void USBMonitorPanel::show_camera(bool show)
+{
+    if (GetSizer()->IsShown(p->camera_box) == show)
+        return;
+    GetSizer()->Show(p->camera_box, show, true);
+    // The terminal gives the camera most of its height.
+    const int em = wxGetApp().em_unit();
+    p->console->SetMinSize(wxSize(40 * em, (show ? 5 : 12) * em));
+    Layout();
+}
+
 void USBMonitorPanel::sys_color_changed()
 {
     SetBackgroundColour(TismaTheme::panel_bg(wxGetApp().dark_mode()));
     wxGetApp().UpdateDarkUI(this);
+    for (wxWindow *child : GetChildren()) {
+        if (auto *title = dynamic_cast<TismaTitle*>(child))
+            title->sys_color_changed();
+        else if (auto *btn = dynamic_cast<::Button*>(child))
+            style_tisma_button(btn, false);
+    }
     p->graph->Refresh();
     Refresh();
 }

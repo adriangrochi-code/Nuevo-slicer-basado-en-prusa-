@@ -12,6 +12,8 @@ namespace GUI {
 
 #if __APPLE__
 extern bool mac_dark_mode();
+// Tisma: the appearance of the application: 0 the one of the system, 1 light, 2 dark (macOS 10.14 and newer).
+extern void mac_set_appearance(int mode);
 extern double mac_max_scaling_factor();
 #endif
 

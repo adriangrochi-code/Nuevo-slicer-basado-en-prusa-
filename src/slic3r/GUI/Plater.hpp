@@ -69,6 +69,7 @@ class Mouse3DController;
 class NotificationManager;
 struct Camera;
 class GLToolbar;
+class PlateTools;
 class UserAccount;
 class PresetArchiveDatabase;
 enum class ArrangeSelectionMode;
@@ -98,6 +99,8 @@ public:
     bool is_project_temp() const;
 
     Sidebar& sidebar();
+    // The groups of tools of the plate (Tisma): in the top bar, placed by the main frame.
+    PlateTools* plate_tools();
     const Model& model() const;
     Model& model();
     //const Print& fff_print() const;
@@ -257,6 +260,10 @@ public:
     bool is_background_process_update_scheduled() const;
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
+    // Tisma: sends the G-code to a physical printer which is not selected (the network printer of the printer in use).
+    void send_gcode_to(const std::string &physical_printer);
+    // Tisma: the answer of the probe of the network printer of the printer in use.
+    void network_printer_probed(const std::string &physical_printer, bool answers);
     // Tisma: prints the sliced G-code on the USB printer saved in the "Print via USB" window.
     void usb_print();
     // Tisma: the G-code of the finished slicing (a temporary file), empty if the plate is not sliced.

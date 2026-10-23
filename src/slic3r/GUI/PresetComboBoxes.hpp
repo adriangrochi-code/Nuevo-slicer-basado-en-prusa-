@@ -5,6 +5,9 @@
 #ifndef slic3r_PresetComboBoxes_hpp_
 #define slic3r_PresetComboBoxes_hpp_
 
+#include <map>
+#include <string>
+
 #include <wx/bmpbndl.h>
 #include <wx/gdicmn.h>
 
@@ -33,6 +36,10 @@ class BitmapCache;
 // ---------------------------------
 
 // BitmapComboBox used to presets list on Sidebar and Tabs
+// Tisma: the name of the model of a printer preset of a vendor ("Anycubic Kobra 3"), without its nozzle (the nozzle is
+// chosen apart, as in OrcaSlicer); empty for a preset without the model of a vendor.
+std::string printer_model_name(const Preset& preset);
+
 class PresetComboBox : public BitmapComboBox
 {
     bool m_show_all { false };
@@ -59,6 +66,9 @@ public:
     bool set_printer_technology(PrinterTechnology pt);
 
     void set_selection_changed_function(std::function<void(int)> sel_changed) { on_selection_changed = sel_changed; }
+
+    // The name of the preset of an item: its label, or the preset of a printer listed by the name of its model.
+    std::string preset_name_of(int item) const;
 
     bool is_selected_physical_printer();
 
@@ -97,6 +107,8 @@ protected:
 
     PresetBundle*       m_preset_bundle {nullptr};
     PresetCollection*   m_collection {nullptr};
+    // Tisma: the labels that are not the names of their presets (the printers listed by model) and their presets.
+    std::map<wxString, std::string> m_label_presets;
 
     // Caching bitmaps for the all bitmaps, used in preset comboboxes
     static BitmapCache& bitmap_cache();
