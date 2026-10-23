@@ -2059,7 +2059,8 @@ void GUI_App::set_mode_palette(const std::vector<wxColour>& palette)
 
 bool GUI_App::suppress_round_corners() const
 {
-    return true;// app_config->get("suppress_round_corners") == "1";
+    // Tisma: rounded fields and switches instead of check boxes, the look of the interface of Tisma.
+    return false;
 }
 
 wxSize GUI_App::get_min_size(wxWindow* display_win) const

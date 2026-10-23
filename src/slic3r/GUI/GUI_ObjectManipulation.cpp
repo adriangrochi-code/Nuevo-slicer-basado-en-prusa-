@@ -558,7 +558,8 @@ void ObjectManipulation::Show(const bool show)
 
 bool ObjectManipulation::IsShown()
 {
-	return dynamic_cast<const wxStaticBoxSizer*>(m_og->sizer)->GetStaticBox()->IsShown(); //  m_og->get_grid_sizer()->IsShown(2);
+    // Tisma: the group has a flat title instead of a static box: shown when its first item (the line of the title) is.
+    return ! m_og->sizer->IsEmpty() && m_og->sizer->IsShown(size_t(0));
 }
 
 void ObjectManipulation::UpdateAndShow(const bool show)

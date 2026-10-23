@@ -403,6 +403,8 @@ void SpinInput::onTextEnter(wxCommandEvent &event)
 
 void SpinInput::mouseWheelMoved(wxMouseEvent &event)
 {
+    if (wxWindow::FindFocus() != text_ctrl && ForwardWheelToScrolledParent(this, event))
+        return;
     auto delta = ((event.GetWheelRotation() < 0) == event.IsWheelInverted()) ? 1 : -1;
     SetValue(val + delta);
     sendSpinEvent();
@@ -600,6 +602,8 @@ void SpinInputDouble::onTextEnter(wxCommandEvent &event)
 
 void SpinInputDouble::mouseWheelMoved(wxMouseEvent &event)
 {
+    if (wxWindow::FindFocus() != text_ctrl && ForwardWheelToScrolledParent(this, event))
+        return;
     auto delta = ((event.GetWheelRotation() < 0) == event.IsWheelInverted()) ? inc : -inc;
     SetValue(val + delta);
     sendSpinEvent();

@@ -58,8 +58,13 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 1. Herramientas de la placa a la izquierda de la vista 3D (hecho, e1bde8f).
 2. Secciones de la barra superior (hecho, 5090783).
 3. Sin las barras de PrusaSlicer en la vista 3D (hecho, 1b9b3f5).
-4. Componentes propios en C++ con tema claro y oscuro.
-5. Panel de la placa nuevo (reemplaza el panel lateral de PrusaSlicer) y chips de ajustes sobre la vista.
+4. Componentes propios en C++ con tema claro y oscuro (en curso: chip, título de grupo, opciones en chips; campos
+   redondeados e interruptores en todo el programa; títulos planos en lugar de los marcos de PrusaSlicer).
+5. Panel de la placa nuevo (en curso): tarjetas con títulos grandes; la impresora por su modelo, con la boquilla y la
+   cama al lado como en OrcaSlicer y Bambu Studio (la boquilla elige el perfil del modelo para ella o pone su diámetro
+   en la impresora; la cama se elige para toda impresora de filamento); soportes, relleno y borde en chips; la lista de
+   objetos en todos los modos; la rueda del mouse sobre un campo desplaza el panel en lugar de cambiar el valor.
+   Falta: chips de ajustes sobre la vista.
 6. Páginas de ajustes nuevas (Impresión, Filamento, Impresora; también resina).
 7. Barra superior propia y menú reorganizado (en macOS el menú del sistema sigue).
 8. Página Más (incluye preferencias propias).

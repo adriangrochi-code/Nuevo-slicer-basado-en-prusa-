@@ -258,6 +258,29 @@ wxString PresetComboBox::get_preset_name(const Preset & preset)
     return from_u8(preset.name);
 }
 
+std::string printer_model_name(const Preset& preset)
+{
+    if (preset.type != Preset::TYPE_PRINTER || preset.vendor == nullptr)
+        return std::string();
+    const std::string model = preset.config.opt_string("printer_model");
+    if (model.empty())
+        return std::string();
+    for (const VendorProfile::PrinterModel& m : preset.vendor->models)
+        if (m.id == model)
+            return m.name;
+    return std::string();
+}
+
+std::string PresetComboBox::preset_name_of(int item) const
+{
+    if (item < 0 || item >= int(GetCount()))
+        return std::string();
+    const wxString label = GetString(item);
+    if (auto it = m_label_presets.find(label); it != m_label_presets.end())
+        return it->second;
+    return Preset::remove_suffix_modified(into_u8(label));
+}
+
 static wxString get_preset_name_with_suffix(const Preset & preset)
 {
     return from_u8(preset.name + Preset::suffix_modified());
@@ -632,10 +655,11 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
         if (!physical_printers.has_selection())
             return false;
 
-        const bool is_changed = selected_string == physical_printers.get_selected_printer_preset_name();
+        const std::string preset_name = preset_name_of(this->GetSelection());
+        const bool is_changed = preset_name == physical_printers.get_selected_printer_preset_name();
         physical_printers.unselect_printer();
         if (is_changed)
-            tab->select_preset(selected_string);
+            tab->select_preset(preset_name);
         return is_changed;
     }
 
@@ -1118,6 +1142,24 @@ void PlaterPresetComboBox::update()
         }
     }
 
+    // Tisma: the printers of a vendor are listed by the name of their model, unless two shown models have the same name.
+    m_label_presets.clear();
+    std::map<std::string, int> model_names;
+    if (m_type == Preset::TYPE_PRINTER)
+        for (size_t i = 0; i < presets.size(); ++i)
+            if (const Preset &p = presets[i]; p.is_system && p.is_visible && other_nozzles.count(i) == 0)
+                if (const std::string model = printer_model_name(p); ! model.empty())
+                    ++model_names[model];
+    auto label_of = [this, &model_names](const Preset &preset) {
+        if (m_type == Preset::TYPE_PRINTER && preset.is_system)
+            if (const std::string model = printer_model_name(preset); ! model.empty() && model_names[model] == 1) {
+                const wxString label = from_u8(model + suffix(preset));
+                m_label_presets[label] = preset.name;
+                return label;
+            }
+        return get_preset_name(preset);
+    };
+
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i) 
     {
         const Preset& preset = presets[i];
@@ -1174,9 +1216,10 @@ void PlaterPresetComboBox::update()
                     }
                 }
             } else {
-                system_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp });
+                const wxString label = label_of(preset);
+                system_presets.push_back({ label, label.Lower(), bmp });
                 if (is_selected) {
-                    selected_user_preset = get_preset_name(preset);
+                    selected_user_preset = label;
                     tooltip = from_u8(preset.name);
                 }
             }

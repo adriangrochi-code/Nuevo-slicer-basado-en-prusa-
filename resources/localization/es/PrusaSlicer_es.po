@@ -34113,3 +34113,48 @@ msgstr "Los ajustes que necesitan casi todas las impresiones"
 
 msgid "Tisma Cloud account: slicing and analysis on the servers"
 msgstr "Cuenta de Tisma Cloud: laminado y análisis en los servidores"
+
+msgid "Build plate only"
+msgstr "Solo sobre la cama"
+
+msgid "Infill density, in percent:"
+msgstr "Densidad del relleno, en porcentaje:"
+
+msgid "Painted only"
+msgstr "Solo lo pintado"
+
+msgid "Bed type"
+msgstr "Tipo de cama"
+
+msgid "Bed temperature by bed type"
+msgstr "Temperatura de la cama según la cama"
+
+msgid "Bed temperature of the first layer on this bed. 0: the first layer bed temperature of the filament."
+msgstr "Temperatura de la primera capa en esta cama. 0: la temperatura de la cama en la primera capa del filamento."
+
+msgid "Bed temperature of the layers after the first one on this bed. 0: the bed temperature of the filament."
+msgstr "Temperatura de la cama en las capas después de la primera en esta cama. 0: la temperatura de la cama del filamento."
+
+msgid "Cool Plate (SuperTack)"
+msgstr "Placa fría (SuperTack)"
+
+msgid "Engineering Plate"
+msgstr "Placa de ingeniería"
+
+msgid "Smooth Cool Plate"
+msgstr "Placa fría lisa"
+
+msgid "Smooth High Temp Plate"
+msgstr "Placa lisa de alta temperatura"
+
+msgid "Textured Cool Plate"
+msgstr "Placa fría texturada"
+
+msgid "Textured PEI Plate"
+msgstr "Placa PEI texturada"
+
+msgid "The bed (build plate) used: the bed temperatures of the filaments for it are used."
+msgstr "La cama (placa de impresión) que se usa: se usan las temperaturas de cama de los filamentos para ella."
+
+msgid "The nozzle on the printer: the printer profile of the model for it, or its diameter set on the printer. The print profiles for that nozzle can be chosen."
+msgstr "La boquilla puesta en la impresora: el perfil de impresora del modelo para ella, o su diámetro puesto en la impresora. Se pueden elegir los perfiles de impresión para esa boquilla."

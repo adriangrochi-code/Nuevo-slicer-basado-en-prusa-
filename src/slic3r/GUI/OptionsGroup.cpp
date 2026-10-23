@@ -635,13 +635,14 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled/* = [](){}*/
 		return false;
 
 	try {
-		// Tisma: flat titles in the settings tabs (PrusaSlicer 3.0 style), static boxes elsewhere.
-		// Not on Windows: there the OG_CustomCtrl must stay inside the static box. As a direct child of the scrolled
-		// page its fields did not follow the scrolling (they showed shifted down by the scrolled distance).
+		// Tisma: flat titles (a line and the title in the accent color) instead of the frames of the static boxes.
+		// On Windows not for the groups drawn by an OG_CustomCtrl (the settings tabs): there the OG_CustomCtrl must stay
+		// inside the static box. As a direct child of the scrolled page its fields did not follow the scrolling (they
+		// showed shifted down by the scrolled distance).
 #ifdef _WIN32
-		const bool flat_title = false;
+		const bool flat_title = staticbox && ! m_use_custom_ctrl;
 #else
-		const bool flat_title = staticbox && m_use_custom_ctrl;
+		const bool flat_title = staticbox;
 #endif
 		if (staticbox && !flat_title) {
 			stb = new wxStaticBox(m_parent, wxID_ANY, _(title));

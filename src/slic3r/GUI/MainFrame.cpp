@@ -39,6 +39,7 @@
 #include "libslic3r/PresetBundle.hpp"
 
 #include "Tab.hpp"
+#include "PresetComboBoxes.hpp"
 #include "3DScene.hpp"
 #include "PrintHostDialogs.hpp"
 #include "wxExtensions.hpp"
@@ -959,7 +960,10 @@ void MainFrame::create_nav_rail()
             PresetBundle* bundle = wxGetApp().preset_bundle;
             if (bundle == nullptr)
                 return st;
-            st.name = from_u8(bundle->printers.get_selected_preset_name());
+            // The model of the printer, without its nozzle (chosen apart in the plate panel).
+            const Preset& printer = bundle->printers.get_selected_preset();
+            const std::string model = printer_model_name(printer);
+            st.name = from_u8(model.empty() ? printer.name : model);
             PhysicalPrinterCollection& ph = bundle->physical_printers;
             if (ph.has_selection()) {
                 st.name = from_u8(ph.get_selected_printer_name());

@@ -1,7 +1,10 @@
 #include "StaticBox.hpp"
+
+#include <algorithm>
 #include "../GUI.hpp"
 #include <wx/dcgraph.h>
 #include <wx/dcbuffer.h>
+#include <wx/scrolwin.h>
 
 #include "DropDown.hpp"
 #include "UIColors.hpp"
@@ -118,6 +121,28 @@ wxColor StaticBox::GetParentBackgroundColor(wxWindow* parent)
     return *wxWHITE;
 }
 
+bool StaticBox::ForwardWheelToScrolledParent(wxWindow* win, wxMouseEvent& event)
+{
+    for (wxWindow* parent = win->GetParent(); parent; parent = parent->GetParent())
+        if (auto* scrolled = dynamic_cast<wxScrollHelperBase*>(parent); scrolled != nullptr) {
+            // Scrolled here: GTK scrolls its scrolled windows itself, it does not take wx wheel events.
+            int x = 0, y = 0;
+            scrolled->GetViewStart(&x, &y);
+            int ppu_x = 0, ppu_y = 0;
+            scrolled->GetScrollPixelsPerUnit(&ppu_x, &ppu_y);
+            if (ppu_y <= 0)
+                return true;
+            const int    delta  = event.GetWheelDelta() > 0 ? event.GetWheelDelta() : 120;
+            const double notches = double(event.GetWheelRotation()) / delta;
+            // Three lines of text per notch.
+            const int    pixels = int(notches * 3 * win->GetCharHeight());
+            const int    units  = pixels / ppu_y != 0 ? pixels / ppu_y : (pixels > 0 ? 1 : pixels < 0 ? -1 : 0);
+            scrolled->Scroll(-1, std::max(0, y - (event.IsWheelInverted() ? -units : units)));
+            return true;
+        }
+    return false;
+}
+
 void StaticBox::paintEvent(wxPaintEvent& evt)
 {
     // depending on your system you may need to look at double-buffered dcs
@@ -152,12 +177,12 @@ void StaticBox::doRender(wxDC& dc)
 #if 0
                 DropDown::SetTransparentBG(dc, this);
 #else
-#ifdef __WXMSW__
+                // Tisma: the corners outside the rounded rectangle get the color of the parent on all the systems (the
+                // buffer of the paint DC is black on Linux).
                 wxColour bg_clr = GetParentBackgroundColor(m_parent);
                 dc.SetBrush(wxBrush(bg_clr));
                 dc.SetPen(wxPen(bg_clr));
                 dc.DrawRectangle(rc);
-#endif
 #endif
             }
 

@@ -50,10 +50,16 @@ TEST_CASE("Bed temperatures of the bed chosen", "[BedType]")
         CHECK(config.opt_int("bed_temperature", 0) == 35);
         CHECK(config.opt_int("first_layer_bed_temperature", 0) == 65);
     }
-    SECTION("a printer without bed types keeps the bed temperatures") {
+    SECTION("the bed is chosen for every printer, also one without interchangeable plates") {
         DynamicPrintConfig config = bed_type_config(false, "High Temp Plate");
+        CHECK(apply_bed_type(config));
+        CHECK(config.opt_int("bed_temperature", 0) == 70);
+    }
+    SECTION("a filament without temperatures for the bed keeps its own") {
+        DynamicPrintConfig config = bed_type_config(false, "Textured PEI Plate");
         CHECK(! apply_bed_type(config));
         CHECK(config.opt_int("bed_temperature", 0) == 60);
+        CHECK(config.opt_int("first_layer_bed_temperature", 0) == 65);
     }
     SECTION("no plate chosen: the default bed of the printer") {
         DynamicPrintConfig config = bed_type_config(true, "");

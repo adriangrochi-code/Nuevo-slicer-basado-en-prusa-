@@ -295,6 +295,8 @@ void ComboBox::mouseDown(wxMouseEvent &event)
 void ComboBox::mouseWheelMoved(wxMouseEvent &event)
 {
     if (drop_down) return;
+    if (wxWindow::FindFocus() != GetTextCtrl() && ForwardWheelToScrolledParent(this, event))
+        return;
     auto delta = ((event.GetWheelRotation() < 0) == event.IsWheelInverted()) ? -1 : 1;
     unsigned int n = GetSelection() + delta;
     if (n < GetCount()) {

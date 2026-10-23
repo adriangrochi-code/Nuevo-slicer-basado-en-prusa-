@@ -1080,27 +1080,6 @@ void Tab::load_key_value(const std::string& opt_key, const boost::any& value, bo
     update();
 }
 
-static wxString support_combo_value_for_config(const DynamicPrintConfig &config, bool is_fff)
-{
-    std::string slatree = is_fff ? "" : get_sla_suptree_prefix(config);
-
-    const std::string support         = is_fff ? "support_material"                 : "supports_enable";
-    const std::string buildplate_only = is_fff ? "support_material_buildplate_only" : slatree + "support_buildplate_only";
-
-    return
-        ! config.opt_bool(support) ?
-            _("None") :
-               ((is_fff && !config.opt_bool("support_material_auto")) || (!is_fff && config.opt_bool("support_enforcers_only"))) ?
-                _("For support enforcers only") :
-                (config.opt_bool(buildplate_only) ? _("Support on build plate only") :
-                                                    _("Everywhere"));
-}
-
-static wxString pad_combo_value_for_config(const DynamicPrintConfig &config)
-{
-    return config.opt_bool("pad_enable") ? (config.opt_bool("pad_around_object") ? _("Around object") : _("Below object")) : _("None");
-}
-
 void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
 {
     if (wxGetApp().plater() == nullptr) {
@@ -1112,33 +1091,15 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
     if (opt_key == "compatible_printers")
         this->compatible_widget_reload(m_compatible_printers);
 
-    const bool is_fff = supports_printer_technology(ptFFF);
-    ConfigOptionsGroup* og_freq_chng_params = wxGetApp().sidebar().og_freq_chng_params(is_fff);
-    if (opt_key == "fill_density" || opt_key == "pad_enable")
-    {
-        boost::any val = og_freq_chng_params->get_config_value(*m_config, opt_key);
-        og_freq_chng_params->set_value(opt_key, val);
-    }
-    
+    // Tisma: the chips of the supports, infill, brim and pad of the plate panel show the edited values.
+    if (m_type == Preset::TYPE_PRINT || m_type == Preset::TYPE_SLA_PRINT)
+        wxGetApp().sidebar().update_frequently_changed_parameters();
+
     if (opt_key == "pad_around_object") {
         for (PageShp &pg : m_pages) {
             Field * fld = pg->get_field(opt_key); /// !!! ysFIXME ????
             if (fld) fld->set_value(value, false);
         }
-    }
-
-    if (is_fff ?
-            (opt_key == "support_material" || opt_key == "support_material_auto" || opt_key == "support_material_buildplate_only") :
-            (opt_key == "supports_enable"  || opt_key == "support_tree_type" || opt_key == get_sla_suptree_prefix(*m_config) + "support_buildplate_only" || opt_key == "support_enforcers_only"))
-        og_freq_chng_params->set_value("support", support_combo_value_for_config(*m_config, is_fff));
-
-    if (! is_fff && (opt_key == "pad_enable" || opt_key == "pad_around_object"))
-        og_freq_chng_params->set_value("pad", pad_combo_value_for_config(*m_config));
-
-    if (opt_key == "brim_width")
-    {
-        bool val = m_config->opt_float("brim_width") > 0.0 ? true : false;
-        og_freq_chng_params->set_value("brim", val);
     }
 
     if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
@@ -1418,28 +1379,16 @@ void Tab::update_preset_description_line()
 
 void Tab::update_frequently_changed_parameters()
 {
-    const bool is_fff = supports_printer_technology(ptFFF);
-    auto og_freq_chng_params = wxGetApp().sidebar().og_freq_chng_params(is_fff);
-    if (!og_freq_chng_params) return;
-
-    og_freq_chng_params->set_value("support", support_combo_value_for_config(*m_config, is_fff));
-    if (! is_fff)
-        og_freq_chng_params->set_value("pad", pad_combo_value_for_config(*m_config));
-
-    const std::string updated_value_key = is_fff ? "fill_density" : "pad_enable";
-
-    const boost::any val = og_freq_chng_params->get_config_value(*m_config, updated_value_key);
-    og_freq_chng_params->set_value(updated_value_key, val);
+    if (wxGetApp().plater() == nullptr)
+        return;
+    wxGetApp().sidebar().update_frequently_changed_parameters();
 
     if (m_type == Preset::TYPE_PRINT)
         if (QuickSettings* quick_settings = wxGetApp().sidebar().quick_settings())
             quick_settings->reload_config();
 
-    if (is_fff)
-    {
-        og_freq_chng_params->set_value("brim", bool(m_config->opt_float("brim_width") > 0.0));
+    if (supports_printer_technology(ptFFF))
         update_wiping_button_visibility();
-    }
 }
 
 static void validate_custom_parameters(Tab* tab, const t_config_option_key& opt_key, const boost::any& value)
@@ -2294,7 +2243,7 @@ void TabFilament::build()
         line.append_option(optgroup->get_option("chamber_minimal_temperature"));
         optgroup->append_line(line);
 
-        // Tisma: the bed temperatures on each bed type, for the printers which let choose the bed (BedType.hpp).
+        // Tisma: the bed temperatures on each bed type, used with the bed chosen in the plate panel (BedType.hpp).
         optgroup = page->new_optgroup(L("Bed temperature by bed type"));
         for (const BedType &bed : bed_types()) {
             line = { wxString::FromUTF8(bed.label), "" };
@@ -2510,15 +2459,6 @@ void TabFilament::toggle_options()
 {
     if (!m_active_page)
         return;
-
-    if (m_active_page->title() == "Filament") {
-        // The bed temperatures by bed type are used by the printers which let choose the bed.
-        const bool beds = supports_bed_types(m_preset_bundle->printers.get_edited_preset().config);
-        for (const BedType &bed : bed_types()) {
-            toggle_option(bed.first_layer_temp_key, beds);
-            toggle_option(bed.temp_key, beds);
-        }
-    }
 
     if (m_active_page->title() == "Cooling")
     {

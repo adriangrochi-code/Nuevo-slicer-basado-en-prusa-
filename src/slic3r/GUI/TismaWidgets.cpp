@@ -4,7 +4,10 @@
 ///|/
 #include "TismaWidgets.hpp"
 
+#include <cmath>
+
 #include <wx/dcbuffer.h>
+#include <wx/wrapsizer.h>
 
 #include "BitmapCache.hpp"
 #include "GUI_App.hpp"
@@ -15,8 +18,9 @@ namespace GUI {
 
 static constexpr int CHIP_ICON_PX = 16;
 
-TismaChip::TismaChip(wxWindow* parent, const wxString& text, const std::string& icon, std::function<void()> on_click)
-    : wxPanel(parent, wxID_ANY), m_text(text), m_icon_name(icon), m_on_click(std::move(on_click))
+TismaChip::TismaChip(wxWindow* parent, const wxString& text, const std::string& icon, std::function<void()> on_click,
+                     double height_em)
+    : wxPanel(parent, wxID_ANY), m_text(text), m_icon_name(icon), m_on_click(std::move(on_click)), m_height_em(height_em)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     load_icon();
@@ -79,7 +83,7 @@ void TismaChip::update_size()
         w += FromDIP(CHIP_ICON_PX) + int(0.5 * em);
     if (m_dot.IsOk())
         w += int(0.8 * em) + int(0.5 * em);
-    const wxSize sz(w, int(2.8 * em));
+    const wxSize sz(w, int(m_height_em * em));
     SetMinSize(sz);
     SetSize(sz);
     if (GetParent())
@@ -133,6 +137,71 @@ void TismaChip::msw_rescale()
     load_icon();
     update_size();
     Refresh();
+}
+
+TismaTitle::TismaTitle(wxWindow* parent, const wxString& text, Style style)
+    : wxStaticText(parent, wxID_ANY, text), m_style(style)
+{
+    wxFont font = wxGetApp().normal_font();
+    if (style == Style::Group) {
+        font.SetPointSize(int(std::lround(font.GetPointSize() * 1.25)));
+        font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+    } else
+        font = wxGetApp().small_font().Bold();
+    SetFont(font);
+    sys_color_changed();
+}
+
+void TismaTitle::sys_color_changed()
+{
+    const bool dark = wxGetApp().dark_mode();
+    SetForegroundColour(m_style == Style::Group ? TismaTheme::accent_text(dark) : TismaTheme::text_muted(dark));
+    Refresh();
+}
+
+TismaChoiceChips::TismaChoiceChips(wxWindow* parent, const std::vector<wxString>& labels, std::function<void(int)> on_select)
+    : wxPanel(parent, wxID_ANY), m_on_select(std::move(on_select))
+{
+    SetBackgroundColour(parent->GetBackgroundColour());
+    const int gap = int(0.4 * wxGetApp().em_unit());
+    auto* sizer = new wxWrapSizer(wxHORIZONTAL);
+    for (size_t i = 0; i < labels.size(); ++i) {
+        auto* chip = new TismaChip(this, labels[i], "", [this, i]() {
+            set_selection(int(i));
+            if (m_on_select)
+                m_on_select(int(i));
+        }, 2.3);
+        m_chips.push_back(chip);
+        sizer->Add(chip, 0, wxRIGHT | wxBOTTOM, gap);
+    }
+    SetSizer(sizer);
+}
+
+void TismaChoiceChips::set_selection(int idx)
+{
+    m_selection = idx;
+    for (size_t i = 0; i < m_chips.size(); ++i)
+        m_chips[i]->set_selected(int(i) == idx);
+}
+
+void TismaChoiceChips::set_label(int idx, const wxString& label)
+{
+    if (idx >= 0 && idx < int(m_chips.size()))
+        m_chips[idx]->set_text(label);
+}
+
+void TismaChoiceChips::sys_color_changed()
+{
+    SetBackgroundColour(GetParent()->GetBackgroundColour());
+    for (TismaChip* chip : m_chips)
+        chip->sys_color_changed();
+}
+
+void TismaChoiceChips::msw_rescale()
+{
+    for (TismaChip* chip : m_chips)
+        chip->msw_rescale();
+    Layout();
 }
 
 } // namespace GUI

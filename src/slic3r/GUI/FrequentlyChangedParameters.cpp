@@ -21,10 +21,13 @@
 #include "FrequentlyChangedParameters.hpp"
 #include "Plater.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 
 #include <wx/sizer.h>
-#include <wx/button.h>
+#include <wx/stattext.h>
+#include <wx/textdlg.h>
 
 #include "libslic3r/PresetBundle.hpp"
 
@@ -33,9 +36,11 @@
 #include "format.hpp"
 #include "Tab.hpp"
 #include "I18N.hpp"
-
-#include "FullSpectrumDialog.hpp"
-#include "GLCanvas3D.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
+#include "Widgets/SwitchButton.hpp"
 #include "WipeTowerDialog.hpp"
 
 using Slic3r::Preset;
@@ -47,311 +52,247 @@ namespace GUI {
 // Trigger Plater::schedule_background_process().
 wxDEFINE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS,     SimpleEvent);
 
-FreqChangedParams::FreqChangedParams(wxWindow* parent)
+// The chips of the supports: none, on the build plate only, everywhere, where the user painted (enforcers) only.
+enum SupportChip { scNone, scBuildPlate, scEverywhere, scEnforcers };
+// The chips of the infill: these densities and a last chip for any other one.
+static const std::vector<double> INFILL_DENSITIES = { 0., 10., 15., 20., 30., 50., 100. };
+// The chips of the pad of a resin print.
+enum PadChip { pcNone, pcBelow, pcAround };
+
+static int support_chip(const DynamicPrintConfig& config, bool is_fff)
 {
-    DynamicPrintConfig*	config = &wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    if (! config.opt_bool(is_fff ? "support_material" : "supports_enable"))
+        return scNone;
+    if (is_fff ? ! config.opt_bool("support_material_auto") : config.opt_bool("support_enforcers_only"))
+        return scEnforcers;
+    const std::string buildplate_only = is_fff ? "support_material_buildplate_only" :
+                                                 get_sla_suptree_prefix(config) + "support_buildplate_only";
+    return config.opt_bool(buildplate_only) ? scBuildPlate : scEverywhere;
+}
 
-    // Frequently changed parameters for FFF_technology
+static wxString percent(double value)
+{
+    return wxString::Format("%g%%", value);
+}
 
-    m_og_fff = std::make_shared<ConfigOptionsGroup>(parent, "");
-    m_og_fff->set_config(config);
-    m_og_fff->hide_labels();
-
-    m_og_fff->on_change = [config, this](t_config_option_key opt_key, boost::any value) {
-        Tab* tab_print = wxGetApp().get_tab(Preset::TYPE_PRINT);
-        if (!tab_print) return;
-
-        if (opt_key == "fill_density") {
-            tab_print->update_dirty();
-            tab_print->reload_config();
-            tab_print->update();
-        }
-        else
-        {
-            DynamicPrintConfig new_conf = *config;
-            if (opt_key == "brim") {
-                double new_val;
-                double brim_width = config->opt_float("brim_width");
-                if (boost::any_cast<bool>(value) == true)
-                {
-                    new_val = m_brim_width == 0.0 ? 5 :
-                        m_brim_width < 0.0 ? m_brim_width * (-1) :
-                        m_brim_width;
-                }
-                else {
-                    m_brim_width = brim_width * (-1);
-                    new_val = 0;
-                }
-                new_conf.set_key_value("brim_width", new ConfigOptionFloat(new_val));
-            }
-            else {
-                assert(opt_key == "support");
-                const wxString& selection = boost::any_cast<wxString>(value);
-                PrinterTechnology printer_technology = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
-
-                auto support_material = selection == _("None") ? false : true;
-                new_conf.set_key_value("support_material", new ConfigOptionBool(support_material));
-
-                if (selection == _("Everywhere")) {
-                    new_conf.set_key_value("support_material_buildplate_only", new ConfigOptionBool(false));
-                    if (printer_technology == ptFFF)
-                        new_conf.set_key_value("support_material_auto", new ConfigOptionBool(true));
-                } else if (selection == _("Support on build plate only")) {
-                    new_conf.set_key_value("support_material_buildplate_only", new ConfigOptionBool(true));
-                    if (printer_technology == ptFFF)
-                        new_conf.set_key_value("support_material_auto", new ConfigOptionBool(true));
-                } else if (selection == _("For support enforcers only")) {
-                    assert(printer_technology == ptFFF);
-                    new_conf.set_key_value("support_material_buildplate_only", new ConfigOptionBool(false));
-                    new_conf.set_key_value("support_material_auto", new ConfigOptionBool(false));
-                }
-            }
-            tab_print->load_config(new_conf);
-        }
+FreqChangedParams::FreqChangedParams(wxWindow* fff_parent, wxWindow* sla_parent)
+{
+    const int em = wxGetApp().em_unit();
+    auto caption = [this, em](wxWindow* parent, wxSizer* sizer, const wxString& text) {
+        auto* title = new TismaTitle(parent, text, TismaTitle::Style::Caption);
+        m_captions.push_back(title);
+        sizer->Add(title, 0, wxTOP | wxBOTTOM, int(0.4 * em));
     };
+    const std::vector<wxString> supports = { _L("None"), _L("Build plate only"), _L("Everywhere"), _L("Painted only") };
 
+    // Filament printers: supports, infill, brim and the purging volumes of a multi-material printer.
+    m_fff_sizer = new wxBoxSizer(wxVERTICAL);
+    caption(fff_parent, m_fff_sizer, _L("Supports"));
+    m_support = new TismaChoiceChips(fff_parent, supports, [this](int idx) { on_support(true, idx); });
+    m_support->SetToolTip(_L("Select what kind of support do you need"));
+    m_fff_sizer->Add(m_support, 0, wxEXPAND);
 
-    Line line = Line { "", "" };
+    caption(fff_parent, m_fff_sizer, _L("Infill"));
+    std::vector<wxString> densities;
+    for (double d : INFILL_DENSITIES)
+        densities.push_back(percent(d));
+    densities.push_back(_L("Other") + dots);
+    m_infill = new TismaChoiceChips(fff_parent, densities, [this](int idx) { on_infill(idx); });
+    m_fff_sizer->Add(m_infill, 0, wxEXPAND);
 
-    ConfigOptionDef support_def;
-    support_def.label = L("Supports");
-    support_def.type = coStrings;
-    support_def.tooltip = L("Select what kind of support do you need");
-    support_def.set_enum_labels(ConfigOptionDef::GUIType::select_close, {
-        L("None"),
-        L("Support on build plate only"),
-        L("For support enforcers only"),
-        L("Everywhere")
-    });
-    support_def.set_default_value(new ConfigOptionStrings{ "None" });
-    Option option = Option(support_def, "support");
-    option.opt.full_width = true;
-    line.append_option(option);
+    auto* brim_row = new wxBoxSizer(wxHORIZONTAL);
+    auto* brim_label = new TismaTitle(fff_parent, _L("Brim"), TismaTitle::Style::Caption);
+    m_captions.push_back(brim_label);
+    brim_row->Add(brim_label, 1, wxALIGN_CENTER_VERTICAL);
+    m_brim = new ::SwitchButton(fff_parent);
+    m_brim->SetToolTip(_L("This flag enables the brim that will be printed around each object on the first layer."));
+    m_brim->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent& e) { on_brim(e.IsChecked()); });
+    brim_row->Add(m_brim, 0, wxALIGN_CENTER_VERTICAL);
+    m_fff_sizer->Add(brim_row, 0, wxEXPAND | wxTOP, int(0.4 * em));
 
-    /* Not a best solution, but
-     * Temporary workaround for right border alignment
-     */
-    auto empty_widget = [this] (wxWindow* parent) {
-        auto sizer = new wxBoxSizer(wxHORIZONTAL);
-        auto btn = new ScalableButton(parent, wxID_ANY, "mirroring_transparent", wxEmptyString,
-            wxDefaultSize, wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER | wxTRANSPARENT_WINDOW);
-        sizer->Add(btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, int(0.3 * wxGetApp().em_unit()));
-        m_empty_buttons.push_back(btn);
-        return sizer;
-    };
-    line.append_widget(empty_widget);
+    m_wiping_dialog_button = new ::Button(fff_parent, _L("Purging volumes") + dots);
+    m_wiping_dialog_button->Bind(wxEVT_BUTTON, [this, fff_parent](wxCommandEvent&) { show_wiping_dialog(fff_parent); });
+    m_wiping_dialog_button->Hide();
+    m_fff_sizer->Add(m_wiping_dialog_button, 0, wxTOP, int(0.4 * em));
 
-    m_og_fff->append_line(line);
+    // Resin printers: supports and pad.
+    m_sla_sizer = new wxBoxSizer(wxVERTICAL);
+    caption(sla_parent, m_sla_sizer, _L("Supports"));
+    m_sla_support = new TismaChoiceChips(sla_parent, supports, [this](int idx) { on_support(false, idx); });
+    m_sla_support->SetToolTip(_L("Select what kind of support do you need"));
+    m_sla_sizer->Add(m_sla_support, 0, wxEXPAND);
+    caption(sla_parent, m_sla_sizer, _L("Pad"));
+    m_pad = new TismaChoiceChips(sla_parent, { _L("None"), _L("Below object"), _L("Around object") },
+                                 [this](int idx) { on_pad(idx); });
+    m_pad->SetToolTip(_L("Select what kind of pad do you need"));
+    m_sla_sizer->Add(m_pad, 0, wxEXPAND);
 
+    m_brim_width = wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_float("brim_width");
+    sys_color_changed();
+    update_from_config();
+}
 
-    line = Line { "", "" };
+wxWindow* FreqChangedParams::get_wiping_dialog_button() noexcept
+{
+    return m_wiping_dialog_button;
+}
 
-    option = m_og_fff->get_option("fill_density");
-    option.opt.label = L("Infill");
-    option.opt.width = 8;
-    option.opt.sidetext = "   ";
-    line.append_option(option);
+void FreqChangedParams::update_from_config()
+{
+    const DynamicPrintConfig& fff = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    m_support->set_selection(support_chip(fff, true));
 
-    m_brim_width = config->opt_float("brim_width");
-    ConfigOptionDef def;
-    def.label = L("Brim");
-    def.type = coBool;
-    def.tooltip = L("This flag enables the brim that will be printed around each object on the first layer.");
-    def.gui_type = ConfigOptionDef::GUIType::undefined;
-    def.set_default_value(new ConfigOptionBool{ m_brim_width > 0.0 ? true : false });
-    option = Option(def, "brim");
-    option.opt.sidetext = "";
-    line.append_option(option);
+    const double density = fff.option<ConfigOptionPercent>("fill_density")->value;
+    const auto it = std::find_if(INFILL_DENSITIES.begin(), INFILL_DENSITIES.end(),
+                                 [density](double d) { return std::abs(d - density) < 1e-6; });
+    const int other = int(INFILL_DENSITIES.size());
+    m_infill->set_selection(it == INFILL_DENSITIES.end() ? other : int(it - INFILL_DENSITIES.begin()));
+    // The chip of another density shows it.
+    m_infill->set_label(other, it == INFILL_DENSITIES.end() ? percent(density) : _L("Other") + dots);
 
-    auto wiping_dialog_btn = [this](wxWindow* parent) {
-        m_wiping_dialog_button = new wxButton(parent, wxID_ANY, _L("Purging volumes") + dots, wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
-        wxGetApp().SetWindowVariantForButton(m_wiping_dialog_button);
-        wxGetApp().UpdateDarkUI(m_wiping_dialog_button, true);
+    m_brim->SetValue(fff.opt_float("brim_width") > 0.);
 
-        auto sizer = new wxBoxSizer(wxHORIZONTAL);
-        sizer->Add(m_wiping_dialog_button, 0, wxALIGN_CENTER_VERTICAL);
-        m_wiping_dialog_button->Bind(wxEVT_BUTTON, ([parent](wxCommandEvent& e)
-        {
-            PresetBundle* preset_bundle = wxGetApp().preset_bundle;
-            DynamicPrintConfig& project_config = preset_bundle->project_config;
-            const bool use_custom_matrix = (project_config.option<ConfigOptionBool>("wiping_volumes_use_custom_matrix"))->value;
-            const std::vector<double> &init_matrix = (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values;
+    const DynamicPrintConfig& sla = wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
+    m_sla_support->set_selection(support_chip(sla, false));
+    m_pad->set_selection(! sla.opt_bool("pad_enable") ? pcNone : sla.opt_bool("pad_around_object") ? pcAround : pcBelow);
+}
 
-            const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_color_strings_from_plater_config();
-
-            // Extract the relevant config options, even values from possibly modified presets.
-            const double default_purge = static_cast<const ConfigOptionFloat*>(preset_bundle->printers.get_edited_preset().config.option("multimaterial_purging"))->value;
-            std::vector<double> filament_purging_multipliers = preset_bundle->get_config_options_for_current_filaments<ConfigOptionPercents>("filament_purge_multiplier");
-
-            WipingDialog dlg(parent, cast<float>(init_matrix), extruder_colours, default_purge, filament_purging_multipliers, use_custom_matrix);
-
-            if (dlg.ShowModal() == wxID_OK) {
-                std::vector<float> matrix = dlg.get_matrix();
-                (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values = std::vector<double>(matrix.begin(), matrix.end());
-                (project_config.option<ConfigOptionBool>("wiping_volumes_use_custom_matrix"))->value = dlg.get_use_custom_matrix();
-                // Update Project dirty state, update application title bar.
-                Plater* plater = wxGetApp().plater();
-                plater->update_project_dirty_from_presets();
-                wxPostEvent(plater, SimpleEvent(EVT_SCHEDULE_BACKGROUND_PROCESS, plater));
-            }
-        }));
-
-        auto btn = new ScalableButton(parent, wxID_ANY, "mirroring_transparent", wxEmptyString,
-                                      wxDefaultSize, wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER | wxTRANSPARENT_WINDOW);
-        sizer->Add(btn , 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
-            int(0.3 * wxGetApp().em_unit()));
-        m_empty_buttons.push_back(btn);
-
-        return sizer;
-    };
-    line.append_widget(wiping_dialog_btn);
-    m_og_fff->append_line(line);
-
-    m_og_fff->activate();
-
-    Choice* choice = dynamic_cast<Choice*>(m_og_fff->get_field("support"));
-    choice->suppress_scroll();
-
-    // Frequently changed parameters for SLA_technology
-
-    m_og_sla = std::make_shared<ConfigOptionsGroup>(parent, "");
-    m_og_sla->hide_labels();
-    DynamicPrintConfig*	config_sla = &wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
-    m_og_sla->set_config(config_sla);
-
-    m_og_sla->on_change = [config_sla](t_config_option_key opt_key, boost::any value) {
-        Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_PRINT);
-        if (!tab) return;
-
-        DynamicPrintConfig new_conf = *config_sla;
-        if (opt_key == "pad") {
-            const wxString& selection = boost::any_cast<wxString>(value);
-
-            const bool pad_enable = selection == _("None") ? false : true;
-            new_conf.set_key_value("pad_enable", new ConfigOptionBool(pad_enable));
-
-            if (selection == _("Below object"))
-                new_conf.set_key_value("pad_around_object", new ConfigOptionBool(false));
-            else if (selection == _("Around object"))
-                new_conf.set_key_value("pad_around_object", new ConfigOptionBool(true));
+void FreqChangedParams::on_support(bool is_fff, int idx)
+{
+    Tab* tab = wxGetApp().get_tab(is_fff ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT);
+    if (! tab)
+        return;
+    DynamicPrintConfig new_conf = is_fff ? wxGetApp().preset_bundle->prints.get_edited_preset().config :
+                                           wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
+    if (is_fff) {
+        new_conf.set_key_value("support_material", new ConfigOptionBool(idx != scNone));
+        if (idx != scNone) {
+            new_conf.set_key_value("support_material_buildplate_only", new ConfigOptionBool(idx == scBuildPlate));
+            new_conf.set_key_value("support_material_auto", new ConfigOptionBool(idx != scEnforcers));
         }
-        else
-        {
-            assert(opt_key == "support");
-            const wxString& selection = boost::any_cast<wxString>(value);
-
-            const bool supports_enable = selection == _("None") ? false : true;
-            new_conf.set_key_value("supports_enable", new ConfigOptionBool(supports_enable));
-
-            std::string treetype = get_sla_suptree_prefix(new_conf);
-
-            if (selection == _("Everywhere")) {
-                new_conf.set_key_value(treetype + "support_buildplate_only", new ConfigOptionBool(false));
-                new_conf.set_key_value("support_enforcers_only", new ConfigOptionBool(false));
-            }
-            else if (selection == _("Support on build plate only")) {
-                new_conf.set_key_value(treetype + "support_buildplate_only", new ConfigOptionBool(true));
-                new_conf.set_key_value("support_enforcers_only", new ConfigOptionBool(false));
-            }
-            else if (selection == _("For support enforcers only")) {
-                new_conf.set_key_value("support_enforcers_only", new ConfigOptionBool(true));
-            }
+    } else {
+        new_conf.set_key_value("supports_enable", new ConfigOptionBool(idx != scNone));
+        if (idx == scEnforcers)
+            new_conf.set_key_value("support_enforcers_only", new ConfigOptionBool(true));
+        else if (idx != scNone) {
+            new_conf.set_key_value(get_sla_suptree_prefix(new_conf) + "support_buildplate_only", new ConfigOptionBool(idx == scBuildPlate));
+            new_conf.set_key_value("support_enforcers_only", new ConfigOptionBool(false));
         }
+    }
+    tab->load_config(new_conf);
+}
 
-        tab->load_config(new_conf);
-        tab->update_dirty();
-    };
+void FreqChangedParams::on_infill(int idx)
+{
+    Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT);
+    if (! tab)
+        return;
+    DynamicPrintConfig new_conf = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    double density = 0.;
+    if (idx < int(INFILL_DENSITIES.size()))
+        density = INFILL_DENSITIES[idx];
+    else {
+        const double current = new_conf.option<ConfigOptionPercent>("fill_density")->value;
+        wxTextEntryDialog dlg(wxGetApp().GetTopWindow(), _L("Infill density, in percent:"), _L("Infill"),
+                              wxString::Format("%g", current));
+        double value = -1.;
+        if (dlg.ShowModal() == wxID_OK) {
+            wxString text = dlg.GetValue();
+            text.Replace(",", ".");
+            text.Replace("%", "");
+            text.Trim().Trim(false);
+            if (! text.ToCDouble(&value))
+                value = -1.;
+        }
+        if (value < 0. || value > 100.) {
+            update_from_config();
+            return;
+        }
+        density = value;
+    }
+    new_conf.set_key_value("fill_density", new ConfigOptionPercent(density));
+    tab->load_config(new_conf);
+    update_from_config();
+}
 
-    line = Line{ "", "" };
+void FreqChangedParams::on_brim(bool on)
+{
+    Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT);
+    if (! tab)
+        return;
+    DynamicPrintConfig new_conf = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    const double brim_width = new_conf.opt_float("brim_width");
+    double new_val = 0.;
+    if (on)
+        new_val = m_brim_width == 0. ? 5 : m_brim_width < 0. ? -m_brim_width : m_brim_width;
+    else
+        m_brim_width = -brim_width;
+    new_conf.set_key_value("brim_width", new ConfigOptionFloat(new_val));
+    tab->load_config(new_conf);
+}
 
-    ConfigOptionDef support_def_sla = support_def;
-    support_def_sla.set_default_value(new ConfigOptionStrings{ "None" });
-    option = Option(support_def_sla, "support");
-    option.opt.full_width = true;
-    line.append_option(option);
-    line.append_widget(empty_widget);
-    m_og_sla->append_line(line);
+void FreqChangedParams::on_pad(int idx)
+{
+    Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_PRINT);
+    if (! tab)
+        return;
+    DynamicPrintConfig new_conf = wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
+    new_conf.set_key_value("pad_enable", new ConfigOptionBool(idx != pcNone));
+    if (idx != pcNone)
+        new_conf.set_key_value("pad_around_object", new ConfigOptionBool(idx == pcAround));
+    tab->load_config(new_conf);
+}
 
-    line = Line{ "", "" };
+void FreqChangedParams::show_wiping_dialog(wxWindow* parent)
+{
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    DynamicPrintConfig& project_config = preset_bundle->project_config;
+    const bool use_custom_matrix = (project_config.option<ConfigOptionBool>("wiping_volumes_use_custom_matrix"))->value;
+    const std::vector<double> &init_matrix = (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values;
 
-    ConfigOptionDef pad_def;
-    pad_def.label = L("Pad");
-    pad_def.type = coStrings;
-    pad_def.tooltip = L("Select what kind of pad do you need");
-    pad_def.set_enum_labels(ConfigOptionDef::GUIType::select_close, {
-        L("None"),
-        L("Below object"),
-        L("Around object")
-    });
-    pad_def.set_default_value(new ConfigOptionStrings{ "Below object" });
-    option = Option(pad_def, "pad");
-    option.opt.full_width = true;
-    line.append_option(option);
-    line.append_widget(empty_widget);
+    const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_color_strings_from_plater_config();
 
-    m_og_sla->append_line(line);
+    // Extract the relevant config options, even values from possibly modified presets.
+    const double default_purge = static_cast<const ConfigOptionFloat*>(preset_bundle->printers.get_edited_preset().config.option("multimaterial_purging"))->value;
+    std::vector<double> filament_purging_multipliers = preset_bundle->get_config_options_for_current_filaments<ConfigOptionPercents>("filament_purge_multiplier");
 
-    m_og_sla->activate();
-    choice = dynamic_cast<Choice*>(m_og_sla->get_field("support"));
-    choice->suppress_scroll();
-    choice = dynamic_cast<Choice*>(m_og_sla->get_field("pad"));
-    choice->suppress_scroll();
+    WipingDialog dlg(parent, cast<float>(init_matrix), extruder_colours, default_purge, filament_purging_multipliers, use_custom_matrix);
 
-    m_sizer = new wxBoxSizer(wxVERTICAL);
-    m_sizer->Add(m_og_fff->sizer, 0, wxEXPAND);
-    m_sizer->Add(m_og_sla->sizer, 0, wxEXPAND);
+    if (dlg.ShowModal() == wxID_OK) {
+        std::vector<float> matrix = dlg.get_matrix();
+        (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values = std::vector<double>(matrix.begin(), matrix.end());
+        (project_config.option<ConfigOptionBool>("wiping_volumes_use_custom_matrix"))->value = dlg.get_use_custom_matrix();
+        // Update Project dirty state, update application title bar.
+        Plater* plater = wxGetApp().plater();
+        plater->update_project_dirty_from_presets();
+        wxPostEvent(plater, SimpleEvent(EVT_SCHEDULE_BACKGROUND_PROCESS, plater));
+    }
 }
 
 void FreqChangedParams::msw_rescale()
 {
-    m_og_fff->msw_rescale();
-    m_og_sla->msw_rescale();
+    for (TismaChoiceChips* chips : { m_support, m_infill, m_sla_support, m_pad })
+        chips->msw_rescale();
+    m_brim->Rescale();
+    m_wiping_dialog_button->Rescale();
 }
 
 void FreqChangedParams::sys_color_changed()
 {
-    m_og_fff->sys_color_changed();
-    m_og_sla->sys_color_changed();
-
-    for (auto btn: m_empty_buttons)
-        btn->sys_color_changed();
-
-    wxGetApp().UpdateDarkUI(m_wiping_dialog_button, true);
-    if (m_full_spectrum_button) {
-        wxGetApp().UpdateDarkUI(m_full_spectrum_button, true);
-    }
-}
-
-void FreqChangedParams::Show(bool is_fff) const
-{
-    const bool is_wdb_shown = m_wiping_dialog_button->IsShown();
-    const bool is_fsb_shown = m_full_spectrum_button == nullptr || m_full_spectrum_button->IsShown();
-    m_og_fff->Show(is_fff);
-    m_og_sla->Show(!is_fff);
-
-    // correct showing of the FreqChangedParams sizer when m_wiping_dialog_button is hidden
-    if (is_fff && !is_wdb_shown)
-        m_wiping_dialog_button->Hide();
-    if (is_fff && !is_fsb_shown && m_full_spectrum_button != nullptr) {
-        m_full_spectrum_button->Hide();
-    }
-}
-
-void FreqChangedParams::update_full_spectrum_visibility(int physical_extruder_count)
-{
-    if (m_full_spectrum_button == nullptr) {
-        return;
-    }
-
-    m_full_spectrum_button->Show(physical_extruder_count >= 2);
-    if (m_sizer != nullptr) {
-        m_sizer->Layout();
-    }
-}
-
-ConfigOptionsGroup* FreqChangedParams::get_og(bool is_fff)
-{
-    return is_fff ? m_og_fff.get() : m_og_sla.get();
+    const bool dark = wxGetApp().dark_mode();
+    for (TismaTitle* title : m_captions)
+        title->sys_color_changed();
+    for (TismaChoiceChips* chips : { m_support, m_infill, m_sla_support, m_pad })
+        chips->sys_color_changed();
+    m_brim->SysColorChange();
+    // A link in the accent color.
+    m_wiping_dialog_button->SetBackgroundColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::panel_bg(dark), StateColor::Hovered),
+        std::pair<wxColour, int>(TismaTheme::card_bg(dark),  StateColor::Normal)));
+    m_wiping_dialog_button->SetBorderColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::card_bg(dark),  StateColor::Normal)));
+    m_wiping_dialog_button->SetTextColor(StateColor(
+        std::pair<wxColour, int>(TismaTheme::accent_text(dark), StateColor::Normal)));
 }
 
 }}    // namespace Slic3r::GUI

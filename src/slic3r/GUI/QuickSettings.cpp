@@ -29,6 +29,7 @@
 #include "I18N.hpp"
 #include "OptionsGroup.hpp"
 #include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
 #include "Plater.hpp"
 #include "Tab.hpp"
 #include "wxExtensions.hpp"
@@ -197,8 +198,7 @@ QuickSettings::QuickSettings(wxWindow* parent) : m_parent(parent)
     m_sizer = new wxBoxSizer(wxVERTICAL);
 
     auto header = new wxBoxSizer(wxHORIZONTAL);
-    m_title = new wxStaticText(parent, wxID_ANY, _L("Quick settings").Upper());
-    m_title->SetFont(wxGetApp().small_font().Bold());
+    m_title = new TismaTitle(parent, _L("Quick settings"));
     header->Add(m_title, 1, wxALIGN_CENTER_VERTICAL);
 
     // "+": add settings of the section; "All settings": its full settings tab.
@@ -237,7 +237,7 @@ QuickSettings::~QuickSettings() = default;
 void QuickSettings::update_section_buttons()
 {
     const bool dark = wxGetApp().dark_mode();
-    m_title->SetForegroundColour(TismaTheme::text_muted(dark));
+    m_title->sys_color_changed();
     for (size_t i = 0; i < SECTIONS; ++i) {
         Button* btn = m_section_btns[i];
         const bool selected = Section(i) == m_section;
