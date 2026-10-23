@@ -72,7 +72,7 @@ msgstr "Relleno del hueco"
 #: src/libslic3r/ExtrusionRole.cpp:52 src/libslic3r/ExtrusionRole.cpp:82
 #: src/slic3r/GUI/GCodeViewer.cpp:419
 msgid "Skirt/Brim"
-msgstr "Falda/Balsa"
+msgstr "Falda/Borde"
 
 #: src/libslic3r/ExtrusionRole.cpp:53 src/libslic3r/ExtrusionRole.cpp:84
 #: src/libslic3r/PrintConfig.cpp:1057 src/libslic3r/PrintConfig.cpp:2694
@@ -780,7 +780,7 @@ msgstr ""
 
 #: src/libslic3r/Print.cpp:951
 msgid "Generating skirt and brim"
-msgstr "Generando falda y balsa"
+msgstr "Generando falda y borde"
 
 #: src/libslic3r/Print.cpp:1014
 msgid "Exporting G-code"
@@ -843,7 +843,7 @@ msgstr "Considera habilitar soportes."
 
 #: src/libslic3r/Print.cpp:1380
 msgid "Also consider enabling brim."
-msgstr "También considera activar la balsa."
+msgstr "También considera activar el borde."
 
 #. TRN Alert message for detected print issues. first argument is a list of detected issues.
 #: src/libslic3r/Print.cpp:1384
@@ -1693,13 +1693,13 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:894
 msgid "Brim width"
-msgstr "Ancho de la balsa"
+msgstr "Ancho del borde"
 
 #: src/libslic3r/PrintConfig.cpp:895 src/libslic3r/PrintConfig.cpp:906
 #: src/libslic3r/PrintConfig.cpp:919 src/slic3r/GUI/GUI_Factories.cpp:170
 #: src/slic3r/GUI/Tab.cpp:1537
 msgid "Skirt and brim"
-msgstr "Falda y balsa"
+msgstr "Falda y borde"
 
 #: src/libslic3r/PrintConfig.cpp:896
 msgid ""
@@ -1713,7 +1713,7 @@ msgstr ""
 
 #: src/libslic3r/PrintConfig.cpp:905
 msgid "Brim type"
-msgstr "Tipo de balsa"
+msgstr "Tipo de borde"
 
 #: src/libslic3r/PrintConfig.cpp:907
 msgid ""
@@ -4862,7 +4862,7 @@ msgstr ""
 "simple para eliminar cualquier costura visible. Esta opción requiere un "
 "perímetro único, sin relleno, sin capas sólidas superiores y sin material de "
 "soporte. Puedes establecer cualquier cantidad de capas sólidas inferiores, "
-"así como los bucles de falda/balsa. No funcionará al imprimir más de un "
+"así como los bucles de falda/borde. No funcionará al imprimir más de un "
 "objeto."
 
 #: src/libslic3r/PrintConfig.cpp:3156
@@ -5797,7 +5797,7 @@ msgstr "Ancho de la torre de limpieza"
 
 #: src/libslic3r/PrintConfig.cpp:3870 src/libslic3r/PrintConfig.cpp:3871
 msgid "Wipe tower brim width"
-msgstr "Ancho de la balsa de la torre de limpieza"
+msgstr "Ancho del borde de la torre de limpieza"
 
 #: src/libslic3r/PrintConfig.cpp:3878
 msgid "Stabilization cone apex angle"
@@ -10680,14 +10680,14 @@ msgstr "Solo para forzado de soportes"
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:157
 #: src/slic3r/GUI/Tab.cpp:1546
 msgid "Brim"
-msgstr "Balsa"
+msgstr "Borde"
 
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:159
 msgid ""
 "This flag enables the brim that will be printed around each object on the "
 "first layer."
 msgstr ""
-"Esta opción activa la balsa que se imprimirá alrededor del objeto en la "
+"Esta opción activa el borde que se imprimirá alrededor del objeto en la "
 "primera capa."
 
 #: src/slic3r/GUI/FrequentlyChangedParameters.cpp:167
@@ -18610,7 +18610,7 @@ msgid ""
 msgstr ""
 "Si esta opción está activada, Slic3r emitirá alertas cuando detecte "
 "problemas en el objeto laminado, que pueden ser resueltos con soportes (y "
-"balsa). Ejemplos de estos problemas son partes flotantes del objeto, "
+"borde). Ejemplos de estos problemas son partes flotantes del objeto, "
 "extrusiones sin soporte y baja adherencia de la base calefactable."
 
 #: src/slic3r/GUI/Preferences.cpp:323
