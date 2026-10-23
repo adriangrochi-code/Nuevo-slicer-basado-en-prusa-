@@ -304,6 +304,8 @@ set(SLIC3R_SOURCES
     NonPlanarFit.cpp
     Fragment.cpp
     Fragment.hpp
+    DimensionalCorrection.cpp
+    DimensionalCorrection.hpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
     InterlockInfill.cpp

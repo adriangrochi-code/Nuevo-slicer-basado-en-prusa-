@@ -22,7 +22,9 @@
 #include <wx/sizer.h>
 #include <wx/spinctrl.h>
 #include <wx/stattext.h>
+#include <wx/textctrl.h>
 
+#include "libslic3r/DimensionalCorrection.hpp"
 #include "libslic3r/MeshBoolean.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -452,6 +454,68 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "arc_overhang_overlap";
 
+    // Ironing (Tisma): a row of solid patches whose top is ironed, each with its own value of the ironing setting (a
+    // setting of its volume).
+    auto ironing_patches = [](ModelObject& obj, const Params& p, const Machine& m, const char* key, auto option) {
+        for (int i = 0; i < p.steps(); ++i) {
+            add_box(obj, i * p.band, 0, 0, std::max(4., p.band - 4.), 20., 2.);
+            obj.volumes.back()->config.set_key_value(key, option(p.start + i * p.signed_step()));
+        }
+        set_layer_height(obj, m.layer);
+        set(obj, "perimeters", "2");
+        set(obj, "top_solid_layers", "5");
+        set(obj, "bottom_solid_layers", "3");
+        set(obj, "fill_density", "100%");
+        set(obj, "top_fill_pattern", "monotonic");
+        set(obj, "ironing", "1");
+        set(obj, "ironing_type", "top");
+    };
+    const wxString ironing_look =
+        _L("Look at the top surfaces against the light, at a low angle: choose the smoothest patch, without the lines of "
+           "the top layer, grooves between the ironing passes, ridges or a dull, scraped surface.");
+
+    tests.push_back({ _L("Ironing flow"),
+        _L("Prints a row of solid patches in one go and irons their top, with a different ironing flow for each patch "
+           "(from left to right): the plastic the nozzle lays while it irons, in percent of a normal layer."),
+        ironing_look + " " +
+        _L("Too little flow leaves the grooves of the top layer; too much leaves ridges and blobs at the edges. Its flow "
+           "is start + step × patch number (from the left, starting at 0): it is the ironing flow rate (Calibration > "
+           "Apply a calibration result). Calibrate the flow of the filament first."),
+        "%", CalibMode::IroningFlow, { 5., 25., 5., 25. }, 0, 1., 100.,
+        [ironing_patches](ModelObject& obj, const Params& p, const Machine& m) {
+            ironing_patches(obj, p, m, "ironing_flowrate",
+                            [](double v) { return new ConfigOptionPercent(std::clamp(v, 0., 100.)); });
+        }, _L("Width of each step") });
+    tests.back().key = "ironing_flow";
+
+    tests.push_back({ _L("Ironing spacing"),
+        _L("Prints a row of solid patches in one go and irons their top, with a different distance between the ironing "
+           "passes for each patch (from left to right)."),
+        ironing_look + " " +
+        _L("Too wide leaves grooves between the passes; closer than needed takes longer for nothing. Choose the widest "
+           "spacing that leaves the surface smooth. Its spacing is start + step × patch number (from the left, starting "
+           "at 0): it is the spacing between ironing passes (Calibration > Apply a calibration result)."),
+        _L("mm"), CalibMode::IroningSpacing, { 0.05, 0.25, 0.05, 25. }, 2, 0.01, 1.,
+        [ironing_patches](ModelObject& obj, const Params& p, const Machine& m) {
+            ironing_patches(obj, p, m, "ironing_spacing",
+                            [](double v) { return new ConfigOptionFloat(std::clamp(v, 0.01, 1.)); });
+        }, _L("Width of each step") });
+    tests.back().key = "ironing_spacing";
+
+    tests.push_back({ _L("Ironing speed"),
+        _L("Prints a row of solid patches in one go and irons their top at a different speed for each patch (from left "
+           "to right)."),
+        ironing_look + " " +
+        _L("Too fast does not melt the top enough and leaves its lines; too slow can scrape it or leave it dull. Choose "
+           "the fastest patch that is smooth. Its speed is start + step × patch number (from the left, starting at 0): "
+           "it is the ironing speed (Calibration > Apply a calibration result)."),
+        _L("mm/s"), CalibMode::IroningSpeed, { 10., 50., 10., 25. }, 0, 1., 200.,
+        [ironing_patches](ModelObject& obj, const Params& p, const Machine& m) {
+            ironing_patches(obj, p, m, "ironing_speed",
+                            [](double v) { return new ConfigOptionFloat(std::clamp(v, 1., 200.)); });
+        }, _L("Width of each step") });
+    tests.back().key = "ironing_speed";
+
     return tests;
 }
 
@@ -788,6 +852,260 @@ private:
     wxStaticText*                    m_result   { nullptr };
 };
 
+// --- Dimensional accuracy (FDM) -------------------------------------------------------------------------------
+// A block of steps with holes, measured with a caliper: the scale and the offsets that make the prints as designed
+// (libslic3r/DimensionalCorrection.hpp).
+
+static const std::array<double, 4> DIM_STEPS { 80., 50., 30., 10. }; // widths of the square steps, from the bottom
+static const std::array<double, 4> DIM_HOLES { 4., 6., 8., 10. };    // holes through the widest step
+static constexpr double            DIM_STEP_HEIGHT = 3.;
+
+static void load_dimensional_block(wxWindow* parent)
+{
+    Model model;
+    ModelObject* obj = model.add_object();
+    obj->name = _u8L("Dimensional accuracy block");
+    for (size_t i = 0; i < DIM_STEPS.size(); ++ i)
+        add_box(*obj, -0.5 * DIM_STEPS[i], -0.5 * DIM_STEPS[i], i * DIM_STEP_HEIGHT, DIM_STEPS[i], DIM_STEPS[i], DIM_STEP_HEIGHT);
+    // One hole at each corner of the widest step, from the smallest at the front left counterclockwise (it tells X from
+    // Y), cut by negative volumes.
+    const double c = 0.25 * (DIM_STEPS[0] + DIM_STEPS[1]);
+    const Vec2d  corners[4] = { { -c, -c }, { c, -c }, { c, c }, { -c, c } };
+    for (size_t i = 0; i < DIM_HOLES.size(); ++ i) {
+        indexed_triangle_set hole = its_make_cylinder(0.5 * DIM_HOLES[i], DIM_STEP_HEIGHT + 0.5, 2. * PI / 180.);
+        its_translate(hole, Vec3f(float(corners[i].x()), float(corners[i].y()), 0.f));
+        obj->add_volume(TriangleMesh(std::move(hole)), ModelVolumeType::NEGATIVE_VOLUME);
+    }
+    set(*obj, "perimeters", "3");
+    set(*obj, "fill_density", "15%");
+    set(*obj, "support_material", "0");
+    obj->center_around_origin(false);
+    const Vec2d center = wxGetApp().plater()->build_volume().bed_center();
+    obj->add_instance()->set_offset(Vec3d(center.x(), center.y(), 0.5 * DIM_STEPS.size() * DIM_STEP_HEIGHT));
+    DynamicPrintConfig calib;
+    calib.set_key_value("calib_mode", new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
+    wxGetApp().plater()->load_calibration(model, calib);
+    wxMessageBox(_L("A block of four square steps (80, 50, 30 and 10 mm wide, 3 mm high each) with four holes (4, 6, 8 "
+                    "and 10 mm) in the widest one, the smallest at the front left.\n\n"
+                    "Print it with the filament and the settings to correct. Let it cool down on the bed, then measure "
+                    "with a caliper, in the middle of each side and away from the first layers: the width of each step "
+                    "from left to right (X) and from front to back (Y), the diameter of each hole, and the height of the "
+                    "top of each step. Enter the values in Calibration > Dimensional correction."),
+                 _L("Dimensional accuracy block"), wxOK | wxICON_INFORMATION, parent);
+}
+
+// The measures of the block give the corrections: the shrinkage of the filament (XY and Z), the XY size compensation
+// (the outer sizes), the XY hole compensation and the elephant foot compensation. The block must have been printed with
+// the settings shown: the new values take them into account.
+class DimensionalCorrectionDialog : public wxDialog
+{
+public:
+    explicit DimensionalCorrectionDialog(wxWindow* parent)
+        : wxDialog(parent, wxID_ANY, _L("Dimensional correction"), wxDefaultPosition, wxDefaultSize,
+                   wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    {
+        wxGetApp().UpdateDlgDarkUI(this);
+        const int em = wxGetApp().em_unit();
+        read_current();
+        auto main = new wxBoxSizer(wxVERTICAL);
+        auto info = new wxStaticText(this, wxID_ANY, _L("Sizes measured on the dimensional accuracy block, printed with "
+            "the settings in use now, in mm (a point or a comma). Each field shows the designed size in grey; leave it "
+            "empty if you did not measure it. Two widths are enough for the scale and the outer sizes; the more sizes, "
+            "the better the noise of the measures is seen."));
+        info->Wrap(48 * em);
+        main->Add(info, 0, wxALL, em);
+
+        // A field of a measure, the designed size as its hint.
+        auto field = [this, em](double nominal) {
+            auto ctrl = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(7 * em, -1));
+            ctrl->SetHint(wxString::Format("%g", nominal));
+            ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update(); });
+            return ctrl;
+        };
+        auto label = [this](const wxString& text) { return new wxStaticText(this, wxID_ANY, text); };
+
+        // The steps: their widths and the height of their tops.
+        auto steps = new wxFlexGridSizer(4, em / 2, em);
+        steps->Add(label(_L("Block step")));
+        steps->Add(label(_L("Width X")));
+        steps->Add(label(_L("Width Y")));
+        steps->Add(label(_L("Height of its top")));
+        for (size_t i = 0; i < DIM_STEPS.size(); ++ i) {
+            steps->Add(label(format_wxstr(_L("Step %1%"), i + 1)), 0, wxALIGN_CENTER_VERTICAL);
+            m_outer_x[i] = field(DIM_STEPS[i]);
+            m_outer_y[i] = field(DIM_STEPS[i]);
+            m_heights[i] = field((i + 1) * DIM_STEP_HEIGHT);
+            steps->Add(m_outer_x[i]);
+            steps->Add(m_outer_y[i]);
+            steps->Add(m_heights[i]);
+        }
+        main->Add(steps, 0, wxLEFT | wxRIGHT, em);
+
+        // The holes in one row, and the first layer.
+        auto others = new wxFlexGridSizer(DIM_HOLES.size() + 1, em / 2, em);
+        others->Add(label(_L("Holes (diameter)")), 0, wxALIGN_CENTER_VERTICAL);
+        for (size_t i = 0; i < DIM_HOLES.size(); ++ i) {
+            m_holes[i] = field(DIM_HOLES[i]);
+            others->Add(m_holes[i]);
+        }
+        others->Add(label(_L("Step 1 at the first layer (X)")), 0, wxALIGN_CENTER_VERTICAL);
+        m_first_layer = field(DIM_STEPS[0]);
+        m_first_layer->SetToolTip(_L("Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."));
+        others->Add(m_first_layer);
+        main->Add(others, 0, wxALL, em);
+
+        m_result = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        main->Add(m_result, 0, wxALL, em);
+        if (wxSizer* btns = CreateStdDialogButtonSizer(wxOK | wxCANCEL))
+            main->Add(btns, 0, wxEXPAND | wxALL, em);
+        if (wxWindow* ok = FindWindow(wxID_OK))
+            static_cast<wxButton*>(ok)->SetLabel(_L("Apply"));
+        update();
+        SetSizerAndFit(main);
+        CenterOnParent();
+    }
+
+    // The new settings, to the filament (shrinkage) and the print settings (the rest): saved by the user afterwards.
+    void apply()
+    {
+        const DimensionalResult r = result();
+        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_FILAMENT); tab != nullptr && (r.xy_ok || r.z_ok)) {
+            DynamicPrintConfig conf = *tab->get_config();
+            auto set_all = [&conf](const char* key, double v) {
+                if (ConfigOptionPercents* o = conf.option<ConfigOptionPercents>(key, true); o != nullptr) {
+                    if (o->values.empty())
+                        o->values.push_back(v);
+                    for (double& x : o->values)
+                        x = std::round(v * 100.) / 100.;
+                }
+            };
+            if (r.xy_ok)
+                set_all("filament_shrinkage_compensation_xy", r.settings.shrinkage_xy_percent);
+            if (r.z_ok)
+                set_all("filament_shrinkage_compensation_z", r.settings.shrinkage_z_percent);
+            tab->load_config(conf);
+        }
+        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT); tab != nullptr && r.xy_ok) {
+            DynamicPrintConfig conf = *tab->get_config();
+            auto mm = [](double v) { return new ConfigOptionFloat(std::round(v * 1000.) / 1000.); };
+            conf.set_key_value("xy_size_compensation", mm(r.settings.xy_size));
+            if (r.holes_ok)
+                conf.set_key_value("xy_hole_compensation", mm(r.settings.xy_hole));
+            if (r.foot_ok)
+                conf.set_key_value("elefant_foot_compensation", mm(r.settings.elephant_foot));
+            tab->load_config(conf);
+        }
+    }
+
+private:
+    void read_current()
+    {
+        auto first = [](const DynamicPrintConfig* c, const char* key) {
+            const ConfigOptionPercents* o = c ? c->option<ConfigOptionPercents>(key) : nullptr;
+            return o && ! o->values.empty() ? o->values.front() : 0.;
+        };
+        auto value = [](const DynamicPrintConfig* c, const char* key) {
+            return c && c->has(key) ? c->opt_float(key) : 0.;
+        };
+        Tab* filament = wxGetApp().get_tab(Preset::TYPE_FILAMENT);
+        Tab* print    = wxGetApp().get_tab(Preset::TYPE_PRINT);
+        const DynamicPrintConfig* f = filament ? filament->get_config() : nullptr;
+        const DynamicPrintConfig* p = print ? print->get_config() : nullptr;
+        m_current.shrinkage_xy_percent = first(f, "filament_shrinkage_compensation_xy");
+        m_current.shrinkage_z_percent  = first(f, "filament_shrinkage_compensation_z");
+        m_current.xy_size              = value(p, "xy_size_compensation");
+        m_current.xy_hole              = value(p, "xy_hole_compensation");
+        m_current.elephant_foot        = value(p, "elefant_foot_compensation");
+    }
+
+    // The measure typed in a field, with a point or a comma (zero: empty or not a number).
+    static double number(const wxTextCtrl* ctrl)
+    {
+        wxString text = ctrl->GetValue();
+        text.Replace(",", ".");
+        text.Trim(true).Trim(false);
+        double value = 0.;
+        return text.ToCDouble(&value) && value > 0. ? value : 0.;
+    }
+
+    DimensionalResult result() const
+    {
+        DimensionalMeasures m;
+        for (size_t i = 0; i < DIM_STEPS.size(); ++ i) {
+            m.outer_nominal.push_back(DIM_STEPS[i]);
+            m.outer_x.push_back(number(m_outer_x[i]));
+            m.outer_y.push_back(number(m_outer_y[i]));
+            m.height_nominal.push_back((i + 1) * DIM_STEP_HEIGHT);
+            m.heights.push_back(number(m_heights[i]));
+        }
+        for (size_t i = 0; i < DIM_HOLES.size(); ++ i) {
+            m.hole_nominal.push_back(DIM_HOLES[i]);
+            m.holes.push_back(number(m_holes[i]));
+        }
+        m.first_layer_width = number(m_first_layer);
+        return Slic3r::dimensional_correction(m, m_current);
+    }
+
+    void update()
+    {
+        const DimensionalResult r = result();
+        const DimensionalSettings& now = m_current;
+        wxString text;
+        auto line = [&text](const wxString& l) { text += l + "\n"; };
+        if (! r.xy_ok)
+            line(_L("Enter at least two widths in X and two in Y."));
+        else {
+            line(format_wxstr(_L("Scale: X %1%, Y %2% of the designed size."),
+                              wxString::Format("%.2f %%", 100. * r.x.slope), wxString::Format("%.2f %%", 100. * r.y.slope)));
+            // The filament shrinks the same in X and Y: a difference larger than the noise (at least 0.02 mm, about what a
+            // caliper reads) is the printer.
+            if (std::abs(r.x.slope - r.y.slope) * DIM_STEPS[0] > 2. * std::max({ r.x.rms, r.y.rms, 0.02 }))
+                line(_L("X and Y differ: that is the printer (belts, steps per mm), not the filament. The correction uses "
+                        "their mean."));
+            line(format_wxstr(_L("Shrinkage compensation XY: %1% (now %2%)"),
+                              wxString::Format("%.2f %%", r.settings.shrinkage_xy_percent), wxString::Format("%.2f %%", now.shrinkage_xy_percent)));
+            line(format_wxstr(_L("XY size compensation: %1% mm (now %2% mm)"),
+                              wxString::Format("%.3f", r.settings.xy_size), wxString::Format("%.3f", now.xy_size)));
+            if (r.holes_ok)
+                line(format_wxstr(_L("XY hole compensation: %1% mm (now %2% mm)"),
+                                  wxString::Format("%.3f", r.settings.xy_hole), wxString::Format("%.3f", now.xy_hole)));
+            if (r.foot_ok)
+                line(format_wxstr(_L("Elephant foot compensation: %1% mm (now %2% mm)"),
+                                  wxString::Format("%.3f", r.settings.elephant_foot), wxString::Format("%.3f", now.elephant_foot)));
+        }
+        if (r.z_ok) {
+            line(format_wxstr(_L("Shrinkage compensation Z: %1% (now %2%)"),
+                              wxString::Format("%.2f %%", r.settings.shrinkage_z_percent), wxString::Format("%.2f %%", now.shrinkage_z_percent)));
+            line(format_wxstr(_L("The first layers add %1% mm to every height: correct it with the Z offset or the first "
+                                 "layer calibration (not applied here)."), wxString::Format("%+.3f", r.z_offset)));
+        }
+        // What the line does not explain: the precision the printer and the caliper reach.
+        if (r.xy_ok)
+            line(format_wxstr(_L("Left after the correction (noise of the printer and of the measures): XY %1% mm%2%%3%"),
+                              wxString::Format("%.3f", std::max(r.x.rms, r.y.rms)),
+                              r.holes_ok ? format_wxstr(_L(", holes %1% mm"), wxString::Format("%.3f", r.holes.rms)) : wxString(),
+                              r.z_ok ? format_wxstr(_L(", Z %1% mm"), wxString::Format("%.3f", r.z.rms)) : wxString()));
+        m_result->SetLabel(text);
+        m_result->Wrap(48 * wxGetApp().em_unit());
+        if (wxWindow* ok = FindWindow(wxID_OK))
+            ok->Enable(r.xy_ok || r.z_ok);
+        Layout();
+        Fit();
+    }
+
+    std::array<wxTextCtrl*, 4>       m_outer_x {}, m_outer_y {}, m_holes {}, m_heights {};
+    wxTextCtrl*                      m_first_layer { nullptr };
+    wxStaticText*                    m_result      { nullptr };
+    DimensionalSettings              m_current;
+};
+
+static void run_dimensional_correction(wxWindow* parent)
+{
+    DimensionalCorrectionDialog dlg(parent);
+    if (dlg.ShowModal() == wxID_OK)
+        dlg.apply();
+}
+
 // --- Apply a calibration result ------------------------------------------------------------------------------
 // The value read on the print goes to the setting it calibrates, without calculations.
 
@@ -837,6 +1155,24 @@ static std::vector<ResultTarget> result_targets()
             c.set_key_value("overhang_arcs", new ConfigOptionBool(true));
         },
         [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_overlap"); } });
+    out.push_back({ CalibMode::IroningFlow, _L("Ironing flow"), "%", Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("ironing_flowrate", new ConfigOptionPercent(v));
+            c.set_key_value("ironing", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("ironing_flowrate"); } });
+    out.push_back({ CalibMode::IroningSpacing, _L("Ironing spacing"), _L("mm"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("ironing_spacing", new ConfigOptionFloat(v));
+            c.set_key_value("ironing", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("ironing_spacing"); } });
+    out.push_back({ CalibMode::IroningSpeed, _L("Ironing speed"), _L("mm/s"), Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("ironing_speed", new ConfigOptionFloat(v));
+            c.set_key_value("ironing", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("ironing_speed"); } });
     out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
         [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
         [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });
@@ -1099,8 +1435,16 @@ wxMenu* create_calibration_menu(wxWindow* parent, bool resin, bool models_only)
     menu->Append(coupons_id, _L("Staggered perimeters: strength coupons") + dots,
                  _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."));
     menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_stagger_coupons(parent); }, coupons_id);
+    const int block_id = wxWindow::NewControlId();
+    menu->Append(block_id, _L("Dimensional accuracy block") + dots,
+                 _L("Steps and holes of several sizes to measure how much the prints grow or shrink."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_dimensional_block(parent); }, block_id);
     if (models_only)
         return menu;
+    const int dims_id = wxWindow::NewControlId();
+    menu->Append(dims_id, _L("Dimensional correction") + dots,
+                 _L("Calculates the shrinkage and the size, hole and elephant foot compensations from the measured block."));
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { run_dimensional_correction(parent); }, dims_id);
     menu->AppendSeparator();
     append_apply_result(menu, parent);
     return menu;
@@ -1140,6 +1484,9 @@ std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
             case CalibMode::ArcOverhangSpeed:    return { _L("Arc speed"), "time" };
             case CalibMode::ArcOverhangDistance: return { _L("Arc length"), "measure" };
             case CalibMode::ArcOverhangOverlap:  return { _L("Arc overlap"), "legend_shells" };
+            case CalibMode::IroningFlow:         return { _L("Iron flow"), "ironing" };
+            case CalibMode::IroningSpacing:      return { _L("Iron spacing"), "ironing" };
+            case CalibMode::IroningSpeed:        return { _L("Iron speed"), "ironing" };
             default:                             return { wxString(), "tisma_calibrate" };
             }
         };
@@ -1152,6 +1499,12 @@ std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
         add(_L("Strength"), _L("Staggered perimeters: strength coupons"),
             _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."),
             "test", [parent]() { load_stagger_coupons(parent); });
+        add(_L("Dimensions"), _L("Dimensional accuracy block"),
+            _L("Steps and holes of several sizes to measure how much the prints grow or shrink."), "measure",
+            [parent]() { load_dimensional_block(parent); });
+        add(_L("Correction"), _L("Dimensional correction"),
+            _L("Calculates the shrinkage and the size, hole and elephant foot compensations from the measured block."),
+            "scale", [parent]() { run_dimensional_correction(parent); });
     }
     add(_L("Apply result"), _L("Apply a calibration result"), _L("Writes the value read on a calibration print to its setting."),
         "wrench", [parent]() { apply_result(parent); });

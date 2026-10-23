@@ -433,3 +433,116 @@ TEST_CASE("Calibration: arc overhang overlap by columns", "[Calibration][ArcOver
     CHECK(length[1] > 1.1 * length[0]);
     CHECK(length[2] > 1.1 * length[1]);
 }
+
+// XY hole compensation (Tisma): a 20 x 20 x 2 mm plate with a hole of 6 mm cut by a negative volume. The diameter of the
+// hole and the width of the plate on a layer, by the length of their outlines.
+static std::pair<double, double> hole_and_width(double hole_compensation)
+{
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "layer_height",         0.2 },
+        { "first_layer_height",   0.2 },
+        { "skirts",               0 },
+        { "xy_hole_compensation", hole_compensation },
+    });
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_volume(TriangleMesh(its_make_cube(20., 20., 2.)));
+    indexed_triangle_set hole = its_make_cylinder(3., 3., 2. * PI / 360.);
+    its_translate(hole, Vec3f(10.f, 10.f, -0.5f));
+    object->add_volume(TriangleMesh(std::move(hole)), ModelVolumeType::NEGATIVE_VOLUME);
+    object->add_instance();
+    object->ensure_on_bed();
+    Print print;
+    print.set_status_silent();
+    print.apply(model, config);
+    print.validate();
+    print.process();
+    const ExPolygons &islands = print.objects().front()->layers()[5]->lslices;
+    REQUIRE(islands.size() == 1);
+    REQUIRE(islands.front().holes.size() == 1);
+    return { unscaled<double>(islands.front().holes.front().length()) / PI,
+             0.25 * unscaled<double>(islands.front().contour.length()) };
+}
+
+TEST_CASE("XY hole compensation grows and shrinks the holes only", "[DimensionalCorrection]")
+{
+    const auto [hole, width]               = hole_and_width(0.);
+    const auto [bigger_hole, same_width]   = hole_and_width(0.2);
+    const auto [smaller_hole, same_width2] = hole_and_width(-0.2);
+    CHECK(hole == Approx(6.).margin(0.02));
+    CHECK(bigger_hole - hole == Approx(0.4).margin(0.02));
+    CHECK(hole - smaller_hole == Approx(0.4).margin(0.02));
+    CHECK(same_width == Approx(width).margin(1e-6));
+    CHECK(same_width2 == Approx(width).margin(1e-6));
+}
+
+// Ironing (Tisma): solid patches 25 mm apart along X with their top ironed, each with its own value of one ironing
+// setting (a setting of its volume, as the calibrations of the ironing set it).
+static std::string slice_ironing_patches(const std::string &key, const std::vector<ConfigOption*> &values)
+{
+    DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+        { "ironing",            true },
+        { "ironing_type",       "top" },
+        { "layer_height",       0.2 },
+        { "first_layer_height", 0.2 },
+        { "perimeters",         2 },
+        { "top_solid_layers",   5 },
+        { "bottom_solid_layers", 3 },
+        { "fill_density",       "100%" },
+        { "skirts",             0 },
+    });
+    Model model;
+    ModelObject *object = model.add_object();
+    object->name = "ironing";
+    for (size_t i = 0; i < values.size(); ++ i) {
+        indexed_triangle_set patch = its_make_cube(21., 30., 2.);
+        its_translate(patch, Vec3f(float(25. * i), 0.f, 0.f));
+        object->add_volume(TriangleMesh(std::move(patch)));
+        object->volumes.back()->config.set_key_value(key, values[i]);
+    }
+    object->add_instance();
+    object->ensure_on_bed();
+    Print print;
+    print.apply(model, config);
+    print.validate();
+    return Test::gcode(print);
+}
+
+TEST_CASE("Calibration: ironing flow, spacing and speed by patches", "[Calibration][Ironing]")
+{
+    // Filament per mm, length and length by feed rate of the ironing, by patch.
+    struct Ironing { double e { 0. }, length { 0. }; std::map<int, double> by_feed; };
+    auto ironing = [](const std::string &gcode) {
+        std::map<int, Ironing> out;
+        for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
+            out[patch].e      += line.dist_E(self);
+            out[patch].length += line.dist_XY(self);
+            out[patch].by_feed[int(std::round(line.new_F(self)))] += line.dist_XY(self);
+        }, "Ironing");
+        return out;
+    };
+    SECTION("flow") {
+        // 10 % and 20 % of a normal layer.
+        std::map<int, Ironing> by_patch = ironing(slice_ironing_patches("ironing_flowrate",
+            { new ConfigOptionPercent(10.), new ConfigOptionPercent(20.) }));
+        REQUIRE(by_patch.size() == 2);
+        const double e0 = by_patch[0].e / by_patch[0].length;
+        const double e1 = by_patch[1].e / by_patch[1].length;
+        CHECK(e1 / e0 == Approx(2.).epsilon(0.05));
+    }
+    SECTION("spacing") {
+        // 0.1 mm and 0.2 mm between the passes: half the passes over the same top.
+        std::map<int, Ironing> by_patch = ironing(slice_ironing_patches("ironing_spacing",
+            { new ConfigOptionFloat(0.1), new ConfigOptionFloat(0.2) }));
+        REQUIRE(by_patch.size() == 2);
+        CHECK(by_patch[0].length / by_patch[1].length == Approx(2.).epsilon(0.1));
+    }
+    SECTION("speed") {
+        // 10 and 30 mm/s: 600 and 1800 mm/min.
+        std::map<int, Ironing> by_patch = ironing(slice_ironing_patches("ironing_speed",
+            { new ConfigOptionFloat(10.), new ConfigOptionFloat(30.) }));
+        REQUIRE(by_patch.size() == 2);
+        CHECK(by_patch[0].by_feed[600] > 0.9 * by_patch[0].length);
+        CHECK(by_patch[1].by_feed[1800] > 0.9 * by_patch[1].length);
+    }
+}

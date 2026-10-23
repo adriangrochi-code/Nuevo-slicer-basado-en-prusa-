@@ -55,6 +55,33 @@ Todas comparten un mecanismo: opciones de proyecto `calib_*` y un valor que camb
 
 "G-code" = verificado leyendo el G-code generado por línea de comandos. Ninguna prueba se ha impreso todavía.
 
+Pruebas por parches a lo largo de X (un valor por parche, un ajuste de sus volúmenes; tests en `test_calibration.cpp`):
+
+| Prueba | Modelo | Ajuste |
+|---|---|---|
+| Alisado: flujo | Parches macizos de 20 mm de fondo y 2 mm de alto, con la cara de arriba alisada | `ironing_flowrate` (5 a 25 %) |
+| Alisado: separación | Igual | `ironing_spacing` (0,05 a 0,25 mm) |
+| Alisado: velocidad | Igual | `ironing_speed` (10 a 50 mm/s) |
+| Arc overhangs: solape | Columnas con una losa en voladizo | `overhang_arcs_overlap` (0 a 40 %) |
+
+**Precisión dimensional** (Calibración > Bloque de precisión dimensional y Corrección dimensional): un bloque de cuatro
+escalones cuadrados (80, 50, 30 y 10 mm, 3 mm de alto cada uno) con agujeros de 4, 6, 8 y 10 mm. Con las medidas del
+calibre, `libslic3r/DimensionalCorrection.cpp` ajusta una recta `medido = escala · diseño + desplazamiento`. La escala es
+la contracción y crece con el tamaño; el desplazamiento es el borde, igual en cualquier tamaño. La cuenta va por X, por
+Y, para los agujeros (con la escala de las medidas exteriores) y para las alturas, y tiene en cuenta los ajustes con los
+que se imprimió el bloque. Escribe:
+
+- en el filamento: `filament_shrinkage_compensation_xy` y `_z` (las de PrusaSlicer);
+- en la configuración de impresión: `xy_size_compensation`, `xy_hole_compensation` (nueva: los agujeros aparte, con la
+  misma clave y sentido que en Bambu Studio, `src/libslic3r/PrintConfig.cpp` de bambulab/BambuStudio) y
+  `elefant_foot_compensation`.
+
+El desplazamiento de las alturas (primeras capas) se muestra pero no se aplica: va al desfase Z o a la calibración de
+primera capa. Lo que la recta no explica se muestra como el ruido de la impresora y del calibre: es el límite de la
+precisión alcanzable. `xy_hole_compensation` agranda o achica los agujeros de cada isla después de la compensación de
+tamaño (`PrintObjectSlice.cpp`). Con varias regiones en la capa solo los agranda: achicarlos necesitaría elegir qué
+región rellena.
+
 Las pruebas están en el grupo **Calibrar** de las herramientas de la placa (barra superior), una herramienta cada una,
 más "Aplicar resultado"; también en Más > Calibración, y los modelos solos con clic derecho en la cama.
 
@@ -77,5 +104,6 @@ PA, tolerancias, y la numeración en relieve de los bloques.
 
 ## 4. Pruebas automáticas del fork
 
-`[NonPlanar]` (libslic3r y fff_print), `[USBPrinter]` (slic3rutils), `[ArcOverhangs]` y `[DenseInfill]` (fff_print).
+`[NonPlanar]` (libslic3r y fff_print), `[USBPrinter]` (slic3rutils), `[ArcOverhangs]` y `[DenseInfill]` (fff_print),
+`[DimensionalCorrection]` (libslic3r y fff_print), `[Ironing]` (fff_print).
 **No hay pruebas** de Ajustes rápidos, columna de navegación ni calibraciones (pendiente: test del G-code de cada modo).

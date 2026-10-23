@@ -1007,11 +1007,41 @@ void PrintObject::slice_volumes()
         	// Only enable Elephant foot compensation if printing directly on the print bed.
             float(scale_(m_config.elefant_foot_compensation.value)) :
         	0.f;
+        // Tisma: the hole compensation (xy_hole_compensation), after the size compensation. The holes of each island grow
+        // (positive) or shrink (negative). With several regions on a layer the holes are those of the whole layer, and
+        // they only grow: they are cut out of every region (a hole made smaller would need a region to fill it).
+        const float hole_compensation_scaled = scaled<float>(m_config.xy_hole_compensation.value);
+        auto compensate_holes = [](Layer &layer, float delta) {
+            auto holes_of = [](const ExPolygons &expolygons) {
+                Polygons out;
+                for (const ExPolygon &expolygon : expolygons)
+                    for (Polygon hole : expolygon.holes) {
+                        hole.reverse(); // the area of the hole
+                        out.emplace_back(std::move(hole));
+                    }
+                return out;
+            };
+            if (layer.m_regions.size() == 1) {
+                LayerRegion &layerm = *layer.m_regions.front();
+                ExPolygons   out;
+                for (ExPolygon &expolygon : to_expolygons(std::move(layerm.m_slices.surfaces))) {
+                    const Polygons holes = offset(holes_of({ expolygon }), delta);
+                    append(out, diff_ex(Polygons{ std::move(expolygon.contour) }, holes));
+                }
+                layerm.m_slices.set(std::move(out), stInternal);
+            } else if (delta > 0.f) {
+                const ExPolygons merged = layer.merged(float(SCALED_EPSILON));
+                const Polygons   trimming = to_polygons(diff_ex(merged, offset(holes_of(merged), delta)));
+                for (LayerRegion *layerm : layer.m_regions)
+                    layerm->trim_surfaces(trimming);
+            }
+        };
         // Uncompensated slices for the first layer in case the Elephant foot compensation is applied.
 	    ExPolygons  lslices_1st_layer;
 	    tbb::parallel_for(
 	        tbb::blocked_range<size_t>(0, m_layers.size()),
-			[this, xy_compensation_scaled, elephant_foot_compensation_scaled, &lslices_1st_layer](const tbb::blocked_range<size_t>& range) {
+			[this, xy_compensation_scaled, elephant_foot_compensation_scaled, hole_compensation_scaled, &compensate_holes,
+             &lslices_1st_layer](const tbb::blocked_range<size_t>& range) {
 	            for (size_t layer_id = range.begin(); layer_id < range.end(); ++ layer_id) {
 	                m_print->throw_if_canceled();
 	                Layer *layer = m_layers[layer_id];
@@ -1059,6 +1089,8 @@ void PrintObject::slice_volumes()
 	                            layer->m_regions[region_id]->trim_surfaces(trimming);
 	                    }
 	                }
+	                if (hole_compensation_scaled != 0.f)
+	                    compensate_holes(*layer, hole_compensation_scaled);
 	                // Merge all regions' slices to get islands sorted topologically, chain them by a shortest path in separate index list
 	                layer->make_slices();
 	            }

@@ -34371,3 +34371,126 @@ msgstr "Mirá las losas desde abajo y desde arriba: elegí la columna con menos 
 
 msgid "Arc overlap"
 msgstr "Solape arcos"
+
+msgid "XY hole compensation"
+msgstr "Compensación de agujeros XY"
+
+msgid "The holes of the object are grown or shrunk in the XY plane by this value, after the XY size compensation: positive makes the holes bigger, negative smaller. Printed holes usually come out smaller than designed (Calibration > Dimensional correction measures it). With several parts or modifiers on a layer, holes are only grown."
+msgstr "Los agujeros del objeto se agrandan o achican en el plano XY en este valor, después de la compensación de tamaño XY: positivo los agranda, negativo los achica. Los agujeros impresos suelen salir más chicos que en el diseño (Calibración > Corrección dimensional lo mide). Con varias partes o modificadores en una capa, los agujeros solo se agrandan."
+
+msgid "A block of four square steps (80, 50, 30 and 10 mm wide, 3 mm high each) with four holes (4, 6, 8 and 10 mm) in the widest one, the smallest at the front left.\n\nPrint it with the filament and the settings to correct. Let it cool down on the bed, then measure with a caliper, in the middle of each side and away from the first layers: the width of each step from left to right (X) and from front to back (Y), the diameter of each hole, and the height of the top of each step. Enter the values in Calibration > Dimensional correction."
+msgstr "Un bloque de cuatro escalones cuadrados (de 80, 50, 30 y 10 mm de ancho y 3 mm de alto cada uno) con cuatro agujeros (de 4, 6, 8 y 10 mm) en el más ancho, el más chico adelante a la izquierda.\n\nImprimilo con el filamento y los ajustes a corregir. Dejalo enfriar sobre la cama y después medí con un calibre, en el medio de cada lado y lejos de las primeras capas: el ancho de cada escalón de izquierda a derecha (X) y de adelante hacia atrás (Y), el diámetro de cada agujero y la altura de la parte de arriba de cada escalón. Cargá los valores en Calibración > Corrección dimensional."
+
+msgid "Dimensional accuracy block"
+msgstr "Bloque de precisión dimensional"
+
+msgid "Dimensional correction"
+msgstr "Corrección dimensional"
+
+msgid "Width X"
+msgstr "Ancho X"
+
+msgid "Width Y"
+msgstr "Ancho Y"
+
+msgid "Step %1%"
+msgstr "Escalón %1%"
+
+msgid "Enter at least two widths in X and two in Y."
+msgstr "Cargá al menos dos anchos en X y dos en Y."
+
+msgid "Scale: X %1%, Y %2% of the designed size."
+msgstr "Escala: X %1%, Y %2% de la medida del diseño."
+
+msgid "X and Y differ: that is the printer (belts, steps per mm), not the filament. The correction uses their mean."
+msgstr "X e Y difieren: eso es la impresora (correas, pasos por mm), no el filamento. La corrección usa el promedio."
+
+msgid "Shrinkage compensation XY: %1% (now %2%)"
+msgstr "Compensación de contracción XY: %1% (ahora %2%)"
+
+msgid "XY size compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de tamaño XY: %1% mm (ahora %2% mm)"
+
+msgid "XY hole compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de agujeros XY: %1% mm (ahora %2% mm)"
+
+msgid "Elephant foot compensation: %1% mm (now %2% mm)"
+msgstr "Compensación de pata de elefante: %1% mm (ahora %2% mm)"
+
+msgid "Shrinkage compensation Z: %1% (now %2%)"
+msgstr "Compensación de contracción Z: %1% (ahora %2%)"
+
+msgid "The first layers add %1% mm to every height: correct it with the Z offset or the first layer calibration (not applied here)."
+msgstr "Las primeras capas suman %1% mm a todas las alturas: corregilo con el desfase Z o la calibración de primera capa (no se aplica acá)."
+
+msgid "Left after the correction (noise of the printer and of the measures): XY %1% mm%2%%3%"
+msgstr "Lo que queda después de la corrección (ruido de la impresora y de las mediciones): XY %1% mm%2%%3%"
+
+msgid ", holes %1% mm"
+msgstr ", agujeros %1% mm"
+
+msgid ", Z %1% mm"
+msgstr ", Z %1% mm"
+
+msgid "Steps and holes of several sizes to measure how much the prints grow or shrink."
+msgstr "Escalones y agujeros de varios tamaños para medir cuánto se agrandan o achican las impresiones."
+
+msgid "Calculates the shrinkage and the size, hole and elephant foot compensations from the measured block."
+msgstr "Calcula la contracción y las compensaciones de tamaño, de agujeros y de pata de elefante a partir del bloque medido."
+
+msgid "Ironing flow"
+msgstr "Flujo de alisado"
+
+msgid "Ironing spacing"
+msgstr "Separación del alisado"
+
+msgid "Ironing speed"
+msgstr "Velocidad de alisado"
+
+msgid "Look at the top surfaces against the light, at a low angle: choose the smoothest patch, without the lines of the top layer, grooves between the ironing passes, ridges or a dull, scraped surface."
+msgstr "Mirá las superficies superiores a contraluz, en ángulo bajo: elegí el parche más liso, sin las líneas de la capa superior, surcos entre las pasadas de alisado, crestas ni una superficie opaca o raspada."
+
+msgid "Prints a row of solid patches in one go and irons their top, with a different ironing flow for each patch (from left to right): the plastic the nozzle lays while it irons, in percent of a normal layer."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior, con un flujo de alisado distinto en cada parche (de izquierda a derecha): el plástico que deja la boquilla mientras alisa, en porcentaje de una capa normal."
+
+msgid "Too little flow leaves the grooves of the top layer; too much leaves ridges and blobs at the edges. Its flow is start + step × patch number (from the left, starting at 0): it is the ironing flow rate (Calibration > Apply a calibration result). Calibrate the flow of the filament first."
+msgstr "Con poco flujo quedan los surcos de la capa superior; con mucho quedan crestas y gotas en los bordes. Su flujo es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la tasa de flujo del alisado (Calibración > Aplicar un resultado de calibración). Calibrá primero el flujo del filamento."
+
+msgid "Prints a row of solid patches in one go and irons their top, with a different distance between the ironing passes for each patch (from left to right)."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior, con una distancia entre pasadas de alisado distinta en cada parche (de izquierda a derecha)."
+
+msgid "Too wide leaves grooves between the passes; closer than needed takes longer for nothing. Choose the widest spacing that leaves the surface smooth. Its spacing is start + step × patch number (from the left, starting at 0): it is the spacing between ironing passes (Calibration > Apply a calibration result)."
+msgstr "Muy separadas quedan surcos entre las pasadas; más juntas de lo necesario tarda más sin ganar nada. Elegí la separación más grande que deje la superficie lisa. Su separación es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la separación entre pasadas de alisado (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Prints a row of solid patches in one go and irons their top at a different speed for each patch (from left to right)."
+msgstr "Imprime de una vez una fila de parches macizos y alisa su cara superior a una velocidad distinta en cada parche (de izquierda a derecha)."
+
+msgid "Too fast does not melt the top enough and leaves its lines; too slow can scrape it or leave it dull. Choose the fastest patch that is smooth. Its speed is start + step × patch number (from the left, starting at 0): it is the ironing speed (Calibration > Apply a calibration result)."
+msgstr "Muy rápido no funde lo suficiente la cara superior y quedan sus líneas; muy lento puede rasparla o dejarla opaca. Elegí el parche más rápido que quede liso. Su velocidad es inicio + paso × número de parche (desde la izquierda, empezando en 0): es la velocidad de alisado (Calibración > Aplicar un resultado de calibración)."
+
+msgid "Iron flow"
+msgstr "Flujo alisado"
+
+msgid "Iron spacing"
+msgstr "Sep. alisado"
+
+msgid "Iron speed"
+msgstr "Vel. alisado"
+
+msgid "Sizes measured on the dimensional accuracy block, printed with the settings in use now, in mm (a point or a comma). Each field shows the designed size in grey; leave it empty if you did not measure it. Two widths are enough for the scale and the outer sizes; the more sizes, the better the noise of the measures is seen."
+msgstr "Medidas del bloque de precisión dimensional, impreso con los ajustes que están en uso ahora, en mm (con punto o coma). Cada campo muestra en gris la medida del diseño; dejalo vacío si no lo mediste. Con dos anchos alcanza para la escala y las medidas exteriores; con más medidas se ve mejor el ruido de las mediciones."
+
+msgid "Block step"
+msgstr "Escalón"
+
+msgid "Height of its top"
+msgstr "Altura de arriba"
+
+msgid "Holes (diameter)"
+msgstr "Agujeros (diámetro)"
+
+msgid "Step 1 at the first layer (X)"
+msgstr "Escalón 1 en la primera capa (X)"
+
+msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
+msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."

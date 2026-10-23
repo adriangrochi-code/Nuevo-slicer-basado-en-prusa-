@@ -192,6 +192,8 @@ enum class CalibMode { Disabled, Temperature, PressureAdvance, Retraction, Volum
                        // Arc overhangs: speed of the arcs, length of the overhang, overlap between the arcs (by
                        // patches along X).
                        ArcOverhangSpeed, ArcOverhangDistance, ArcOverhangOverlap,
+                       // Ironing: flow, spacing and speed of the ironing (by patches along X).
+                       IroningFlow, IroningSpacing, IroningSpeed,
                        // Resin: exposure time per band of layers (archives with a per layer exposure, GOO).
                        ResinExposure };
 enum class NonPlanarPattern { Egg, Ridges, Twisted };
@@ -744,6 +746,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     // The rest
     ((ConfigOptionBool,                thick_bridges))
     ((ConfigOptionFloat,               xy_size_compensation))
+    ((ConfigOptionFloat,               xy_hole_compensation))
     ((ConfigOptionBool,                wipe_into_objects))
 
     ((ConfigOptionBool,                interlocking_beam))

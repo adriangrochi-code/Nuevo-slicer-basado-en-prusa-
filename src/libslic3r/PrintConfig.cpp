@@ -305,6 +305,9 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "arc_overhang_speed", int(CalibMode::ArcOverhangSpeed) },
     { "arc_overhang_distance", int(CalibMode::ArcOverhangDistance) },
     { "arc_overhang_overlap", int(CalibMode::ArcOverhangOverlap) },
+    { "ironing_flow",     int(CalibMode::IroningFlow) },
+    { "ironing_spacing",  int(CalibMode::IroningSpacing) },
+    { "ironing_speed",    int(CalibMode::IroningSpeed) },
     { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
@@ -4360,6 +4363,9 @@ void PrintConfigDef::init_fff_params()
         { "arc_overhang_speed", L("Arc overhang speed") },
         { "arc_overhang_distance", L("Arc overhang maximum distance") },
         { "arc_overhang_overlap", L("Arc overhang overlap") },
+        { "ironing_flow",     L("Ironing flow") },
+        { "ironing_spacing",  L("Ironing spacing") },
+        { "ironing_speed",    L("Ironing speed") },
         { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));
@@ -4528,6 +4534,18 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("The object will be grown/shrunk in the XY plane by the configured value "
                    "(negative = inwards, positive = outwards). This might be useful "
                    "for fine-tuning hole sizes.");
+    def->sidetext = L("mm");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    // Tisma: the holes apart (the same key and meaning as in Bambu Studio and OrcaSlicer, so their projects keep it).
+    def = this->add("xy_hole_compensation", coFloat);
+    def->label = L("XY hole compensation");
+    def->category = L("Advanced");
+    def->tooltip = L("The holes of the object are grown or shrunk in the XY plane by this value, after the XY size "
+                     "compensation: positive makes the holes bigger, negative smaller. Printed holes usually come out "
+                     "smaller than designed (Calibration > Dimensional correction measures it). With several parts or "
+                     "modifiers on a layer, holes are only grown.");
     def->sidetext = L("mm");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
