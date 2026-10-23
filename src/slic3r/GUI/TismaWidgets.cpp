@@ -15,6 +15,8 @@
 #include "BitmapCache.hpp"
 #include "GUI_App.hpp"
 #include "TismaTheme.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -142,6 +144,36 @@ void TismaChip::msw_rescale()
     Refresh();
 }
 
+void style_tisma_button(::Button *button, bool primary)
+{
+    const bool dark = wxGetApp().dark_mode();
+    button->SetCornerRadius(0.6 * wxGetApp().em_unit());
+    if (primary) {
+        button->SetBackgroundColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+            std::pair<wxColour, int>(TismaTheme::accent_pressed(),    StateColor::Pressed),
+            std::pair<wxColour, int>(TismaTheme::accent_hover(),      StateColor::Hovered),
+            std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+        button->SetBorderColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::disabled_bg(dark),   StateColor::Disabled),
+            std::pair<wxColour, int>(TismaTheme::accent(),            StateColor::Normal)));
+        button->SetTextColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+            std::pair<wxColour, int>(*wxWHITE,                        StateColor::Normal)));
+    } else {
+        button->SetBackgroundColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::card_bg(dark),       StateColor::Hovered),
+            std::pair<wxColour, int>(TismaTheme::panel_bg(dark),      StateColor::Normal)));
+        button->SetBorderColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::separator(dark),     StateColor::Disabled),
+            std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+        button->SetTextColor(StateColor(
+            std::pair<wxColour, int>(TismaTheme::disabled_text(dark), StateColor::Disabled),
+            std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
+    }
+    button->Refresh();
+}
+
 TismaTitle::TismaTitle(wxWindow* parent, const wxString& text, Style style)
     : wxStaticText(parent, wxID_ANY, text), m_style(style)
 {
@@ -220,6 +252,14 @@ TismaPageList::TismaPageList(wxWindow* parent, const wxSize& size)
         SetFocus();
         if (const int row = row_at(e.GetPosition()); row >= 0)
             select(row, true);
+    });
+    Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent& e) {
+        if (const int row = row_at(e.GetPosition()); row >= 0 && row == m_selection) {
+            wxTreeEvent event(wxEVT_TREE_ITEM_ACTIVATED, GetId());
+            event.SetEventObject(this);
+            event.SetItem(id(row));
+            GetEventHandler()->ProcessEvent(event);
+        }
     });
     Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
         if (const int row = row_at(e.GetPosition()); row != m_hover) {
@@ -335,6 +375,12 @@ void TismaPageList::SelectItem(const wxTreeItemId& item, bool select_it)
     const int i = index(item);
     if (i >= 0 && select_it)
         select(i, true);
+}
+
+void TismaPageList::SetSelectionIndex(int idx)
+{
+    if (idx >= -1 && idx < int(m_items.size()))
+        select(idx, false);
 }
 
 void TismaPageList::select(int idx, bool send_event)

@@ -17,8 +17,13 @@
 #include <wx/stattext.h>
 #include <wx/treebase.h>
 
+class Button;
+
 namespace Slic3r {
 namespace GUI {
+
+// The buttons of the interface of Tisma: filled with the accent color (the main action of a page) or outlined in it.
+void style_tisma_button(::Button *button, bool primary);
 
 // A rounded chip: an icon, a dot of a color or neither, and a text. A click calls on_click.
 class TismaChip : public wxPanel
@@ -110,6 +115,12 @@ public:
 
     wxTreeItemId GetSelection() const;
     void         SelectItem(const wxTreeItemId& item, bool select = true);
+
+    // As a list: its rows by their index, the selection set without an event (as wxListBox::SetSelection()). A double
+    // click sends wxEVT_TREE_ITEM_ACTIVATED.
+    void         Clear() { DeleteChildren(GetRootItem()); }
+    int          GetSelectionIndex() const { return m_selection; }
+    void         SetSelectionIndex(int idx);
 
 private:
     struct Item {

@@ -34167,3 +34167,9 @@ msgstr "La cama que se elige al seleccionar esta impresora."
 
 msgid "Legend"
 msgstr "Leyenda"
+
+msgid "Change access code"
+msgstr "Cambiar el código de acceso"
+
+msgid "When the printer shows a new access code or API key: type it here, Tisma tests the connection and saves it."
+msgstr "Cuando la impresora muestra un código de acceso o una clave API nuevos: escribilos acá, Tisma prueba la conexión y los guarda."

@@ -3,6 +3,10 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "DevicesPanel.hpp"
+#include <wx/treectrl.h>
+#include "Widgets/SwitchButton.hpp"
+#include "Widgets/Button.hpp"
+#include "TismaWidgets.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -136,20 +140,23 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 
     // Left: the printers.
     auto *left = new wxBoxSizer(wxVERTICAL);
-    auto *caption = new wxStaticText(this, wxID_ANY, _L("Devices").Upper());
-    caption->SetFont(wxGetApp().small_font().Bold());
-    caption->SetForegroundColour(TismaTheme::text_muted(dark));
-    left->Add(caption, 0, wxBOTTOM, em / 2);
-    m_list = new wxListBox(this, wxID_ANY, wxDefaultPosition, wxSize(24 * em, -1));
-    wxGetApp().UpdateDarkUI(m_list);
+    m_caption = new TismaTitle(this, _L("Devices"));
+    left->Add(m_caption, 0, wxBOTTOM, em / 2);
+    m_list = new TismaPageList(this, wxSize(24 * em, -1));
+    {
+        wxVector<wxBitmapBundle> icons;
+        icons.push_back(*get_bmp_bundle("plug"));
+        icons.push_back(*get_bmp_bundle("tisma_printer"));
+        m_list->SetImages(icons);
+    }
     left->Add(m_list, 1, wxEXPAND | wxBOTTOM, em / 2);
-    auto *btn_add = new wxButton(this, wxID_ANY, "+ " + _L("Add network printer"));
-    btn_add->SetToolTip(_L("Bambu Lab (LAN), Flashforge, OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, "
-                           "Repetier, MKS, FlashAir, AstroBox. The printers of the local network can be searched in the dialog."));
-    left->Add(btn_add, 0, wxEXPAND | wxBOTTOM, em / 4);
-    m_btn_edit = new wxButton(this, wxID_ANY, _L("Edit printer") + dots);
-    left->Add(m_btn_edit, 0, wxEXPAND | wxBOTTOM, em / 4);
-    m_btn_code = new wxButton(this, wxID_ANY, _L("Change access code") + dots);
+    m_btn_add = new ::Button(this, "+ " + _L("Add network printer"));
+    m_btn_add->SetToolTip(_L("Bambu Lab (LAN), Flashforge, OctoPrint, Klipper (Moonraker: Mainsail, Fluidd), PrusaLink, Duet, "
+                             "Repetier, MKS, FlashAir, AstroBox. The printers of the local network can be searched in the dialog."));
+    left->Add(m_btn_add, 0, wxEXPAND | wxBOTTOM, em / 2);
+    m_btn_edit = new ::Button(this, _L("Edit printer") + dots);
+    left->Add(m_btn_edit, 0, wxEXPAND | wxBOTTOM, em / 2);
+    m_btn_code = new ::Button(this, _L("Change access code") + dots);
     m_btn_code->SetToolTip(_L("When the printer shows a new access code or API key: type it here, Tisma tests the connection "
                               "and saves it."));
     left->Add(m_btn_code, 0, wxEXPAND);
@@ -158,15 +165,16 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
     // Right: the selected printer.
     auto *right = new wxBoxSizer(wxVERTICAL);
     auto *bar = new wxBoxSizer(wxHORIZONTAL);
-    m_title = new wxStaticText(this, wxID_ANY, "");
-    m_title->SetFont(wxGetApp().bold_font());
+    m_title = new TismaTitle(this, "");
     bar->Add(m_title, 1, wxALIGN_CENTER_VERTICAL);
-    m_start = new wxCheckBox(this, wxID_ANY, _L("Start printing"));
+    m_start_label = new wxStaticText(this, wxID_ANY, _L("Start printing"));
+    bar->Add(m_start_label, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
+    m_start = new ::SwitchButton(this);
     m_start->SetValue(wxGetApp().app_config->get("tisma_devices_start_print") != "0");
     bar->Add(m_start, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
-    m_btn_send = new wxButton(this, wxID_ANY, _L("Send sliced G-code"));
+    m_btn_send = new ::Button(this, _L("Send sliced G-code"));
     bar->Add(m_btn_send, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, em / 2);
-    m_btn_browser = new wxButton(this, wxID_ANY, _L("Open in browser"));
+    m_btn_browser = new ::Button(this, _L("Open in browser"));
     bar->Add(m_btn_browser, 0, wxALIGN_CENTER_VERTICAL);
     right->Add(bar, 0, wxEXPAND | wxBOTTOM, em / 2);
     m_hint = new wxStaticText(this, wxID_ANY, "");
@@ -187,14 +195,14 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 
     SetSizer(main);
 
-    m_list->Bind(wxEVT_LISTBOX, [this](wxCommandEvent &) { on_select(); });
-    m_list->Bind(wxEVT_LISTBOX_DCLICK, [this](wxCommandEvent &) { edit_printer(); });
-    btn_add->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { add_network_printer(); });
+    m_list->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent &) { on_select(); });
+    m_list->Bind(wxEVT_TREE_ITEM_ACTIVATED, [this](wxTreeEvent &) { edit_printer(); });
+    m_btn_add->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { add_network_printer(); });
     m_btn_edit->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { edit_printer(); });
     m_btn_code->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { change_access_code(); });
     m_btn_send->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { send_sliced(); });
     m_btn_browser->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { open_in_browser(); });
-    m_start->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
+    m_start->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &) {
         wxGetApp().app_config->set("tisma_devices_start_print", m_start->GetValue() ? "1" : "0");
     });
     // The list follows the printers added or edited elsewhere (the printer combo of the sidebar).
@@ -206,7 +214,19 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
         evt.Skip();
     });
 
+    style_controls();
     update_list();
+}
+
+void DevicesPanel::style_controls()
+{
+    const bool dark = wxGetApp().dark_mode();
+    m_caption->sys_color_changed();
+    m_title->sys_color_changed();
+    m_start_label->SetForegroundColour(TismaTheme::text(dark));
+    for (::Button *btn : { m_btn_add, m_btn_edit, m_btn_code, m_btn_browser })
+        style_tisma_button(btn, false);
+    style_tisma_button(m_btn_send, true);
 }
 
 DevicesPanel::~DevicesPanel()
@@ -220,20 +240,21 @@ void DevicesPanel::update_list()
 {
     // Keep the selection by name.
     std::string selected;
-    if (int sel = m_list->GetSelection(); sel != wxNOT_FOUND && size_t(sel) < m_entries.size())
+    if (int sel = m_list->GetSelectionIndex(); sel >= 0 && size_t(sel) < m_entries.size())
         selected = m_entries[sel].type == Entry::Type::USB ? std::string("\\usb") : m_entries[sel].name;
 
     m_entries.clear();
     m_list->Clear();
     const std::string usb_port = wxGetApp().app_config->get("usb_print_port");
     m_entries.push_back({ Entry::Type::USB, {} });
-    m_list->Append(usb_port.empty() ? _L("USB printer (detected when connected)") : format_wxstr(_L("USB printer (%1%)"), from_u8(usb_port)));
+    m_list->AppendItem(m_list->GetRootItem(), usb_port.empty() ? _L("USB printer (detected when connected)") :
+                                                                 format_wxstr(_L("USB printer (%1%)"), from_u8(usb_port)), 0);
     for (const PhysicalPrinter &printer : wxGetApp().preset_bundle->physical_printers) {
         const auto *host = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
         const std::string address = printer.config.opt_string("print_host");
         m_entries.push_back({ Entry::Type::Network, printer.name });
-        m_list->Append(from_u8(printer.name) + (address.empty() ? wxString() : "  —  " + from_u8(address)) +
-                       (host && (host->value == htPrusaConnect || host->value == htPrusaConnectNew) ? "  (Prusa Connect)" : wxString()));
+        m_list->AppendItem(m_list->GetRootItem(), from_u8(printer.name) + (address.empty() ? wxString() : "  —  " + from_u8(address)) +
+                           (host && (host->value == htPrusaConnect || host->value == htPrusaConnectNew) ? "  (Prusa Connect)" : wxString()), 1);
     }
     int sel = 0;
     for (size_t i = 0; i < m_entries.size(); ++ i)
@@ -242,7 +263,7 @@ void DevicesPanel::update_list()
     // Nothing selected: the USB printer if one was connected, else the first network printer.
     if (selected.empty() && m_entries.size() > 1 && usb_port.empty())
         sel = 1;
-    m_list->SetSelection(sel);
+    m_list->SetSelectionIndex(sel);
     on_select();
 }
 
@@ -263,13 +284,14 @@ std::string DevicesPanel::web_url(const std::string &print_host, int host_type)
 
 void DevicesPanel::on_select()
 {
-    const int sel = m_list->GetSelection();
-    const bool network = sel != wxNOT_FOUND && size_t(sel) < m_entries.size() && m_entries[sel].type == Entry::Type::Network;
+    const int sel = m_list->GetSelectionIndex();
+    const bool network = sel >= 0 && size_t(sel) < m_entries.size() && m_entries[sel].type == Entry::Type::Network;
     m_btn_edit->Enable(network);
     m_btn_code->Enable(network);
     m_btn_send->Enable(network);
     m_btn_browser->Enable(network);
     m_start->Enable(network);
+    m_start_label->Enable(network);
     m_usb->Show(! network);
     stop_camera();
     if (! network) {
@@ -382,8 +404,8 @@ void DevicesPanel::on_select()
 void DevicesPanel::select_usb()
 {
     // The USB printer is always the first entry.
-    if (! m_entries.empty() && m_list->GetSelection() != 0) {
-        m_list->SetSelection(0);
+    if (! m_entries.empty() && m_list->GetSelectionIndex() != 0) {
+        m_list->SetSelectionIndex(0);
         on_select();
     }
 }
@@ -396,7 +418,7 @@ void DevicesPanel::add_network_printer()
         update_list();
         // Select the new printer (the last one in the list).
         if (m_entries.size() > 1) {
-            m_list->SetSelection(int(m_entries.size()) - 1);
+            m_list->SetSelectionIndex(int(m_entries.size()) - 1);
             on_select();
         }
     }
@@ -404,8 +426,8 @@ void DevicesPanel::add_network_printer()
 
 void DevicesPanel::edit_printer()
 {
-    const int sel = m_list->GetSelection();
-    if (sel == wxNOT_FOUND || size_t(sel) >= m_entries.size())
+    const int sel = m_list->GetSelectionIndex();
+    if (sel < 0 || size_t(sel) >= m_entries.size())
         return;
     if (m_entries[sel].type == Entry::Type::USB)
         return;
@@ -419,8 +441,8 @@ void DevicesPanel::edit_printer()
 
 void DevicesPanel::change_access_code()
 {
-    const int sel = m_list->GetSelection();
-    if (sel == wxNOT_FOUND || size_t(sel) >= m_entries.size() || m_entries[sel].type != Entry::Type::Network)
+    const int sel = m_list->GetSelectionIndex();
+    if (sel < 0 || size_t(sel) >= m_entries.size() || m_entries[sel].type != Entry::Type::Network)
         return;
     PhysicalPrinterCollection &printers = wxGetApp().preset_bundle->physical_printers;
     const PhysicalPrinter *found = printers.find_printer(m_entries[sel].name);
@@ -467,8 +489,8 @@ void DevicesPanel::change_access_code()
 
 void DevicesPanel::send_sliced()
 {
-    const int sel = m_list->GetSelection();
-    if (sel == wxNOT_FOUND || size_t(sel) >= m_entries.size() || m_entries[sel].type != Entry::Type::Network)
+    const int sel = m_list->GetSelectionIndex();
+    if (sel < 0 || size_t(sel) >= m_entries.size() || m_entries[sel].type != Entry::Type::Network)
         return;
     const PhysicalPrinter *printer = wxGetApp().preset_bundle->physical_printers.find_printer(m_entries[sel].name);
     if (printer == nullptr)
@@ -570,7 +592,8 @@ void DevicesPanel::sys_color_changed()
     const bool dark = wxGetApp().dark_mode();
     SetBackgroundColour(TismaTheme::panel_bg(dark));
     m_hint->SetForegroundColour(TismaTheme::text_muted(dark));
-    wxGetApp().UpdateDarkUI(m_list);
+    style_controls();
+    m_list->Refresh();
     m_web->sys_color_changed();
     m_usb->sys_color_changed();
     Refresh();

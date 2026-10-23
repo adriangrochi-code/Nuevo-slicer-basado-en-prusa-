@@ -15,10 +15,9 @@
 
 #include <wx/panel.h>
 
-class wxListBox;
 class wxStaticText;
-class wxButton;
-class wxCheckBox;
+class Button;
+class SwitchButton;
 
 namespace Slic3r {
 
@@ -28,6 +27,8 @@ namespace GUI {
 
 class BambuCameraView;
 class PrinterWebViewPanel;
+class TismaPageList;
+class TismaTitle;
 class USBMonitorPanel;
 
 class DevicesPanel : public wxPanel
@@ -64,14 +65,19 @@ private:
     static std::string web_url(const std::string &print_host, int host_type);
 
     std::vector<Entry>   m_entries;
-    wxListBox           *m_list       { nullptr };
-    wxStaticText        *m_title      { nullptr };
+    // Tisma: the list of the pages of the settings (a row with an icon for each printer), buttons and a switch of Tisma.
+    TismaPageList       *m_list       { nullptr };
+    TismaTitle          *m_caption    { nullptr };
+    TismaTitle          *m_title      { nullptr };
     wxStaticText        *m_hint       { nullptr };
-    wxButton            *m_btn_edit   { nullptr };
-    wxButton            *m_btn_code   { nullptr };
-    wxButton            *m_btn_send   { nullptr };
-    wxButton            *m_btn_browser{ nullptr };
-    wxCheckBox          *m_start      { nullptr };
+    ::Button            *m_btn_add    { nullptr };
+    ::Button            *m_btn_edit   { nullptr };
+    ::Button            *m_btn_code   { nullptr };
+    ::Button            *m_btn_send   { nullptr };
+    ::Button            *m_btn_browser{ nullptr };
+    ::SwitchButton      *m_start      { nullptr };
+    wxStaticText        *m_start_label{ nullptr };
+    void                 style_controls();
     PrinterWebViewPanel *m_web        { nullptr };
     USBMonitorPanel     *m_usb        { nullptr };
     BambuCameraView     *m_camera     { nullptr };
