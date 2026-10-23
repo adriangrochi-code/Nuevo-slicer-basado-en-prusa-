@@ -734,6 +734,12 @@ void MainFrame::init_tabpanel()
 
         wxWindow* panel = m_tabpanel->GetCurrentPage();
         Tab* tab = dynamic_cast<Tab*>(panel);
+        // The Printer section of the top bar opens again the page of the two used last (also when it was opened from
+        // the plate panel or the printer chip).
+        if (m_devices_panel && panel == m_devices_panel)
+            m_printer_section_devices = true;
+        else if (tab && tab->type() == Preset::TYPE_PRINTER)
+            m_printer_section_devices = false;
 
         // There shouldn't be a case, when we try to select a tab, which doesn't support a printer technology
         if (panel == nullptr || (tab != nullptr && !tab->supports_printer_technology(m_plater->printer_technology())))
@@ -879,23 +885,26 @@ void MainFrame::create_nav_rail()
                                   Preset::TYPE_PRINT, is_fff));
     m_nav_rail->add_item(tab_item(_CTX("Print", "Section"), _L("Print settings of the resin printer: layers, supports, pad, hollowing..."),
                                   "tisma_print", Preset::TYPE_SLA_PRINT, is_sla));
-    m_nav_rail->add_item(tab_item(_CTX("Filament", "Section"), _L("Filament settings: temperatures, cooling, flow..."), "tisma_filament",
-                                  Preset::TYPE_FILAMENT, is_fff));
-    m_nav_rail->add_item(tab_item(_L("Material"), _L("Resin settings: exposure times, shrinkage..."), "tisma_filament",
-                                  Preset::TYPE_SLA_MATERIAL, is_sla));
-    m_nav_rail->add_item(tab_item(_CTX("Printer", "Section"), _L("Printer settings: bed, extruders, firmware, custom G-code, limits..."),
-                                  "tisma_printer", Preset::TYPE_PRINTER, nullptr));
-
-    NavRail::Item devices;
-    devices.label       = _L("Devices");
-    devices.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
-    devices.icon        = "plug";
-    devices.on_click    = [this, select_page]() {
-        if (m_devices_panel)
-            select_page(m_devices_panel);
+    // The filament (or resin) settings are opened from the plate panel (its gear and the quick settings), not from here.
+    // The printer: its settings and the devices (the printers connected over USB and the network, their cameras) in one
+    // section, which opens the one of the two used last; each page switches to the other one.
+    NavRail::Item printer;
+    printer.label       = _CTX("Printer", "Section");
+    printer.tooltip     = _L("Printer settings (bed, extruders, firmware, custom G-code, limits) and the devices: the printers "
+                             "over USB and the network, their cameras, sending the G-code");
+    printer.icon        = "tisma_printer";
+    printer.on_click    = [this]() {
+        if (m_printer_section_devices)
+            select_devices();
+        else
+            select_printer_settings();
     };
-    devices.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
-    m_nav_rail->add_item(devices);
+    printer.is_selected = [this, current_page]() {
+        wxWindow* page = current_page();
+        Tab*      tab  = wxGetApp().get_tab(Preset::TYPE_PRINTER);
+        return page != nullptr && ((tab && page == tab) || (m_devices_panel && page == m_devices_panel));
+    };
+    m_nav_rail->add_item(printer);
 
     // More: a page with the actions of Tisma (Thingiverse instead of Printables, whose page needs the Prusa account of
     // PrusaSlicer; the Tisma Cloud account; preferences) and the cards made from the menus of the program (File, Edit,
@@ -950,10 +959,7 @@ void MainFrame::create_nav_rail()
             st.tooltip += "\n" + _L("Click to open Device");
             return st;
         },
-        [this, select_page]() {
-            if (m_devices_panel)
-                select_page(m_devices_panel);
-        });
+        [this]() { select_devices(); });
     top_bar->AddRightWindow(m_printer_chip);
 }
 
@@ -1060,6 +1066,23 @@ void MainFrame::show_connect_tab(const wxString& url)
     m_connect_webview->set_load_default_url_on_next_error(true);
     m_connect_webview->load_url(url);
 }
+void MainFrame::select_printer_settings()
+{
+    m_printer_section_devices = false;
+    select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER));
+    update_nav_rail();
+}
+
+void MainFrame::select_devices()
+{
+    if (m_devices_panel == nullptr)
+        return;
+    m_printer_section_devices = true;
+    if (int idx = m_tabpanel->FindPage(m_devices_panel); idx != wxNOT_FOUND)
+        m_tabpanel->SetSelection(idx);
+    update_nav_rail();
+}
+
 void MainFrame::show_usb_printer()
 {
     if (m_devices_panel == nullptr)

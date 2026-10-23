@@ -17,19 +17,22 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 
 ## Estructura
 
-- **Barra superior**: logo, secciones (Placa, Impresión, Filamento o Material, Impresora, Dispositivos, Más),
-  búsqueda, impresora en uso y su conexión, cuenta.
+- **Barra superior**: logo, secciones (Placa, Impresión, Impresora, Más), búsqueda, impresora en uso y su conexión,
+  cuenta. El filamento (o la resina) se elige y se edita desde el panel de la placa (su engranaje y los ajustes
+  rápidos): no tiene sección propia.
 - **Placa**: a la izquierda los grupos de herramientas (Archivo, Vista, Organizar, Pintar, Ingeniería, Calibrar,
   Laminar) y las herramientas del grupo elegido (en Calibrar, cada prueba: temperatura, presión, retracción, caudal
   máximo, VFA, aceleración, esquinas, vibraciones, primera capa, flujo, coasting, arcos, resistencia, y aplicar un
   resultado; las de resina con una impresora de resina); en el centro la vista 3D con los ajustes en uso arriba (chips que abren su página),
   el zoom a la derecha y el estado abajo; a la derecha el panel de la placa: objetos, propiedades de la selección,
   ajustes por objeto y el botón principal (Laminar, Exportar o Enviar).
-- **Impresión, Filamento, Impresora**: páginas propias, con el perfil arriba (elegir, guardar, renombrar, borrar,
+- **Impresión, Filamento, Impresora**: páginas propias (la del filamento se abre desde el panel de la placa), con el perfil arriba (elegir, guardar, renombrar, borrar,
   comparar) y los ajustes en grupos con títulos grandes, como en el teléfono; búsqueda y modo simple o experto.
-- **Dispositivos**: impresoras por USB y por red (estado, cámara, envío). Cada impresora puede usar una cámara USB
-  de la computadora (ver `docs/USB_CAMERA.md`).
-- **Más**: Thingiverse, cuenta de Tisma Cloud, preferencias, asistente de configuración, ayuda.
+- **Impresora**: dos páginas, «Ajustes» (el perfil de la impresora) y «Dispositivos» (impresoras por USB y por red:
+  estado, cámara, envío; cada impresora puede usar una cámara USB de la computadora, ver `docs/USB_CAMERA.md`), con
+  un selector arriba de las dos; la sección abre la usada por última vez. El chip de la impresora en uso abre
+  Dispositivos.
+- **Más**: calibración (también en el grupo Calibrar de la placa), Thingiverse, cuenta de Tisma Cloud, preferencias, asistente de configuración, ayuda.
 
 ## Inventario: de dónde viene cada función y a dónde va
 
@@ -39,7 +42,7 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 | Menú Archivo: proyecto nuevo, abrir, guardar, importar (modelos, archivos de resina, ZIP, configuración), exportar (G-code, SD, nube, placa STL/OBJ, trayectorias, configuración), convertir G-code binario | Grupo Archivo (lo frecuente) y Más > Archivo (el resto); atajos de teclado iguales |
 | Menú Editar: seleccionar, borrar, deshacer, copiar y pegar, recargar, buscar, galería de formas, cola de subidas, comparar perfiles | Grupo Archivo, panel de objetos, búsqueda de la barra, Dispositivos (cola), página de cada perfil (comparar); atajos |
 | Menú Ventana y Vista | Secciones de la barra y grupo Vista |
-| Menú Configuración y Ayuda | Más |
+| Menú Configuración y Calibración, Ayuda | Más |
 | Menú Calibración | Grupo Calibrar de la placa (y modelos con clic derecho en la cama) |
 | Panel lateral: perfiles, boquilla, tipo de cama, ajustes rápidos | Chips sobre la vista y páginas de ajustes; ajustes rápidos en el panel de la placa |
 | Panel lateral: lista de objetos, posición/rotación/escala, ajustes por objeto, capas por rango | Panel de la placa |

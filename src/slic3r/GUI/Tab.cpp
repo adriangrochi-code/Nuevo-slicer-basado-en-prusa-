@@ -249,6 +249,20 @@ void Tab::create_preset_tab()
     // Tisma: the title of the page, big, as the groups of the phone; then its profile.
     auto *page_title = new TismaTitle(panel, m_title);
     m_top_hsizer->Add(page_title, 0, wxLEFT | wxRIGHT | wxALIGN_CENTER_VERTICAL, m_em_unit);
+    if (m_type == Preset::TYPE_PRINTER) {
+        // The Printer section of the top bar: its settings (this page) and the devices, one click apart.
+        auto holder = std::make_shared<TismaChoiceChips*>(nullptr);
+        auto *chips = new TismaChoiceChips(panel, { _L("Settings"), _L("Devices") }, [holder](int idx) {
+            if (idx != 1)
+                return;
+            wxGetApp().mainframe->select_devices();
+            // Back on this page later, its chip is the chosen one.
+            (*holder)->set_selection(0);
+        });
+        *holder = chips;
+        chips->set_selection(0);
+        m_top_hsizer->Add(chips, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, m_em_unit);
+    }
     m_top_hsizer->Add(m_presets_choice, 0, wxLEFT | wxRIGHT | wxTOP | wxALIGN_CENTER_VERTICAL, 3);
     m_top_hsizer->AddSpacer(int(4*scale_factor));
 

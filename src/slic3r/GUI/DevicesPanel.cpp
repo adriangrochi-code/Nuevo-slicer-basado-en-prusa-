@@ -69,6 +69,17 @@ DevicesPanel::DevicesPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 
     // Left: the printers.
     auto *left = new wxBoxSizer(wxVERTICAL);
+    // The Printer section of the top bar: the settings of the printer and the devices (this page), one click apart.
+    auto holder = std::make_shared<TismaChoiceChips*>(nullptr);
+    auto *section = new TismaChoiceChips(this, { _L("Settings"), _L("Devices") }, [holder](int idx) {
+        if (idx != 0)
+            return;
+        wxGetApp().mainframe->select_printer_settings();
+        (*holder)->set_selection(1);
+    });
+    *holder = section;
+    section->set_selection(1);
+    left->Add(section, 0, wxBOTTOM, em / 2);
     m_caption = new TismaTitle(this, _L("Devices"));
     left->Add(m_caption, 0, wxBOTTOM, em / 2);
     m_list = new TismaPageList(this, wxSize(24 * em, -1));
