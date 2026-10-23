@@ -41,6 +41,10 @@
 #include "NotificationManager.hpp"
 #include "Plater.hpp"
 #include "format.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
+#include "Widgets/TextInput.hpp"
 
 namespace Slic3r {
 namespace GUI {
@@ -113,54 +117,64 @@ public:
         : wxDialog(parent, wxID_ANY, _L("Tisma Cloud account"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     {
         SetFont(wxGetApp().normal_font());
-        const int em = wxGetApp().em_unit();
+        const int  em   = wxGetApp().em_unit();
+        const bool dark = wxGetApp().dark_mode();
         const CloudAccess access = cloud_access();
+        // The look of the pages of Tisma: the background of the cards, a title, the captions over the rounded fields.
+        SetBackgroundColour(TismaTheme::card_bg(dark));
 
+        auto *title = new TismaTitle(this, "Tisma Cloud");
         auto *intro = new wxStaticText(this, wxID_ANY, _L("Slice and run the structural analyses on the Tisma Cloud servers. "
                                                           "The account and the plan are managed on the web site."));
+        intro->SetForegroundColour(TismaTheme::text_muted(dark));
         intro->Wrap(40 * em);
 
-        auto *grid = new wxFlexGridSizer(2, em / 2, em);
-        grid->AddGrowableCol(1);
-        m_url = new wxTextCtrl(this, wxID_ANY, wxString::FromUTF8(access.url), wxDefaultPosition, wxSize(30 * em, -1));
-        m_url->SetHint("https://cloud.example.com");
-        m_email = new wxTextCtrl(this, wxID_ANY, wxString::FromUTF8(access.email));
-        m_password = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD | wxTE_PROCESS_ENTER);
-        grid->Add(new wxStaticText(this, wxID_ANY, _L("Server") + ":"), 0, wxALIGN_CENTER_VERTICAL);
-        grid->Add(m_url, 1, wxEXPAND);
-        grid->Add(new wxStaticText(this, wxID_ANY, _L("E-mail") + ":"), 0, wxALIGN_CENTER_VERTICAL);
-        grid->Add(m_email, 1, wxEXPAND);
-        grid->Add(new wxStaticText(this, wxID_ANY, _L("Password") + ":"), 0, wxALIGN_CENTER_VERTICAL);
-        grid->Add(m_password, 1, wxEXPAND);
+        auto *fields = new wxBoxSizer(wxVERTICAL);
+        auto add_field = [this, fields, em](const wxString &caption, const wxString &value, long style) {
+            auto *input = new ::TextInput(this, value, wxEmptyString, wxEmptyString, wxDefaultPosition, wxSize(34 * em, -1), style);
+            wxGetApp().UpdateDarkUI(input);
+            fields->Add(new TismaTitle(this, caption, TismaTitle::Style::Caption), 0, wxTOP, em);
+            fields->Add(input, 0, wxEXPAND | wxTOP, em / 4);
+            return input;
+        };
+        m_url      = add_field(_L("Server"), wxString::FromUTF8(access.url), 0);
+        m_url->GetTextCtrl()->SetHint("https://cloud.example.com");
+        m_email    = add_field(_L("E-mail"), wxString::FromUTF8(access.email), 0);
+        m_password = add_field(_L("Password"), wxEmptyString, wxTE_PASSWORD | wxTE_PROCESS_ENTER);
 
         m_state = new wxStaticText(this, wxID_ANY, wxEmptyString);
+        m_state->SetForegroundColour(TismaTheme::text(dark));
         // The page of the web site to create an account and pay the plan, given by the server.
         m_billing = new wxHyperlinkCtrl(this, wxID_ANY, _L("Create an account or pay the plan on the web site"), "https://");
+        m_billing->SetNormalColour(TismaTheme::accent_text(dark));
+        m_billing->SetVisitedColour(TismaTheme::accent_text(dark));
         m_billing->Hide();
-        m_login  = new wxButton(this, wxID_ANY, _L("Log in"));
-        m_logout = new wxButton(this, wxID_ANY, _L("Log out"));
-        auto *close = new wxButton(this, wxID_CLOSE, _L("Close"));
+        m_login  = tisma_dialog_button(this, wxID_ANY, _L("Log in"), true);
+        m_logout = tisma_dialog_button(this, wxID_ANY, _L("Log out"));
+        // Escape closes the dialog by the button of Cancel (tisma_dialog_keys()).
+        m_close  = tisma_dialog_button(this, wxID_CANCEL, _L("Close"));
         auto *buttons = new wxBoxSizer(wxHORIZONTAL);
-        buttons->Add(m_login, 0, wxRIGHT, em / 2);
-        buttons->Add(m_logout, 0, wxRIGHT, em / 2);
+        buttons->Add(m_logout);
         buttons->AddStretchSpacer();
-        buttons->Add(close);
+        buttons->Add(m_close, 0, wxRIGHT, em);
+        buttons->Add(m_login);
 
         auto *top = new wxBoxSizer(wxVERTICAL);
-        top->Add(intro, 0, wxALL, em);
-        top->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
-        top->Add(m_state, 0, wxEXPAND | wxALL, em);
-        top->Add(m_billing, 0, wxLEFT | wxRIGHT | wxBOTTOM, em);
-        top->Add(buttons, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, em);
+        const int border = 2 * em;
+        top->Add(title, 0, wxLEFT | wxRIGHT | wxTOP, border);
+        top->AddSpacer(em / 2);
+        top->Add(intro, 0, wxLEFT | wxRIGHT, border);
+        top->Add(fields, 0, wxEXPAND | wxLEFT | wxRIGHT, border);
+        top->Add(m_state, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, border);
+        top->Add(m_billing, 0, wxLEFT | wxRIGHT | wxTOP, border);
+        top->Add(buttons, 0, wxEXPAND | wxALL, border);
         SetSizerAndFit(top);
-        SetEscapeId(wxID_CLOSE);
+        tisma_dialog_keys(this);
 
         m_login->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { login(); });
-        m_password->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent &) { login(); });
         m_logout->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { logout(); });
-        close->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { EndModal(wxID_CLOSE); });
+        m_close->Bind(wxEVT_BUTTON, [this](wxCommandEvent &) { EndModal(wxID_CLOSE); });
         refresh();
-        wxGetApp().UpdateDlgDarkUI(this);
         CenterOnParent();
     }
 
@@ -170,6 +184,8 @@ private:
         const CloudAccess access = cloud_access();
         show_billing(access.url);
         m_logout->Enable(access.logged_in());
+        // Enter logs in, or closes the dialog once logged in.
+        SetDefaultItem(access.logged_in() ? m_close : m_login);
         if (! access.logged_in()) {
             set_state(_L("Not logged in."));
             return;
@@ -214,9 +230,9 @@ private:
 
     void login()
     {
-        std::string url = into_u8(m_url->GetValue().Strip(wxString::both));
-        const std::string email = into_u8(m_email->GetValue().Strip(wxString::both));
-        const std::string password = into_u8(m_password->GetValue());
+        std::string url = into_u8(m_url->GetTextCtrl()->GetValue().Strip(wxString::both));
+        const std::string email = into_u8(m_email->GetTextCtrl()->GetValue().Strip(wxString::both));
+        const std::string password = into_u8(m_password->GetTextCtrl()->GetValue());
         if (url.empty() || email.empty() || password.empty()) {
             set_state(_L("Enter the server, the e-mail and the password."));
             return;
@@ -233,8 +249,8 @@ private:
         }
         wxGetApp().app_config->set("tisma_cloud_url", url);
         save_token(email, token);
-        m_url->SetValue(wxString::FromUTF8(url));
-        m_password->Clear();
+        m_url->GetTextCtrl()->SetValue(wxString::FromUTF8(url));
+        m_password->GetTextCtrl()->Clear();
         refresh();
     }
 
@@ -250,13 +266,14 @@ private:
         refresh();
     }
 
-    wxTextCtrl   *m_url;
-    wxTextCtrl   *m_email;
-    wxTextCtrl   *m_password;
+    ::TextInput  *m_url;
+    ::TextInput  *m_email;
+    ::TextInput  *m_password;
     wxStaticText *m_state;
     wxHyperlinkCtrl *m_billing;
-    wxButton     *m_login;
-    wxButton     *m_logout;
+    ::Button     *m_login;
+    ::Button     *m_logout;
+    ::Button     *m_close;
 };
 
 // Runs a job with a progress dialog that can cancel it. True when the result was downloaded.
