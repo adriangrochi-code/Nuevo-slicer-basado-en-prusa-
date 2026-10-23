@@ -180,6 +180,75 @@ las instantáneas de configuración para la compatibilidad, y no cambia con las 
   huecas con la costura atrás, una distancia por torre, y su resultado se aplica al filamento.
 - La comprobación de versión ya no anuncia versiones de PrusaSlicer como actualizaciones de Tisma.
 
+## [0.10.0](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/compare/v0.9.0...v0.10.0) (2026-10-23)
+
+
+### Features
+
+* **3mf:** open Bambu Studio and OrcaSlicer projects ([f74d824](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/f74d824e8527772af3e96a904d749a1cf9f83f2f))
+* **belt:** profiles of BLACKBELT, Creality CR-30 and IdeaFormer IR3 V2, belt on Z ([66a1a39](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/66a1a395a0cc955501cf897e6c0181e8115d9984))
+* **calibration:** non-planar layer strength test pieces ([7eaeec4](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/7eaeec4ddcfcd8137fbca7a3960985e385ac5432))
+* **calibration:** test pieces of the automatic non-planar mode ([95ed147](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/95ed1476ebde0ad8d6cf169dc6185c00997f3473))
+* **calibration:** V groove gauge with several angles and depths ([3ad7958](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/3ad7958dc45635013391cfef38c5fecff68bd0b3))
+* **engineering:** resin printers, walls and interior infill of hollowed parts ([b3dcef1](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/b3dcef1dcec254f87ab3f5160cc920e44a8c0977))
+* **fea:** editable material table and load arrows outside of the part ([22e775e](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/22e775eb52c3ea7ec80eba913573b69fb9ee07f0))
+* **fea:** infill ribs along the stresses ([3f5e860](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/3f5e860aa24251b96f18cbfeb950b153b313d88d))
+* **fea:** orthotropic model of aligned infill and ribs in the lightest infill ([22d3e1e](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/22d3e1e70fb5c66cabaacb409be9eaefa3322c36))
+* **fea:** skin + core in one click ([59e93bb](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/59e93bbb663f4f0d8fe55a427f19723b05e643d6))
+* **fea:** walls and infill of the analysis as they are sliced ([6acbccf](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/6acbccf174375454e670a947214ddfd6d0bf9c4a))
+* **fragment:** split an object larger than the printer into pieces with connectors ([8717b01](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/8717b010ee2ae064526db14c6af494330e37042b))
+* **gcode:** Z anti-aliasing of sloped top surfaces ([b6f5bc2](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/b6f5bc28d52d7b547bab7d473baa75f8cd8a0426))
+* **gcode:** Z anti-aliasing within non-planar layers ([352a6fc](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/352a6fcc35580d7b04550bb69bbe4b60be30e14b))
+* **gui:** floating slice and output buttons in compact mode ([01d5592](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/01d55920f9c8271277ee65656a4e632cac23eb50))
+* **gui:** new Tisma UI ([#7](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/issues/7)) ([dee3ea9](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/dee3ea985a9fdef07d4126f48642e28790174935))
+* **gui:** tell that the Beginner mode hides most settings ([430ab73](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/430ab731af91c069ef1fbd11200308ce69a710bf))
+* **gui:** Thingiverse page, one Engineering button and the objects in the sidebar ([4e96778](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/4e967780636ce6d585b330750b715686cfa47fd5))
+* **nonplanar:** automatic mode for the finish and fewer supports ([a6ef8bd](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/a6ef8bd1b1db97fef696381f6d9f8910357649f7))
+* **nonplanar:** conical layers whose slope at each radius comes from the part ([80f295c](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/80f295c1822d87ab33a1aa242207137c1e927276))
+* **nonplanar:** curved layers that follow the stresses of the analysis ([e435bef](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/e435befd2324affb86968036a9bb8668c95b0760))
+* **nonplanar:** fit the layers to the free angles of the print head ([61ca8b0](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/61ca8b048c64875c3dd80d85d9a3111511f9cf5f))
+* **nonplanar:** interlocking non-planar infill ([d061717](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/d0617170d6bf94cf3d3643a8cd7d0b4b7111c0d2))
+* **nonplanar:** only the two print head measurements in the GUI ([a98ed13](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/a98ed13dfd9aaaa5c31fe53801c4adfff0dbfdf1))
+* **nonplanar:** tilt the layers only under overhangs that need supports ([22cddff](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/22cddff6a439d7c85f8b0ddefbd8fcc3387f3cc7))
+* **nonplanar:** upper layers that follow the top surfaces ([cd02f0c](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/cd02f0ce419df09031f7e8af27cfb507073bb5dc))
+* orientation, curved layers, ZAA with non-planar, arc overhangs, Bambu/Orca projects ([c27cc31](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/c27cc31b370984aca7b53d7bd7a0f858ac7dfd86))
+* **orientation:** least support (FFF) and lowest peel force (SLA) ([89ce8dd](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/89ce8ddc5207d1f32beea04cd51ab6f521c3474f))
+* overhang-only non-planar layers, Z anti-aliasing, Cura printers and V groove gauge ([5de2268](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/5de2268c9a6850c9ca487db2dbffcd7156506f33))
+* **perimeters:** arc overhang speed, maximum distance and calibrations ([e1c9395](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/e1c9395c834a758469480dd9ab56a43957acc8f5))
+* **profiles:** printers of Creality Print and Elegoo Slicer, belt brands in the wizard ([76d3d01](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/76d3d01864ba0eec08a96b6968c92a7d7741033e))
+* **profiles:** printers of UltiMaker Cura that Tisma did not have ([da8bfe0](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/da8bfe0ca9b1e7678b91308b92471d92e1c8e3ad))
+* realistic render, GPU structural analysis, tisma-fea and Tisma Cloud client ([#4](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/issues/4)) ([de2da9b](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/de2da9b996e9458f27db105f9f4c3dafb0e51586))
+* **sla:** warn about suction cups ([585f0e6](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/585f0e6646b7896700e56bc4c299f32178853cee))
+* Tisma 0.10 work, rebrand to Tisma and CI/CD for Windows, Linux and macOS ([f396764](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/f3967649ac9235aa03cdf1a67ab85dba0d693203))
+* **usb:** printer monitor in the Device page and print via USB after slicing ([4c8f9be](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/4c8f9bea75ff3ccaf959a417b43f57900e248a18))
+
+
+### Bug Fixes
+
+* **bambu:** resume the TLS session on the FTPS data connection ([37e7f07](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/37e7f07f82d8bba54ce1350f7b198c2f588fcad2))
+* **bambu:** skip the certificate revocation check on LAN connections ([528dcf5](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/528dcf551fc7efc5cb851821799b117395e187f6))
+* **bambu:** verify the printer name so FTPS resumes the TLS session ([8f61869](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/8f61869ae5c1865fe4f99b0881d475acfc14c997))
+* **build:** finish the Tisma rename in the FHS install ([32aa87d](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/32aa87d969f21e8839346eb685dc233d9e6b4ce7))
+* **deps:** download GMP and MPFR from GNU mirrors first ([8145e68](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/8145e68e76cf24e030ff8c9387fe08d7d4b281fd))
+* **gui:** keep the settings fields in their static boxes on Windows ([d641de4](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/d641de4dd998f2f045601167a70eff548200c45a))
+* **gui:** keep the slicing warnings of the objects ([7620a7b](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/7620a7b9ec4d5596f829c399609bea5d4fc6fa6a))
+* **gui:** open project dialog without PrusaSlicer and with descriptions ([572c172](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/572c17276df90f41f9fdddd1809ac1529590f3d7))
+* **i18n:** say Tisma Slicer in the visible texts that still said PrusaSlicer ([985f9e0](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/985f9e0f84c82390b8f49689fd16a02f59eafb18))
+* **profiles:** name the library filaments as loaded in the converted printers ([8d1d703](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/8d1d7034bdc02e2909148ce149f518e982384c35))
+* start TismaSlicer on macOS and finish the user-visible rename ([f9afdd7](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/f9afdd758b120d127fabd9804a3fd532547874ac))
+* **wizard:** one printer list, bundled profiles only, no crash on printer change ([bdd380b](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/bdd380b0cd3b8b1dc437e24540f739d845882992))
+
+
+### Performance
+
+* **fea:** geometric multigrid preconditioner for the voxel solver ([b07824d](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/b07824da34c8b70bb629340caa1c3dd3024ac5c7))
+* **perimeters:** skip the extra perimeters offsets when a bound decides ([7bb299e](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/7bb299e4054b011cd4ab407915c0bf39d2c31f06))
+
+
+### Refactoring
+
+* rebrand PrusaSlicer and NonPlanarSlicer names to Tisma ([472c606](https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-/commit/472c606924267a23957acd1e0e812605c036503f))
+
 ## 0.9.0 (beta, sin validar todavía en impresoras reales)
 
 Base: PrusaSlicer 2.9.6.
