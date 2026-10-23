@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import bindparam, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import __version__, alerts, billing, codes, google_play, remote, scheduler
+from . import __version__, alerts, billing, codes, crypto, google_play, remote, scheduler
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, exists_message, mailer_for
 from .db import Database
@@ -97,8 +97,11 @@ class TokenCache:
 class Services:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        # The personal data is encrypted in the database (crypto.py); the values of older versions are encrypted now.
+        crypto.configure(settings)
         self.db = Database(settings.database_url)
         self.db.create_all()
+        crypto.migrate(self.db)
         self.sync_internal_accounts()
         self.storage = Storage(settings.storage_dir)
         self.remote_files = remote.RemoteFiles(settings.storage_dir)
@@ -732,7 +735,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 and limiter.allow(f"login-email:{email}", cfg.login_per_minute)):
             raise HTTPException(429, "Too many login attempts: wait a minute", headers={"Retry-After": "60"})
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             stored = user.password_hash if user and user.password_hash else DUMMY_HASH
             ok = verify_password(body.password, stored)
             if ok and needs_rehash(stored):
@@ -899,7 +902,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Hashed in both cases, so that the time does not tell either.
         password_hash = hash_password(body.password)
         with db.session() as s:
-            if s.execute(select(User.id).where(User.email == email)).first():
+            if s.execute(select(User.id).where(User.email_index == crypto.index(email))).first():
                 code = None
             else:
                 code = new_account(s, email, body.plan, password_hash)
@@ -958,7 +961,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # The wrong attempt is saved before the answer (an exception inside the session would undo it).
         token = None
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if user is not None and user.enabled and codes.check(s, user, "verify", body.code):
                 user.email_verified = True
                 token = open_session(s, user, body.device)
@@ -973,7 +976,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not mail_allowed(request, email):
             raise HTTPException(429, "Wait a minute before asking another code", headers={"Retry-After": "60"})
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             code = codes.issue(s, user, "verify") if user is not None and user.enabled and not user.email_verified else None
         if code:
             send_code(email, "verify", code)
@@ -986,7 +989,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not mail_allowed(request, email):
             raise HTTPException(429, "Wait a minute before asking another code", headers={"Retry-After": "60"})
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             code = codes.issue(s, user, "reset") if user is not None and user.enabled else None
         if code:
             send_code(email, "reset", code)
@@ -999,7 +1002,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(429, "Too many attempts: wait a minute", headers={"Retry-After": "60"})
         token = None
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if user is not None and user.enabled and codes.check(s, user, "reset", body.code):
                 user.password_hash = hash_password(body.password)
                 # The code reached the inbox: the address is theirs. The sessions of the devices are closed.
@@ -1023,7 +1026,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with db.session() as s:
             user = s.execute(select(User).where(User.google_sub == who.sub)).scalar_one_or_none()
             if user is None:
-                user = s.execute(select(User).where(User.email == who.email)).scalar_one_or_none()
+                user = s.execute(select(User).where(User.email_index == crypto.index(who.email))).scalar_one_or_none()
                 if user is not None:
                     # Linking needs Google to be the authority on the address, or the account could be taken.
                     if not who.authoritative or user.google_sub:
@@ -1707,14 +1710,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/v1/admin/users")
     def admin_users(_admin: AdminDep) -> dict:
         with db.session() as s:
+            # Sorted here: the e-mails are encrypted in the database.
+            users = sorted(s.execute(select(User)).scalars(), key=lambda u: u.email)
             return {"users": [{**user_view(u), "account": scheduler.account(s, u, cfg.grace_days).as_dict()}
-                              for u in s.execute(select(User).order_by(User.email)).scalars()]}
+                              for u in users]}
 
     @app.put("/v1/admin/users/{email}/unlimited")
     def admin_unlimited(_admin: AdminDep, email: str, body: UnlimitedBody) -> dict:
         """Makes an account internal (unlimited computing, never charged) or a normal one again."""
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email.strip().lower())).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if user is None:
                 raise HTTPException(404, "No such user")
             user.unlimited = body.unlimited
@@ -1725,7 +1730,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def admin_manual_payment(_admin: AdminDep, email: str, body: ManualPaymentBody) -> dict:
         """A payment received outside the provider (transfer, cash): the plan is paid body.months more."""
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email.strip().lower())).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if user is None:
                 raise HTTPException(404, "No such user")
             plan = s.get(Plan, body.plan or user.plan_name)
@@ -1777,7 +1782,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with db.session() as s:
             user = s.execute(select(User).where(User.external_id == external_id)).scalar_one_or_none()
             email = body.email.strip().lower() if body.email else None
-            if email and s.execute(select(User).where(User.email == email, User.external_id != external_id)).first():
+            if email and s.execute(select(User).where(User.email_index == crypto.index(email), User.external_id != external_id)).first():
                 raise HTTPException(409, "Another user has that e-mail")
             if body.plan is not None and s.get(Plan, body.plan) is None:
                 raise HTTPException(422, f"No plan {body.plan}")

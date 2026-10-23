@@ -8,8 +8,9 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from .crypto import Encrypted, index
 from .db import Base
 
 
@@ -48,7 +49,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(200), unique=True)
+    # Encrypted (crypto.py); found by email_index, an HMAC of it set with it.
+    email: Mapped[str] = mapped_column(Encrypted)
+    email_index: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
     # Id of the account on the web site, which creates the users and records their payments.
     external_id: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
     # scrypt (see security.py); empty: no password login (token only).
@@ -77,6 +80,11 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     plan: Mapped[Plan] = relationship(lazy="joined")
+
+    @validates("email")
+    def _index_email(self, _key: str, value: str) -> str:
+        self.email_index = index(value)
+        return value
 
     @property
     def is_unlimited(self) -> bool:
@@ -110,7 +118,7 @@ class Payment(Base):
     provider_ref: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
     # pending, approved, rejected
     status: Mapped[str] = mapped_column(String(20), default="pending")
-    note: Mapped[str] = mapped_column(String(200), default="")
+    note: Mapped[str] = mapped_column(Encrypted, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -124,14 +132,14 @@ class PlaySubscription(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     # SHA-256 of the purchase token (the index; tokens are long) and the token itself (needed to ask Google).
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    purchase_token: Mapped[str] = mapped_column(Text)
+    purchase_token: Mapped[str] = mapped_column(Encrypted)
     product_id: Mapped[str] = mapped_column(String(100))
     plan_name: Mapped[str] = mapped_column(ForeignKey("plans.name"))
     # subscriptionState of Google (SUBSCRIPTION_STATE_ACTIVE...), or REPLACED by a newer token (upgrade, resubscribe).
     state: Mapped[str] = mapped_column(String(50), default="")
     # The access it gives (expiryTime of Google while the state gives access), none otherwise.
     entitled_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    order_id: Mapped[str] = mapped_column(String(100), default="")
+    order_id: Mapped[str] = mapped_column(Encrypted, default="")
     acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -173,7 +181,7 @@ class ApiToken(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    label: Mapped[str] = mapped_column(String(100), default="")
+    label: Mapped[str] = mapped_column(Encrypted, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     last_used: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -239,8 +247,8 @@ class Job(Base):
     error: Mapped[str] = mapped_column(Text, default="")
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     node_id: Mapped[int | None] = mapped_column(ForeignKey("nodes.id"), nullable=True)
-    input_name: Mapped[str] = mapped_column(String(200), default="")
-    result_filename: Mapped[str] = mapped_column(String(200), default="")
+    input_name: Mapped[str] = mapped_column(Encrypted, default="")
+    result_filename: Mapped[str] = mapped_column(Encrypted, default="")
     summary: Mapped[str] = mapped_column(Text, default="{}")
     # The project and the result were deleted (retention_h after the job ended).
     files_removed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -275,9 +283,9 @@ class Bridge(Base):
     # Made by the computer once (a UUID), so that it is the same bridge after a restart.
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    name: Mapped[str] = mapped_column(String(100), default="")
+    name: Mapped[str] = mapped_column(Encrypted, default="")
     # The printers and their state, a JSON list (remote.clean_printers).
-    printers: Mapped[str] = mapped_column(Text, default="[]")
+    printers: Mapped[str] = mapped_column(Encrypted, default="[]")
     # The printers whose camera is being looked at: JSON {printer id: until (ISO 8601)}.
     watching: Mapped[str] = mapped_column(Text, default="{}")
     last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -311,7 +319,7 @@ class RemoteCommand(Base):
     # print, pause, resume, stop
     action: Mapped[str] = mapped_column(String(10))
     # print: the name of the file for the printer (the file is in storage_dir/remote/<id>).
-    file_name: Mapped[str] = mapped_column(String(200), default="")
+    file_name: Mapped[str] = mapped_column(Encrypted, default="")
     # queued (waiting for the bridge), sent (the bridge took it), done, failed
     status: Mapped[str] = mapped_column(String(10), default="queued", index=True)
     error: Mapped[str] = mapped_column(Text, default="")

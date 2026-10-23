@@ -49,6 +49,17 @@ def fast_passwords(monkeypatch):
     monkeypatch.setattr(security, "_N", 1 << 12)
 
 
+@pytest.fixture(autouse=True)
+def data_key(tmp_path: Path, monkeypatch):
+    """A key of the personal data for the models used without the app (the app loads the one of its storage)."""
+    from types import SimpleNamespace
+
+    from tisma_cloud import crypto
+
+    monkeypatch.delenv("TISMA_DATA_KEY", raising=False)
+    crypto.configure(SimpleNamespace(storage_dir=tmp_path / "key"))
+
+
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     url = os.environ.get("TISMA_TEST_DATABASE_URL") or f"sqlite:///{tmp_path / 'test.db'}"
@@ -57,15 +68,15 @@ def settings(tmp_path: Path) -> Settings:
 
 
 def new_app(settings: Settings):
-    """An app on an empty database (a shared PostgreSQL test database is emptied)."""
-    app = create_app(settings)
-    db = app.state.services.db
-    if not db.is_sqlite:
-        from tisma_cloud.db import Base
+    """An app on an empty database (a shared PostgreSQL test database is emptied first: its data was encrypted with
+    the key of another test)."""
+    if not settings.database_url.startswith("sqlite"):
+        from tisma_cloud.db import Base, Database
 
+        db = Database(settings.database_url)
         Base.metadata.drop_all(db.engine)
-        db.create_all()
-    return app
+        db.engine.dispose()
+    return create_app(settings)
 
 
 @pytest.fixture

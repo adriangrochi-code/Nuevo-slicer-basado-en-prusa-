@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from tisma_cloud import admin as admin_cli
+from tisma_cloud import crypto
 from tisma_cloud.api import create_app
 from tisma_cloud.models import User
 from tisma_cloud.settings import Settings
@@ -16,7 +17,7 @@ from tisma_cloud.settings import Settings
 
 def set_unlimited(f, email: str, value: bool = True) -> None:
     with f.db.session() as s:
-        s.execute(select(User).where(User.email == email)).scalar_one().unlimited = value
+        s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one().unlimited = value
 
 
 def test_internal_emails_setting():
@@ -56,7 +57,7 @@ def test_admin_makes_an_account_internal(client, f):
 def test_unverified_internal_account_is_limited(client, f):
     user = f.user("eq@x.com", plan=f.plan("tiny", hours=0., concurrent=1), paid_days=None)
     with f.db.session() as s:
-        u = s.execute(select(User).where(User.email == "eq@x.com")).scalar_one()
+        u = s.execute(select(User).where(User.email_index == crypto.index("eq@x.com"))).scalar_one()
         u.unlimited, u.email_verified = True, False
     f.submit(user, expect=402)
 
@@ -87,10 +88,12 @@ def test_internal_emails_apply_at_start(settings, f):
 def test_admin_command(settings, f, monkeypatch, capsys):
     f.user("eq@x.com", paid_days=None)
     monkeypatch.setenv("TISMA_DATABASE_URL", settings.database_url)
+    # The command reads the key of the personal data from the same storage as the service.
+    monkeypatch.setenv("TISMA_STORAGE_DIR", str(settings.storage_dir))
     assert admin_cli.main(["user-set", "eq@x.com", "--unlimited"]) == 0
     assert "unlimited" in capsys.readouterr().out
     with f.db.session() as s:
-        assert s.execute(select(User.unlimited).where(User.email == "eq@x.com")).scalar_one()
+        assert s.execute(select(User.unlimited).where(User.email_index == crypto.index("eq@x.com"))).scalar_one()
     assert admin_cli.main(["user-set", "eq@x.com", "--limited"]) == 0
     with f.db.session() as s:
-        assert not s.execute(select(User.unlimited).where(User.email == "eq@x.com")).scalar_one()
+        assert not s.execute(select(User.unlimited).where(User.email_index == crypto.index("eq@x.com"))).scalar_one()

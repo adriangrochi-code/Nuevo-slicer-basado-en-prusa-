@@ -7,7 +7,7 @@ import hashlib
 import re
 from datetime import timedelta
 
-from tisma_cloud import security
+from tisma_cloud import crypto, security
 from tisma_cloud.models import ApiToken, Bridge, Job, Payment, RemoteCommand, User, utcnow
 from tisma_cloud.security import hash_password, needs_rehash, verify_password
 
@@ -15,7 +15,7 @@ from tisma_cloud.security import hash_password, needs_rehash, verify_password
 def with_password(f, email: str, password: str = "una clave larga", stored: str | None = None) -> dict:
     headers = f.user(email)
     with f.db.session() as s:
-        user = s.query(User).filter_by(email=email).one()
+        user = s.query(User).filter_by(email_index=crypto.index(email)).one()
         user.password_hash = stored or hash_password(password)
     return headers
 
@@ -40,7 +40,7 @@ def test_old_hashes_are_made_again_at_login(client, f):
     with_password(f, "vieja@x.com", stored=old)
     assert client.post("/v1/auth/login", json={"email": "vieja@x.com", "password": "una clave larga"}).status_code == 200
     with f.db.session() as s:
-        stored = s.query(User).filter_by(email="vieja@x.com").one().password_hash
+        stored = s.query(User).filter_by(email_index=crypto.index("vieja@x.com")).one().password_hash
     assert stored != old and not needs_rehash(stored) and verify_password("una clave larga", stored)
 
 
@@ -122,7 +122,7 @@ def test_delete_the_account(client, f):
     client.get("/v1/bridges/pc-1/commands?wait=0", headers=ana)
     command = client.post("/v1/remote/bridges/pc-1/printers/p/pause", headers=ana).json()
     with f.db.session() as s:
-        user = s.query(User).filter_by(email="ana@x.com").one()
+        user = s.query(User).filter_by(email_index=crypto.index("ana@x.com")).one()
         s.add(Payment(user_id=user.id, plan_name=user.plan_name, amount_cents=200, provider="manual", status="approved"))
         user_id = user.id
     assert client.post("/v1/me/delete", headers=ana, json={"password": "mal"}).status_code == 403
@@ -164,7 +164,7 @@ def test_registering_a_known_address_does_not_tell_it(client, f):
     assert sent[-1][0] == "ana@x.com" and "Ya tenés una cuenta" in sent[-1][1]
     assert client.post("/v1/auth/login", json={"email": "ana@x.com", "password": "una clave larga"}).status_code == 200
     with f.db.session() as s:
-        assert s.query(User).filter_by(email="ana@x.com").count() == 1
+        assert s.query(User).filter_by(email_index=crypto.index("ana@x.com")).count() == 1
 
 
 def test_old_data_is_forgotten(client, f):

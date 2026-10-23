@@ -15,7 +15,7 @@ installed with pip.
 | python-multipart | 0.0.32 | Apache-2.0 | master (uploads) |
 | httpx / httpcore | 0.28.1 / 1.0.9 | BSD-3-Clause | node, tests |
 | PyJWT | 2.15.1 | MIT | master (Sign in with Google: ID token verification) |
-| cryptography | 50.0.2 | Apache-2.0 OR BSD-3-Clause | master (RS256 signatures, through PyJWT) |
+| cryptography | 50.0.2 | Apache-2.0 OR BSD-3-Clause | master (RS256 signatures through PyJWT; AES-256-GCM of the personal data in the database) |
 | cffi / pycparser | 2.1.1 / 3.11 | MIT-0 / BSD-3-Clause | dependencies of cryptography |
 | aiosmtpd | 1.4.6 | Apache-2.0 | tests only (an SMTP server to test the e-mails) |
 | anyio, h11, annotated-types, typing-inspection | — | MIT | dependencies of the above |

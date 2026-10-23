@@ -215,6 +215,23 @@ El objetivo es guardar lo mínimo para dar el servicio, y que lo guardado sirva 
 | Imágenes de las cámaras | verlas en vivo | solo en memoria, 30 s; nunca en disco |
 | Direcciones IP | frenar ataques | solo en memoria (límites y bloqueos); no hay registro de accesos (`TISMA_ACCESS_LOG=1` lo prende) |
 
+**Datos personales cifrados en la base** (`crypto.py`): el correo, los nombres de las sesiones, de los puentes, de las
+impresoras y de los archivos, las notas de los pagos y los datos de las compras de Google Play se guardan cifrados con
+AES-256-GCM (de [cryptography](https://cryptography.io/en/latest/hazmat/primitives/aead/), con un número al azar
+distinto en cada valor, así que dos iguales no se ven iguales, y un valor cambiado no se lee). Una copia de la base
+sola (una copia de seguridad, un `pg_dump`, el disco de la base) no muestra a quién pertenece cada cuenta ni qué
+imprime. El correo se busca por su índice: un HMAC-SHA256 del correo con otra clave derivada de la misma; sin la clave
+no se puede ni probar si un correo está en la base. Cuesta unos 5 µs por valor (un procesador de 2,1 GHz): nada al
+lado de una consulta. Los datos de una versión anterior (en claro) se cifran solos al arrancar el maestro: 8000 cuentas
+con sus puentes (24 001 valores) en 1,6 s en PostgreSQL 16.
+
+La clave es `data.key` en la carpeta de almacenamiento (`TISMA_STORAGE_DIR`; en Docker, el volumen `storage`), hecha
+en el primer arranque y legible solo por el servicio, o `TISMA_DATA_KEY` (32 bytes en base64) si se prefiere darla como
+secreto. **Guardarla aparte de las copias de la base** (ver «Copias de seguridad»): sin ella no se pueden leer los
+datos ni entrar con un correo, y junto a la copia no protege nada. Si el maestro arranca con otra clave que la de la
+base, no arranca (en vez de escribir datos con la equivocada). `tisma-cloud-admin` y el programa de gestión usan la
+misma clave: hay que correrlos con la misma `TISMA_STORAGE_DIR` que el servicio.
+
 Nunca pasan por el central los datos de las tarjetas (se cargan en la página del medio de pago). Las páginas no cargan
 nada de otros sitios (salvo el botón de Google si está activado).
 
@@ -420,6 +437,10 @@ docker compose --env-file .env -f deploy/compose.master.yaml start api
 
 - **También guardar aparte** el archivo `.env` y la clave de la cuenta de servicio de Google Play: no están en la base de
   datos.
+- **La clave de los datos personales** (`data.key`) no va en las copias, a propósito: una copia robada no sirve sin
+  ella. Guardarla una vez en otro lugar (un gestor de contraseñas, un pendrive guardado):
+  `docker compose --env-file .env -f deploy/compose.master.yaml exec api cat /data/data.key`.
+  Para restaurar en otra máquina, ponerla de nuevo en el volumen `storage` o en `TISMA_DATA_KEY` antes de arrancar.
 
 ## Instalar un nodo
 

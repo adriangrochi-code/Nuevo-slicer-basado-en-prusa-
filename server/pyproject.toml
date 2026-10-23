@@ -19,6 +19,8 @@ master = [
     "psycopg[binary]>=3.1",
     "python-multipart>=0.0.9",
     "pyjwt[crypto]>=2.8",
+    # The personal data encrypted in the database (AES-256-GCM, crypto.py).
+    "cryptography>=42",
 ]
 # A computing node needs only httpx (and the Tisma programs).
 node = []

@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from conftest import new_app as create_app
 from test_accounts import FakeJwks, KEY as GOOGLE_KEY
 from test_billing import INTERNET, SITE, register
-from tisma_cloud import google_play
+from tisma_cloud import crypto, google_play
 from tisma_cloud.models import PlaySubscription, User, utcnow
 
 PACKAGE = "net.tismaservidores.app"
@@ -129,7 +129,7 @@ def user_row(c, email: str) -> User:
     with c.app.state.services.db.session() as s:
         from sqlalchemy import select
 
-        return s.execute(select(User).where(User.email == email)).scalar_one()
+        return s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one()
 
 
 def test_plans_show_play_products(play):
@@ -206,7 +206,7 @@ def test_refund_keeps_other_payments(play):
     with play.app.state.services.db.session() as s:
         from sqlalchemy import select
 
-        u = s.execute(select(User).where(User.email == "ana@correo.com")).scalar_one()
+        u = s.execute(select(User).where(User.email_index == crypto.index("ana@correo.com"))).scalar_one()
         u.paid_until = utcnow() + timedelta(days=10)                  # paid by transfer in Montevideo
     play.google.buy("tok-1", account_id(play, user))
     play.post("/v1/billing/play/purchase", headers=user, json={"purchase_token": "tok-1"})

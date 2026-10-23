@@ -268,18 +268,22 @@ class Manager:
 
     # ---- the nodes known by the master: what each one does
     def _database(self):
+        from . import crypto
         from .cli import load_env
         from .db import Database
         from .settings import Settings
 
         load_env(self.env_path)
         settings = Settings()
+        # The key of the personal data is in the storage folder of the service (relative to the home).
+        crypto.configure(settings, self.home)
         url = settings.database_url
         # A relative SQLite file is in the home, as for the service (run() works in the home).
         if url.startswith("sqlite:///") and not url.startswith("sqlite:////") and not Path(url[10:]).is_absolute():
             url = "sqlite:///" + str((self.home / url[10:]).resolve())
         db = Database(url)
         db.create_all()
+        crypto.migrate(db)
         return db, settings
 
     def nodes(self) -> list[dict]:
@@ -417,6 +421,7 @@ class Manager:
         """The first administrator of the master (the panel, the alerts), with the trial plan."""
         from sqlalchemy import select
 
+        from . import crypto
         from .models import Plan, User
         from .security import hash_password
 
@@ -425,7 +430,7 @@ class Manager:
             raise ValueError("Correo válido y contraseña de 8 caracteres o más")
         db, _settings = self._database()
         with db.session() as s:
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if user is None:
                 plan = s.execute(select(Plan.name).order_by(Plan.monthly_hours)).scalars().first() or "trial"
                 user = User(email=email, plan_name=plan)
@@ -435,7 +440,7 @@ class Manager:
 
     def panel_token(self) -> str:
         """A session of the first administrator for the panel opened by the program (it replaces the previous one)."""
-        from sqlalchemy import delete, select
+        from sqlalchemy import select
 
         from .models import ApiToken, User
         from .security import hash_token, new_token
@@ -446,7 +451,10 @@ class Manager:
                               .order_by(User.id)).scalars().first()
             if admin is None:
                 raise RuntimeError("No administrator: create one first")
-            s.execute(delete(ApiToken).where(ApiToken.user_id == admin.id, ApiToken.label == self.PANEL_TOKEN_LABEL))
+            # The labels are encrypted in the database: compared here.
+            for old in s.execute(select(ApiToken).where(ApiToken.user_id == admin.id)).scalars():
+                if old.label == self.PANEL_TOKEN_LABEL:
+                    s.delete(old)
             token = new_token("tu")
             s.add(ApiToken(user_id=admin.id, token_hash=hash_token(token), label=self.PANEL_TOKEN_LABEL))
             return token

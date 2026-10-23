@@ -6,7 +6,7 @@ import pytest
 from conftest import make_3mf
 from fastapi.testclient import TestClient
 
-from tisma_cloud import billing
+from tisma_cloud import billing, crypto
 from conftest import new_app as create_app
 from tisma_cloud.models import Payment, User, utcnow
 
@@ -90,7 +90,7 @@ def test_payment_with_the_test_provider(shop):
     shop.post(f"/billing/test/{pid2}/approved", follow_redirects=False)
     db = shop.app.state.services.db
     with db.session() as s:
-        u = s.query(User).filter_by(email="ana@correo.com").one()
+        u = s.query(User).filter_by(email_index=crypto.index("ana@correo.com")).one()
         assert abs((u.paid_until - utcnow()) - 2 * billing.MONTH) < timedelta(minutes=1)
 
 

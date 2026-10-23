@@ -25,6 +25,7 @@ from datetime import datetime
 
 from sqlalchemy import func, select
 
+from . import crypto
 from .db import Database
 from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES
 from .models import ApiToken, Job, Node, Plan, User
@@ -108,8 +109,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     settings = Settings()
+    crypto.configure(settings)
     db = Database(settings.database_url)
     db.create_all()
+    crypto.migrate(db)
 
     with db.session() as s:
         if args.command == "plan-set":
@@ -131,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.plan and s.get(Plan, args.plan) is None:
                 print(f"No plan {args.plan} (plan-set creates it)", file=sys.stderr)
                 return 1
-            user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(email))).scalar_one_or_none()
             if args.command == "user-add":
                 if user is not None:
                     print(f"The user {email} exists", file=sys.stderr)
@@ -161,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{email}: plan {user.plan_name}, paid until {user.paid_until}, "
                       f"{'enabled' if user.enabled else 'disabled'}{', unlimited' if user.unlimited else ''}")
         elif args.command == "user-token":
-            user = s.execute(select(User).where(User.email == args.email.strip().lower())).scalar_one_or_none()
+            user = s.execute(select(User).where(User.email_index == crypto.index(args.email))).scalar_one_or_none()
             if user is None:
                 print(f"No user {args.email}", file=sys.stderr)
                 return 1
@@ -169,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
             s.add(ApiToken(user_id=user.id, token_hash=hash_token(token), label=args.label))
             print(f"Access token of {user.email} (shown only now):\n{token}")
         elif args.command == "user-list":
-            for u in s.execute(select(User).order_by(User.email)).scalars():
+            for u in sorted(s.execute(select(User)).scalars(), key=lambda u: u.email):  # (encrypted in the database)
                 acc = account(s, u, settings.grace_days)
                 flags = (" admin" if u.is_admin else "") + (" unlimited" if u.unlimited else "") + \
                     ("" if u.enabled else " disabled")
