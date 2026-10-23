@@ -26,12 +26,17 @@ def make_3mf(triangles: int = 12, config: str | None = None, extra: dict[str, st
              f'</vertices><triangles>{tris}</triangles></mesh></object></resources><build><item objectid="1"/></build>'
              '</model>')
     buf = io.BytesIO()
+
+    def put(z: zipfile.ZipFile, name: str, content: str) -> None:
+        # A fixed date: the same arguments give the same bytes (the current time changes every 2 s in a ZIP).
+        z.writestr(zipfile.ZipInfo(name, date_time=(2024, 1, 1, 0, 0, 0)), content, compress_type=zipfile.ZIP_DEFLATED)
+
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("3D/3dmodel.model", model)
+        put(z, "3D/3dmodel.model", model)
         if config is not None:
-            z.writestr("Metadata/Slic3r_PE.config", config)
+            put(z, "Metadata/Slic3r_PE.config", config)
         for name, content in (extra or {}).items():
-            z.writestr(name, content)
+            put(z, name, content)
     return buf.getvalue()
 
 
