@@ -24,6 +24,11 @@ namespace Slic3r {
 inline std::optional<std::size_t> thread_count;
 extern void set_logging_level(unsigned int level);
 extern unsigned get_logging_level();
+// Tisma Slicer: keeps the last lines of the log in memory, for the problem reports, besides writing them to the console
+// as before. Called once by the GUI at its start.
+extern void keep_recent_log(size_t lines = 500);
+// The lines kept, the oldest first (empty unless keep_recent_log() was called).
+extern std::string recent_log();
 // Format memory allocated, separate thousands by comma.
 extern std::string format_memsize_MB(size_t n);
 extern std::string format_memsize(size_t bytes, unsigned int decimals = 1);

@@ -149,6 +149,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/FeaMaterialsDialog.hpp
     GUI/TismaCloudDialog.cpp
     GUI/TismaCloudDialog.hpp
+    GUI/ProblemReportDialog.cpp
+    GUI/ProblemReportDialog.hpp
     GUI/FragmentDialog.cpp
     GUI/FragmentDialog.hpp
     GUI/NavRail.cpp

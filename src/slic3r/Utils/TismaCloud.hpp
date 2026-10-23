@@ -59,6 +59,11 @@ public:
     bool logout(std::string &error);
     bool account(Account &account, std::string &error);
 
+    // POST /v1/reports: a problem found by the user (fields of the server's ReportBody: app, kind, title, description,
+    // steps, expected, actual, app_version, os, log), with the token of the account when there is one. similar: how
+    // many reports of the same problem the server has besides this one.
+    bool report(const std::map<std::string, std::string> &fields, int &similar, std::string &error);
+
     // Sends a job (kind "slice" or "fea", params a JSON object) with the project (3MF).
     bool submit(const std::string &kind, const std::string &params_json, const std::string &project_path, Job &job,
                 std::string &error);

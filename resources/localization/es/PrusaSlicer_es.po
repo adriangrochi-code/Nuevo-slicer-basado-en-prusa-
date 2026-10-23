@@ -34284,3 +34284,72 @@ msgstr "Aplicar resultado"
 
 msgid "Correction"
 msgstr "Corrección"
+
+msgid "Report a problem"
+msgstr "Informar de un problema"
+
+msgid "Send a problem or a suggestion to the Tisma team"
+msgstr "Enviar un problema o una sugerencia al equipo de Tisma"
+
+msgid "Tell what went wrong, or what you would like Tisma to do. It goes to the Tisma team, which groups the reports of the same problem to fix the most frequent ones first. E-mails, addresses, the user name in the paths, keys and serial numbers are removed before it is kept."
+msgstr "Cuenta qué salió mal o qué te gustaría que haga Tisma. Llega al equipo de Tisma, que agrupa los informes del mismo problema para arreglar primero los más frecuentes. Los correos, las direcciones, el usuario en las rutas, las claves y los números de serie se quitan antes de guardarlo."
+
+msgid "Kind"
+msgstr "Tipo"
+
+msgid "Something does not work"
+msgstr "Algo no funciona"
+
+msgid "Tisma closed"
+msgstr "Tisma se cerró"
+
+msgid "Suggestion"
+msgstr "Sugerencia"
+
+msgid "In a few words"
+msgstr "En pocas palabras"
+
+msgid "e.g. The supports are missing under the overhang"
+msgstr "p. ej.: Faltan los soportes bajo el voladizo"
+
+msgid "What happened"
+msgstr "Qué pasó"
+
+msgid "Steps to make it happen again"
+msgstr "Pasos para que vuelva a pasar"
+
+msgid "What you expected"
+msgstr "Qué esperabas"
+
+msgid "Tisma Cloud server"
+msgstr "Servidor de Tisma Cloud"
+
+msgid "Attach the version, the system, the printer in use and the log of this session"
+msgstr "Adjuntar la versión, el sistema, la impresora en uso y el registro de esta sesión"
+
+msgid "See what is attached"
+msgstr "Ver lo que se adjunta"
+
+msgid "Sent with the account %1%: its reports and their state are in the copy of its data."
+msgstr "Se envía con la cuenta %1%: sus informes y su estado están en la copia de sus datos."
+
+msgid "Sent without an account."
+msgstr "Se envía sin cuenta."
+
+msgid "What is attached"
+msgstr "Lo que se adjunta"
+
+msgid "Write in a few words what happened."
+msgstr "Escribe en pocas palabras qué pasó."
+
+msgid "Enter the address of the Tisma Cloud server."
+msgstr "Escribe la dirección del servidor de Tisma Cloud."
+
+msgid "The report could not be sent: %1%"
+msgstr "No se pudo enviar el informe: %1%"
+
+msgid "Thank you: the report was sent to the Tisma team."
+msgstr "Gracias: el informe se envió al equipo de Tisma."
+
+msgid "The same problem was reported %1% times before: it is among the ones to fix."
+msgstr "El mismo problema se informó %1% veces antes: está entre los que hay que arreglar."

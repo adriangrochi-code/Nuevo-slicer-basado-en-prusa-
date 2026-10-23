@@ -34,6 +34,10 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
   un selector arriba de las dos; la sección abre la usada por última vez. El chip de la impresora en uso abre
   Dispositivos.
 - **Más**: calibración (también en el grupo Calibrar de la placa), Thingiverse, cuenta de Tisma Cloud, preferencias, asistente de configuración, ayuda.
+  Ayuda > «Informar de un problema» manda al servidor de Tisma Cloud qué pasó, los pasos y, si la persona quiere, la
+  versión, el sistema, la impresora en uso y las últimas 500 líneas del registro de la sesión (se ven antes de mandar);
+  el servidor quita los datos personales y agrupa los informes del mismo problema (`server/README.md`, «Problemas
+  informados»). Se puede mandar sin cuenta (se pide la dirección del servidor si no hay una).
 
 ## Inventario: de dónde viene cada función y a dónde va
 

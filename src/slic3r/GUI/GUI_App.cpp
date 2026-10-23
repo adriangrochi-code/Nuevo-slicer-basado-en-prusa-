@@ -1353,6 +1353,9 @@ bool GUI_App::on_init_inner()
     m_log_gui = new LogGui();
     wxLog::SetActiveTarget(m_log_gui);
 
+    // Tisma Slicer: the last lines of the log, for the problem reports (Help > Report a problem).
+    keep_recent_log();
+
 #if defined(_WIN32) && ! defined(_WIN64)
     // Win32 32bit build.
     if (wxPlatformInfo::Get().GetArchName().substr(0, 2) == "64") {

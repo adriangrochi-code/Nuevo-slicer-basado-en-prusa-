@@ -76,6 +76,7 @@
 #include "WebViewPanel.hpp"
 #include "UserAccount.hpp"
 #include "TismaCloudDialog.hpp"
+#include "ProblemReportDialog.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
@@ -1609,8 +1610,9 @@ static wxMenu* generate_help_menu()
         [](wxCommandEvent&) { wxGetApp().system_info(); });
     append_menu_item(helpMenu, wxID_ANY, _L("Show &Configuration Folder"), _L("Show user configuration folder (datadir)"),
         [](wxCommandEvent&) { Slic3r::GUI::desktop_open_datadir_folder(); });
-    append_menu_item(helpMenu, wxID_ANY, _L("Report an I&ssue"), wxString::Format(_L("Report an issue on %s"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository + "/issues/new", nullptr, false); });
+    // Tisma Slicer: the report goes to the Tisma team through Tisma Cloud (ProblemReportDialog).
+    append_menu_item(helpMenu, wxID_ANY, _L("Report a problem") + dots, _L("Send a problem or a suggestion to the Tisma team"),
+        [](wxCommandEvent&) { show_problem_report_dialog(wxGetApp().mainframe); });
 #ifndef __APPLE__
     append_about_menu_item(helpMenu);
 #endif // __APPLE__
