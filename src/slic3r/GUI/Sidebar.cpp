@@ -1174,15 +1174,16 @@ void Sidebar::init_printer_parts()
     auto *grid = new wxFlexGridSizer(2, 2, int(0.3 * em), em);
     grid->AddGrowableCol(0, 1);
     grid->AddGrowableCol(1, 1);
-    auto make = [this](wxStaticText **label, BitmapComboBox **combo, const wxString &text) {
+    auto make = [this](wxStaticText **label, BitmapComboBox **combo, const wxString &text, long style) {
         auto *title = new TismaTitle(m_card_printer, text, TismaTitle::Style::Caption);
         m_titles.push_back(title);
         *label = title;
         *combo = new BitmapComboBox(m_card_printer, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,
-                                    nullptr, wxCB_READONLY);
+                                    nullptr, style);
     };
-    make(&m_label_nozzle, &m_combo_nozzle, _L("Nozzle"));
-    make(&m_label_bed, &m_combo_bed, _L("Bed type"));
+    // The nozzle can also be typed: any diameter, not only the ones of the list.
+    make(&m_label_nozzle, &m_combo_nozzle, _L("Nozzle"), 0);
+    make(&m_label_bed, &m_combo_bed, _L("Bed type"), wxCB_READONLY);
     grid->Add(m_label_nozzle, 0, wxALIGN_BOTTOM);
     grid->Add(m_label_bed, 0, wxALIGN_BOTTOM);
     grid->Add(m_combo_nozzle, 1, wxEXPAND);
@@ -1192,6 +1193,8 @@ void Sidebar::init_printer_parts()
     m_combo_bed->SetToolTip(_L("The bed (build plate) used: the bed temperatures of the filaments for it are used."));
     // Handled here, not by on_select_preset().
     m_combo_nozzle->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_nozzle(); });
+    m_combo_nozzle->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent &) { on_type_nozzle(); });
+    m_combo_nozzle->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent &e) { on_type_nozzle(); e.Skip(); });
     m_combo_bed->Bind(wxEVT_COMBOBOX, [this](wxCommandEvent &) { on_select_bed(); });
 
     // Aligned with the printer combo, which has its edit button on the right.
@@ -1277,10 +1280,38 @@ void Sidebar::update_printer_parts()
 void Sidebar::on_select_nozzle()
 {
     const int selection = m_combo_nozzle->GetSelection();
-    if (selection < 0 || selection >= int(m_nozzles.size()))
+    if (selection >= 0 && selection < int(m_nozzles.size()))
+        apply_nozzle(m_nozzles[size_t(selection)]);
+}
+
+void Sidebar::on_type_nozzle()
+{
+    // The number at the start of the text, with a comma or a point ("0,35", "0.6 mm").
+    wxString text = m_combo_nozzle->GetTextCtrl()->GetValue();
+    text.Replace(",", ".");
+    text.Trim(false);
+    size_t end = 0;
+    while (end < text.length() && wxString("0123456789.").Find(text[end]) != wxNOT_FOUND)
+        ++ end;
+    double diameter = 0.;
+    const auto *current = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    // Not a nozzle (or the one on the printer): the field shows the nozzle of the printer again.
+    if (end == 0 || ! text.Left(end).ToCDouble(&diameter) || diameter < 0.05 || diameter > 3. ||
+        (current != nullptr && ! current->values.empty() && std::abs(current->values.front() - diameter) < 1e-6)) {
+        update_printer_parts();
         return;
+    }
+    // A nozzle of the list (the profile of the model for it first), else this diameter on the printer.
+    NozzleChoice nozzle { diameter, std::string() };
+    for (const NozzleChoice &n : m_nozzles)
+        if (std::abs(n.diameter - diameter) < 1e-6 && (nozzle.preset.empty() || ! n.preset.empty()))
+            nozzle = n;
+    apply_nozzle(nozzle);
+}
+
+void Sidebar::apply_nozzle(const NozzleChoice &nozzle)
+{
     PresetBundle &bundle = *wxGetApp().preset_bundle;
-    const NozzleChoice nozzle = m_nozzles[size_t(selection)];
     if (! nozzle.preset.empty()) {
         // The printer preset of the vendor for this nozzle.
         if (nozzle.preset == bundle.printers.get_selected_preset_name() && ! bundle.printers.current_is_dirty()) {

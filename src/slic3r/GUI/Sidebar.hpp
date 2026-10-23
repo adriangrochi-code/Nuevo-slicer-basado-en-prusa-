@@ -172,6 +172,9 @@ class Sidebar : public wxPanel
     void init_printer_parts();
     void update_printer_parts();
     void on_select_nozzle();
+    // Tisma: a diameter typed in the nozzle field.
+    void on_type_nozzle();
+    void apply_nozzle(const NozzleChoice &nozzle);
     void on_select_bed();
 
     void show_preset_comboboxes();

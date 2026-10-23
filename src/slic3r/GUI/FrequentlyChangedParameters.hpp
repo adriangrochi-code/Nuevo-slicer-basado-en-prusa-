@@ -26,6 +26,7 @@ class wxSizer;
 class wxWindow;
 class Button;
 class SwitchButton;
+class TextInput;
 
 namespace Slic3r {
 
@@ -35,7 +36,8 @@ class TismaChoiceChips;
 class TismaTitle;
 
 // Tisma: the settings changed most often, as chips in the cards of the print settings of the plate panel: the supports,
-// the infill and the brim of a filament print, the supports and the pad of a resin print. A choice is loaded in the
+// the infill and the brim of a filament print, the supports and the pad of a resin print; the density of the infill and
+// the width of the brim can also be typed. A choice is loaded in the
 // settings tab of the print (Tab::load_config()), which then shows the new values here (update_from_config()).
 class FreqChangedParams
 {
@@ -47,14 +49,20 @@ class FreqChangedParams
 
     TismaChoiceChips*               m_support     { nullptr };
     TismaChoiceChips*               m_infill      { nullptr };
+    // Tisma: the density and the width of the brim typed with the keyboard, beside their captions.
+    ::TextInput*                    m_infill_value { nullptr };
     ::SwitchButton*                 m_brim        { nullptr };
+    ::TextInput*                    m_brim_value  { nullptr };
+    wxSizer*                        m_brim_row    { nullptr };
     TismaChoiceChips*               m_sla_support { nullptr };
     TismaChoiceChips*               m_pad         { nullptr };
     std::vector<TismaTitle*>        m_captions;
 
     void on_support(bool is_fff, int idx);
     void on_infill(int idx);
+    void set_infill(double density);
     void on_brim(bool on);
+    void set_brim_width(double width);
     void on_pad(int idx);
     void show_wiping_dialog(wxWindow* parent);
 

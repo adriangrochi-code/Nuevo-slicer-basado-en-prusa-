@@ -314,6 +314,10 @@ void ComboBox::keyDown(wxKeyEvent& event)
                 drop.DismissAndNotify();
                 sendComboBoxEvent();
             }
+            else if (! HasFlag(wxCB_READONLY)) {
+                // Enter confirms the typed value (wxEVT_TEXT_ENTER) instead of opening the list.
+                event.Skip();
+            }
             else if (drop.HasDismissLongTime()) {
                 drop.autoPosition();
                 drop_down = true;

@@ -23,11 +23,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
+#include <limits>
 #include <string>
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
-#include <wx/textdlg.h>
 
 #include "libslic3r/PresetBundle.hpp"
 
@@ -41,6 +42,7 @@
 #include "Widgets/Button.hpp"
 #include "Widgets/StateColor.hpp"
 #include "Widgets/SwitchButton.hpp"
+#include "Widgets/TextInput.hpp"
 #include "WipeTowerDialog.hpp"
 
 using Slic3r::Preset;
@@ -54,7 +56,7 @@ wxDEFINE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS,     SimpleEvent);
 
 // The chips of the supports: none, on the build plate only, everywhere, where the user painted (enforcers) only.
 enum SupportChip { scNone, scBuildPlate, scEverywhere, scEnforcers };
-// The chips of the infill: these densities and a last chip for any other one.
+// The chips of the infill: these densities; any other one is typed in the field beside the caption.
 static const std::vector<double> INFILL_DENSITIES = { 0., 10., 15., 20., 30., 50., 100. };
 // The chips of the pad of a resin print.
 enum PadChip { pcNone, pcBelow, pcAround };
@@ -75,6 +77,35 @@ static wxString percent(double value)
     return wxString::Format("%g%%", value);
 }
 
+// A small field of a number typed with the keyboard, added to the row with its unit after it: Enter or leaving the
+// field gives the number to on_value (NaN when the text is not a number).
+static ::TextInput* number_field(wxWindow* parent, wxSizer* row, const wxString& unit, std::function<void(double)> on_value)
+{
+    const int em = wxGetApp().em_unit();
+    auto* field = new ::TextInput(parent, wxEmptyString, wxEmptyString, wxEmptyString, wxDefaultPosition, wxSize(6 * em, -1),
+                                  wxTE_PROCESS_ENTER);
+    auto* unit_text = new wxStaticText(parent, wxID_ANY, unit);
+    unit_text->SetForegroundColour(TismaTheme::text_muted(wxGetApp().dark_mode()));
+    row->Add(field, 0, wxALIGN_CENTER_VERTICAL);
+    row->Add(unit_text, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, em / 3);
+    auto apply = [field, on_value]() {
+        // The number at the start, with a comma or a point ("15", "12,5 %", "5mm").
+        wxString text = field->GetTextCtrl()->GetValue();
+        text.Replace(",", ".");
+        text.Trim(false);
+        size_t end = 0;
+        while (end < text.length() && wxString("0123456789.+-").Find(text[end]) != wxNOT_FOUND)
+            ++ end;
+        double value = std::numeric_limits<double>::quiet_NaN();
+        if (end == 0 || ! text.Left(end).ToCDouble(&value))
+            value = std::numeric_limits<double>::quiet_NaN();
+        on_value(value);
+    };
+    field->Bind(wxEVT_TEXT_ENTER, [apply](wxCommandEvent&) { apply(); });
+    field->Bind(wxEVT_KILL_FOCUS, [apply](wxFocusEvent& e) { apply(); e.Skip(); });
+    return field;
+}
+
 FreqChangedParams::FreqChangedParams(wxWindow* fff_parent, wxWindow* sla_parent)
 {
     const int em = wxGetApp().em_unit();
@@ -92,18 +123,29 @@ FreqChangedParams::FreqChangedParams(wxWindow* fff_parent, wxWindow* sla_parent)
     m_support->SetToolTip(_L("Select what kind of support do you need"));
     m_fff_sizer->Add(m_support, 0, wxEXPAND);
 
-    caption(fff_parent, m_fff_sizer, _L("Infill"));
+    // The caption of the infill with its density typed beside it, then the usual densities as chips.
+    auto* infill_row = new wxBoxSizer(wxHORIZONTAL);
+    auto* infill_label = new TismaTitle(fff_parent, _L("Infill"), TismaTitle::Style::Caption);
+    m_captions.push_back(infill_label);
+    infill_row->Add(infill_label, 1, wxALIGN_CENTER_VERTICAL);
+    m_infill_value = number_field(fff_parent, infill_row, "%", [this](double v) { set_infill(v); });
+    m_infill_value->SetToolTip(_L("Infill density, in percent:"));
+    m_fff_sizer->Add(infill_row, 0, wxEXPAND | wxTOP | wxBOTTOM, int(0.4 * em));
     std::vector<wxString> densities;
     for (double d : INFILL_DENSITIES)
         densities.push_back(percent(d));
-    densities.push_back(_L("Other") + dots);
     m_infill = new TismaChoiceChips(fff_parent, densities, [this](int idx) { on_infill(idx); });
     m_fff_sizer->Add(m_infill, 0, wxEXPAND);
 
+    // The brim: its width typed when it is on, and the switch.
     auto* brim_row = new wxBoxSizer(wxHORIZONTAL);
     auto* brim_label = new TismaTitle(fff_parent, _L("Brim"), TismaTitle::Style::Caption);
     m_captions.push_back(brim_label);
     brim_row->Add(brim_label, 1, wxALIGN_CENTER_VERTICAL);
+    m_brim_row = brim_row;
+    m_brim_value = number_field(fff_parent, brim_row, _L("mm"), [this](double v) { set_brim_width(v); });
+    m_brim_value->SetToolTip(_L("Brim width"));
+    brim_row->AddSpacer(em);
     m_brim = new ::SwitchButton(fff_parent);
     m_brim->SetToolTip(_L("This flag enables the brim that will be printed around each object on the first layer."));
     m_brim->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent& e) { on_brim(e.IsChecked()); });
@@ -145,12 +187,17 @@ void FreqChangedParams::update_from_config()
     const double density = fff.option<ConfigOptionPercent>("fill_density")->value;
     const auto it = std::find_if(INFILL_DENSITIES.begin(), INFILL_DENSITIES.end(),
                                  [density](double d) { return std::abs(d - density) < 1e-6; });
-    const int other = int(INFILL_DENSITIES.size());
-    m_infill->set_selection(it == INFILL_DENSITIES.end() ? other : int(it - INFILL_DENSITIES.begin()));
-    // The chip of another density shows it.
-    m_infill->set_label(other, it == INFILL_DENSITIES.end() ? percent(density) : _L("Other") + dots);
+    // Another density: no chip, the field shows it.
+    m_infill->set_selection(it == INFILL_DENSITIES.end() ? -1 : int(it - INFILL_DENSITIES.begin()));
+    m_infill_value->GetTextCtrl()->ChangeValue(wxString::Format("%g", density));
 
-    m_brim->SetValue(fff.opt_float("brim_width") > 0.);
+    const double brim_width = fff.opt_float("brim_width");
+    m_brim->SetValue(brim_width > 0.);
+    m_brim_value->GetTextCtrl()->ChangeValue(wxString::Format("%g", brim_width));
+    // The width and its unit only while the brim is on.
+    m_brim_row->Show(size_t(1), brim_width > 0.);
+    m_brim_row->Show(size_t(2), brim_width > 0.);
+    m_fff_sizer->Layout();
 
     const DynamicPrintConfig& sla = wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
     m_sla_support->set_selection(support_chip(sla, false));
@@ -184,31 +231,19 @@ void FreqChangedParams::on_support(bool is_fff, int idx)
 
 void FreqChangedParams::on_infill(int idx)
 {
+    if (idx >= 0 && idx < int(INFILL_DENSITIES.size()))
+        set_infill(INFILL_DENSITIES[idx]);
+}
+
+void FreqChangedParams::set_infill(double density)
+{
     Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT);
-    if (! tab)
-        return;
     DynamicPrintConfig new_conf = wxGetApp().preset_bundle->prints.get_edited_preset().config;
-    double density = 0.;
-    if (idx < int(INFILL_DENSITIES.size()))
-        density = INFILL_DENSITIES[idx];
-    else {
-        const double current = new_conf.option<ConfigOptionPercent>("fill_density")->value;
-        wxTextEntryDialog dlg(wxGetApp().GetTopWindow(), _L("Infill density, in percent:"), _L("Infill"),
-                              wxString::Format("%g", current));
-        double value = -1.;
-        if (dlg.ShowModal() == wxID_OK) {
-            wxString text = dlg.GetValue();
-            text.Replace(",", ".");
-            text.Replace("%", "");
-            text.Trim().Trim(false);
-            if (! text.ToCDouble(&value))
-                value = -1.;
-        }
-        if (value < 0. || value > 100.) {
-            update_from_config();
-            return;
-        }
-        density = value;
+    // Not a density (or the same one): the field shows the density of the profile again.
+    if (! tab || std::isnan(density) || density < 0. || density > 100. ||
+        std::abs(new_conf.option<ConfigOptionPercent>("fill_density")->value - density) < 1e-9) {
+        update_from_config();
+        return;
     }
     new_conf.set_key_value("fill_density", new ConfigOptionPercent(density));
     tab->load_config(new_conf);
@@ -229,6 +264,23 @@ void FreqChangedParams::on_brim(bool on)
         m_brim_width = -brim_width;
     new_conf.set_key_value("brim_width", new ConfigOptionFloat(new_val));
     tab->load_config(new_conf);
+    update_from_config();
+}
+
+void FreqChangedParams::set_brim_width(double width)
+{
+    Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT);
+    DynamicPrintConfig new_conf = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    // Not a width (or the same one): the field shows the width of the profile again; 0 switches the brim off.
+    if (! tab || std::isnan(width) || width < 0. || width > 200. || std::abs(new_conf.opt_float("brim_width") - width) < 1e-9) {
+        update_from_config();
+        return;
+    }
+    if (width == 0.)
+        m_brim_width = -new_conf.opt_float("brim_width");
+    new_conf.set_key_value("brim_width", new ConfigOptionFloat(width));
+    tab->load_config(new_conf);
+    update_from_config();
 }
 
 void FreqChangedParams::on_pad(int idx)
@@ -274,6 +326,8 @@ void FreqChangedParams::msw_rescale()
     for (TismaChoiceChips* chips : { m_support, m_infill, m_sla_support, m_pad })
         chips->msw_rescale();
     m_brim->Rescale();
+    m_infill_value->Rescale();
+    m_brim_value->Rescale();
     m_wiping_dialog_button->Rescale();
 }
 
