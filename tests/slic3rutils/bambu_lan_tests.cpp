@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <atomic>
 #include <cstdlib>
 #include <fstream>
 
@@ -118,7 +119,29 @@ TEST_CASE("Bambu start command", "[BambuLan]")
     CHECK(p.at("sequence_id") == "7");
 }
 
-// End to end against tools/bambu/fake_printer.py (TLS with a test CA, MQTT and implicit FTPS):
+TEST_CASE("Bambu camera packets", "[BambuLan]")
+{
+    const std::string auth = BambuCamera::auth_packet("bblp", "12345678");
+    REQUIRE(auth.size() == 80);
+    CHECK(auth.substr(0, 8) == std::string("\x40\0\0\0\0\x30\0\0", 8));
+    CHECK(auth.substr(8, 8) == std::string(8, '\0'));
+    CHECK(auth.substr(16, 5) == std::string("bblp\0", 5));
+    CHECK(auth.substr(48, 9) == std::string("12345678\0", 9));
+
+    const std::string jpeg("\xFF\xD8\x01\x02\xFF\xD9", 6);
+    const std::string header("\x06\0\0\0\0\0\0\0\x01\0\0\0\0\0\0\0", 16);
+    const std::string stream = header + jpeg + header + jpeg;
+    std::string frame;
+    CHECK(BambuCamera::parse_frame(stream.substr(0, 10), frame) == 0);   // not a whole header
+    CHECK(BambuCamera::parse_frame(stream.substr(0, 20), frame) == 0);   // not a whole image
+    REQUIRE(BambuCamera::parse_frame(stream, frame) == 22);
+    CHECK(frame == jpeg);
+    REQUIRE(BambuCamera::parse_frame(stream.substr(22), frame) == 22);
+    CHECK(frame == jpeg);
+    CHECK_THROWS(BambuCamera::parse_frame(std::string(16, '\0'), frame));
+}
+
+// End to end against tools/bambu/fake_printer.py (TLS with a test CA, MQTT, implicit FTPS and the camera):
 //   python3 tools/bambu/fake_printer.py --dir /tmp/fake &   then
 //   TISMA_BAMBU_FAKE=/tmp/fake slic3rutils_tests "[BambuLanFake]"
 TEST_CASE("Bambu LAN against the fake printer", "[.][BambuLanFake]")
@@ -131,6 +154,7 @@ TEST_CASE("Bambu LAN against the fake printer", "[.][BambuLanFake]")
     client.cafile      = (fs::path(dir) / "ca.pem").string();
     client.mqtt_port   = 18883;
     client.ftps_port   = 18990;
+    client.camera_port = 16000;
 
     BambuStatus status;
     std::string error;
@@ -179,6 +203,29 @@ TEST_CASE("Bambu LAN against the fake printer", "[.][BambuLanFake]")
         CHECK(cmd.at("print").at("command") == "project_file");
         CHECK(cmd.at("print").at("url") == "ftp://tisma_bambu.gcode.3mf");
         fs::remove(gcode);
+    }
+
+    SECTION("camera") {
+        std::atomic<bool> stop{ false };
+        int frames = 0;
+        const bool ok = client.stream_camera([&frames](const std::string &jpeg) {
+            CHECK(jpeg.substr(0, 2) == "\xFF\xD8");
+            return ++ frames < 3;
+        }, stop, error);
+        INFO(error);
+        CHECK(ok);
+        CHECK(frames == 3);
+
+        BambuLanClient bad = client;
+        bad.access_code = "00000000";
+        CHECK(!bad.stream_camera([](const std::string &) { return true; }, stop, error));
+        CHECK(error == "refused");
+
+        // Nothing on the port, as the X1, P2S and H2 (RTSPS on 322).
+        BambuLanClient rtsps = client;
+        rtsps.camera_port = 1;
+        CHECK(!rtsps.stream_camera([](const std::string &) { return true; }, stop, error));
+        CHECK(error == "no camera");
     }
 
     SECTION("cancel the upload") {
