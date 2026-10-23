@@ -5646,7 +5646,7 @@ msgstr "Número de capas sólidas para generar en las superficies superiores."
 
 #: src/libslic3r/PrintConfig.cpp:3762
 msgid "Top solid layers"
-msgstr "Capas solidas superiores"
+msgstr "Capas sólidas superiores"
 
 #: src/libslic3r/PrintConfig.cpp:3769
 msgid ""

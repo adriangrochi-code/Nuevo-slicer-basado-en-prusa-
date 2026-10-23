@@ -181,7 +181,6 @@ wxPoint OG_CustomCtrl::get_pos(const Line& line, Field* field_in/* = nullptr*/)
                     // those two parameter names require localization with context
                     label = (option.label == "Top" || option.label == "Bottom") ?
                         _CTX(option.label, "Layers") : _(option.label);
-                    label += ":";
 
                     wxCoord label_w, label_h;
 #ifdef __WXMSW__
@@ -646,7 +645,8 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
     if (ctrl->opt_group->label_width != 0 && !label.IsEmpty()) {
         const wxColour* text_clr = (option_set.size() == 1 && field ? field->label_color() : og_line.label_color());
         is_url_string = !suppress_hyperlinks && !og_line.label_path.empty();
-        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label + ":", text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
+        // Tisma: the labels without the colon of PrusaSlicer, as in the modern slicers.
+        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label, text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
     }
 
     // If there's a widget, build it and set result to the correct position.
@@ -685,7 +685,6 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
             // those two parameter names require localization with context
             label = (option.label == "Top" || option.label == "Bottom") ?
                 _CTX(option.label, "Layers") : _(option.label);
-            label += ":";
 
             if (is_url_string)
                 is_url_string = false;

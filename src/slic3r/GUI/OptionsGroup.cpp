@@ -496,27 +496,28 @@ void OptionsGroup::activate_line(Line& line)
         else {
             if (!line.near_label_widget || !line.label.IsEmpty()) {
                 // Only create the label if it is going to be displayed.
-                long label_style = staticbox ? 0 : wxALIGN_RIGHT;
+                // Tisma: the labels at the left, without the colon of PrusaSlicer.
+                long label_style = 0;
 #ifdef __WXGTK__
                 // workaround for correct text align of the StaticBox on Linux
                 // flags wxALIGN_RIGHT and wxALIGN_CENTRE don't work when Ellipsize flags are _not_ given.
                 // Text is properly aligned only when Ellipsize is checked.
                 label_style |= staticbox ? 0 : wxST_ELLIPSIZE_END;
 #endif /* __WXGTK__ */
-                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, line.label + (line.label.IsEmpty() ? "" : ": "),
+                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, line.label,
                     wxDefaultPosition, wxSize(label_width * wxGetApp().em_unit(), -1), label_style);
                 label->SetBackgroundStyle(wxBG_STYLE_PAINT);
                 label->SetFont(wxGetApp().normal_font());
                 label->Wrap(label_width * wxGetApp().em_unit()); // avoid a Linux/GTK bug
             }
             if (!line.near_label_widget)
-                m_grid_sizer->Add(label, 0, (staticbox ? 0 : wxALIGN_RIGHT | wxRIGHT) | wxALIGN_CENTER_VERTICAL, line.label.IsEmpty() ? 0 : 5);
+                m_grid_sizer->Add(label, 0, (staticbox ? 0 : wxRIGHT) | wxALIGN_CENTER_VERTICAL, line.label.IsEmpty() ? 0 : 5);
             else if (!line.label.IsEmpty()) {
                 // If we're here, we have some widget near the label
                 // so we need a horizontal sizer to arrange these things
                 auto sizer = new wxBoxSizer(wxHORIZONTAL);
                 m_grid_sizer->Add(sizer, 0, wxEXPAND | (staticbox ? wxALL : wxBOTTOM | wxTOP | wxLEFT), staticbox ? 0 : 1);
-                sizer->Add(label, 0, (staticbox ? 0 : wxALIGN_RIGHT | wxRIGHT) | wxALIGN_CENTER_VERTICAL, 5);
+                sizer->Add(label, 0, (staticbox ? 0 : wxRIGHT) | wxALIGN_CENTER_VERTICAL, 5);
             }
             if (label != nullptr && line.label_tooltip != "")
                 label->SetToolTip(line.label_tooltip);
@@ -570,7 +571,7 @@ void OptionsGroup::activate_line(Line& line)
                 wxString str_label = (option.label == "Top" || option.label == "Bottom") ?
                     _CTX(option.label, "Layers") :
                     _(option.label);
-                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, str_label + ": ", wxDefaultPosition, //wxDefaultSize);
+                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, str_label + " ", wxDefaultPosition, //wxDefaultSize);
                     wxSize(sublabel_width != -1 ? sublabel_width * wxGetApp().em_unit() : -1, -1), wxALIGN_RIGHT);
                 label->SetBackgroundStyle(wxBG_STYLE_PAINT);
                 label->SetFont(wxGetApp().normal_font());
