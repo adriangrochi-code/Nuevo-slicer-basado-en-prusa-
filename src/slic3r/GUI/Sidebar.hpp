@@ -119,6 +119,9 @@ class Sidebar : public wxPanel
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
     SlicedInfo*     m_sliced_info               { nullptr };
+    // The slicing information is up to date (shown in the panel for a resin print, with the legend for a filament one).
+    bool            m_sliced_info_shown         { false };
+    std::vector<std::pair<std::string, std::string>> m_sliced_info_rows;
     wxBoxSizer*     m_btns_sizer                { nullptr };
     wxBoxSizer*     m_autoslicing_btns_sizer    { nullptr };
 
@@ -214,6 +217,9 @@ public:
     void show_bulk_btns_sizer(const bool show);
 
     void update_sliced_info_sizer();
+    // Tisma: the slicing information of a filament print (name, value; the estimated time apart), shown with the legend
+    // of the preview (GCodeViewer::render_legend()) instead of in the panel. Empty while the plate is not sliced.
+    const std::vector<std::pair<std::string, std::string>>& sliced_info_rows() const { return m_sliced_info_rows; }
 
     void enable_buttons(bool enable);
     void set_btn_label(const ActionButtonType btn_type, const wxString& label) const;

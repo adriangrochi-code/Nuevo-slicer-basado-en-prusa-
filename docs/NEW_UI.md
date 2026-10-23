@@ -79,7 +79,9 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 5. Panel de la placa nuevo (en curso): tarjetas con títulos grandes; la impresora por su modelo, con la boquilla y la
    cama al lado como en OrcaSlicer y Bambu Studio (la boquilla elige el perfil del modelo para ella o pone su diámetro
    en la impresora; la cama se elige para toda impresora de filamento); soportes, relleno y borde en chips; la lista de
-   objetos en todos los modos; la rueda del mouse sobre un campo desplaza el panel en lugar de cambiar el valor.
+   objetos en todos los modos; la rueda del mouse sobre un campo desplaza el panel en lugar de cambiar el valor; la información del laminado de una
+   impresión de filamento se muestra con la leyenda de la vista previa, a la izquierda, y no en el panel (una de resina,
+   sin leyenda, la sigue mostrando en el panel).
    Falta: chips de ajustes sobre la vista.
 6. Páginas de ajustes nuevas (Impresión, Filamento, Impresora; también resina).
 7. Barra superior propia y menú reorganizado (en macOS el menú del sistema sigue).
