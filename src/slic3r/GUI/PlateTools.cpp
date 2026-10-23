@@ -108,9 +108,22 @@ wxRect PlateTools::group_rect(size_t idx) const
     return wxRect(0, int(0.5 * wxGetApp().em_unit()) + int(idx) * ih, groups_width(), ih);
 }
 
+std::vector<size_t> PlateTools::visible_tools() const
+{
+    std::vector<size_t> out;
+    if (m_groups.empty())
+        return out;
+    const std::vector<Tool>& tools = m_groups[current_group()].tools;
+    for (size_t i = 0; i < tools.size(); ++i)
+        if (! tools[i].is_visible || tools[i].is_visible())
+            out.push_back(i);
+    return out;
+}
+
+// idx: the position among the visible tools.
 wxRect PlateTools::tool_rect(size_t idx) const
 {
-    const size_t n  = m_groups.empty() ? 0 : m_groups[current_group()].tools.size();
+    const size_t n  = visible_tools().size();
     const int    ih = item_height(n);
     return wxRect(groups_width(), int(0.5 * wxGetApp().em_unit()) + int(idx) * ih, tools_width(), ih);
 }
@@ -120,10 +133,10 @@ int PlateTools::hit_test(const wxPoint& pt) const
     for (size_t i = 0; i < m_groups.size(); ++i)
         if (group_rect(i).Contains(pt))
             return int(i);
-    if (! m_groups.empty())
-        for (size_t i = 0; i < m_groups[current_group()].tools.size(); ++i)
-            if (tool_rect(i).Contains(pt))
-                return -1 - int(i);
+    const std::vector<size_t> tools = visible_tools();
+    for (size_t i = 0; i < tools.size(); ++i)
+        if (tool_rect(i).Contains(pt))
+            return -1 - int(tools[i]);
     return INT_MIN;
 }
 
@@ -135,7 +148,8 @@ std::vector<int> PlateTools::state() const
     const size_t g = current_group();
     out.push_back(int(g));
     for (const Tool& t : m_groups[g].tools)
-        out.push_back((t.is_enabled && ! t.is_enabled() ? 0 : 1) + (t.is_selected && t.is_selected() ? 2 : 0));
+        out.push_back((t.is_enabled && ! t.is_enabled() ? 0 : 1) + (t.is_selected && t.is_selected() ? 2 : 0) +
+                      (t.is_visible && ! t.is_visible() ? 4 : 0));
     return out;
 }
 
@@ -238,9 +252,11 @@ void PlateTools::on_paint(wxPaintEvent&)
     for (size_t i = 0; i < m_groups.size(); ++i)
         draw_item(group_rect(i), m_groups[i].bmp, m_groups[i].label, i == current, m_hovered == int(i), true);
     const Group& g = m_groups[current];
-    for (size_t i = 0; i < g.tools.size(); ++i) {
-        const Tool& t = g.tools[i];
-        draw_item(tool_rect(i), t.bmp, t.label, t.is_selected && t.is_selected(), m_hovered == -1 - int(i),
+    const std::vector<size_t> shown = visible_tools();
+    for (size_t pos = 0; pos < shown.size(); ++pos) {
+        const size_t i = shown[pos];
+        const Tool&  t = g.tools[i];
+        draw_item(tool_rect(pos), t.bmp, t.label, t.is_selected && t.is_selected(), m_hovered == -1 - int(i),
                   ! t.is_enabled || t.is_enabled());
     }
 }

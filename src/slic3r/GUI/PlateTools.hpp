@@ -31,6 +31,8 @@ public:
         std::function<bool()>   is_enabled;
         // Optional: true highlights the tool (e.g. the gizmo open).
         std::function<bool()>   is_selected;
+        // Optional: false hides the tool (e.g. a tool of resin printers with a filament printer).
+        std::function<bool()>   is_visible;
         wxBitmapBundle          bmp;
     };
     struct Group {
@@ -74,6 +76,8 @@ private:
     int    hit_test(const wxPoint& pt) const;
     // Enabled and selected states of all the tools of the current group, to repaint only when they change.
     std::vector<int> state() const;
+    // Indices of the tools of the current group which are shown.
+    std::vector<size_t> visible_tools() const;
 
     std::vector<Group>  m_groups;
     size_t              m_chosen  { 0 };

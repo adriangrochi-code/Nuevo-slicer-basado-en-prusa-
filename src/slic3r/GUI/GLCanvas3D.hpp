@@ -503,6 +503,7 @@ private:
     Mouse m_mouse;
     GLGizmosManager m_gizmos;
     GLToolbar m_main_toolbar;
+    bool m_toolbars_hidden{ false };
     GLToolbar m_undoredo_toolbar;
     std::array<ClippingPlane, 2> m_clipping_planes;
     ClippingPlane m_camera_clipping_plane;
@@ -793,6 +794,10 @@ public:
     void enable_gizmos(bool enable) { m_gizmos.set_enabled(enable); }
     void enable_selection(bool enable) { m_selection.set_enabled(enable); }
     void enable_main_toolbar(bool enable) { m_main_toolbar.set_enabled(enable); }
+    // Tisma: the toolbars of the view (main, undo/redo, gizmos, 3D/preview) are neither drawn nor clicked: their actions
+    // are the tools of the plate. The toolbars stay enabled (whether the main one is tells the plater from the preview).
+    void hide_toolbars(bool hide) { m_toolbars_hidden = hide; m_gizmos.show_toolbar(! hide); }
+    bool toolbars_hidden() const { return m_toolbars_hidden; }
     void enable_undoredo_toolbar(bool enable) { m_undoredo_toolbar.set_enabled(enable); }
     void enable_dynamic_background(bool enable) { m_dynamic_background_enabled = enable; }
     void enable_labels(bool enable) { m_labels.enable(enable); }
@@ -932,7 +937,7 @@ public:
     
     void schedule_extra_frame(int miliseconds);
 
-    float get_main_toolbar_height() { return m_main_toolbar.get_height(); }
+    float get_main_toolbar_height() { return m_toolbars_hidden ? 0.f : m_main_toolbar.get_height(); }
     int get_main_toolbar_item_id(const std::string& name) const { return m_main_toolbar.get_item_id(name); }
     void force_main_toolbar_left_action(int item_id) { m_main_toolbar.force_left_action(item_id, *this); }
     void force_main_toolbar_right_action(int item_id) { m_main_toolbar.force_right_action(item_id, *this); }

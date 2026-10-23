@@ -480,7 +480,7 @@ bool GLGizmosManager::on_mouse(const wxMouseEvent &mouse_event)
     if (!m_enabled) return false;
 
     // tool bar wants to use event?
-    if (gizmos_toolbar_on_mouse(mouse_event)) return true;
+    if (m_toolbar_shown && gizmos_toolbar_on_mouse(mouse_event)) return true;
 
     // current gizmo wants to use event?
     if (m_current != Undefined &&
@@ -798,6 +798,14 @@ void GLGizmosManager::do_render_overlay() const
     const Size cnv_size = m_parent.get_canvas_size();
     const float cnv_w = (float)cnv_size.get_width();
     const float cnv_h = (float)cnv_size.get_height();
+
+    if (! m_toolbar_shown) {
+        // Only the window of the gizmo open, at the top left corner of the view.
+        if (m_current != Undefined)
+            m_gizmos[m_current]->render_input_window(2.0f * m_layout.scaled_border(), 2.0f * m_layout.scaled_border(),
+                                                     cnv_h - wxGetApp().plater()->get_view_toolbar().get_height());
+        return;
+    }
 
     if (cnv_w == 0 || cnv_h == 0)
         return;

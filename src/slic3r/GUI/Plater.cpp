@@ -789,6 +789,9 @@ void Plater::priv::init()
     auto *center_sizer = new wxBoxSizer(wxVERTICAL);
     if (wxGetApp().is_editor()) {
         plate_tools = create_plate_tools();
+        // Their actions are the tools of the plate.
+        view3D->get_canvas3d()->hide_toolbars(true);
+        preview->get_canvas3d()->hide_toolbars(true);
         auto *row = new wxBoxSizer(wxHORIZONTAL);
         row->Add(plate_tools, 0, wxEXPAND);
         row->Add(panel_sizer, 1, wxEXPAND);
@@ -1304,7 +1307,8 @@ PlateTools* Plater::priv::create_plate_tools()
         q->close_engineering();
     };
     auto tool = [](const wxString& label, const wxString& tooltip, const std::string& icon, std::function<void()> on_click,
-                   std::function<bool()> is_enabled = nullptr, std::function<bool()> is_selected = nullptr) {
+                   std::function<bool()> is_enabled = nullptr, std::function<bool()> is_selected = nullptr,
+                   std::function<bool()> is_visible = nullptr) {
         PlateTools::Tool t;
         t.label       = label;
         t.tooltip     = tooltip;
@@ -1312,8 +1316,11 @@ PlateTools* Plater::priv::create_plate_tools()
         t.on_click    = std::move(on_click);
         t.is_enabled  = std::move(is_enabled);
         t.is_selected = std::move(is_selected);
+        t.is_visible  = std::move(is_visible);
         return t;
     };
+    auto is_fff = [this]() { return printer_technology == ptFFF; };
+    auto is_sla = [this]() { return printer_technology == ptSLA; };
 
     PlateTools::Group file;
     file.label     = _L("File");
@@ -1327,6 +1334,8 @@ PlateTools* Plater::priv::create_plate_tools()
         tool(_L("Remove all"), _L("Remove all the objects of the plate"), "delete_all", [this]() { q->reset_with_confirm(); },
              [this]() { return q->can_delete_all(); }),
         tool(_L("Save"), _L("Save the project (3MF)"), "tisma_save", []() { wxGetApp().mainframe->save_project(); }, has_objects),
+        tool(_L("Undo"), _L("Undo (Ctrl+Z)"), "undo", [this]() { q->undo(); }, [this]() { return q->can_undo(); }),
+        tool(_L("Redo"), _L("Redo (Ctrl+Y)"), "redo", [this]() { q->redo(); }, [this]() { return q->can_redo(); }),
     };
     tools->add_group(std::move(file));
 
@@ -1387,8 +1396,47 @@ PlateTools* Plater::priv::create_plate_tools()
              has_selection, gizmo_open(GLGizmosManager::Flatten)),
         tool(_L("Cut"), _L("Cut the selection (C)"), "cut", gizmo(GLGizmosManager::Cut), has_selection,
              gizmo_open(GLGizmosManager::Cut)),
+        tool(_L("Add copy"), _L("Add a copy of the selected object (+)"), "add_copies", [this]() { q->increase_instances(); },
+             [this]() { return q->can_increase_instances(); }),
+        tool(_L("Remove copy"), _L("Remove a copy of the selected object (-)"), "remove_copies", [this]() { q->decrease_instances(); },
+             [this]() { return q->can_decrease_instances(); }),
+        tool(_L("Split"), _L("Split the selected object into its parts"), "split_objects", [this]() { q->split_object(); },
+             [this]() { return q->can_split_to_objects(); }),
+        tool(_L("Measure"), _L("Measure distances and angles (U)"), "measure", gizmo(GLGizmosManager::Measure), has_selection,
+             gizmo_open(GLGizmosManager::Measure)),
+        tool(_L("Layer heights"), _L("Variable layer height: thinner layers where the surface needs them"), "layers",
+             [this]() {
+                 if (q->is_preview_shown())
+                     q->select_view_3D("3D");
+                 SimpleEvent evt(EVT_GLTOOLBAR_LAYERSEDITING);
+                 on_action_layersediting(evt);
+             },
+             [this, has_objects, is_fff]() { return has_objects() && is_fff() && q->can_layers_editing(); },
+             [this, canvas3d]() { return canvas3d()->is_layers_editing_enabled(); }, is_fff),
     };
     tools->add_group(std::move(arrange));
+
+    // Painting on the parts: supports, seam, fuzzy skin and colors; resin printers: hollowing and supports.
+    PlateTools::Group paint;
+    paint.label     = _L("Paint");
+    paint.tooltip   = _L("Paint supports, seam, fuzzy skin and colors on the parts");
+    paint.icon      = "fdm_supports";
+    paint.on_select = to_plate;
+    paint.tools = {
+        tool(_L("Supports"), _L("Paint where supports go, or where they must not (L)"), "fdm_supports",
+             gizmo(GLGizmosManager::FdmSupports), has_selection, gizmo_open(GLGizmosManager::FdmSupports), is_fff),
+        tool(_L("Seam"), _L("Paint where the seam goes (P)"), "seam", gizmo(GLGizmosManager::Seam), has_selection,
+             gizmo_open(GLGizmosManager::Seam), is_fff),
+        tool(_L("Fuzzy skin"), _L("Paint the surfaces with fuzzy skin"), "fuzzy_skin_painting", gizmo(GLGizmosManager::FuzzySkin),
+             has_selection, gizmo_open(GLGizmosManager::FuzzySkin), is_fff),
+        tool(_L("Colors"), _L("Paint the colors of a multi-material print (N)"), "mmu_segmentation",
+             gizmo(GLGizmosManager::MmSegmentation), has_selection, gizmo_open(GLGizmosManager::MmSegmentation), is_fff),
+        tool(_L("Hollow"), _L("Hollow the part and add drain holes (H)"), "hollow", gizmo(GLGizmosManager::Hollow), has_selection,
+             gizmo_open(GLGizmosManager::Hollow), is_sla),
+        tool(_L("Supports"), _L("Edit the support points (L)"), "sla_supports", gizmo(GLGizmosManager::SlaSupports), has_selection,
+             gizmo_open(GLGizmosManager::SlaSupports), is_sla),
+    };
+    tools->add_group(std::move(paint));
 
     // The structural analysis is a gizmo of the 3D view, with its own panel of tools.
     PlateTools::Group engineering;

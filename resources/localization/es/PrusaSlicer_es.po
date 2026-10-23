@@ -34035,3 +34035,66 @@ msgstr "Los modelos en la cama: abrirlos, verlos, ordenarlos, analizarlos y lami
 msgctxt "Section"
 msgid "Print"
 msgstr "Impresión"
+
+msgid "Add a copy of the selected object (+)"
+msgstr "Agregar una copia del objeto seleccionado (+)"
+
+msgid "Add copy"
+msgstr "Agregar copia"
+
+msgid "Colors"
+msgstr "Colores"
+
+msgid "Edit the support points (L)"
+msgstr "Editar los puntos de soporte (L)"
+
+msgid "Fuzzy skin"
+msgstr "Piel difusa"
+
+msgid "Hollow"
+msgstr "Vaciar"
+
+msgid "Hollow the part and add drain holes (H)"
+msgstr "Vaciar la pieza y agregar agujeros de drenaje (H)"
+
+msgid "Layer heights"
+msgstr "Alturas de capa"
+
+msgid "Measure distances and angles (U)"
+msgstr "Medir distancias y ángulos (U)"
+
+msgid "Paint"
+msgstr "Pintar"
+
+msgid "Paint supports, seam, fuzzy skin and colors on the parts"
+msgstr "Pintar soportes, costura, piel difusa y colores en las piezas"
+
+msgid "Paint the colors of a multi-material print (N)"
+msgstr "Pintar los colores de una impresión multimaterial (N)"
+
+msgid "Paint the surfaces with fuzzy skin"
+msgstr "Pintar las superficies con piel difusa"
+
+msgid "Paint where supports go, or where they must not (L)"
+msgstr "Pintar dónde van los soportes, o dónde no deben ir (L)"
+
+msgid "Paint where the seam goes (P)"
+msgstr "Pintar dónde va la costura (P)"
+
+msgid "Redo (Ctrl+Y)"
+msgstr "Rehacer (Ctrl+Y)"
+
+msgid "Remove a copy of the selected object (-)"
+msgstr "Quitar una copia del objeto seleccionado (-)"
+
+msgid "Remove copy"
+msgstr "Quitar copia"
+
+msgid "Split the selected object into its parts"
+msgstr "Separar el objeto seleccionado en sus partes"
+
+msgid "Undo (Ctrl+Z)"
+msgstr "Deshacer (Ctrl+Z)"
+
+msgid "Variable layer height: thinner layers where the surface needs them"
+msgstr "Altura de capa variable: capas más finas donde la superficie las necesita"
