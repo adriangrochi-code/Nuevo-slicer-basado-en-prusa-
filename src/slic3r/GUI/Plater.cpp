@@ -4522,13 +4522,28 @@ std::string Plater::priv::find_network_target() const
         return std::string();
     const std::string preset = bundle.printers.get_selected_preset_name();
     const std::string last   = wxGetApp().app_config->get("tisma_send_printer");
+    // The printer of the network is the machine, whatever nozzle is on it: a profile of the same model of the same vendor
+    // (the profile of another nozzle) is the same printer.
+    const Preset            &selected = bundle.printers.get_selected_preset();
+    const std::string        model    = selected.config.opt_string("printer_model");
+    const VendorProfile     *vendor   = bundle.printers.get_preset_with_vendor_profile(selected).vendor;
+    auto same_printer = [&](const std::string &name) {
+        if (name == preset)
+            return true;
+        const Preset *other = model.empty() || vendor == nullptr ? nullptr : bundle.printers.find_preset(name);
+        return other != nullptr && other->config.opt_string("printer_model") == model &&
+               bundle.printers.get_preset_with_vendor_profile(*other).vendor == vendor;
+    };
     std::string found;
     for (PhysicalPrinterCollection::ConstIterator it = bundle.physical_printers.begin(); it != bundle.physical_printers.end(); ++it) {
         const PhysicalPrinter &printer = *it;
         const auto *type = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
         // Prusa Connect is a service on the internet, not a printer of the network.
-        if (printer.config.opt_string("print_host").empty() || printer.get_preset_names().count(preset) == 0 ||
+        if (printer.config.opt_string("print_host").empty() ||
             (type != nullptr && (type->value == htPrusaConnect || type->value == htPrusaConnectNew)))
+            continue;
+        const std::set<std::string> &names = printer.get_preset_names();
+        if (std::none_of(names.begin(), names.end(), same_printer))
             continue;
         if (found.empty() || printer.name == last)
             found = printer.name;

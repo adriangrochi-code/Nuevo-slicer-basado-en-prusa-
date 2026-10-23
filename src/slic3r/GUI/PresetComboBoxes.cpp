@@ -446,7 +446,8 @@ void PresetComboBox::edit_physical_printer()
     if (!m_preset_bundle->physical_printers.has_selection())
         return;
 
-    PhysicalPrinterDialog dlg(this->GetParent(),this->GetString(this->GetSelection()));
+    // Tisma: the full name, the label can be the name of the printer and its model.
+    PhysicalPrinterDialog dlg(this->GetParent(), from_u8(m_preset_bundle->physical_printers.get_selected_full_printer_name()));
     if (dlg.ShowModal() == wxID_OK) {
         update();
         wxGetApp().show_printer_webview_tab();
@@ -647,7 +648,8 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
     if (m_type != Preset::TYPE_PRINTER)
         return false;
 
-    const std::string           selected_string     = into_u8(this->GetString(this->GetSelection()));
+    // Tisma: the full name of the physical printer behind its label (preset_name_of()).
+    const std::string           selected_string     = preset_name_of(this->GetSelection());
     PhysicalPrinterCollection&  physical_printers   = m_preset_bundle->physical_printers;
     Tab*                        tab                 = wxGetApp().get_tab(Preset::TYPE_PRINTER);
 
@@ -1287,17 +1289,31 @@ void PlaterPresetComboBox::update()
                 std::string name; // preset_name
                 std::string fullname; // full name
                 bool selected; // is selected
+                std::string label; // Tisma: the name shown
             };
             std::vector<PhysicalPrinterPresetData> preset_data;
             bool is_selected_some_ph_printer{ false };
             for (PhysicalPrinterCollection::ConstIterator it = ph_printers.begin(); it != ph_printers.end(); ++it) {
                 for (const std::string& preset_name : it->get_preset_names()) {
                     bool is_selected = ph_printers.is_selected(it, preset_name);
-                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), is_selected });
+                    // Tisma: the printer by its name and the model of its profile, "Kobra LAN (Anycubic Kobra 3)", as the
+                    // printers of a vendor are listed by their model.
+                    std::string label = it->get_full_name(preset_name);
+                    if (const Preset* preset = m_collection->find_preset(preset_name); preset != nullptr && preset->is_system)
+                        if (const std::string model = printer_model_name(*preset); ! model.empty())
+                            label = it->name + " (" + model + ")";
+                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), is_selected, label });
                     if (is_selected)
                         is_selected_some_ph_printer = true;
                 }
             }
+            // Two profiles of the same model on a printer (two nozzles): their full names.
+            std::map<std::string, int> labels;
+            for (const PhysicalPrinterPresetData& data : preset_data)
+                ++labels[data.label];
+            for (PhysicalPrinterPresetData& data : preset_data)
+                if (labels[data.label] > 1)
+                    data.label = data.fullname;
             if (is_selected_some_ph_printer)
                 connect_info_sizer->Show(false);
             std::sort(preset_data.begin(), preset_data.end(), [](const PhysicalPrinterPresetData& a, const PhysicalPrinterPresetData& b) {
@@ -1314,7 +1330,10 @@ void PlaterPresetComboBox::update()
                 auto bmp = get_bmp(main_icon_name, main_icon_name, "", true, true, false);
                 assert(bmp);
 
-                set_label_marker(Append(from_u8(data.fullname + suffix(preset)), *bmp), LABEL_ITEM_PHYSICAL_PRINTER);
+                const wxString label = from_u8(data.label + suffix(preset));
+                if (data.label != data.fullname)
+                    m_label_presets[label] = data.fullname;
+                set_label_marker(Append(label, *bmp), LABEL_ITEM_PHYSICAL_PRINTER);
                 validate_selection(data.selected);
             }
         }
