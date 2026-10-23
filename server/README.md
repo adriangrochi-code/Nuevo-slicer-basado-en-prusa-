@@ -237,6 +237,9 @@ reciben una alerta con lo rechazado en la última hora (solo cuántos y de qué 
   [G-Code Shell Command](https://docs.kalico.gg/G-Code_Shell_Command.html). Los que algunos fabricantes usan en su
   G-code inicial (`M500`, `M502`, `SET_KINEMATIC_POSITION`, `RESTART`) no se rechazan: la orden vuelve con
   `warnings` para que el teléfono los muestre. El G-code binario (`.bgcode`) va comprimido y solo lo revisa el antivirus.
+  Un G-code de más de 32 MB se lee en partes a la vez, una por proceso (hasta 4): 210 MB en 0,81 s en vez de 2,56 s
+  (4 núcleos de 2,1 GHz), sin ocupar el proceso que atiende a los usuarios. No vale la pena hacerlo en la placa de
+  video: el archivo tarda más en llegar por internet (200 MB a 220 Mbit/s, unos 7 s) que en revisarse.
 - **Antivirus** (opcional): con `TISMA_CLAMD` cada proyecto, G-code y resultado pasa por
   [ClamAV](https://docs.clamav.net/) (servicio aparte, `docker compose --profile antivirus up -d`; pide 3 GiB de
   memoria). Si ClamAV no contesta, no se acepta nada sin revisar (503) y se avisa a los administradores. Probado con

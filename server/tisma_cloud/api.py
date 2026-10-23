@@ -2,6 +2,8 @@
 
 import asyncio
 import base64
+import multiprocessing
+import os
 import hashlib
 import hmac
 import ipaddress
@@ -10,6 +12,7 @@ import logging
 import re
 import threading
 import time
+from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from importlib import resources
@@ -37,7 +40,7 @@ from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, Busy, hash_password, hash_token, needs_rehash, new_token, verify_password
 from .settings import Settings
 from .storage import ALLOWED_RESULTS, Storage, TooLarge, safe_filename
-from .threats import Clamd, ScanUnavailable, Threat, ThreatLog, check_gcode, check_project
+from .threats import PARALLEL_BYTES, Clamd, ScanUnavailable, Threat, ThreatLog, check_gcode, check_project
 from .wakeup import Wakeup
 
 log = logging.getLogger("tisma_cloud")
@@ -106,6 +109,9 @@ class Services:
         # Uploads checked before they are kept (threats.py), and the ones refused lately for the alerts.
         self.clamd = Clamd(settings.clamd) if settings.clamd else None
         self.refused = ThreatLog()
+        # Processes that read large G-code in parts at the same time (made when first needed).
+        self._scan_pool: ProcessPoolExecutor | None = None
+        self._scan_pool_lock = threading.Lock()
         self.limiter = RateLimiter()
         # The long polls of the bridges and the nodes, woken by the commands and jobs created here.
         self.wakeup = Wakeup()
@@ -229,6 +235,18 @@ class Services:
                 s.execute(update(Bridge).where(Bridge.id == bridge_id).values(
                     name=name, printers=json.dumps(printers), last_seen=seen.get(bridge_id) or utcnow()))
 
+    def scan_pool(self) -> ProcessPoolExecutor:
+        with self._scan_pool_lock:
+            if self._scan_pool is None:
+                self._scan_pool = ProcessPoolExecutor(max_workers=min(4, os.cpu_count() or 1),
+                                                      mp_context=multiprocessing.get_context("spawn"))
+            return self._scan_pool
+
+    def close(self) -> None:
+        if self._scan_pool is not None:
+            self._scan_pool.shutdown(wait=False, cancel_futures=True)
+        self.db.engine.dispose()
+
     def inspect(self, path: Path, kind: str, text_gcode: bool = True) -> list:
         """Checks an uploaded file: "project" (3MF), "gcode" (sent to a printer; text_gcode: ASCII, read) or "result"
         (of a node), and with ClamAV when set. Raises Threat or ScanUnavailable (both counted for the alerts); returns
@@ -238,7 +256,8 @@ class Services:
             if kind == "project":
                 check_project(path)
             elif kind == "gcode" and text_gcode:
-                findings = check_gcode(path)
+                large = path.stat().st_size > PARALLEL_BYTES
+                findings = check_gcode(path, pool=self.scan_pool() if large else None)
             if self.clamd is not None:
                 found = self.clamd.scan(path)
                 if found:
@@ -522,8 +541,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             for task in tasks:
                 task.cancel()
             await run_in_threadpool(services.flush_presence)
-            # The connections to the database are closed with the server.
-            services.db.engine.dispose()
+            # The processes that read G-code and the connections to the database end with the server.
+            services.close()
 
     app = FastAPI(title="Tisma Cloud", version=__version__, lifespan=lifespan)
 

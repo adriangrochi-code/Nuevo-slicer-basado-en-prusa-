@@ -179,3 +179,23 @@ def test_a_too_large_result_fails_the_job(client, f):
     with f.db.session() as s:
         # Before, the failure was undone with the request and the job stayed running.
         assert s.get(Job, job["id"]).status == "failed"
+
+
+def test_a_large_gcode_is_read_in_parts_by_several_processes(client, f, monkeypatch):
+    from tisma_cloud import threats
+
+    monkeypatch.setattr(threats, "PARALLEL_BYTES", 1 << 20)
+    import tisma_cloud.api as api
+
+    monkeypatch.setattr(api, "PARALLEL_BYTES", 1 << 20)
+    ana = f.user("ana@x.com")
+    client.put("/v1/bridges/pc-1", headers=ana, json={"name": "PC", "printers": [{"id": "p", "name": "MK3S",
+                                                                                  "actions": ["print"]}]})
+    client.get("/v1/bridges/pc-1/commands?wait=0", headers=ana)
+    body = b"G1 X1 Y1 E0.01\n" * 300_000          # 4.5 MB: 4 parts
+    url = "/v1/remote/bridges/pc-1/printers/p/print"
+    r = client.post(url, headers=ana, files={"file": ("a.gcode", body + b"M500\n")})
+    assert r.status_code == 201 and r.json()["warnings"][0]["line"] == 300_001
+    r = client.post(url, headers=ana, files={"file": ("b.gcode", body + b"M997\n")})
+    assert r.status_code == 422 and "line 300001" in r.json()["detail"]
+    assert client.app.state.services._scan_pool is not None

@@ -110,6 +110,48 @@ GCODE_COMMANDS = {
 # A command at the start of a line (after an optional line number "N123"), not in a comment.
 _COMMAND = re.compile(rb"^[ \t]*(?:N\d+[ \t]+)?(" + b"|".join(re.escape(c.encode()) for c in GCODE_COMMANDS)
                       + rb")(?![A-Za-z0-9_.])", re.M | re.I)
+# The fast way: each command searched as bytes (bytes.find, in C) in the block made upper case, and only its hits
+# checked in Python. A block with more hits than this (a file made to slow the check down) is read with _COMMAND.
+_TOKENS = [(c.encode(), c) for c in GCODE_COMMANDS]
+_MAX_HITS = 5000
+_NAME_CHARS = frozenset(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.")
+
+
+def _at_line_start(data: bytes, pos: int) -> bool:
+    """data[pos:] starts its line, after blanks or a line number ("N123 "): not a comment nor part of a word."""
+    i = pos - 1
+    while i >= 0 and data[i] in (32, 9):
+        i -= 1
+    if i >= 0 and data[i] != 10:
+        if i == pos - 1:
+            return False
+        j = i
+        while j >= 0 and 48 <= data[j] <= 57:
+            j -= 1
+        if j == i or j < 0 or data[j] != 78:  # "N" and its digits
+            return False
+        i = j - 1
+        while i >= 0 and data[i] in (32, 9):
+            i -= 1
+    return i < 0 or data[i] == 10
+
+
+def _commands_in(data: bytes) -> list[tuple[int, str]]:
+    """(position, command) of the commands of GCODE_COMMANDS in a block of whole lines, in order."""
+    upper = data.upper()
+    hits: list[tuple[int, str]] = []
+    candidates = 0
+    for token, name in _TOKENS:
+        pos = upper.find(token)
+        while pos >= 0:
+            candidates += 1
+            if candidates > _MAX_HITS:
+                return [(m.start(1), m.group(1).decode().upper()) for m in _COMMAND.finditer(data)]
+            end = pos + len(token)
+            if (end == len(upper) or upper[end] not in _NAME_CHARS) and _at_line_start(upper, pos):
+                hits.append((pos, name))
+            pos = upper.find(token, pos + 1)
+    return sorted(hits)
 
 
 @dataclass
@@ -122,30 +164,38 @@ class Finding:
 
 # A line longer than this is not a command (it is skipped, not kept in memory).
 LONG_LINE = 1 << 20
+# A G-code larger than this is read by several processes at once, one part each (check_gcode).
+PARALLEL_BYTES = 32 << 20
 
 
-def check_gcode(path: Path, max_findings: int = 20) -> list[Finding]:
-    """The commands of GCODE_COMMANDS in an ASCII G-code, read in blocks of whole lines (a regular expression over each
-    block: a G-code of 100 MB takes well under a second). Raises Threat when one is refused. A binary G-code (.bgcode)
-    is compressed: it is not read here (only ClamAV checks it)."""
+def scan_range(path: str, start: int, end: int, skip_first: bool = False,
+               max_findings: int = 20) -> tuple[list[Finding], int]:
+    """The commands of GCODE_COMMANDS in the bytes [start, end) of a G-code, start being the start of a line (or, with
+    skip_first, inside a line too long to be a command). Line numbers counted from start; returns them with the
+    newlines of the range. Stops at the first refused command. Runs in another process for large files."""
     findings: list[Finding] = []
-
-    def scan(data: bytes, lines_before: int) -> None:
-        for m in _COMMAND.finditer(data):
-            name = m.group(1).decode().upper()
-            info = GCODE_COMMANDS[name]
-            finding = Finding(name, lines_before + data.count(b"\n", 0, m.start()) + 1, info.what, info.blocked)
-            if info.blocked:
-                raise Threat(f"The G-code has {name} at line {finding.line}, which {info.what}: it is not sent to "
-                             "the printer", "gcode")
-            if len(findings) < max_findings:
-                findings.append(finding)
-
     lines = 0             # newlines before the block being read
     pending = b""         # the start of a line not ended yet
-    skipping = False      # inside a line too long to be a command
+    skipping = skip_first  # inside a line too long to be a command
+
+    def scan(data: bytes) -> bool:
+        for pos, name in _commands_in(data):
+            info = GCODE_COMMANDS[name]
+            findings.append(Finding(name, lines + data.count(b"\n", 0, pos) + 1, info.what, info.blocked))
+            if info.blocked:
+                return True
+            if len(findings) >= max_findings:
+                findings.pop()
+        return False
+
     with open(path, "rb") as f:
-        while chunk := f.read(4 << 20):
+        f.seek(start)
+        left = end - start
+        while left > 0:
+            chunk = f.read(min(4 << 20, left))
+            if not chunk:
+                break
+            left -= len(chunk)
             data = pending + chunk
             pending = b""
             if skipping:
@@ -158,10 +208,54 @@ def check_gcode(path: Path, max_findings: int = 20) -> list[Finding]:
             data, pending = data[:cut], data[cut:]
             if len(pending) > LONG_LINE:
                 pending, skipping = b"", True
-            scan(data, lines)
+            if scan(data):
+                return findings, lines
             lines += data.count(b"\n")
     if pending and not skipping:
-        scan(pending, lines)
+        scan(pending)
+    return findings, lines
+
+
+def split_lines(path: Path, parts: int) -> list[tuple[int, int, bool]]:
+    """[start, end) ranges of about the same size cut at the ends of lines (skip_first when a cut fell inside a line
+    longer than LONG_LINE)."""
+    size = path.stat().st_size
+    ranges: list[tuple[int, int, bool]] = []
+    start, skip = 0, False
+    with open(path, "rb") as f:
+        for i in range(1, parts):
+            f.seek(max(start, size * i // parts))
+            line = f.readline(LONG_LINE)
+            cut = f.tell()
+            if cut <= start or cut >= size:
+                continue
+            ranges.append((start, cut, skip))
+            start, skip = cut, not line.endswith(b"\n")
+    ranges.append((start, size, skip))
+    return ranges
+
+
+def check_gcode(path: Path, max_findings: int = 20, pool=None) -> list[Finding]:  # noqa: ANN001
+    """The commands of GCODE_COMMANDS in an ASCII G-code. Raises Threat when one is refused. With pool (a process
+    pool), a file larger than PARALLEL_BYTES is read in parts at the same time, one per process: the master's own
+    process is not held, and 4 cores read it about 4 times faster. A binary G-code (.bgcode) is compressed: it is not
+    read here (only ClamAV checks it)."""
+    if pool is not None and path.stat().st_size > PARALLEL_BYTES:
+        ranges = split_lines(path, getattr(pool, "_max_workers", 4))
+        parts = [f.result() for f in [pool.submit(scan_range, str(path), a, b, skip) for a, b, skip in ranges]]
+    else:
+        parts = [scan_range(str(path), 0, path.stat().st_size, False, max_findings)]
+    findings: list[Finding] = []
+    lines_before = 0
+    for part, newlines in parts:
+        for x in part:
+            x = Finding(x.command, x.line + lines_before, x.what, x.blocked)
+            if x.blocked:
+                raise Threat(f"The G-code has {x.command} at line {x.line}, which {x.what}: it is not sent to the "
+                             "printer", "gcode")
+            if len(findings) < max_findings:
+                findings.append(x)
+        lines_before += newlines
     return findings
 
 
