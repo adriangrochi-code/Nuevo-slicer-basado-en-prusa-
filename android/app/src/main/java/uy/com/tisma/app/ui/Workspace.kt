@@ -35,6 +35,9 @@ class Workspace(context: Context) {
     var info by mutableStateOf<ModelInfo?>(null)
     var mesh by mutableStateOf<PreviewMesh?>(null)
 
+    /** The G-code of the last slice, to send to a printer. */
+    var lastGcode by mutableStateOf<File?>(null)
+
     /** The structural analysis of the model (Engineering tab); a new model starts a new one. */
     var engineering by mutableStateOf(EngineeringState())
 

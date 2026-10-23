@@ -48,9 +48,32 @@ val printerCatalog = tasks.register<PrinterCatalogTask>("printerCatalog") {
     outputDir.set(layout.buildDirectory.dir("generated/printerCatalog"))
 }
 
+/** The CA certificates of the Bambu Lab printers (resources/cert, as the desktop program) as an asset of the app. */
+abstract class BambuCaTask : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val source: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val dir = outputDir.get().asFile
+        dir.listFiles()?.forEach { it.deleteRecursively() }
+        source.get().asFile.copyTo(dir.resolve("bambu_printer_ca.pem"), overwrite = true)
+    }
+}
+
+val bambuCa = tasks.register<BambuCaTask>("bambuCa") {
+    source.set(rootProject.layout.projectDirectory.file("../resources/cert/bambu_printer_ca.pem"))
+    outputDir.set(layout.buildDirectory.dir("generated/bambuCa"))
+}
+
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(printerCatalog, PrinterCatalogTask::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(bambuCa, BambuCaTask::outputDir)
     }
 }
 
@@ -141,4 +164,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // The JVM tests run without Android: org.json of android.jar is only a stub there.
     testImplementation("org.json:json:20240303")
+    // The TLS of Android (BoringSSL) for the tests of the printer connections.
+    testImplementation("org.conscrypt:conscrypt-openjdk-uber:2.5.2")
 }

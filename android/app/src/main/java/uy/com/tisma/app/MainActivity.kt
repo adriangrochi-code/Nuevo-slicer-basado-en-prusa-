@@ -34,6 +34,7 @@ import uy.com.tisma.app.core.TismaCore
 import uy.com.tisma.app.ui.AccountScreen
 import uy.com.tisma.app.ui.EngineeringScreen
 import uy.com.tisma.app.ui.PrepareScreen
+import uy.com.tisma.app.ui.PrintersScreen
 import uy.com.tisma.app.ui.TismaTheme
 import uy.com.tisma.app.ui.Workspace
 
@@ -45,9 +46,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab { SLICE, ENGINEERING, ACCOUNT }
+private enum class Tab { SLICE, ENGINEERING, PRINTERS, ACCOUNT }
 
-/** The tabs of the app: slicing and structural analysis on the phone, and the Tisma Cloud account. */
+/** The tabs of the app: slicing and structural analysis on the phone, the printers over Wi-Fi, the Tisma Cloud account. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TismaApp() {
@@ -74,6 +75,9 @@ fun TismaApp() {
                 NavigationBarItem(selected = tab == Tab.ENGINEERING, onClick = { tab = Tab.ENGINEERING },
                     icon = { Icon(painterResource(R.drawable.ic_engineering), contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_engineering)) })
+                NavigationBarItem(selected = tab == Tab.PRINTERS, onClick = { tab = Tab.PRINTERS },
+                    icon = { Icon(painterResource(R.drawable.ic_printer), contentDescription = null) },
+                    label = { Text(stringResource(R.string.tab_printers)) })
                 NavigationBarItem(selected = tab == Tab.ACCOUNT, onClick = { tab = Tab.ACCOUNT },
                     icon = { Icon(Icons.Filled.AccountCircle, contentDescription = null) },
                     label = { Text(stringResource(R.string.tab_account)) })
@@ -82,8 +86,9 @@ fun TismaApp() {
     ) { padding ->
         // The slice screen stays composed, so switching tabs keeps the model and the slice result (and a slice running).
         Box(Modifier.fillMaxSize().padding(padding)) {
-            PrepareScreen(workspace, Modifier.hiddenIf(tab != Tab.SLICE))
+            PrepareScreen(workspace, onSendToPrinter = { tab = Tab.PRINTERS }, Modifier.hiddenIf(tab != Tab.SLICE))
             if (tab == Tab.ENGINEERING) EngineeringScreen(workspace)
+            if (tab == Tab.PRINTERS) PrintersScreen(workspace)
             if (tab == Tab.ACCOUNT) AccountScreen()
         }
     }

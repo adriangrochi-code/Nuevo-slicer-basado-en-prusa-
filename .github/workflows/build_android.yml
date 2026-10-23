@@ -18,6 +18,7 @@ on:
       - 'deps/**'
       - 'src/**'
       - 'resources/profiles/**'
+      - 'resources/cert/**'
       - 'tools/profiles/validate_bundles.py'
       - 'CMakeLists.txt'
       - '.github/workflows/build_android.yml'

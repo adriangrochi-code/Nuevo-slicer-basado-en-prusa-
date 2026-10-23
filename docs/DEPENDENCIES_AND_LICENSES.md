@@ -104,6 +104,8 @@ curados (marcados así en la nota de cada material).
 | Kotlin (biblioteca estándar) | 2.0.21 | Apache-2.0 | Dentro del APK. |
 | Gradle wrapper (`android/gradle/wrapper/gradle-wrapper.jar`) | 8.10.2 | Apache-2.0 | Solo para compilar. |
 | Android NDK (libc++_shared.so) | r27d | Apache-2.0 con excepciones de LLVM | Dentro del APK. |
+| Certificado de la CA de Bambu Lab (`resources/cert/bambu_printer_ca.pem`) | el de Bambu Studio | AGPL-3.0 (Bambu Studio) | Se copia al APK para verificar las impresoras Bambu Lab por LAN, como el programa de escritorio. |
+| Conscrypt (`org.conscrypt:conscrypt-openjdk-uber`) | 2.5.2 | Apache-2.0 (github.com/google/conscrypt) | Solo en los tests: la TLS de Android (BoringSSL) para probar la conexión con las impresoras. No va en el APK. |
 
 La app es código propio (AGPL-3.0 como el resto de Tisma); no se usa código de Slice Beam ni de otras apps.
 

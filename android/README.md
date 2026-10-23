@@ -36,3 +36,16 @@ Open a model (STL, 3MF, OBJ), slice it on the phone, see the print time and fila
   displacement and a colour map on the model; *Lightest infill* finds the lowest infill density that holds and can
   set it for the slice. The analysis runs in `app/src/main/cpp/engineering.cpp` with the walls, infill and filament
   of the slice settings.
+- **Printers** (Wi-Fi, same network as the phone): send the sliced G-code, start, pause, resume or stop the print,
+  see its state, temperatures and progress, and watch its camera.
+  - *Bambu Lab* in LAN mode (IP address and access code from the printer screen; the printers announce themselves on
+    the network and show up in the list): MQTT over TLS on port 8883, the job as a `.gcode.3mf` on the SD card by
+    implicit FTPS on port 990, the camera of the A1 and P1 on port 6000. The certificate must be issued by the CA of
+    Bambu Lab (`resources/cert/bambu_printer_ca.pem`) for the serial number saved. The X1, P2S and H2 send their
+    camera by RTSPS (port 322), which the app does not show yet. Protocol: OpenBambuAPI (github.com/Doridian/
+    OpenBambuAPI) and the desktop program (`src/slic3r/Utils/BambuLanClient.cpp`).
+  - *Klipper* (Moonraker API, its webcam list) and *OctoPrint* (REST API, its webcam settings), with an optional API
+    key.
+  - Access codes and API keys are kept encrypted with a key of the Android Keystore (`printers/Printers.kt`).
+  - Tests against the simulated printer of the desktop branches (`tools/bambu/fake_printer.py`):
+    `TISMA_BAMBU_FAKE=<its --dir> ./gradlew :app:testDebugUnitTest` (see `printers/PrintersTest.kt`).

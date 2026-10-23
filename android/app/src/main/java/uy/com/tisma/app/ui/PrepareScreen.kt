@@ -74,7 +74,7 @@ import java.util.Locale
 
 /** Prepare and slice: the model on the bed, the settings of printer, filament and quality, the result. */
 @Composable
-fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
+fun PrepareScreen(workspace: Workspace, onSendToPrinter: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings = workspace.settings
@@ -179,6 +179,7 @@ fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
                                     scope.launch(Dispatchers.Main) { progress = percent to text }
                                 }
                             }
+                            workspace.lastGcode = File(result!!.gcodePath)
                         } catch (e: Exception) {
                             error = e.message ?: e.toString()
                         } finally {
@@ -195,7 +196,7 @@ fun PrepareScreen(workspace: Workspace, modifier: Modifier = Modifier) {
                 Text(text, style = MaterialTheme.typography.bodySmall)
             }
             result?.let { r -> ResultCard(r, onSave = { saveGcode.launch(File(r.gcodePath).name) },
-                onShare = { shareGcode(context, File(r.gcodePath)) }) }
+                onShare = { shareGcode(context, File(r.gcodePath)) }, onSendToPrinter = onSendToPrinter) }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             // Room for the floating button.
             Box(Modifier.height(72.dp))
@@ -414,7 +415,7 @@ private fun SupportStyle.label(): Int = when (this) {
 }
 
 @Composable
-private fun ResultCard(r: SliceResult, onSave: () -> Unit, onShare: () -> Unit) {
+private fun ResultCard(r: SliceResult, onSave: () -> Unit, onShare: () -> Unit, onSendToPrinter: () -> Unit) {
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.slice_done), style = MaterialTheme.typography.titleMedium)
@@ -429,6 +430,7 @@ private fun ResultCard(r: SliceResult, onSave: () -> Unit, onShare: () -> Unit) 
                     Text(stringResource(R.string.share_gcode))
                 }
             }
+            Button(onClick = onSendToPrinter, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.send_to_printer)) }
         }
     }
 }
