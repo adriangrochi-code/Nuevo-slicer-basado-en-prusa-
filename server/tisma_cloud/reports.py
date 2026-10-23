@@ -16,6 +16,7 @@ import hashlib
 import ipaddress
 import json
 import re
+import shlex
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -176,15 +177,77 @@ def digest(r, corpus: triage.Corpus) -> dict:  # noqa: ANN001
     }
 
 
+# The fields of the search ("impresora:kobra", "version:0.9"), in Spanish and English, without accents.
+SEARCH_FIELDS = {
+    "impresora": "printer", "printer": "printer", "version": "version", "sistema": "os", "system": "os", "os": "os",
+    "idioma": "language", "language": "language", "error": "error", "titulo": "title", "title": "title", "app": "app",
+    "tipo": "category", "type": "category", "category": "category", "categoria": "category",
+}
+
+
+def parse_query(query: str) -> tuple[dict[str, list[str]], list[str]]:
+    """The words of a search for given fields ("impresora:kobra", "impresora:\"kobra 3\"") and the free ones, without
+    case or accents."""
+    try:
+        parts = shlex.split(query)
+    except ValueError:        # an open quote
+        parts = query.replace('"', "").split()
+    fields: dict[str, list[str]] = {}
+    free: list[str] = []
+    for part in parts:
+        name, sep, value = part.partition(":")
+        key = SEARCH_FIELDS.get(triage.normalize(name)) if sep and value else None
+        if key:
+            fields.setdefault(key, []).append(triage.normalize(value))
+        else:
+            free += triage.normalize(part).split()
+    return fields, free
+
+
+def field_text(r, key: str) -> str:  # noqa: ANN001
+    """The value of a field of the search in a report, without case or accents."""
+    if key == "printer":
+        value = triage.printer_of(r.log or "") + " " + " ".join(re.findall(r"(?m)^Printer: (.*)$", r.log or ""))
+    elif key == "version":
+        value = r.app_version or ""
+    elif key == "os":
+        value = r.os or ""
+    elif key == "language":
+        value = r.language or ""
+    elif key == "error":
+        value = first_error(r.log or "")
+    elif key == "title":
+        value = f"{r.title} {translation_of(r).get('title', '')}"
+    elif key == "app":
+        value = r.app or ""
+    else:   # category: its key or its name
+        value = f"{r.category} {triage.CATEGORY_NAMES.get(r.category, '')}"
+    return triage.normalize(value)
+
+
 def matches(r, query: str) -> bool:  # noqa: ANN001
-    """Every word of the query is in the texts of the report, as written or translated (any case and accents)."""
-    wanted = triage.normalize(query).split()
-    if not wanted:
+    """The report has every word of the query: those of a field in that field, the free ones anywhere in its texts, as
+    written or translated (any case and accents)."""
+    fields, free = parse_query(query)
+    for key, values in fields.items():
+        text = field_text(r, key)
+        if not all(v in text for v in values):
+            return False
+    if not free:
         return True
     text = triage.normalize(" ".join([*(getattr(r, k) or "" for k in TEXT_FIELDS), *translation_of(r).values(),
                                       first_error(r.log or ""), r.app_version or "", r.os or "",
                                       triage.printer_of(r.log or "")]))
-    return all(w in text for w in wanted)
+    return all(w in text for w in free)
+
+
+def system_of(os_text: str) -> str:
+    """The family of a system ("Windows 11 Pro" -> "Windows") for the filters."""
+    os_text = (os_text or "").strip()
+    for name in ("Windows", "macOS", "Android", "iOS", "Linux"):
+        if name.lower() in os_text.lower() or (name == "macOS" and "mac os" in os_text.lower()):
+            return name
+    return os_text.split(" ")[0] if os_text else ""
 
 
 @dataclass

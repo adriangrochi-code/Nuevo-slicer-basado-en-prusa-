@@ -352,3 +352,34 @@ def test_translator_speaks_libretranslate():
         raise AssertionError("no error")
     except TranslationError:
         pass
+
+
+def test_search_by_fields_and_specific_filters(client, f):
+    admin = f.user("admin@x.com", admin=True)
+    ana = f.user("ana@x.com")
+    kobra = "Tisma\nWindows 11\nPrinter: Kobra 3 0.4 nozzle (Anycubic Kobra 3), print: x\n--- log ---\n[e] [1] [error]   std::out_of_range\n"
+    bambu = "Tisma\nLinux\nPrinter: Bambu Lab A1 0.4 nozzle (Bambu Lab A1), print: y\n--- log ---\n[e] [1] [error]   Access denied\n"
+    client.post("/v1/reports", json=report(title="Crash on the Kobra", log=kobra, os="Windows 11 Pro", app_version="0.9.0"))
+    client.post("/v1/reports", json=report(title="Crash on the A1", log=bambu, os="Ubuntu Linux 24.04", app_version="0.9.1"),
+                headers=ana)
+    page = client.get("/v1/admin/reports", headers=admin).json()
+    assert page["printers"] == ["Anycubic Kobra 3", "Bambu Lab A1"]
+    assert page["systems"] == ["Linux", "Windows"] and page["versions"] == ["0.9.0", "0.9.1"]
+
+    def titles(**params):
+        return [r["title"] for r in client.get("/v1/admin/reports/list", params=params, headers=admin).json()["reports"]]
+
+    assert titles(q="impresora:kobra") == ["Crash on the Kobra"]
+    assert titles(q='printer:"bambu lab"') == ["Crash on the A1"]
+    assert titles(q="version:0.9.1 crash") == ["Crash on the A1"]
+    assert titles(q="error:out_of_range") == ["Crash on the Kobra"]
+    assert titles(q="sistema:linux") == ["Crash on the A1"]
+    assert titles(q="tipo:cierre") == ["Crash on the A1", "Crash on the Kobra"]
+    assert titles(q="impresora:kobra sistema:linux") == []
+    assert titles(q='impresora:"kobra') == ["Crash on the Kobra"]       # an open quote
+    assert titles(printer="Bambu Lab A1") == ["Crash on the A1"]
+    assert titles(system="Windows") == ["Crash on the Kobra"]
+    assert titles(account="1") == ["Crash on the A1"]
+    today = utcnow().date().isoformat()
+    assert len(titles(since=today, until=today)) == 2
+    assert titles(until="2020-01-01") == []

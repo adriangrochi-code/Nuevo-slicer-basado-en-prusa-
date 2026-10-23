@@ -571,8 +571,11 @@ de Tisma. Con cuenta o sin ella (sin cuenta, 5 por hora por dirección, `TISMA_A
   y se busca en los dos. Un traductor general no conoce las palabras de la impresión 3D («slicing» puede salir «cortar»):
   el título original va siempre al lado del traducido.
 - **Catálogo**: el panel (sección «Problemas informados») muestra los problemas abiertos, el más informado primero, y
-  se filtra por tipo de error, estado, app y versión, o se busca por palabras (en cualquier idioma, sin importar
-  mayúsculas ni tildes; tocar una palabra clave la busca); se ve agrupado por problema o la lista de todos los informes
+  se filtra por tipo de error, estado, app, versión, tipo de informe (error, cierre, sugerencia), impresora, sistema,
+  idioma, fechas, solo con cuenta o premiados, y se busca por palabras (en cualquier idioma, sin importar mayúsculas ni
+  tildes; tocar una palabra clave la busca) o por campos: `impresora:kobra`, `version:0.9`, `sistema:windows`,
+  `idioma:pt`, `error:out_of_range`, `tipo:soportes`, `titulo:…`, `app:android` (entre comillas para varias palabras:
+  `impresora:"bambu lab"`); se ve agrupado por problema o la lista de todos los informes
   con su texto original y traducido. Descarga el catálogo con los mismos filtros en Markdown (una sección por problema:
   el tipo, el resumen, las palabras clave, los pasos, lo esperado, lo que pasó, su traducción y el registro) o en
   JSON lines (un problema por línea), para dárselo al programador o a la IA que programa. Cada problema se marca

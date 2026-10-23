@@ -29,7 +29,7 @@
   .muted { color: var(--muted); }
   .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
   .filters select, .filters input { width: auto; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); }
-  .filters input { min-width: 16em; }
+  .filters input[type=search] { flex: 1; min-width: 20em; }
   .tag { display: inline-block; margin: 2px 4px 0 0; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); font-size: 12px; cursor: pointer; background: var(--panel); color: var(--text); }
   .summary { margin: 2px 0; }
   .error { color: var(--bad); min-height: 1.4em; }
@@ -129,7 +129,21 @@
         <option value="new,confirmed,fixed,wontfix,duplicate">Todos</option></select>
       <select id="r-app"><option value="">Todas las apps</option></select>
       <select id="r-version"><option value="">Todas las versiones</option></select>
-      <input id="r-q" type="search" placeholder="Buscar palabras (en cualquier idioma)">
+    </div>
+    <div class="filters">
+      <input id="r-q" type="search" placeholder="Buscar: palabras, o impresora:kobra version:0.9 sistema:windows idioma:pt error:… tipo:soportes">
+    </div>
+    <div class="filters">
+      <select id="r-kind"><option value="">Errores, cierres y sugerencias</option><option value="bug">Errores</option>
+        <option value="crash">Cierres</option><option value="suggestion">Sugerencias</option></select>
+      <select id="r-printer"><option value="">Todas las impresoras</option></select>
+      <select id="r-system"><option value="">Todos los sistemas</option></select>
+      <select id="r-language"><option value="">Todos los idiomas</option></select>
+      <label class="muted">Desde <input id="r-since" type="date"></label>
+      <label class="muted">Hasta <input id="r-until" type="date"></label>
+      <label><input id="r-account" type="checkbox" style="width:auto"> Solo con cuenta</label>
+      <label><input id="r-rewarded" type="checkbox" style="width:auto"> Premiados</label>
+      <button type="button" id="r-clear">Limpiar filtros</button>
       <span class="muted" id="r-count"></span>
     </div>
     <p><button type="button" id="catalog-md">Descargar catálogo (Markdown)</button>
@@ -378,12 +392,18 @@ async function rewardGroup(g) {
   } catch (e) { if (e.message !== "auth") alert(e.message); }
 }
 
+const FILTERS = [["category", "r-category"], ["status", "r-status"], ["app", "r-app"], ["version", "r-version"], ["q", "r-q"],
+  ["kind", "r-kind"], ["printer", "r-printer"], ["system", "r-system"], ["language", "r-language"], ["since", "r-since"],
+  ["until", "r-until"]];
+
 function reportFilters() {
   const p = new URLSearchParams();
-  for (const [key, id] of [["category", "r-category"], ["status", "r-status"], ["app", "r-app"], ["version", "r-version"], ["q", "r-q"]]) {
+  for (const [key, id] of FILTERS) {
     const v = $(id).value.trim();
     if (v) p.set(key, v);
   }
+  if ($("r-account").checked) p.set("account", "1");
+  if ($("r-rewarded").checked) p.set("rewarded", "1");
   return p;
 }
 
@@ -406,6 +426,9 @@ async function refreshReports() {
     fillSelect("r-category", "Todos los tipos", page.categories.filter((c) => c.reports).map((c) => [c.key, `${c.name} (${c.reports})`]));
     fillSelect("r-app", "Todas las apps", page.apps.map((a) => [a, a]));
     fillSelect("r-version", "Todas las versiones", page.versions.map((v) => [v, v]));
+    fillSelect("r-printer", "Todas las impresoras", page.printers.map((v) => [v, v]));
+    fillSelect("r-system", "Todos los sistemas", page.systems.map((v) => [v, v]));
+    fillSelect("r-language", "Todos los idiomas", page.languages.map((v) => [v, v]));
     if ($("r-view").value === "list") return renderReportList(await api(`/v1/admin/reports/list?${params}&limit=100`));
     $("r-count").textContent = `${page.reports} informes, ${page.groups.length} problemas`;
     $("reports").replaceChildren(el("tr", {}, ["Informes", "Tipo de error", "Problema", "Versiones", "Último", ""].map((h) => el("th", {}, h))),
@@ -460,7 +483,13 @@ async function setCategory(r, category) {
   } catch (e) { if (e.message !== "auth") alert(e.message); }
 }
 
-for (const id of ["r-view", "r-category", "r-status", "r-app", "r-version"]) $(id).onchange = () => refreshReports();
+for (const id of ["r-view", "r-category", "r-status", "r-app", "r-version", "r-kind", "r-printer", "r-system", "r-language",
+                  "r-since", "r-until", "r-account", "r-rewarded"]) $(id).onchange = () => refreshReports();
+$("r-clear").onclick = () => {
+  for (const [, id] of FILTERS) $(id).value = "";
+  $("r-account").checked = $("r-rewarded").checked = false;
+  refreshReports();
+};
 {
   let typing = null;
   $("r-q").oninput = () => { clearTimeout(typing); typing = setTimeout(refreshReports, 400); };

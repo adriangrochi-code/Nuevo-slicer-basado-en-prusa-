@@ -12,6 +12,7 @@ import logging
 import re
 import threading
 import time
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -2010,10 +2011,53 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
             return {"active": [view(r) for r in active], "ended": [view(r) for r in ended]}
 
+    class ReportFilters(BaseModel):
+        """The filters of the lists of reports (query parameters)."""
+        status: str = ""
+        app: str = ""
+        category: str = ""
+        kind: str = ""
+        version: str = ""
+        # The words of the search: free ones and of given fields ("impresora:kobra", reports.SEARCH_FIELDS).
+        q: str = ""
+        language: str = ""
+        printer: str = ""
+        system: str = ""
+        since: datetime | None = None
+        until: datetime | None = None
+        # "1": only the reports sent with an account / only the rewarded ones.
+        account: str = ""
+        rewarded: str = ""
+
+    FiltersDep = Annotated[ReportFilters, Depends()]
+
+    def filtered_rows(s, f: ReportFilters):  # noqa: ANN001, ANN202
+        rows = report_rows(s, f.status, f.app, f.category, f.kind, f.version, f.q)
+        if f.language:
+            rows = [r for r in rows if r.language == f.language]
+        if f.printer:
+            rows = [r for r in rows if triage.normalize(f.printer) in reports.field_text(r, "printer")]
+        if f.system:
+            rows = [r for r in rows if reports.system_of(r.os) == f.system]
+        if f.since:
+            since = f.since.replace(tzinfo=None)
+            rows = [r for r in rows if r.created_at >= since]
+        if f.until:
+            # A date alone includes its whole day.
+            until = f.until.replace(tzinfo=None)
+            if until.time() == datetime.min.time():
+                until += timedelta(days=1)
+            rows = [r for r in rows if r.created_at < until]
+        if f.account == "1":
+            rows = [r for r in rows if r.user_id is not None]
+        if f.rewarded == "1":
+            rows = [r for r in rows if r.rewarded_at is not None]
+        return rows
+
     def report_rows(s, status: str, app_name: str, category: str = "", kind: str = "", version: str = "",  # noqa: ANN001, ANN202
                     q: str = ""):
         """The reports of the filters (the open ones by default: status=new,confirmed), the newest first; q: words
-        that must all be in their texts, as written or translated."""
+        that must all be in their texts, as written or translated, or in the fields they name."""
         query = select(BugReport)
         statuses = [x for x in status.split(",") if x] if status else ["new", "confirmed"]
         if any(x not in reports.STATUSES for x in statuses):
@@ -2036,41 +2080,45 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return reports.corpus_of(s.execute(select(BugReport)).scalars().all())
 
     @app.get("/v1/admin/reports")
-    def admin_reports(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
-                      version: str = "", q: str = "") -> dict:
+    def admin_reports(_admin: AdminDep, filters: FiltersDep) -> dict:
         """The problem reports of the filters grouped, the most frequent first, with their kind of error, key words and
-        summary; and the kinds of error, versions and apps of the reports, for the filters."""
+        summary; and the values of all the reports for the filters (kinds of error, versions, apps, printers, systems,
+        languages)."""
         with db.session() as s:
-            rows = report_rows(s, status, app, category, kind, version, q)
-            groups = reports.catalog(rows, corpus=report_corpus(s))
-            facets = s.execute(select(BugReport.category, BugReport.app_version, BugReport.app)).all()
+            rows = filtered_rows(s, filters)
+            everything = s.execute(select(BugReport)).scalars().all()
+            groups = reports.catalog(rows, corpus=reports.corpus_of(everything))
+            counts = Counter(r.category for r in everything)
+            facets = {
+                "versions": sorted({r.app_version for r in everything if r.app_version}),
+                "apps": sorted({r.app for r in everything}),
+                "printers": sorted({p for r in everything if (p := triage.printer_of(r.log or ""))}),
+                "systems": sorted({x for r in everything if (x := reports.system_of(r.os))}),
+                "languages": sorted({r.language for r in everything if r.language}),
+            }
         return {"groups": [g.as_dict() for g in groups], "reports": len(rows),
-                "categories": [{"key": k, "name": n, "reports": sum(1 for c, _v, _a in facets if c == k)}
-                               for k, n, _s in triage.CATEGORIES],
-                "versions": sorted({v for _c, v, _a in facets if v}), "apps": sorted({a for _c, _v, a in facets})}
+                "categories": [{"key": k, "name": n, "reports": counts[k]} for k, n, _s in triage.CATEGORIES], **facets}
 
     @app.get("/v1/admin/reports/list")
-    def admin_reports_list(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
-                           version: str = "", q: str = "", limit: int = 50, offset: int = 0) -> dict:
+    def admin_reports_list(_admin: AdminDep, filters: FiltersDep, limit: int = 50, offset: int = 0) -> dict:
         """Every report of the filters (not grouped), the newest first, with its summary, key words and texts
         (translated when they were in another language)."""
         limit, offset = max(1, min(limit, 200)), max(0, offset)
         with db.session() as s:
-            rows = report_rows(s, status, app, category, kind, version, q)
+            rows = filtered_rows(s, filters)
             corpus = report_corpus(s)
             page = [{**report_view(r, texts=True), **reports.digest(r, corpus), "note": r.note}
                     for r in rows[offset:offset + limit]]
         return {"total": len(rows), "reports": page}
 
     @app.get("/v1/admin/reports/catalog")
-    def admin_reports_catalog(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
-                              version: str = "", q: str = "", format: str = "md") -> Response:
+    def admin_reports_catalog(_admin: AdminDep, filters: FiltersDep, format: str = "md") -> Response:
         """The catalog of the problems for the programmers (and the AI that programs with them): Markdown, or JSON lines
         (format=jsonl), one group per line."""
         if format not in ("md", "jsonl"):
             raise HTTPException(422, "format is md or jsonl")
         with db.session() as s:
-            groups = reports.catalog(report_rows(s, status, app, category, kind, version, q), corpus=report_corpus(s))
+            groups = reports.catalog(filtered_rows(s, filters), corpus=report_corpus(s))
         if format == "jsonl":
             return PlainTextResponse(reports.to_jsonl(groups), media_type="application/x-ndjson",
                                      headers={"Content-Disposition": 'attachment; filename="tisma-problems.jsonl"'})
