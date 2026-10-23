@@ -191,24 +191,20 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 
 #ifndef __APPLE__
     std::vector<wxAcceleratorEntry*>& entries_cache = accelerator_entries_cache();
-    assert(entries_cache.size() + 6 < 100);
-    wxAcceleratorEntry entries[100];
-
-    int id = 0;
-    //for (const auto* entry : entries_cache)
-    //    entries[id++].Set(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
+    std::vector<wxAcceleratorEntry> entries;
+    // Tisma: without a menu bar, the shortcuts of its menus (now in More) are in the table of the window.
+    if (wxGetApp().is_editor())
+        for (const wxAcceleratorEntry* entry : entries_cache)
+            if (entry->GetMenuItem() != nullptr)
+                entries.emplace_back(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
 
 #if _WIN32
     // This is needed on Windows to fake the CTRL+# of the window menu when using the numpad
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD1, wxID_HIGHEST + 1);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD2, wxID_HIGHEST + 2);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD3, wxID_HIGHEST + 3);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD4, wxID_HIGHEST + 4);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD5, wxID_HIGHEST + 5);
-    entries[id++].Set(wxACCEL_CTRL, WXK_NUMPAD6, wxID_HIGHEST + 6);
+    for (int i = 1; i <= 6; ++i)
+        entries.emplace_back(wxACCEL_CTRL, WXK_NUMPAD0 + i, wxID_HIGHEST + i);
 #endif // _WIN32
 
-    wxAcceleratorTable accel(id, entries);
+    wxAcceleratorTable accel(int(entries.size()), entries.data());
     SetAcceleratorTable(accel);
 
     // clear cache with wxAcceleratorEntry, because it's no need anymore
@@ -833,6 +829,39 @@ void MainFrame::register_win32_callbacks()
 }
 #endif // _WIN32
 
+// A copy of a menu for a popup: the same ids, labels, kinds, states and submenus. The events of the copy go to the
+// window which shows it (the main frame, where the menu items have their handlers); the handlers bound to the menu
+// itself get them through it.
+static wxMenu* copy_menu_for_popup(wxMenu* src)
+{
+    auto *out = new wxMenu();
+    for (wxMenuItem* item : src->GetMenuItems()) {
+        if (item->IsSeparator()) {
+            out->AppendSeparator();
+            continue;
+        }
+        if (wxMenu* sub = item->GetSubMenu()) {
+            wxMenuItem* copy = out->AppendSubMenu(copy_menu_for_popup(sub), item->GetItemLabel(), item->GetHelp());
+            copy->Enable(item->IsEnabled());
+            continue;
+        }
+        auto *copy = new wxMenuItem(out, item->GetId(), item->GetItemLabel(), item->GetHelp(), item->GetKind());
+        if (item->GetBitmapBundle().IsOk())
+            copy->SetBitmap(item->GetBitmapBundle());
+        out->Append(copy);
+        if (item->IsCheckable())
+            copy->Check(item->IsChecked());
+        copy->Enable(item->IsEnabled());
+    }
+    out->Bind(wxEVT_MENU, [src](wxCommandEvent& evt) {
+        wxCommandEvent forwarded(evt);
+        forwarded.SetEventObject(src);
+        if (! src->ProcessEvent(forwarded))
+            evt.Skip();
+    });
+    return out;
+}
+
 void MainFrame::create_nav_rail()
 {
     // Órbita Pro: the workspaces are tabs of the top bar.
@@ -905,14 +934,16 @@ void MainFrame::create_nav_rail()
             menu.Append(id, label);
             menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
         };
-        // The calibration menu is a popup too: it opens once this one is closed.
-        add(_L("Calibration") + dots, [this]() { CallAfter([this]() { show_calibration_menu(this); }); });
         if (m_thingiverse_webview)
             add("Thingiverse", [this, select_page]() { select_page(m_thingiverse_webview); update_nav_rail(); });
         add(_L("Tisma Cloud account") + dots, [this]() { show_cloud_account_dialog(this); });
-        menu.AppendSeparator();
         add(_L("Preferences") + dots, []() { wxGetApp().open_preferences(); });
-        add(_(ConfigWizard::name()) + dots, []() { wxGetApp().run_wizard(ConfigWizard::RR_USER); });
+        // The menus of the program (File, Edit, Window, View, Configuration, Calibration, Help).
+        if (m_menubar != nullptr) {
+            menu.AppendSeparator();
+            for (size_t i = 0; i < m_menubar->GetMenuCount(); ++i)
+                menu.AppendSubMenu(copy_menu_for_popup(m_menubar->GetMenu(i)), m_menubar->GetMenuLabel(i));
+        }
         PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
     };
     m_nav_rail->add_item(more);
@@ -1543,22 +1574,14 @@ static wxMenu* generate_help_menu()
 {
     wxMenu* helpMenu = new wxMenu();
 
+    // Tisma: the pages of Tisma (its repository); the pages of Prusa (website, quick start, samples, drivers) are not
+    // listed.
+    static const std::string repository = "https://github.com/adriangrochi-code/Nuevo-slicer-basado-en-prusa-";
     append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("%s &Website"), SLIC3R_APP_NAME),
         wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_web_page_localized("https://www.prusa3d.com/slicerweb"); });
-    // TRN Item from "Help" menu
-    append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("&Quick Start"), SLIC3R_APP_NAME),
-        wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://help.prusa3d.com/article/first-print-with-prusaslicer_1753", nullptr, false); });
-    // TRN Item from "Help" menu
-    append_menu_item(helpMenu, wxID_ANY, wxString::Format(_L("Sample &G-codes and Models"), SLIC3R_APP_NAME),
-        wxString::Format(_L("Open the %s website in your browser"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://help.prusa3d.com/article/sample-g-codes_529630", nullptr, false); });
-    helpMenu->AppendSeparator();
-    append_menu_item(helpMenu, wxID_ANY, _L("Prusa 3D &Drivers"), _L("Open the Prusa3D drivers download page in your browser"),
-        [](wxCommandEvent&) { wxGetApp().open_web_page_localized("https://www.prusa3d.com/downloads"); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository, nullptr, false); });
     append_menu_item(helpMenu, wxID_ANY, _L("Software &Releases"), _L("Open the software releases page in your browser"),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/PrusaSlicer/releases", nullptr, false); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository + "/releases", nullptr, false); });
 //#        my $versioncheck = $self->_append_menu_item($helpMenu, "Check for &Updates...", "Check for new Slic3r versions", sub{
 //#            wxTheApp->check_version(1);
 //#        });
@@ -1572,16 +1595,10 @@ static wxMenu* generate_help_menu()
     append_menu_item(helpMenu, wxID_ANY, _L("Show &Configuration Folder"), _L("Show user configuration folder (datadir)"),
         [](wxCommandEvent&) { Slic3r::GUI::desktop_open_datadir_folder(); });
     append_menu_item(helpMenu, wxID_ANY, _L("Report an I&ssue"), wxString::Format(_L("Report an issue on %s"), SLIC3R_APP_NAME),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/slic3r/issues/new", nullptr, false); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog(repository + "/issues/new", nullptr, false); });
 #ifndef __APPLE__
     append_about_menu_item(helpMenu);
 #endif // __APPLE__
-    append_menu_item(helpMenu, wxID_ANY, _L("Show Tip of the Day")
-#if 0//debug
-        + "\tCtrl+Shift+T"
-#endif
-        ,_L("Opens Tip of the day notification in bottom right corner or shows another tip if already opened."),
-        [](wxCommandEvent&) { wxGetApp().plater()->get_notification_manager()->push_hint_notification(false); });
     helpMenu->AppendSeparator();
     append_menu_item(helpMenu, wxID_ANY, _L("Keyboard Shortcuts") + sep + "&?", _L("Show the list of the keyboard shortcuts"),
         [](wxCommandEvent&) { wxGetApp().keyboard_shortcuts(); });
@@ -1974,7 +1991,11 @@ void MainFrame::init_menubar_as_editor()
     m_menubar->Append(m_calibration_menu, _L("C&alibration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
+#ifdef __APPLE__
     SetMenuBar(m_menubar);
+#else
+    // Tisma: no menu bar; its menus are in More, in the top bar, and their shortcuts in the accelerator table.
+#endif
     // With an SLA printer at start, without the FFF only menus.
     update_technology_ui();
 
@@ -2504,6 +2525,9 @@ MainFrame::~MainFrame()
     for (wxMenu* menu : { m_calibration_menu, m_resin_calibration_menu })
         if (menu != nullptr && menu->GetMenuBar() == nullptr)
             delete menu;
+    // Without a menu bar in the window (Tisma, outside macOS) the menu bar and its menus are deleted here.
+    if (m_menubar != nullptr && GetMenuBar() != m_menubar)
+        delete m_menubar;
 }
 
 // Tisma Slicer: the Calibration menu has the tests of the printer technology.

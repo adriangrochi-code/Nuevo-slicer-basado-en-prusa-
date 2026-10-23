@@ -841,9 +841,7 @@ void GUI_App::post_init()
         }
     }
 
-    // show "Did you know" notification
-    if (app_config->get_bool("show_hints") && ! is_gcode_viewer())
-        plater_->get_notification_manager()->push_hint_notification(true);
+    // Tisma: no "Did you know" tips at start (PrusaSlicer's tips speak of its interface, which Tisma replaced).
 
     // The extra CallAfter() is needed because of Mac, where this is the only way
     // to popup a modal dialog on start without screwing combo boxes.
