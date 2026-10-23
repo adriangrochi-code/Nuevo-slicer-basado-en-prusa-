@@ -32652,8 +32652,23 @@ msgstr "Boquilla %1% °C, cama %2% °C."
 msgid "Progress %1% %%, %2% min left."
 msgstr "Progreso %1% %%, faltan %2% min."
 
-msgid "Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."
-msgstr "Selecciónala de nuevo para actualizar. Tisma todavía no muestra la cámara de las impresoras Bambu Lab."
+msgid "Select it again to refresh."
+msgstr "Selecciónala de nuevo para actualizar."
+
+msgid "Connecting to the camera of the printer..."
+msgstr "Conectando con la cámara de la impresora..."
+
+msgid "This printer sends its camera by RTSPS (X1, P2S and H2 series), which Tisma does not show yet. The camera of the A1 and P1 series is shown here."
+msgstr "Esta impresora envía su cámara por RTSPS (series X1, P2S y H2), que Tisma todavía no muestra. Aquí se muestra la cámara de las series A1 y P1."
+
+msgid "The printer closed the camera connection before sending an image: check the access code, and that the camera is on and not in use by another program."
+msgstr "La impresora cerró la conexión de la cámara antes de enviar una imagen: revisa el código de acceso y que la cámara esté encendida y no la use otro programa."
+
+msgid "The printer ended the camera stream. Select the printer again to reconnect."
+msgstr "La impresora terminó la transmisión de la cámara. Selecciona la impresora de nuevo para reconectar."
+
+msgid "Could not show the camera: %1%"
+msgstr "No se pudo mostrar la cámara: %1%"
 
 msgid "The printer rejected the access code."
 msgstr "La impresora rechazó el código de acceso."

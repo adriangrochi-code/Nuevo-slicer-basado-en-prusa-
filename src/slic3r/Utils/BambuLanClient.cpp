@@ -4,6 +4,7 @@
 ///|/
 #include "BambuLanClient.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -151,6 +152,40 @@ bool parse_publish(const Packet &packet, std::string &topic, std::string &payloa
 }
 
 } // namespace BambuMqtt
+
+namespace BambuCamera {
+
+std::string auth_packet(const std::string &user, const std::string &access_code)
+{
+    std::string out(80, '\0');
+    auto put_u32 = [&out](size_t at, uint32_t v) {
+        for (size_t i = 0; i < 4; ++ i)
+            out[at + i] = char((v >> (8 * i)) & 0xFF);
+    };
+    put_u32(0, 0x40);
+    put_u32(4, 0x3000);
+    out.replace(16, std::min<size_t>(user.size(), 32), user, 0, 32);
+    out.replace(48, std::min<size_t>(access_code.size(), 32), access_code, 0, 32);
+    return out;
+}
+
+size_t parse_frame(const std::string &buf, std::string &jpeg)
+{
+    if (buf.size() < 16)
+        return 0;
+    uint32_t size = 0;
+    for (size_t i = 0; i < 4; ++ i)
+        size |= uint32_t(uint8_t(buf[i])) << (8 * i);
+    // The printers send 1280x720 images of about 100 kB.
+    if (size == 0 || size > (16u << 20))
+        throw std::runtime_error("camera: bad image size " + std::to_string(size));
+    if (buf.size() < 16 + size_t(size))
+        return 0;
+    jpeg.assign(buf, 16, size);
+    return 16 + size_t(size);
+}
+
+} // namespace BambuCamera
 
 bool BambuStatus::update_from_report(const std::string &json)
 {
@@ -330,6 +365,7 @@ public:
         char errbuf[CURL_ERROR_SIZE] = "";
         curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, errbuf);
         const CURLcode res = curl_easy_perform(m_curl);
+        m_open_result = res;
         if (res != CURLE_OK) {
             error = errbuf[0] ? errbuf : curl_easy_strerror(res);
             return false;
@@ -337,6 +373,9 @@ public:
         curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, nullptr);
         return true;
     }
+
+    // Result of open(): CURLE_COULDNT_CONNECT when nothing listens on the port.
+    CURLcode open_result() const { return m_open_result; }
 
     // Common name of the server certificate (the serial number of the printer).
     std::string peer_common_name() const
@@ -408,7 +447,8 @@ public:
     }
 
 private:
-    CURL *m_curl{ nullptr };
+    CURL    *m_curl{ nullptr };
+    CURLcode m_open_result{ CURLE_OK };
 
     void wait(bool for_read, int timeout_ms)
     {
@@ -680,6 +720,43 @@ bool BambuLanClient::upload_file(const fs::path &file, const std::string &name, 
     else
         error = errbuf[0] ? errbuf : curl_easy_strerror(res);
     return false;
+}
+
+bool BambuLanClient::stream_camera(const std::function<bool(const std::string &jpeg)> &on_frame, const std::atomic<bool> &stop,
+                                   std::string &error) const
+{
+    TlsStream tls;
+    if (!tls.open(host, camera_port, cafile, error)) {
+        if (tls.open_result() == CURLE_COULDNT_CONNECT)
+            error = "no camera";
+        return false;
+    }
+    if (!tls.send_all(BambuCamera::auth_packet("bblp", access_code), error))
+        return false;
+    std::string buf;
+    std::string jpeg;
+    bool        got_frame = false;
+    while (!stop) {
+        try {
+            if (const size_t used = BambuCamera::parse_frame(buf, jpeg); used > 0) {
+                buf.erase(0, used);
+                got_frame = true;
+                if (!on_frame(jpeg))
+                    return true;
+                continue;
+            }
+        } catch (const std::runtime_error &e) {
+            error = e.what();
+            return false;
+        }
+        // A short wait lets stop be checked; the printers send about one image per second.
+        if (!tls.recv_some(buf, 500, error)) {
+            // Before the first image: a wrong access code, or a camera that is off or in use.
+            error = got_frame ? "closed" : "refused";
+            return false;
+        }
+    }
+    return true;
 }
 
 std::string BambuLanClient::job_name(const std::string &upload_name)
