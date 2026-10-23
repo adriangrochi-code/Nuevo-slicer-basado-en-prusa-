@@ -36,6 +36,7 @@ class ScalableButton;
 class ModeSizer;
 
 class Button;
+class SwitchButton;
 class wxStaticText;
 
 class StaticBox;
@@ -144,6 +145,11 @@ class Sidebar : public wxPanel
     ::Button*       m_btn_compact               { nullptr };
     bool            m_compact                   { false };
     void            set_compact(bool compact);
+    // Tisma: slice right after every change (the background processing of PrusaSlicer, as a switch above the slice
+    // button).
+    TismaTitle*     m_auto_slice_label          { nullptr };
+    ::SwitchButton* m_auto_slice                { nullptr };
+    void            set_auto_slice(bool on);
     void            slice_now();
     // Sets whether an output action is available; true if it changed.
     bool            set_available(OutputAction action, bool available) const;

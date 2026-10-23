@@ -25,6 +25,7 @@
 #include "Widgets/Button.hpp"
 #include "Widgets/StateColor.hpp"
 #include "Widgets/StaticBox.hpp"
+#include "Widgets/SwitchButton.hpp"
 #include "Plater.hpp"
 
 #include <cstddef>
@@ -785,6 +786,13 @@ Sidebar::Sidebar(Plater *parent)
     m_btn_compact->SetToolTip(_L("Hide the settings (the slice button stays)"));
     m_btn_compact->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
+    m_auto_slice_label = new TismaTitle(this, _L("Slice automatically"), TismaTitle::Style::Caption);
+    m_titles.push_back(m_auto_slice_label);
+    m_auto_slice = new ::SwitchButton(this);
+    m_auto_slice->SetToolTip(_L("Slice again right after any change of the objects or of the settings."));
+    m_auto_slice->SetValue(wxGetApp().app_config->get_bool("background_processing"));
+    // Skipped: the switch draws its new state in its own handler.
+    m_auto_slice->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &e) { set_auto_slice(e.IsChecked()); e.Skip(); });
 
     apply_tisma_theme();
     enable_buttons(false);
@@ -800,6 +808,10 @@ Sidebar::Sidebar(Plater *parent)
 
     // The arrow that hides the settings, at the left of the slice and output buttons.
     auto *actions_sizer = new wxBoxSizer(wxVERTICAL);
+    auto *auto_slice_row = new wxBoxSizer(wxHORIZONTAL);
+    auto_slice_row->Add(m_auto_slice_label, 1, wxALIGN_CENTER_VERTICAL);
+    auto_slice_row->Add(m_auto_slice, 0, wxALIGN_CENTER_VERTICAL);
+    actions_sizer->Add(auto_slice_row, 0, wxEXPAND | wxTOP, margin_5);
     actions_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
     actions_sizer->Add(complect_btns_sizer, 0, wxEXPAND | wxTOP, margin_5);
     auto *row_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -1408,6 +1420,7 @@ void Sidebar::msw_rescale()
     m_btn_usb_print   ->SetMinSize(wxSize(-1, scaled_height));
     m_btn_more_actions->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     m_btn_compact     ->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
+    m_auto_slice->Rescale();
 
     m_scrolled_panel->Layout();
 }
@@ -1462,6 +1475,8 @@ void Sidebar::apply_tisma_theme()
         btn->Refresh();
     }
     m_btn_reslice->Refresh();
+    if (m_auto_slice)
+        m_auto_slice->SysColorChange();
 }
 
 void Sidebar::sys_color_changed()
@@ -2181,6 +2196,16 @@ void Sidebar::render_compact_actions(GLCanvas3D &canvas)
     ImGui::PopStyleVar(2);
 }
 
+void Sidebar::set_auto_slice(bool on)
+{
+    wxGetApp().app_config->set("background_processing", on ? "1" : "0");
+    // The plate is sliced now, then again after every change (Plater::priv::update_background_process()).
+    if (on && ! m_plater->model().objects.empty())
+        m_plater->reslice();
+    m_plater->show_action_buttons();
+    Layout();
+}
+
 void Sidebar::set_compact(bool compact)
 {
     m_compact = compact;
@@ -2214,6 +2239,7 @@ void Sidebar::collapse(bool collapse)
 
 void Sidebar::update_ui_from_settings()
 {
+    m_auto_slice->SetValue(wxGetApp().app_config->get_bool("background_processing"));
     m_object_manipulation->update_ui_from_settings();
     show_info_sizer();
     update_sliced_info_sizer();

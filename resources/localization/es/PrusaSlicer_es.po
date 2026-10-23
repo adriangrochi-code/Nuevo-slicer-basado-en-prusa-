@@ -33615,6 +33615,12 @@ msgstr[1] "%1% impresoras elegidas. Finalizar las instala con su configuración 
 msgid "Another nozzle can be chosen later, next to the printer."
 msgstr "Otra boquilla se puede elegir después, junto a la impresora."
 
+msgid "Slice automatically"
+msgstr "Laminar automáticamente"
+
+msgid "Slice again right after any change of the objects or of the settings."
+msgstr "Vuelve a laminar apenas cambia algún objeto o algún ajuste."
+
 msgid "Split to fit the printer"
 msgstr "Dividir para que entre en la impresora"
 
