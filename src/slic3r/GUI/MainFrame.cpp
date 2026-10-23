@@ -846,90 +846,76 @@ void MainFrame::create_nav_rail()
             m_tabpanel->SetSelection(idx);
     };
 
-    // Workspaces (master specification, 4.3): Prepare, Slice, Engineering (with Structures), Configuration.
-    NavRail::Item prepare;
-    prepare.label       = _L("Prepare");
-    prepare.tooltip     = _L("Import, arrange and orient the models; supports and painting tools");
-    prepare.icon        = "plater";
-    prepare.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("3D"); m_plater->close_engineering(); update_nav_rail(); };
-    prepare.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && !m_plater->is_engineering_open(); };
-    m_nav_rail->add_item(prepare);
+    // The sections, as in the Android app: the plate (its groups of tools are at the left of the 3D view: file, view,
+    // arrange, engineering, slice), the print, filament and printer settings, the devices and the rest.
+    auto is_sla = [is_fff]() { return ! is_fff(); };
+    auto tab_item = [this, current_page](const wxString& label, const wxString& tooltip, const std::string& icon,
+                                         Preset::Type type, std::function<bool()> is_visible) {
+        NavRail::Item item;
+        item.label       = label;
+        item.tooltip     = tooltip;
+        item.icon        = icon;
+        item.on_click    = [this, type]() { select_tab(wxGetApp().get_tab(type)); update_nav_rail(); };
+        item.is_selected = [current_page, type]() { Tab* tab = wxGetApp().get_tab(type); return tab && current_page() == tab; };
+        item.is_visible  = std::move(is_visible);
+        return item;
+    };
 
-    NavRail::Item slice;
-    slice.label       = _L("Slice");
-    slice.tooltip     = _L("Layers, toolpaths and G-code preview");
-    slice.icon        = "layers";
-    slice.on_click    = [this]() { select_tab(size_t(0)); m_plater->select_view_3D("Preview"); };
-    slice.is_selected = [this, current_page]() { return current_page() == m_plater && m_plater->is_preview_shown(); };
-    m_nav_rail->add_item(slice);
+    NavRail::Item plate;
+    plate.label       = _L("Plate");
+    plate.tooltip     = _L("The models on the bed: open, view, arrange, analyze and slice them");
+    plate.icon        = "tisma_plate";
+    plate.on_click    = [this]() { select_tab(size_t(0)); update_nav_rail(); };
+    plate.is_selected = [this, current_page]() { return current_page() == m_plater; };
+    m_nav_rail->add_item(plate);
 
-    // Engineering works on the 3D view: it opens the structural analysis of the selected object (phase 5). The
-    // structures (lightest infill, reinforcements, lattice: phase 6) are sections of the same view, so they share
-    // its button.
-    NavRail::Item engineering;
-    engineering.label       = _L("Engineering");
-    engineering.tooltip     = _L("Structural analysis at the working temperature (supports, loads and material) and "
-                                 "structures: lightest infill, reinforcements and lattice");
-    engineering.icon        = "wrench";
-    engineering.on_click    = [this]() { select_tab(size_t(0)); m_plater->open_engineering(); update_nav_rail(); };
-    engineering.is_selected = [this, current_page]() { return current_page() == m_plater && !m_plater->is_preview_shown() && m_plater->is_engineering_open(); };
-    // In every mode (it is a main function of Tisma) and with every printer technology: with a resin printer it
-    // analyzes the solid or hollowed part and searches its walls and interior infill.
-    m_nav_rail->add_item(engineering);
+    m_nav_rail->add_item(tab_item(_CTX("Print", "Section"), _L("Print settings: layers, walls, infill, supports, speeds..."), "tisma_print",
+                                  Preset::TYPE_PRINT, is_fff));
+    m_nav_rail->add_item(tab_item(_CTX("Print", "Section"), _L("Print settings of the resin printer: layers, supports, pad, hollowing..."),
+                                  "tisma_print", Preset::TYPE_SLA_PRINT, is_sla));
+    m_nav_rail->add_item(tab_item(_CTX("Filament", "Section"), _L("Filament settings: temperatures, cooling, flow..."), "tisma_filament",
+                                  Preset::TYPE_FILAMENT, is_fff));
+    m_nav_rail->add_item(tab_item(_L("Material"), _L("Resin settings: exposure times, shrinkage..."), "tisma_filament",
+                                  Preset::TYPE_SLA_MATERIAL, is_sla));
+    m_nav_rail->add_item(tab_item(_CTX("Printer", "Section"), _L("Printer settings: bed, extruders, firmware, custom G-code, limits..."),
+                                  "tisma_printer", Preset::TYPE_PRINTER, nullptr));
 
-    NavRail::Item calib;
-    calib.label    = _L("Calibration");
-    calib.tooltip  = _L("Calibration tests: temperature, pressure advance, retraction, speeds, ...");
-    calib.icon     = "test";
-    calib.on_click = [this]() { show_calibration_menu(this); };
-    m_nav_rail->add_item(calib);
-
-    NavRail::Item usb;
-    usb.label       = _L("Device");
-    usb.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
-    usb.icon        = "plug";
-    usb.on_click    = [this, select_page]() {
+    NavRail::Item devices;
+    devices.label       = _L("Devices");
+    devices.tooltip     = _L("Printers over USB and Wi-Fi: web interface (camera, temperatures, calibrations) and sending the G-code");
+    devices.icon        = "plug";
+    devices.on_click    = [this, select_page]() {
         if (m_devices_panel)
             select_page(m_devices_panel);
     };
-    usb.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
-    m_nav_rail->add_item(usb);
+    devices.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
+    m_nav_rail->add_item(devices);
 
-    // Thingiverse instead of Printables (whose page needs the Prusa account of PrusaSlicer).
-    if (m_thingiverse_webview) {
-        NavRail::Item thingiverse;
-        thingiverse.label       = "Thingiverse";
-        thingiverse.tooltip     = _L("Find models on Thingiverse and download them into the plater");
-        thingiverse.icon        = "open_browser";
-        thingiverse.on_click    = [select_page, this]() { select_page(m_thingiverse_webview); };
-        thingiverse.is_selected = [this, current_page]() { return current_page() == m_thingiverse_webview; };
-        m_nav_rail->add_item(thingiverse);
-    }
-
-    // Configuration: printer, filament and process profiles, preferences.
-    NavRail::Item config;
-    config.label       = _L("Configuration");
-    config.tooltip     = _L("Printer, filament and process profiles; preferences");
-    config.icon        = "settings";
-    config.bottom      = true;
-    config.is_selected = [current_page]() { return dynamic_cast<Tab*>(current_page()) != nullptr; };
-    config.on_click    = [this, is_fff]() {
+    // More: calibration, Thingiverse (instead of Printables, whose page needs the Prusa account of PrusaSlicer),
+    // the Tisma Cloud account, preferences and the configuration wizard.
+    NavRail::Item more;
+    more.label       = _L("More");
+    more.tooltip     = _L("Calibration, Thingiverse, Tisma Cloud account, preferences");
+    more.icon        = "tisma_more";
+    more.is_selected = [this, current_page]() { return m_thingiverse_webview && current_page() == m_thingiverse_webview; };
+    more.on_click    = [this, select_page]() {
         wxMenu menu;
-        auto add = [this, &menu](const wxString& label, std::function<void()> action) {
+        auto add = [&menu](const wxString& label, std::function<void()> action) {
             const int id = wxWindow::NewControlId();
             menu.Append(id, label);
             menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
         };
-        add(_L("Printer"),  [this]()         { select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER)); });
-        add(is_fff() ? _L("Filament") : _L("Material"),
-                            [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_FILAMENT : Preset::TYPE_SLA_MATERIAL)); });
-        add(_L("Process"),  [this, is_fff]() { select_tab(wxGetApp().get_tab(is_fff() ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT)); });
+        // The calibration menu is a popup too: it opens once this one is closed.
+        add(_L("Calibration") + dots, [this]() { CallAfter([this]() { show_calibration_menu(this); }); });
+        if (m_thingiverse_webview)
+            add("Thingiverse", [this, select_page]() { select_page(m_thingiverse_webview); update_nav_rail(); });
+        add(_L("Tisma Cloud account") + dots, [this]() { show_cloud_account_dialog(this); });
         menu.AppendSeparator();
-        add(_L("Preferences") + dots, []()   { wxGetApp().open_preferences(); });
+        add(_L("Preferences") + dots, []() { wxGetApp().open_preferences(); });
         add(_(ConfigWizard::name()) + dots, []() { wxGetApp().run_wizard(ConfigWizard::RR_USER); });
         PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
     };
-    m_nav_rail->add_item(config);
+    m_nav_rail->add_item(more);
 
     // The pages are selected from the workspace tabs.
     top_bar->ShowPageButtons(false);

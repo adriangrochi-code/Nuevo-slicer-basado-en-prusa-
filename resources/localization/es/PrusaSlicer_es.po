@@ -32291,10 +32291,6 @@ msgid "Select the settings to show in the sidebar."
 msgstr "Elige los ajustes que se muestran en la barra lateral."
 
 msgctxt "Section"
-msgid "Print"
-msgstr "Impresión"
-
-msgctxt "Section"
 msgid "Filament"
 msgstr "Filamento"
 
@@ -34011,3 +34007,31 @@ msgstr "Acercar (o la rueda del ratón)"
 
 msgid "Zoom out (or the mouse wheel)"
 msgstr "Alejar (o la rueda del ratón)"
+
+msgid "Calibration, Thingiverse, Tisma Cloud account, preferences"
+msgstr "Calibración, Thingiverse, cuenta de Tisma Cloud, preferencias"
+
+msgid "Filament settings: temperatures, cooling, flow..."
+msgstr "Ajustes del filamento: temperaturas, ventilación, flujo..."
+
+msgid "Plate"
+msgstr "Placa"
+
+msgid "Print settings of the resin printer: layers, supports, pad, hollowing..."
+msgstr "Ajustes de impresión de la impresora de resina: capas, soportes, base, vaciado..."
+
+msgid "Print settings: layers, walls, infill, supports, speeds..."
+msgstr "Ajustes de impresión: capas, paredes, relleno, soportes, velocidades..."
+
+msgid "Printer settings: bed, extruders, firmware, custom G-code, limits..."
+msgstr "Ajustes de la impresora: cama, extrusores, firmware, G-code personalizado, límites..."
+
+msgid "Resin settings: exposure times, shrinkage..."
+msgstr "Ajustes de la resina: tiempos de exposición, contracción..."
+
+msgid "The models on the bed: open, view, arrange, analyze and slice them"
+msgstr "Los modelos en la cama: abrirlos, verlos, ordenarlos, analizarlos y laminarlos"
+
+msgctxt "Section"
+msgid "Print"
+msgstr "Impresión"

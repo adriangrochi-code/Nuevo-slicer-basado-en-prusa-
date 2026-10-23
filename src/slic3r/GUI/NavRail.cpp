@@ -160,7 +160,9 @@ int NavRail::tab_width(size_t idx) const
         return BAR_ICON_PX + 2 * int(0.8 * em);
     wxClientDC dc(const_cast<NavRail*>(this));
     dc.SetFont(GetFont());
-    return dc.GetTextExtent(m_items[idx].label).x + 2 * tab_padding(em);
+    // The icon before the label, as the sections of the Android app.
+    const int icon = m_items[idx].bmp.IsOk() ? BAR_ICON_PX + int(0.5 * em) : 0;
+    return icon + dc.GetTextExtent(m_items[idx].label).x + 2 * tab_padding(em);
 }
 
 wxRect NavRail::item_rect(size_t idx) const
@@ -260,8 +262,17 @@ void NavRail::paint_horizontal(wxDC& dc)
             }
         } else {
             const wxSize tsz = dc.GetTextExtent(item.label);
+            int tx = rc.x + (rc.width - tsz.x) / 2;
+            if (item.bmp.IsOk()) {
+                const wxBitmap bmp = item.bmp.GetBitmapFor(this);
+                const wxSize   bsz = bmp.GetLogicalSize();
+                const int      w   = bsz.x + int(0.5 * em) + tsz.x;
+                const int      bx  = rc.x + (rc.width - w) / 2;
+                dc.DrawBitmap(bmp, bx, rc.y + (rc.height - bsz.y) / 2, true);
+                tx = bx + bsz.x + int(0.5 * em);
+            }
             dc.SetTextForeground(selected ? text_sel : text);
-            dc.DrawText(item.label, rc.x + (rc.width - tsz.x) / 2, rc.y + (rc.height - tsz.y) / 2);
+            dc.DrawText(item.label, tx, rc.y + (rc.height - tsz.y) / 2);
         }
         if (selected) {
             // Underline in the brand color at the bottom edge of the bar.
