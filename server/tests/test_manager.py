@@ -169,3 +169,65 @@ def test_panel_signs_in_the_administrator(tmp_path, monkeypatch):
         # The administrator can log in with the password too.
         r = c.post("/v1/auth/login", json={"email": "yo@tisma.com.uy", "password": "una clave larga"})
         assert r.status_code == 200
+
+
+def test_dashboard_of_the_master(tmp_path, monkeypatch):
+    from datetime import timedelta
+
+    from tisma_cloud.models import Alert, Job, Node, Payment, Plan, Usage, User, month_of, utcnow
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("TISMA_DATABASE_URL", raising=False)
+    m = Manager(tmp_path)
+    m.set_role("master")
+    empty = m.dashboard()
+    assert empty["nodes"] == [] and empty["jobs"] == [] and empty["users"] == 0 and empty["hours_month"] == 0
+    db, _settings = m._database()
+    now = utcnow()
+    with db.session() as s:
+        s.add(Plan(name="pro", monthly_hours=10))
+        s.flush()
+        ana = User(email="ana@x.uy", plan_name="pro", paid_until=now + timedelta(days=20))
+        old = User(email="old@x.uy", plan_name="pro", created_at=now - timedelta(days=30))
+        busy = Node(name="i7", token_hash="h1", priorities="slice,fea", last_seen=now, info='{"cpus": 8}')
+        idle = Node(name="i5", token_hash="h2", priorities="fea", last_seen=now - timedelta(hours=1))
+        s.add_all([ana, old, busy, idle])
+        s.flush()
+        s.add_all([
+            Job(user_id=ana.id, kind="slice", job_class="slice", status="running", node_id=busy.id, progress=40,
+                input_name="benchy.3mf", created_at=now - timedelta(minutes=1)),
+            Job(user_id=ana.id, kind="slice", job_class="slice", status="queued", created_at=now),
+            Job(user_id=old.id, kind="fea", job_class="fea", status="done", seconds=90., finished_at=now,
+                created_at=now - timedelta(minutes=5)),
+            Job(user_id=old.id, kind="fea", job_class="fea", status="failed", error="no memory", finished_at=now,
+                created_at=now - timedelta(minutes=6)),
+            # Ended yesterday: not one of today.
+            Job(user_id=old.id, kind="slice", job_class="slice", status="done", finished_at=now - timedelta(days=2),
+                created_at=now - timedelta(days=2)),
+            Usage(user_id=ana.id, month=month_of(now), seconds=5400.),
+            Usage(user_id=old.id, month="2001-01", seconds=99999.),
+            Payment(user_id=ana.id, plan_name="pro", provider="manual", amount_cents=900, currency="USD",
+                    status="approved", paid_at=now),
+            Payment(user_id=old.id, plan_name="pro", provider="manual", amount_cents=900, status="pending"),
+            Alert(key="nodes", message="Sin nodos en línea"),
+            Alert(key="disk", message="Disco lleno", resolved_at=now),
+        ])
+    d = m.dashboard()
+    nodes = {n["name"]: n for n in d["nodes"]}
+    assert nodes["i7"]["online"] and nodes["i7"]["running"] == 1 and nodes["i7"]["info"] == {"cpus": 8}
+    assert not nodes["i5"]["online"] and nodes["i5"]["priorities"] == ["fea"]
+    assert (d["queued"], d["running"], d["done_today"], d["failed_today"]) == (1, 1, 1, 1)
+    assert [j["status"] for j in d["jobs"]] == ["queued", "running", "done", "failed", "done"]
+    assert d["jobs"][1]["node"] == "i7" and d["jobs"][1]["user"] == "ana@x.uy" and d["jobs"][3]["error"] == "no memory"
+    assert (d["users"], d["new_users"], d["paying_users"]) == (2, 1, 1)
+    assert d["hours_month"] == 1.5
+    assert d["payments_month"] == [{"currency": "USD", "count": 1, "amount_cents": 900}]
+    assert d["alerts"] == [{"message": "Sin nodos en línea", "started_at": d["alerts"][0]["started_at"]}]
+    # The last 7 days: today has one done and one failed, two days ago one done.
+    assert len(d["days"]) == 7 and d["days"][-1]["done"] == 1 and d["days"][-1]["failed"] == 1
+    assert d["days"][-3] == {"day": (now - timedelta(days=2)).date().isoformat(), "done": 1, "failed": 0}
+    users = m.users()
+    assert [u["email"] for u in users] == ["ana@x.uy", "old@x.uy"]
+    assert users[0]["paid"] and users[0]["hours_month"] == 1.5 and not users[1]["paid"]
+    r = m.resources()
+    assert r["cpus"] >= 1 and r["disk_free_gb"] <= r["disk_gb"]

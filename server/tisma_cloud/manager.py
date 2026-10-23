@@ -316,6 +316,89 @@ class Manager:
             if enabled is not None:
                 node.enabled = enabled
 
+    # ---- what the master is doing: the window shows it, read from the database (also while the service is stopped)
+    def dashboard(self, last_jobs: int = 12) -> dict:
+        """The state of the master: its nodes (with the jobs each one runs and its machine), the jobs (waiting,
+        running, done and failed today, the last ones), the users, the hours computed this month, the payments of
+        the month and the open alerts."""
+        from datetime import timedelta
+
+        from sqlalchemy import func, select
+
+        from .models import Alert, Job, Node, Payment, Usage, User, month_of, utcnow
+        from .scheduler import ACTIVE
+
+        db, settings = self._database()
+        now = utcnow()
+        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        with db.session() as s:
+            running = dict(s.execute(select(Job.node_id, func.count()).where(Job.status == "running")
+                                     .group_by(Job.node_id)).all())
+            nodes = [{"name": n.name, "priorities": n.priority_list, "enabled": n.enabled, "info": n.info_dict,
+                      "online": n.last_seen is not None and (now - n.last_seen).total_seconds() < settings.node_timeout_s,
+                      "last_seen": n.last_seen.isoformat(timespec="seconds") if n.last_seen else "",
+                      "running": running.get(n.id, 0)}
+                     for n in s.execute(select(Node).order_by(Node.name)).scalars()]
+            active = dict(s.execute(select(Job.status, func.count()).where(Job.status.in_(ACTIVE))
+                                    .group_by(Job.status)).all())
+            ended = dict(s.execute(select(Job.status, func.count()).where(Job.finished_at >= today)
+                                   .group_by(Job.status)).all())
+            jobs = [{"id": j.id, "kind": j.kind, "job_class": j.job_class, "status": j.status, "progress": j.progress,
+                     "user": email, "node": node or "", "input": j.input_name, "seconds": round(j.seconds, 1),
+                     "created_at": j.created_at.isoformat(timespec="seconds"), "error": j.error}
+                    for j, email, node in s.execute(
+                        select(Job, User.email, Node.name).join(User, User.id == Job.user_id)
+                        .outerjoin(Node, Node.id == Job.node_id).order_by(Job.created_at.desc()).limit(last_jobs)).all()]
+            users = s.execute(select(func.count()).select_from(User)).scalar_one()
+            new_users = s.execute(select(func.count()).select_from(User)
+                                  .where(User.created_at >= now - timedelta(days=7))).scalar_one()
+            paying = s.execute(select(func.count()).select_from(User).where(User.paid_until > now)).scalar_one()
+            seconds = s.execute(select(func.coalesce(func.sum(Usage.seconds), 0.))
+                                .where(Usage.month == month_of(now))).scalar_one()
+            payments = [{"currency": currency, "count": count, "amount_cents": int(amount or 0)}
+                        for currency, count, amount in s.execute(
+                            select(Payment.currency, func.count(), func.sum(Payment.amount_cents))
+                            .where(Payment.status == "approved", Payment.paid_at >= today.replace(day=1))
+                            .group_by(Payment.currency)).all()]
+            alerts = [{"message": a.message, "started_at": a.started_at.isoformat(timespec="seconds")}
+                      for a in s.execute(select(Alert).where(Alert.resolved_at.is_(None))
+                                         .order_by(Alert.started_at.desc())).scalars()]
+            # The jobs that ended on each of the last 7 days (UTC), the oldest first.
+            first = today - timedelta(days=6)
+            days = {(first + timedelta(days=i)).date().isoformat(): {"done": 0, "failed": 0} for i in range(7)}
+            for status, finished in s.execute(select(Job.status, Job.finished_at).where(
+                    Job.finished_at >= first, Job.status.in_(("done", "failed")))).all():
+                day = days.get(finished.date().isoformat())
+                if day is not None:
+                    day[status] += 1
+        return {"nodes": nodes, "queued": active.get("queued", 0), "running": active.get("running", 0),
+                "done_today": ended.get("done", 0), "failed_today": ended.get("failed", 0), "jobs": jobs,
+                "users": users, "new_users": new_users, "paying_users": paying, "hours_month": round(seconds / 3600, 2),
+                "payments_month": payments, "alerts": alerts,
+                "days": [{"day": day, **counts} for day, counts in days.items()]}
+
+    def users(self, limit: int = 500) -> list[dict]:
+        """The accounts of the master, the newest first: plan, paid until, hours computed this month and what they are
+        (administrator, internal without charge, disabled)."""
+        from sqlalchemy import select
+
+        from .models import Usage, User, month_of, utcnow
+
+        db, _settings = self._database()
+        now = utcnow()
+        with db.session() as s:
+            hours = dict(s.execute(select(Usage.user_id, Usage.seconds).where(Usage.month == month_of(now))).all())
+            return [{"email": u.email, "plan": u.plan_name, "admin": u.is_admin, "unlimited": u.unlimited,
+                     "enabled": u.enabled, "paid_until": u.paid_until.date().isoformat() if u.paid_until else "",
+                     "paid": u.paid_until is not None and u.paid_until > now,
+                     "hours_month": round(hours.get(u.id, 0.) / 3600, 2),
+                     "created_at": u.created_at.date().isoformat()}
+                    for u in s.execute(select(User).order_by(User.created_at.desc()).limit(limit)).scalars()]
+
+    def resources(self) -> dict:
+        """This machine: processors, load, memory and the disk of the home."""
+        return system.resources(self.home)
+
     # ---- the administration panel of the master, opened by the program
     PANEL_TOKEN_LABEL = "panel (tisma-cloud)"
 

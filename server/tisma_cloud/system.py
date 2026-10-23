@@ -8,6 +8,8 @@ Sources:
 - Detecting the WebView2 Runtime: https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution
 - Inno Setup uninstall key "<AppId>_is1" with InstallLocation: https://jrsoftware.org/ishelp/ (Uninstall registry key)
 - GetConsoleMode fails for a handle that is not a console: https://learn.microsoft.com/windows/console/getconsolemode
+- Memory of Windows: GlobalMemoryStatusEx, https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-globalmemorystatusex
+- Memory of Linux: MemTotal and MemAvailable of /proc/meminfo, https://man7.org/linux/man-pages/man5/proc_meminfo.5.html
 """
 
 from __future__ import annotations
@@ -259,3 +261,44 @@ def find_program(names: tuple[str, ...]) -> str | None:
 def find_tisma_programs() -> tuple[str | None, str | None]:
     """(tisma-slicer, tisma-fea) of this machine, or None for the ones not found."""
     return find_program(SLICER_NAMES), find_program(FEA_NAMES)
+
+
+def resources(folder: Path) -> dict:
+    """The machine: processors, load (average of the last minute, not on Windows), memory and the disk of [folder]
+    (total and free, in GB). What cannot be read is left out."""
+    out: dict = {"cpus": os.cpu_count() or 1}
+    if hasattr(os, "getloadavg"):
+        try:
+            out["load"] = round(os.getloadavg()[0], 2)
+        except OSError:
+            pass
+    if os.name == "nt":
+        import ctypes
+
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+        status = MemoryStatus()
+        status.dwLength = ctypes.sizeof(MemoryStatus)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            out["memory_gb"] = round(status.ullTotalPhys / 2 ** 30, 1)
+            out["memory_free_gb"] = round(status.ullAvailPhys / 2 ** 30, 1)
+    else:
+        try:
+            with open("/proc/meminfo", encoding="ascii") as f:
+                info = {line.split(":")[0]: int(line.split()[1]) for line in f if line.split()[1:2]}
+            out["memory_gb"] = round(info["MemTotal"] / 2 ** 20, 1)
+            out["memory_free_gb"] = round(info.get("MemAvailable", info.get("MemFree", 0)) / 2 ** 20, 1)
+        except (OSError, KeyError, ValueError):
+            pass
+    try:
+        disk = shutil.disk_usage(folder)
+        out["disk_gb"] = round(disk.total / 2 ** 30, 1)
+        out["disk_free_gb"] = round(disk.free / 2 ** 30, 1)
+    except OSError:
+        pass
+    return out
