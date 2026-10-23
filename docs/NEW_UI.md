@@ -59,7 +59,9 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 2. Secciones de la barra superior (hecho, 5090783).
 3. Sin las barras de PrusaSlicer en la vista 3D (hecho, 1b9b3f5).
 4. Componentes propios en C++ con tema claro y oscuro (en curso: chip, título de grupo, opciones en chips; campos
-   redondeados e interruptores en todo el programa; títulos planos en lugar de los marcos de PrusaSlicer).
+   redondeados e interruptores en todo el programa; títulos planos en lugar de los marcos de PrusaSlicer; los botones
+   de Tisma en los diálogos de mensajes, de impresora en red, de guardar perfil y de cambios sin guardar, con Enter y
+   Escape como los botones nativos; las notificaciones de la vista 3D en morado).
 5. Panel de la placa nuevo (en curso): tarjetas con títulos grandes; la impresora por su modelo, con la boquilla y la
    cama al lado como en OrcaSlicer y Bambu Studio (la boquilla elige el perfil del modelo para ella o pone su diámetro
    en la impresora; la cama se elige para toda impresora de filamento); soportes, relleno y borde en chips; la lista de

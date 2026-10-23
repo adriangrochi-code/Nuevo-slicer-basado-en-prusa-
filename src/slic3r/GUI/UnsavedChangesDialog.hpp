@@ -14,6 +14,7 @@
 #include "libslic3r/PresetBundle.hpp"
 
 class ScalableButton;
+class Button;
 class wxStaticText;
 
 namespace Slic3r {
@@ -269,9 +270,10 @@ enum class Action {
 class UnsavedChangesDialog : public DPIDialog
 {
     DiffViewCtrl*           m_tree          { nullptr };
-    ScalableButton*         m_save_btn      { nullptr };
-    ScalableButton*         m_transfer_btn  { nullptr };
-    ScalableButton*         m_discard_btn   { nullptr };
+    // Tisma: the buttons of Tisma.
+    ::Button*               m_save_btn      { nullptr };
+    ::Button*               m_transfer_btn  { nullptr };
+    ::Button*               m_discard_btn   { nullptr };
     wxStaticText*           m_action_line   { nullptr };
     wxStaticText*           m_info_line     { nullptr };
     wxCheckBox*             m_remember_choice   { nullptr };

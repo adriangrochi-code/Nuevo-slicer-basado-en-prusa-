@@ -9,11 +9,14 @@
 
 #include <wx/dcbuffer.h>
 #include <wx/control.h>
+#include <wx/stockitem.h>
+#include <wx/textctrl.h>
 #include <wx/treectrl.h>
 #include <wx/wrapsizer.h>
 
 #include "BitmapCache.hpp"
 #include "GUI_App.hpp"
+#include "I18N.hpp"
 #include "TismaTheme.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/StateColor.hpp"
@@ -172,6 +175,69 @@ void style_tisma_button(::Button *button, bool primary)
             std::pair<wxColour, int>(TismaTheme::accent_text(dark),   StateColor::Normal)));
     }
     button->Refresh();
+}
+
+wxString tisma_stock_label(wxWindowID id)
+{
+    switch (id) {
+    case wxID_OK:     return _L("OK");
+    case wxID_CANCEL: return _L("Cancel");
+    case wxID_YES:    return _L("Yes");
+    case wxID_NO:     return _L("No");
+    case wxID_CLOSE:  return _L("Close");
+    case wxID_APPLY:  return _L("Apply");
+    case wxID_SAVE:   return _L("Save");
+    default:          return wxGetStockLabel(id, wxSTOCK_NOFLAGS);
+    }
+}
+
+::Button* tisma_dialog_button(wxWindow *parent, wxWindowID id, const wxString &label, bool primary)
+{
+    auto *btn = new ::Button(parent, label.IsEmpty() ? tisma_stock_label(id) : label);
+    btn->SetId(id);
+    btn->SetFont(wxGetApp().normal_font());
+    const int em = wxGetApp().em_unit();
+    btn->SetPaddingSize(wxSize(int(1.4 * em), int(0.6 * em)));
+    // The buttons of a row have at least the width of "Cancel".
+    btn->SetMinSize(wxSize(std::max(9 * em, btn->GetMinSize().GetWidth()), btn->GetMinSize().GetHeight()));
+    style_tisma_button(btn, primary);
+    return btn;
+}
+
+static void click_tisma_button(wxWindow *button)
+{
+    if (button->IsEnabled() && button->IsShown()) {
+        wxCommandEvent click(wxEVT_BUTTON, button->GetId());
+        click.SetEventObject(button);
+        button->GetEventHandler()->ProcessEvent(click);
+    }
+}
+
+void tisma_dialog_keys(wxDialog *dialog)
+{
+    dialog->Bind(wxEVT_CHAR_HOOK, [dialog](wxKeyEvent &evt) {
+        const int key = evt.GetKeyCode();
+        if (evt.HasAnyModifiers() || (key != WXK_ESCAPE && key != WXK_RETURN && key != WXK_NUMPAD_ENTER)) {
+            evt.Skip();
+            return;
+        }
+        if (key != WXK_ESCAPE) {
+            wxWindow *focus = wxWindow::FindFocus();
+            auto     *text  = dynamic_cast<wxTextCtrl*>(focus);
+            auto     *dflt  = dynamic_cast<::Button*>(dialog->GetDefaultItem());
+            // A focused button clicks itself, a text of several lines takes the new line.
+            if (dflt == nullptr || dynamic_cast<::Button*>(focus) != nullptr || (text != nullptr && text->IsMultiLine()))
+                evt.Skip();
+            else
+                click_tisma_button(dflt);
+            return;
+        }
+        if (auto *cancel = dynamic_cast<::Button*>(dialog->FindWindow(wxID_CANCEL)))
+            click_tisma_button(cancel);
+        else
+            // A native Cancel button or none (a question of Yes and No): as wxWidgets does.
+            evt.Skip();
+    });
 }
 
 TismaTitle::TismaTitle(wxWindow* parent, const wxString& text, Style style)

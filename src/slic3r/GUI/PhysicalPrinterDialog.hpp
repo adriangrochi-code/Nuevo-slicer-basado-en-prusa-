@@ -17,6 +17,7 @@ class wxString;
 class wxStaticText;
 class ScalableButton;
 class wxBoxSizer;
+class Button;
 
 namespace Slic3r {
 
@@ -71,12 +72,13 @@ class PhysicalPrinterDialog : public DPIDialog
 
     ConfigOptionsGroup* m_optgroup          { nullptr };
 
-    ScalableButton*     m_add_preset_btn                {nullptr};
-    ScalableButton*     m_printhost_browse_btn          {nullptr};
-    ScalableButton*     m_printhost_test_btn            {nullptr};
-    ScalableButton*     m_printhost_cafile_browse_btn   {nullptr};
-    ScalableButton*     m_printhost_port_browse_btn     {nullptr};
-    ScalableButton*     m_api_key_copy_btn              {nullptr};
+    // Tisma: the buttons of Tisma.
+    ::Button*           m_add_preset_btn                {nullptr};
+    ::Button*           m_printhost_browse_btn          {nullptr};
+    ::Button*           m_printhost_test_btn            {nullptr};
+    ::Button*           m_printhost_cafile_browse_btn   {nullptr};
+    ::Button*           m_printhost_port_browse_btn     {nullptr};
+    ::Button*           m_api_key_copy_btn              {nullptr};
 
     wxBoxSizer*         m_presets_sizer                 {nullptr};
 

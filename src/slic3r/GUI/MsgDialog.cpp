@@ -26,7 +26,10 @@
 #include "wxExtensions.hpp"
 #include "slic3r/GUI/MainFrame.hpp"
 #include "GUI_App.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
 
+#include "Widgets/Button.hpp"
 #include "Widgets/CheckBox.hpp"
 
 namespace Slic3r {
@@ -38,9 +41,8 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
 	, content_sizer(new wxBoxSizer(wxVERTICAL))
 	, btn_sizer(new wxBoxSizer(wxHORIZONTAL))
 {
-#ifdef __APPLE__
-    this->SetBackgroundColour(wxGetApp().get_window_default_clr());
-#endif
+    // Tisma: the background of the cards of Tisma (Windows sets the colors of its dark mode in finalize()).
+    this->SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
 	boldfont.SetWeight(wxFONTWEIGHT_BOLD);
 
     this->SetFont(wxGetApp().normal_font());
@@ -51,7 +53,11 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
 	auto *rightsizer = new wxBoxSizer(wxVERTICAL);
 
 	auto *headtext = new wxStaticText(this, wxID_ANY, headline);
-	headtext->SetFont(boldfont);
+	// Tisma: the headline as the titles of Tisma, a bit bigger and semibold.
+	wxFont headfont = wxGetApp().normal_font();
+	headfont.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+	headfont.SetPointSize(int(std::lround(headfont.GetPointSize() * 1.15)));
+	headtext->SetFont(headfont);
     headtext->Wrap(CONTENT_WIDTH*wxGetApp().em_unit());
 	rightsizer->Add(headtext);
 	rightsizer->AddSpacer(VERT_SPACING);
@@ -65,41 +71,39 @@ MsgDialog::MsgDialog(wxWindow *parent, const wxString &title, const wxString &he
 	topsizer->Add(rightsizer, 1, wxTOP | wxBOTTOM | wxRIGHT | wxEXPAND, BORDER);
 
     main_sizer->Add(topsizer, 1, wxEXPAND);
-    main_sizer->Add(new StaticLine(this), 0, wxEXPAND | wxLEFT | wxRIGHT, HORIZ_SPACING);
-    main_sizer->Add(btn_sizer, 0, wxALL | wxEXPAND, VERT_SPACING);
+    // Tisma: the buttons under the text, without the line of PrusaSlicer.
+    main_sizer->Add(btn_sizer, 0, wxLEFT | wxRIGHT | wxBOTTOM | wxEXPAND, VERT_SPACING);
 
     apply_style(style);
+    tisma_dialog_keys(this);
 
 	SetSizerAndFit(main_sizer);
 }
 
 void MsgDialog::SetButtonLabel(wxWindowID btn_id, const wxString& label, bool set_focus/* = false*/) 
 {
-    if (wxButton* btn = get_button(btn_id)) {
+    if (::Button* btn = get_button(btn_id)) {
         btn->SetLabel(label);
         if (set_focus)
             btn->SetFocus();
     }
 }
 
-wxButton* MsgDialog::add_button(wxWindowID btn_id, bool set_focus /*= false*/, const wxString& label/* = wxString()*/)
+::Button* MsgDialog::add_button(wxWindowID btn_id, bool set_focus /*= false*/, const wxString& label/* = wxString()*/)
 {
-    wxButton* btn = new wxButton(this, btn_id, label);
-    wxGetApp().SetWindowVariantForButton(btn);
+    // Tisma: the default button (the one with the focus: Enter clicks it) filled with the accent color.
+    ::Button* btn = tisma_dialog_button(this, btn_id, label, set_focus);
     if (set_focus) {
         btn->SetFocus();
-        // For non-MSW platforms SetFocus is not enought to use it as default, when the dialog is closed by ENTER
-        // We have to set this button as the (permanently) default one in its dialog
-        // See https://twitter.com/ZMelmed/status/1472678454168539146
-        btn->SetDefault();
+        SetDefaultItem(btn);
     }
-    btn_sizer->Add(btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, HORIZ_SPACING);
+    btn_sizer->Add(btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 2 * HORIZ_SPACING);
     btn->Bind(wxEVT_BUTTON, [this, btn_id](wxCommandEvent&) { this->EndModal(btn_id); });
     return btn;
 };
 
-wxButton* MsgDialog::get_button(wxWindowID btn_id){
-    return static_cast<wxButton*>(FindWindowById(btn_id, this));
+::Button* MsgDialog::get_button(wxWindowID btn_id){
+    return dynamic_cast<::Button*>(FindWindowById(btn_id, this));
 }
 
 void MsgDialog::apply_style(long style)
@@ -112,7 +116,7 @@ void MsgDialog::apply_style(long style)
     std::string icon_name = style & wxICON_WARNING        ? "exclamation" :
                             style & wxICON_INFORMATION    ? "info"        :
                             style & wxICON_QUESTION       ? "question"    : "PrusaSlicer";
-    logo->SetBitmap(*get_bmp_bundle(icon_name, 64));
+    logo->SetBitmap(*get_bmp_bundle(icon_name, 48));
 }
 
 void MsgDialog::finalize()

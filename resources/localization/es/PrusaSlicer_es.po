@@ -13939,7 +13939,7 @@ msgstr "Ajustes de impresión SLA"
 #: src/slic3r/GUI/MainFrame.cpp:971
 #: src/slic3r/GUI/PhysicalPrinterDialog.cpp:241
 msgid "Physical Printer"
-msgstr "Impresora Física"
+msgstr "Impresora en red"
 
 #: src/slic3r/GUI/GUI.cpp:232
 msgid ""
@@ -19203,7 +19203,7 @@ msgstr "¿Estás seguro de que quieres borrar la impresora \"%1%\"?"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:458
 msgid "Delete Physical Printer"
-msgstr "Eliminar Impresora Física"
+msgstr "Eliminar la impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:711
 msgid "Click to edit preset"
@@ -19235,7 +19235,7 @@ msgstr "Añadir/Quitar ajustes preestablecidos"
 #: src/slic3r/GUI/PresetComboBoxes.cpp:877
 #: src/slic3r/GUI/PresetComboBoxes.cpp:926 src/slic3r/GUI/Tab.cpp:3905
 msgid "Add physical printer"
-msgstr "Añadir impresora física"
+msgstr "Añadir impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:889
 msgid "Edit preset"
@@ -19251,20 +19251,20 @@ msgstr "Mostrar/Ocultar plantillas de configuración"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:906 src/slic3r/GUI/Tab.cpp:3905
 msgid "Edit physical printer"
-msgstr "Editar impresora física"
+msgstr "Editar impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:912
 msgid "Open the physical printer URL"
-msgstr "Abre el URL de la impresora física"
+msgstr "Abrir la página de la impresora"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:917
 msgid "Delete physical printer"
-msgstr "Eliminar impresora física"
+msgstr "Eliminar impresora en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1206
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1489
 msgid "Physical printers"
-msgstr "Impresoras físicas"
+msgstr "Impresoras en red"
 
 #: src/slic3r/GUI/PresetComboBoxes.cpp:1254
 msgid "Add/Remove filaments"
@@ -19656,22 +19656,22 @@ msgstr "El nombre no puede ser el mismo que un nombre de alias preestablecido."
 #. TRN Settings Tab: tooltip for toolbar button
 #: src/slic3r/GUI/SavePresetDialog.cpp:361 src/slic3r/GUI/Tab.cpp:199
 msgid "Save preset"
-msgstr "Guardar ajuste inicial"
+msgstr "Guardar perfil"
 
 #: src/slic3r/GUI/SavePresetDialog.cpp:361
 msgid "Save presets"
-msgstr "Guardar ajustes"
+msgstr "Guardar perfiles"
 
 #. TRN Settings Tab: tooltip for toolbar button
 #: src/slic3r/GUI/SavePresetDialog.cpp:369 src/slic3r/GUI/Tab.cpp:201
 msgid "Rename preset"
-msgstr "Renombrar ajuste"
+msgstr "Renombrar perfil"
 
 #. TRN Suffix for the preset name. Have to be a noun.
 #: src/slic3r/GUI/SavePresetDialog.cpp:397
 msgctxt "PresetName"
 msgid "Copy"
-msgstr "Copiar"
+msgstr "Copia"
 
 #: src/slic3r/GUI/SavePresetDialog.cpp:417
 msgid "Save as profile derived from current printer only."
@@ -21518,7 +21518,7 @@ msgstr "No instalar"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:342
 msgid "Yes"
-msgstr "Si"
+msgstr "Sí"
 
 #: src/slic3r/GUI/UpdateDialogs.cpp:343
 msgid "No"
@@ -34173,3 +34173,15 @@ msgstr "Cambiar el código de acceso"
 
 msgid "When the printer shows a new access code or API key: type it here, Tisma tests the connection and saves it."
 msgstr "Cuando la impresora muestra un código de acceso o una clave API nuevos: escribilos acá, Tisma prueba la conexión y los guarda."
+
+msgid "Printer on the network"
+msgstr "Impresora en red"
+
+msgid "Tisma sends the prints to this printer: the main button offers it when the printer answers, and Devices shows it."
+msgstr "Tisma le envía las impresiones a esta impresora: el botón principal la ofrece cuando la impresora responde, y Dispositivos la muestra."
+
+msgid "Printer profile"
+msgstr "Perfil de impresora"
+
+msgid "Add a printer profile"
+msgstr "Añadir un perfil de impresora"

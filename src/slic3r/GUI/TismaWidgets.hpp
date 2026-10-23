@@ -12,6 +12,7 @@
 
 #include <wx/bmpbndl.h>
 #include <wx/colour.h>
+#include <wx/dialog.h>
 #include <wx/panel.h>
 #include <wx/scrolwin.h>
 #include <wx/stattext.h>
@@ -24,6 +25,19 @@ namespace GUI {
 
 // The buttons of the interface of Tisma: filled with the accent color (the main action of a page) or outlined in it.
 void style_tisma_button(::Button *button, bool primary);
+
+// The label of a standard button (OK, Cancel, Yes, No, Close, Apply, Save) from the translations of Tisma: wxWidgets
+// has its own labels, not translated by Tisma.
+wxString tisma_stock_label(wxWindowID id);
+
+// A button of the row at the bottom of a dialog. It has the standard id (wxID_OK, wxID_CANCEL...) of the native button
+// it replaces, the dialogs find their buttons by it. An empty label: the standard label of the id.
+::Button* tisma_dialog_button(wxWindow *parent, wxWindowID id, const wxString &label = wxString(), bool primary = false);
+
+// The keys of a dialog with the buttons above, which wxWidgets handles only for its native buttons: Escape clicks the
+// button with wxID_CANCEL, Enter clicks the default item of the dialog (wxTopLevelWindow::SetDefaultItem()) unless a
+// button or a text of several lines has the focus.
+void tisma_dialog_keys(wxDialog *dialog);
 
 // A rounded chip: an icon, a dot of a color or neither, and a text. A click calls on_click.
 class TismaChip : public wxPanel
