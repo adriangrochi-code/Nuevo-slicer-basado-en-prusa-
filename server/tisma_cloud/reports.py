@@ -6,7 +6,8 @@ reproduce it and nothing personal.
   addresses, the user folder in paths, tokens, keys, access codes and serial numbers).
 - signature(): reports of the same problem share it (the app, the first error line of the log without numbers or
   paths, else the words of the title).
-- catalog(): the groups, as JSON lines (one group per line) or Markdown.
+- catalog(): the groups, as JSON lines (one group per line) or Markdown, with their kind of error, key words and a
+  summary (triage.py) and the texts translated to the language of the team when the translator is on (translate.py).
 """
 
 from __future__ import annotations
@@ -15,8 +16,11 @@ import hashlib
 import ipaddress
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from . import triage
 
 APPS = ("pc", "android", "web")
 KINDS = ("bug", "crash", "suggestion")
@@ -128,7 +132,59 @@ def clean(app: str, kind: str, title: str, description: str = "", steps: str = "
         "app_version": redact(app_version)[:40].strip(), "os": redact(os)[:80].strip(),
         "log": excerpt(log, LOG_KEPT) if log.strip() else "",
         "signature": signature(app, title, log),
+        "category": triage.category(kind, title, "\n".join((description, steps, expected, actual)), log),
     }
+
+
+TEXT_FIELDS = ("title", "description", "steps", "expected", "actual")
+
+
+def translation_of(r) -> dict:  # noqa: ANN001  (a BugReport)
+    try:
+        value = json.loads(r.translation or "{}")
+    except ValueError:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def texts_of(r) -> dict:  # noqa: ANN001
+    """The texts of a report in the language of the team when they were translated, else as they were written."""
+    translated = translation_of(r)
+    return {k: translated.get(k) or getattr(r, k) or "" for k in TEXT_FIELDS}
+
+
+def corpus_of(reports) -> triage.Corpus:  # noqa: ANN001
+    return triage.Corpus([" ".join(texts_of(r).values()) for r in reports])
+
+
+def error_text(line: str) -> str:
+    """A line of the log without its time, thread and level in brackets."""
+    return re.sub(r"^(\[[^\]]*\]\s*)+", "", line).strip()
+
+
+def digest(r, corpus: triage.Corpus) -> dict:  # noqa: ANN001
+    """What the team reads first of a report: its summary and its key words."""
+    texts = texts_of(r)
+    body = " ".join(texts[k] for k in ("description", "steps", "expected", "actual"))
+    # A translation of a title can miss the words of 3D printing: the title as written goes with it.
+    title = texts["title"] if texts["title"] == r.title else f"{texts['title']} ({r.title})"
+    return {
+        "summary": triage.summary(r.category or "other", title,
+                                  [texts["description"], texts["actual"], texts["steps"]], corpus,
+                                  error_text(first_error(r.log or "")), triage.printer_of(r.log or "")),
+        "keywords": triage.keywords(texts["title"] + " " + body, corpus),
+    }
+
+
+def matches(r, query: str) -> bool:  # noqa: ANN001
+    """Every word of the query is in the texts of the report, as written or translated (any case and accents)."""
+    wanted = triage.normalize(query).split()
+    if not wanted:
+        return True
+    text = triage.normalize(" ".join([*(getattr(r, k) or "" for k in TEXT_FIELDS), *translation_of(r).values(),
+                                      first_error(r.log or ""), r.app_version or "", r.os or "",
+                                      triage.printer_of(r.log or "")]))
+    return all(w in text for w in wanted)
 
 
 @dataclass
@@ -150,6 +206,16 @@ class Group:
     # Reports sent with an account (their authors can be rewarded) and the ones rewarded.
     with_account: int = 0
     rewarded: int = 0
+    # The kind of error most of its reports have, the languages they were written in, what the team reads first.
+    categories: Counter = field(default_factory=Counter)
+    languages: set[str] = field(default_factory=set)
+    summary: str = ""
+    keywords: list[str] = field(default_factory=list)
+    translated: list[dict] = field(default_factory=list)
+
+    @property
+    def category(self) -> str:
+        return self.categories.most_common(1)[0][0] if self.categories else "other"
 
     def as_dict(self) -> dict:
         return {
@@ -160,13 +226,20 @@ class Group:
             "last_seen": self.last_seen.isoformat(timespec="seconds") + "Z" if self.last_seen else None,
             "first_error": self.error, "examples": self.examples, "log_excerpt": self.log_excerpt,
             "report_ids": self.ids, "with_account": self.with_account, "rewarded": self.rewarded,
+            "category": self.category, "category_name": triage.CATEGORY_NAMES.get(self.category, self.category),
+            "languages": sorted(self.languages), "summary": self.summary, "keywords": self.keywords,
+            "translated_examples": self.translated,
         }
 
 
-def catalog(reports, max_examples: int = 3) -> list[Group]:  # noqa: ANN001  (BugReport rows)
-    """The reports grouped by signature, the most frequent (then the most recent) first."""
+def catalog(reports, max_examples: int = 3, corpus: triage.Corpus | None = None) -> list[Group]:  # noqa: ANN001
+    """The reports (BugReport rows) grouped by signature, the most frequent (then the most recent) first. The words are
+    weighed among these reports, or among those of corpus."""
+    reports = sorted(reports, key=lambda r: r.created_at)
+    corpus = corpus or corpus_of(reports)
     groups: dict[str, Group] = {}
-    for r in sorted(reports, key=lambda r: r.created_at):
+    best: dict[str, tuple[int, object]] = {}
+    for r in reports:
         g = groups.get(r.signature)
         if g is None:
             g = groups[r.signature] = Group(r.signature, r.app, r.title, first_seen=r.created_at)
@@ -185,9 +258,22 @@ def catalog(reports, max_examples: int = 3) -> list[Group]:  # noqa: ANN001  (Bu
             g.error = first_error(r.log)
         if r.log:
             g.log_excerpt = excerpt(r.log)
+        g.categories[r.category or "other"] += 1
+        if r.language:
+            g.languages.add(r.language)
         if len(g.examples) < max_examples:
             g.examples.append({k: v for k, v in (("description", r.description), ("steps", r.steps),
                                                   ("expected", r.expected), ("actual", r.actual)) if v})
+            translated = {k: v for k, v in translation_of(r).items() if v and k != "title"}
+            if translated:
+                g.translated.append(translated)
+        # The summary of the group is the one of its best explained report (the longest texts).
+        size = sum(len(v) for v in texts_of(r).values())
+        if r.signature not in best or size > best[r.signature][0]:
+            best[r.signature] = (size, r)
+    for sig, g in groups.items():
+        d = digest(best[sig][1], corpus)
+        g.summary, g.keywords = d["summary"], d["keywords"]
     return sorted(groups.values(), key=lambda g: (-g.count, -(g.last_seen.timestamp() if g.last_seen else 0)))
 
 
@@ -207,11 +293,20 @@ def to_markdown(groups: list[Group]) -> str:
                 f"- Kind: {', '.join(sorted(g.kinds))}; status: "
                 + ", ".join(f"{k} {v}" for k, v in sorted(g.statuses.items())),
                 f"- Versions: {', '.join(sorted(g.versions)) or '-'}; systems: {', '.join(sorted(g.systems)) or '-'}",
-                f"- Seen: {g.first_seen:%Y-%m-%d} to {g.last_seen:%Y-%m-%d}" if g.first_seen and g.last_seen else "- Seen: -"]
+                f"- Seen: {g.first_seen:%Y-%m-%d} to {g.last_seen:%Y-%m-%d}" if g.first_seen and g.last_seen else "- Seen: -",
+                f"- Kind of error: {triage.CATEGORY_NAMES.get(g.category, g.category)}; key words: "
+                f"{', '.join(g.keywords) or '-'}; languages: {', '.join(sorted(g.languages)) or '-'}",
+                f"- Summary: {g.summary}"]
         if g.error:
             out.append(f"- First error: `{g.error}`")
         for n, ex in enumerate(g.examples, 1):
             out += ["", f"### Report {n}"]
+            for key, label in (("description", "What happened"), ("steps", "Steps"), ("expected", "Expected"),
+                               ("actual", "Actual")):
+                if ex.get(key):
+                    out += [f"**{label}:**", "", ex[key].strip(), ""]
+        for n, ex in enumerate(g.translated, 1):
+            out += ["", f"### Report {n}, translated"]
             for key, label in (("description", "What happened"), ("steps", "Steps"), ("expected", "Expected"),
                                ("actual", "Actual")):
                 if ex.get(key):

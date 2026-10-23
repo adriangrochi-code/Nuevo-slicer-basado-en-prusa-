@@ -352,6 +352,14 @@ class BugReport(Base):
     signature: Mapped[str] = mapped_column(String(16), index=True)
     # new, confirmed, fixed, wontfix, duplicate (reports.STATUSES)
     status: Mapped[str] = mapped_column(String(10), default="new", index=True)
+    # Kind of error (triage.CATEGORIES): found from its words, or set by the team (category_by_hand).
+    category: Mapped[str] = mapped_column(String(20), default="other", index=True)
+    category_by_hand: Mapped[bool] = mapped_column(Boolean, default=False)
+    # The language it was written in and its texts in the language of the team (translate.py): JSON {field: text} of
+    # the fields that were in another language. translated_at is empty while it waits for the translator.
+    language: Mapped[str] = mapped_column(String(8), default="")
+    translation: Mapped[str] = mapped_column(Encrypted, default="")
+    translated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     # Of the programmers: what was found, the commit that fixed it.
     note: Mapped[str] = mapped_column(Text, default="")
     # The team found the report useful and rewarded its author with days of their plan (by hand, once per report).

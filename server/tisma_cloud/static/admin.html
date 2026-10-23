@@ -27,6 +27,11 @@
   button:disabled { opacity: .45; cursor: default; }
   input { font: inherit; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); width: 100%; }
   .muted { color: var(--muted); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+  .filters select, .filters input { width: auto; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); }
+  .filters input { min-width: 16em; }
+  .tag { display: inline-block; margin: 2px 4px 0 0; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); font-size: 12px; cursor: pointer; background: var(--panel); color: var(--text); }
+  .summary { margin: 2px 0; }
   .error { color: var(--bad); min-height: 1.4em; }
   #app-error:empty { display: none; }
   .alert { color: var(--bad); font-weight: 600; border: 1px solid var(--bad); border-radius: 8px; padding: 8px 12px; }
@@ -113,8 +118,20 @@
     <div class="table-wrap"><table id="payments"></table></div>
 
     <h2>Problemas informados</h2>
-    <p class="muted">Los informes de Tisma y de la app agrupados por problema, el más informado primero, sin datos personales.
-      El catálogo (los abiertos: nuevos y confirmados) es para el programador o la IA que programa.</p>
+    <p class="muted">Los informes de Tisma y de la app, sin datos personales, con su tipo de error, un resumen y sus palabras
+      clave (tocar una la busca). Los escritos en otro idioma se leen y se buscan traducidos (con el traductor del
+      servidor). El catálogo (con los mismos filtros) es para el programador o la IA que programa.</p>
+    <div class="filters">
+      <select id="r-view"><option value="groups">Agrupados por problema</option><option value="list">Todos los informes</option></select>
+      <select id="r-category"><option value="">Todos los tipos</option></select>
+      <select id="r-status"><option value="">Abiertos</option><option value="new">Nuevos</option><option value="confirmed">Confirmados</option>
+        <option value="fixed">Arreglados</option><option value="wontfix">No se arreglan</option><option value="duplicate">Repetidos</option>
+        <option value="new,confirmed,fixed,wontfix,duplicate">Todos</option></select>
+      <select id="r-app"><option value="">Todas las apps</option></select>
+      <select id="r-version"><option value="">Todas las versiones</option></select>
+      <input id="r-q" type="search" placeholder="Buscar palabras (en cualquier idioma)">
+      <span class="muted" id="r-count"></span>
+    </div>
     <p><button type="button" id="catalog-md">Descargar catálogo (Markdown)</button>
       <button type="button" id="catalog-jsonl">Descargar catálogo (JSON lines)</button></p>
     <div class="table-wrap"><table id="reports"></table></div>
@@ -361,30 +378,99 @@ async function rewardGroup(g) {
   } catch (e) { if (e.message !== "auth") alert(e.message); }
 }
 
+function reportFilters() {
+  const p = new URLSearchParams();
+  for (const [key, id] of [["category", "r-category"], ["status", "r-status"], ["app", "r-app"], ["version", "r-version"], ["q", "r-q"]]) {
+    const v = $(id).value.trim();
+    if (v) p.set(key, v);
+  }
+  return p;
+}
+
+// The options of a filter, keeping the one chosen.
+function fillSelect(id, first, values) {
+  const sel = $(id), chosen = sel.value;
+  sel.replaceChildren(el("option", { value: "" }, first), ...values.map(([v, label]) => el("option", { value: v }, label)));
+  sel.value = values.some(([v]) => v === chosen) ? chosen : "";
+}
+
+function keywordTags(words) {
+  return el("div", {}, words.map((w) => el("span", { class: "tag", title: "Buscar", onclick: () => { $("r-q").value = w; refreshReports(); } }, w)));
+}
+
 async function refreshReports() {
   try {
-    const groups = (await api("/v1/admin/reports")).groups;
-    $("reports").replaceChildren(el("tr", {}, ["Informes", "App", "Tipo", "Problema", "Versiones", "Último", ""].map((h) => el("th", {}, h))),
-      ...(groups.length ? groups.map((g) => el("tr", {},
-        el("td", {}, g.reports), el("td", {}, g.app), el("td", {}, g.kinds.map((k) => KINDS[k] || k).join(", ")),
-        el("td", {}, g.title, g.first_error ? el("div", { class: "muted" }, g.first_error) : null,
+    const params = reportFilters();
+    const page = await api(`/v1/admin/reports?${params}`);
+    allCategories = page.categories.map((c) => [c.key, c.name]);
+    fillSelect("r-category", "Todos los tipos", page.categories.filter((c) => c.reports).map((c) => [c.key, `${c.name} (${c.reports})`]));
+    fillSelect("r-app", "Todas las apps", page.apps.map((a) => [a, a]));
+    fillSelect("r-version", "Todas las versiones", page.versions.map((v) => [v, v]));
+    if ($("r-view").value === "list") return renderReportList(await api(`/v1/admin/reports/list?${params}&limit=100`));
+    $("r-count").textContent = `${page.reports} informes, ${page.groups.length} problemas`;
+    $("reports").replaceChildren(el("tr", {}, ["Informes", "Tipo de error", "Problema", "Versiones", "Último", ""].map((h) => el("th", {}, h))),
+      ...(page.groups.length ? page.groups.map((g) => el("tr", {},
+        el("td", {}, g.reports),
+        el("td", {}, g.category_name, el("div", { class: "muted" }, `${g.app} · ${g.kinds.map((k) => KINDS[k] || k).join(", ")}`)),
+        el("td", {}, el("div", { class: "summary" }, g.summary), keywordTags(g.keywords),
           el("div", { class: "muted" }, Object.entries(g.statuses).map(([k, v]) => `${REPORT_STATUS[k] || k}: ${v}`).join(" · "),
-            ` · con cuenta: ${g.with_account}` + (g.rewarded ? ` · premiados: ${g.rewarded}` : ""))),
+            ` · con cuenta: ${g.with_account}` + (g.rewarded ? ` · premiados: ${g.rewarded}` : "") +
+            (g.languages.length ? ` · idiomas: ${g.languages.join(", ")}` : ""))),
         el("td", { class: "muted" }, g.versions.join(", ") || "–"),
         el("td", { class: "muted" }, ago(g.last_seen)),
         el("td", {}, el("button", { type: "button", onclick: () => setGroup(g, "confirmed") }, "Confirmar"), " ",
           el("button", { type: "button", onclick: () => setGroup(g, "fixed") }, "Arreglado"), " ",
           el("button", { type: "button", onclick: () => setGroup(g, "wontfix") }, "No se arregla"),
           g.with_account > g.rewarded ? [" ", el("button", { type: "button", onclick: () => rewardGroup(g) }, "Premiar")] : null)))
-      : [el("tr", {}, el("td", { colspan: 7, class: "muted" }, "Ninguno abierto"))]));
+      : [el("tr", {}, el("td", { colspan: 6, class: "muted" }, "Ninguno"))]));
   } catch (e) {
     if (e.message !== "auth") $("app-error").textContent = `No se pudieron leer los problemas: ${e.message}`;
   }
 }
 
+// Every report, the newest first: its summary, its texts (translated when they were in another language) and its key
+// words; the kind of error can be changed by hand.
+function renderReportList(list) {
+  $("r-count").textContent = `${list.total} informes` + (list.total > list.reports.length ? ` (los ${list.reports.length} más nuevos)` : "");
+  const text = (r, key) => (r.translation && r.translation[key]) || r[key];
+  $("reports").replaceChildren(el("tr", {}, ["Fecha", "Tipo de error", "Informe", "Versión", "Estado"].map((h) => el("th", {}, h))),
+    ...(list.reports.length ? list.reports.map((r) => el("tr", {},
+      el("td", { class: "muted" }, ago(r.created_at)),
+      el("td", {}, el("select", { onchange: (e) => setCategory(r, e.target.value) },
+        ...allCategories.map(([k, n]) => { const o = el("option", { value: k }, n); o.selected = k === r.category; return o; })),
+        el("div", { class: "muted" }, `${r.app} · ${KINDS[r.kind] || r.kind}` + (r.language ? ` · ${r.language}` : ""))),
+      el("td", {}, el("div", { class: "summary" }, r.summary), keywordTags(r.keywords),
+        el("details", {}, el("summary", { class: "muted" }, "Ver el informe"),
+          ...["description", "steps", "expected", "actual"].filter((k) => text(r, k)).map((k) =>
+            el("p", {}, el("b", {}, { description: "Qué pasó", steps: "Pasos", expected: "Esperaba", actual: "Pasó" }[k] + ": "), text(r, k))),
+          r.translation && Object.keys(r.translation).length ? el("p", { class: "muted" }, `Traducido del ${r.language}. Original: ${r.title}`) : null,
+          r.log ? el("pre", { class: "muted", style: "white-space: pre-wrap; max-height: 20em; overflow: auto" }, r.log) : null)),
+      el("td", { class: "muted" }, r.app_version || "–", r.os ? el("div", {}, r.os) : null),
+      el("td", {}, REPORT_STATUS[r.status] || r.status, r.reward_days ? el("div", { class: "muted" }, `premiado: ${r.reward_days} días`) : null)))
+    : [el("tr", {}, el("td", { colspan: 5, class: "muted" }, "Ninguno"))]));
+}
+
+// The kinds of error of the server (key, name), from the last answer.
+let allCategories = [];
+
+async function setCategory(r, category) {
+  try {
+    await api(`/v1/admin/reports/${encodeURIComponent(r.id)}`, { method: "PATCH", body: JSON.stringify({ category }) });
+    refreshReports();
+  } catch (e) { if (e.message !== "auth") alert(e.message); }
+}
+
+for (const id of ["r-view", "r-category", "r-status", "r-app", "r-version"]) $(id).onchange = () => refreshReports();
+{
+  let typing = null;
+  $("r-q").oninput = () => { clearTimeout(typing); typing = setTimeout(refreshReports, 400); };
+}
+
 async function downloadCatalog(format) {
   try {
-    const r = await fetch(`/v1/admin/reports/catalog?format=${format}`, { headers: { "Authorization": `Bearer ${token}` } });
+    const params = reportFilters();
+    params.set("format", format);
+    const r = await fetch(`/v1/admin/reports/catalog?${params}`, { headers: { "Authorization": `Bearer ${token}` } });
     if (!r.ok) throw new Error(`Error ${r.status}`);
     const url = URL.createObjectURL(await r.blob());
     const a = el("a", { href: url, download: format === "md" ? "tisma-problemas.md" : "tisma-problemas.jsonl" });

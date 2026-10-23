@@ -42,6 +42,7 @@ Programs run as separate processes (not linked):
 | PostgreSQL 16 | PostgreSQL License | Database (Docker image `postgres:16`). |
 | Caddy 2.8 | Apache-2.0 | HTTPS proxy (Docker image `caddy:2.8`). |
 | ClamAV 1.5 (optional) | GPL-2.0 | Antivirus of the uploads (Docker image `clamav/clamav:1.5`, `--profile antivirus`); the master only talks to it over its TCP protocol (clamd INSTREAM), nothing is linked. Its signatures come from Cisco Talos under their own terms. |
+| LibreTranslate 1.9.6 (optional) | AGPL-3.0 | Translator of the problem reports (Docker image `libretranslate/libretranslate:v1.9.6`, `--profile translate`), unmodified; the master only calls its HTTP API (`POST /translate`), nothing is linked. Its models come from the Argos Translate index: several are derived from OPUS-MT (CC-BY 4.0, credited in the README of each model) and include Stanza models (Apache-2.0); they are downloaded by the container, not distributed with the server. |
 | Google Identity Services (`accounts.google.com/gsi/client`) | Google's terms | Loaded by the account page from Google only when `TISMA_GOOGLE_CLIENT_IDS` is set; not distributed with the server. |
 
 This is a technical summary, not legal advice.

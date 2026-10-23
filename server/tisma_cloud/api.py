@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import bindparam, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import __version__, alerts, billing, codes, crypto, google_play, remote, reports, scheduler
+from . import __version__, alerts, billing, codes, crypto, google_play, remote, reports, scheduler, triage
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, exists_message, mailer_for, reward_message
 from .db import Database
@@ -40,6 +40,7 @@ from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, Busy, hash_password, hash_token, needs_rehash, new_token, verify_password
 from .settings import Settings
 from .storage import ALLOWED_RESULTS, Storage, TooLarge, safe_filename
+from .translate import TranslationError, Translator
 from .threats import PARALLEL_BYTES, Clamd, ScanUnavailable, Threat, ThreatLog, check_gcode, check_project
 from .wakeup import Wakeup
 
@@ -121,6 +122,8 @@ class Services:
         # A slower window for the e-mails sent to one address (at most a few per hour).
         self.hourly = RateLimiter(3600.)
         self.mailer = mailer_for(settings)
+        # The translator of the problem reports, on our own servers (none: they are kept as written).
+        self.translator = Translator(settings.translate_url, settings.translate_to) if settings.translate_url else None
         self.google = GoogleVerifier([c.strip() for c in settings.google_client_ids.split(",") if c.strip()])
         self.play = google_play.store_for(settings.play_package, settings.play_credentials, settings.play_products)
         self.play_push = (google_play.PushVerifier(settings.play_push_audience, settings.play_push_account)
@@ -175,6 +178,48 @@ class Services:
         if self._alerts_checked is None or time.monotonic() - self._alerts_checked >= 60:
             self._alerts_checked = time.monotonic()
             self.check_alerts()
+
+    def translate_reports(self, limit: int = 5) -> int:
+        """Translates the texts of the reports that wait for it (translate.py) and guesses their kind of error again on
+        the translated words. Returns how many were done; stops at the first failure of the translator (it is tried
+        again later)."""
+        translator = self.translator
+        if translator is None:
+            return 0
+        with self.db.session() as s:
+            pending = s.execute(select(BugReport).where(BugReport.translated_at.is_(None))
+                                .order_by(BugReport.created_at).limit(limit)).scalars().all()
+            work = [(r.id, {k: getattr(r, k) for k in reports.TEXT_FIELDS}) for r in pending]
+        done = 0
+        for report_id, fields in work:
+            translated, languages = {}, {}
+            try:
+                for key, text in fields.items():
+                    if text.strip():
+                        out, language = translator.translate(text)
+                        languages[key] = language
+                        if language and language != translator.target and out.strip() != text.strip():
+                            translated[key] = out
+            except TranslationError as ex:
+                log.warning("The translator does not answer: %s", ex)
+                break
+            # The language of the longest text.
+            longest = max((k for k in languages), key=lambda k: len(fields[k]), default=None)
+            with self.db.session() as s:
+                r = s.get(BugReport, report_id)
+                if r is None:
+                    continue
+                r.language = languages.get(longest, "") if longest else ""
+                r.translation = json.dumps(translated, ensure_ascii=False) if translated else ""
+                r.translated_at = utcnow()
+                if translated and not r.category_by_hand:
+                    # On the words as written and translated: a translator can miss the words of 3D printing.
+                    texts = reports.texts_of(r)
+                    body = ("description", "steps", "expected", "actual")
+                    r.category = triage.category(r.kind, f"{r.title} {texts['title']}", "\n".join(
+                        [*(getattr(r, k) for k in body), *(texts[k] for k in body)]), r.log)
+            done += 1
+        return done
 
     def forget_old_data(self, now: datetime | None = None) -> None:
         """Keeps only what the service needs (privacy): the jobs ended long ago (their files went before; the hours used
@@ -431,6 +476,8 @@ class ReportBody(BaseModel):
 class ReportUpdateBody(BaseModel):
     status: str | None = Field(default=None, pattern="^(" + "|".join(reports.STATUSES) + ")$")
     note: str | None = Field(default=None, max_length=2000)
+    # The kind of error chosen by the team (triage.CATEGORIES); it is not guessed again.
+    category: str | None = Field(default=None, pattern="^(" + "|".join(k for k, _n, _s in triage.CATEGORIES) + ")$")
 
 
 class RewardBody(BaseModel):
@@ -440,11 +487,14 @@ class RewardBody(BaseModel):
 
 def report_view(r: BugReport, texts: bool = False) -> dict[str, Any]:
     out = {"id": r.id, "app": r.app, "kind": r.kind, "title": r.title, "status": r.status, "signature": r.signature,
+           "category": r.category, "category_name": triage.CATEGORY_NAMES.get(r.category, r.category),
+           "language": r.language,
            "app_version": r.app_version, "os": r.os, "created_at": r.created_at.isoformat() + "Z",
            "updated_at": r.updated_at.isoformat() + "Z",
            "rewarded_at": r.rewarded_at.isoformat() + "Z" if r.rewarded_at else None, "reward_days": r.reward_days}
     if texts:
-        out.update(description=r.description, steps=r.steps, expected=r.expected, actual=r.actual, log=r.log)
+        out.update(description=r.description, steps=r.steps, expected=r.expected, actual=r.actual, log=r.log,
+                   translation=reports.translation_of(r))
     return out
 
 
@@ -583,7 +633,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 except Exception:  # noqa: BLE001 (keep flushing)
                     log.exception("Writing the bridges failed")
 
+        async def translator() -> None:
+            while not stopping.is_set():
+                try:
+                    done = await run_in_threadpool(services.translate_reports)
+                except Exception:  # noqa: BLE001 (keep translating)
+                    log.exception("Translating the problem reports failed")
+                    done = 0
+                # Right away while there are reports waiting, else every half a minute.
+                await pause(0.1 if done else 30)
+
         tasks = [asyncio.create_task(sweeper()), asyncio.create_task(flusher())]
+        if services.translator is not None:
+            tasks.append(asyncio.create_task(translator()))
         try:
             yield
         finally:
@@ -1948,7 +2010,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
             return {"active": [view(r) for r in active], "ended": [view(r) for r in ended]}
 
-    def report_rows(s, status: str, app_name: str):  # noqa: ANN001, ANN202
+    def report_rows(s, status: str, app_name: str, category: str = "", kind: str = "", version: str = "",  # noqa: ANN001, ANN202
+                    q: str = ""):
+        """The reports of the filters (the open ones by default: status=new,confirmed), the newest first; q: words
+        that must all be in their texts, as written or translated."""
         query = select(BugReport)
         statuses = [x for x in status.split(",") if x] if status else ["new", "confirmed"]
         if any(x not in reports.STATUSES for x in statuses):
@@ -1956,23 +2021,56 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         query = query.where(BugReport.status.in_(statuses))
         if app_name:
             query = query.where(BugReport.app == app_name)
-        return s.execute(query.order_by(BugReport.created_at.desc()).limit(5000)).scalars().all()
+        if category:
+            query = query.where(BugReport.category == category)
+        if kind:
+            query = query.where(BugReport.kind == kind)
+        if version:
+            query = query.where(BugReport.app_version == version)
+        rows = s.execute(query.order_by(BugReport.created_at.desc()).limit(5000)).scalars().all()
+        # The texts are encrypted: the words are looked for here.
+        return [r for r in rows if reports.matches(r, q)] if q.strip() else rows
+
+    def report_corpus(s) -> triage.Corpus:  # noqa: ANN001
+        """The words of all the reports kept, to weigh those of each one."""
+        return reports.corpus_of(s.execute(select(BugReport)).scalars().all())
 
     @app.get("/v1/admin/reports")
-    def admin_reports(_admin: AdminDep, status: str = "", app: str = "") -> dict:
-        """The problem reports grouped (the open ones by default: status=new,confirmed), the most frequent first."""
+    def admin_reports(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
+                      version: str = "", q: str = "") -> dict:
+        """The problem reports of the filters grouped, the most frequent first, with their kind of error, key words and
+        summary; and the kinds of error, versions and apps of the reports, for the filters."""
         with db.session() as s:
-            groups = reports.catalog(report_rows(s, status, app))
-        return {"groups": [g.as_dict() for g in groups]}
+            rows = report_rows(s, status, app, category, kind, version, q)
+            groups = reports.catalog(rows, corpus=report_corpus(s))
+            facets = s.execute(select(BugReport.category, BugReport.app_version, BugReport.app)).all()
+        return {"groups": [g.as_dict() for g in groups], "reports": len(rows),
+                "categories": [{"key": k, "name": n, "reports": sum(1 for c, _v, _a in facets if c == k)}
+                               for k, n, _s in triage.CATEGORIES],
+                "versions": sorted({v for _c, v, _a in facets if v}), "apps": sorted({a for _c, _v, a in facets})}
+
+    @app.get("/v1/admin/reports/list")
+    def admin_reports_list(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
+                           version: str = "", q: str = "", limit: int = 50, offset: int = 0) -> dict:
+        """Every report of the filters (not grouped), the newest first, with its summary, key words and texts
+        (translated when they were in another language)."""
+        limit, offset = max(1, min(limit, 200)), max(0, offset)
+        with db.session() as s:
+            rows = report_rows(s, status, app, category, kind, version, q)
+            corpus = report_corpus(s)
+            page = [{**report_view(r, texts=True), **reports.digest(r, corpus), "note": r.note}
+                    for r in rows[offset:offset + limit]]
+        return {"total": len(rows), "reports": page}
 
     @app.get("/v1/admin/reports/catalog")
-    def admin_reports_catalog(_admin: AdminDep, status: str = "", app: str = "", format: str = "md") -> Response:
+    def admin_reports_catalog(_admin: AdminDep, status: str = "", app: str = "", category: str = "", kind: str = "",
+                              version: str = "", q: str = "", format: str = "md") -> Response:
         """The catalog of the problems for the programmers (and the AI that programs with them): Markdown, or JSON lines
         (format=jsonl), one group per line."""
         if format not in ("md", "jsonl"):
             raise HTTPException(422, "format is md or jsonl")
         with db.session() as s:
-            groups = reports.catalog(report_rows(s, status, app))
+            groups = reports.catalog(report_rows(s, status, app, category, kind, version, q), corpus=report_corpus(s))
         if format == "jsonl":
             return PlainTextResponse(reports.to_jsonl(groups), media_type="application/x-ndjson",
                                      headers={"Content-Disposition": 'attachment; filename="tisma-problems.jsonl"'})
@@ -1998,6 +2096,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 r.status = body.status
             if body.note is not None:
                 r.note = body.note
+            if body.category is not None:
+                r.category, r.category_by_hand = body.category, True
             r.updated_at = utcnow()
             return {**report_view(r), "note": r.note}
 
@@ -2059,6 +2159,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             values["status"] = body.status
         if body.note is not None:
             values["note"] = body.note
+        if body.category is not None:
+            values["category"], values["category_by_hand"] = body.category, True
         with db.session() as s:
             count = s.execute(update(BugReport).where(BugReport.signature == signature).values(**values)).rowcount
         if not count:

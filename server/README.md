@@ -558,8 +558,23 @@ de Tisma. Con cuenta o sin ella (sin cuenta, 5 por hora por dirección, `TISMA_A
 - **Agrupados por problema**: los informes con la misma primera línea de error del registro (sin números, rutas ni
   horas), o sin registro con las mismas palabras en el título, son el mismo problema (`signature`). Quien informa ve
   cuántos informaron lo mismo.
+- **Tipo de error, palabras clave y resumen** (`triage.py`, en el maestro, sin servicios de afuera): cada informe se
+  clasifica por las palabras que usa, en español, inglés o portugués (cierre o cuelgue, laminado, soportes, impresora y
+  conexión, cámara, calibración, resina, ingeniería, cuenta y nube, vista 3D, interfaz, perfiles y ajustes,
+  rendimiento, otro; el equipo lo puede cambiar a mano y queda). Sus palabras clave son las que más lo distinguen de
+  los demás informes (TF-IDF), y su resumen junta el tipo, el título, las frases que más dicen, el primer error del
+  registro y la impresora: sirve cuando el informe está mal explicado.
+- **Traducción automática** (opcional, `translate.py`): con `TISMA_TRANSLATE_URL` los informes en otro idioma se
+  traducen al del equipo (`TISMA_TRANSLATE_TO`, `es`) con [LibreTranslate](https://docs.libretranslate.com) corriendo
+  en el mismo servidor (`docker compose --profile translate up -d`, servicio `libretranslate`; unos 700 MB de modelos
+  y 0,4 a 0,8 s por frase en el procesador): nada sale del servidor. Se guardan el original y la traducción (cifrados),
+  y se busca en los dos. Un traductor general no conoce las palabras de la impresión 3D («slicing» puede salir «cortar»):
+  el título original va siempre al lado del traducido.
 - **Catálogo**: el panel (sección «Problemas informados») muestra los problemas abiertos, el más informado primero, y
-  descarga el catálogo en Markdown (una sección por problema: los pasos, lo esperado, lo que pasó y el registro) o en
+  se filtra por tipo de error, estado, app y versión, o se busca por palabras (en cualquier idioma, sin importar
+  mayúsculas ni tildes; tocar una palabra clave la busca); se ve agrupado por problema o la lista de todos los informes
+  con su texto original y traducido. Descarga el catálogo con los mismos filtros en Markdown (una sección por problema:
+  el tipo, el resumen, las palabras clave, los pasos, lo esperado, lo que pasó, su traducción y el registro) o en
   JSON lines (un problema por línea), para dárselo al programador o a la IA que programa. Cada problema se marca
   confirmado, arreglado o que no se arregla (todos sus informes juntos), y sale del catálogo al arreglarlo. Por comandos:
 
@@ -588,7 +603,7 @@ python -m tisma_cloud.admin reports --format jsonl --app android
 | usuario | `GET /v1/me/export` | una copia (JSON) de todo lo que el servicio guarda de la cuenta |
 | todos | `POST /v1/reports` `{app, kind, title, description, steps, expected, actual, app_version, os, log}` | informar un problema (con o sin token); responde su `signature` y cuántos `similar` hay |
 | usuario | `GET /v1/me/reports` | los problemas informados con la cuenta y su estado |
-| administrador | `GET /v1/admin/reports`, `GET /v1/admin/reports/catalog?format=md\|jsonl`, `GET\|PATCH /v1/admin/reports/{id}`, `PATCH /v1/admin/report-groups/{signature}` `{status, note}` | problemas agrupados, catálogo, estado |
+| administrador | `GET /v1/admin/reports`, `GET /v1/admin/reports/list`, `GET /v1/admin/reports/catalog?format=md\|jsonl` (filtros `status`, `category`, `app`, `kind`, `version`, `q`), `GET\|PATCH /v1/admin/reports/{id}`, `PATCH /v1/admin/report-groups/{signature}` `{status, note, category}` | problemas agrupados o todos, catálogo, estado, tipo de error |
 | administrador | `POST /v1/admin/reports/{id}/reward`, `POST /v1/admin/report-groups/{signature}/reward` `{days}` | premiar un informe útil con días del plan |
 | usuario | `POST /v1/me/delete/code`, `POST /v1/me/delete` `{password}` o `{code}` | borrar la cuenta y sus datos |
 | usuario | `GET /v1/billing/play/account`, `POST /v1/billing/play/purchase` `{purchase_token}` | suscripción de Google Play (app) |

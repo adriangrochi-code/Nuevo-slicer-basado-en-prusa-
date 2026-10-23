@@ -120,6 +120,10 @@ class Settings:
     report_days: int = field(default_factory=lambda: _int("TISMA_REPORT_DAYS", 365))
     # The reward of a useful report (given by an administrator): days of the plan of its author; at most this many
     # rewards per account in a year.
+    # LibreTranslate on our own servers (the libretranslate service of compose.master.yaml, e.g.
+    # http://libretranslate:5000) to read and search the reports in the language of the team; empty: not translated.
+    translate_url: str = field(default_factory=lambda: os.environ.get("TISMA_TRANSLATE_URL", ""))
+    translate_to: str = field(default_factory=lambda: os.environ.get("TISMA_TRANSLATE_TO", "es"))
     report_reward_days: int = field(default_factory=lambda: _int("TISMA_REPORT_REWARD_DAYS", 7))
     report_rewards_per_year: int = field(default_factory=lambda: _int("TISMA_REPORT_REWARDS_PER_YEAR", 4))
 

@@ -213,3 +213,142 @@ def test_rewards_are_limited_per_year(client, f, settings):
     codes = [client.post(f"/v1/admin/reports/{i}/reward", json={}, headers=admin).status_code for i in ids]
     assert codes == [200, 200, 409]
     assert client.post(f"/v1/admin/reports/{ids[2]}/reward", json={"days": 500}, headers=admin).status_code == 422
+
+
+def test_kind_of_error_key_words_and_summary():
+    from tisma_cloud import triage
+
+    assert triage.category("bug", "Faltan los soportes bajo el voladizo",
+                           "Laminé una pieza con voladizo y no aparecen soportes") == "supports"
+    assert triage.category("bug", "The camera does not open", "It stays black") == "camera"
+    assert triage.category("bug", "A impressora não conecta pelo wifi", "") == "printer"
+    assert triage.category("crash", "Se cierra", "") == "crash"
+    assert triage.category("bug", "Planchado deja marcas", "") == "slicing"   # "plan" is not "planchado"
+    assert triage.category("bug", "Algo raro", "") == "other"
+    corpus = triage.Corpus(["soportes voladizo pieza", "camera black", "cierra laminar", "camera wifi"])
+    assert triage.keywords("Faltan los soportes bajo el voladizo y no aparecen soportes", corpus)[:2] == \
+        ["soportes", "voladizo"]
+    text = triage.summary("supports", "Faltan los soportes", ["Laminé una pieza con voladizo de 60 grados y no hay "
+                          "soportes. Gracias. Uso la última versión."], corpus, "std::out_of_range at layer 12",
+                          triage.printer_of("Tisma\nPrinter: Kobra 3 0.4 nozzle (Anycubic Kobra 3), print: x\n"))
+    assert text.startswith("Soportes: Faltan los soportes. Laminé una pieza con voladizo de 60 grados")
+    assert "Uso la última" not in text and "Error: std::out_of_range" in text and "Impresora: Anycubic Kobra 3." in text
+
+
+def test_filters_list_and_category_by_hand(client, f):
+    admin = f.user("admin@x.com", admin=True)
+    client.post("/v1/reports", json=report(kind="bug", title="Faltan los soportes bajo el voladizo",
+                                           description="No aparecen los soportes de árbol", log=""))
+    client.post("/v1/reports", json=report(app="android", kind="bug", title="The camera does not open",
+                                           description="It stays black", log="", app_version="1.4.0"))
+    client.post("/v1/reports", json=report())   # a crash while slicing
+    page = client.get("/v1/admin/reports", headers=admin).json()
+    assert page["reports"] == 3 and page["apps"] == ["android", "pc"] and "1.4.0" in page["versions"]
+    assert {c["key"]: c["reports"] for c in page["categories"]}["supports"] == 1
+    by_kind = {g["category"]: g for g in page["groups"]}
+    assert set(by_kind) == {"supports", "camera", "crash"}
+    assert by_kind["crash"]["summary"].startswith("Cierre o cuelgue: Crash when slicing.")
+    assert "std::out_of_range" in by_kind["crash"]["summary"]
+
+    def titles(**params):
+        return [r["title"] for r in client.get("/v1/admin/reports/list", params=params, headers=admin).json()["reports"]]
+
+    assert titles(category="camera") == ["The camera does not open"]
+    assert titles(app="android") == ["The camera does not open"]
+    assert titles(version="1.4.0") == ["The camera does not open"]
+    assert titles(q="ARBOL soportes") == ["Faltan los soportes bajo el voladizo"]    # any case and accents
+    assert titles(q="out_of_range") == ["Crash when slicing"]                      # the error of the log
+    assert titles(q="nothing like this") == []
+    one = client.get("/v1/admin/reports/list", params={"category": "camera"}, headers=admin).json()["reports"][0]
+    assert one["keywords"] and one["summary"].startswith("Cámara: The camera does not open.")
+
+    # The team chooses another kind: it stays.
+    r = client.patch(f"/v1/admin/reports/{one['id']}", json={"category": "interface"}, headers=admin)
+    assert r.json()["category"] == "interface"
+    assert titles(category="interface") == ["The camera does not open"]
+    assert client.patch(f"/v1/admin/reports/{one['id']}", json={"category": "nope"}, headers=admin).status_code == 422
+
+
+def test_reports_are_translated_on_our_servers(client, f):
+    """With a translator (a LibreTranslate that answers as the real one): the texts in another language are kept
+    translated, searched and classified on the translation."""
+    from tisma_cloud import translate
+
+    services = client.app.state.services
+    admin = f.user("admin@x.com", admin=True)
+    words = {"A impressora não conecta": "La impresora no conecta", "depois da atualização": "después de la actualización",
+             "Faltam os suportes": "Faltan los soportes"}
+
+    class FakeTranslator(translate.Translator):
+        def translate(self, text):
+            if text in words:
+                return words[text], "pt"
+            if text == "down":
+                raise translate.TranslationError("connection refused")
+            return text, "es"
+
+    client.post("/v1/reports", json=report(kind="bug", title="A impressora não conecta", description="depois da atualização", log=""))
+    client.post("/v1/reports", json=report(kind="bug", title="Faltam os suportes", description="", log=""))
+    client.post("/v1/reports", json=report(kind="bug", title="Se cierra al abrir", description="Ya está en castellano", log=""))
+    assert services.translate_reports() == 0          # no translator: kept as written
+    services.translator = FakeTranslator("http://translator", "es")
+    assert services.translate_reports() == 3
+    assert services.translate_reports() == 0          # nothing left
+    rows = {r["title"]: r for r in client.get("/v1/admin/reports/list", headers=admin).json()["reports"]}
+    printer = rows["A impressora não conecta"]
+    assert printer["language"] == "pt" and printer["translation"] == {
+        "title": "La impresora no conecta", "description": "después de la actualización"}
+    # The title as written goes with its translation.
+    assert printer["summary"].startswith("Impresora y conexión: La impresora no conecta (A impressora não conecta).")
+    assert rows["Faltam os suportes"]["category"] == "supports"
+    assert rows["Se cierra al abrir"]["language"] == "es" and rows["Se cierra al abrir"]["translation"] == {}
+    # Searched in the language of the team too.
+    found = client.get("/v1/admin/reports/list", params={"q": "actualizacion"}, headers=admin).json()["reports"]
+    assert [r["title"] for r in found] == ["A impressora não conecta"]
+    md = client.get("/v1/admin/reports/catalog", headers=admin).text
+    assert "Report 1, translated" in md and "después de la actualización" in md
+
+    # The translator down: the report waits for it.
+    client.post("/v1/reports", json=report(kind="bug", title="down", description="", log=""))
+    assert services.translate_reports() == 0
+    with services.db.session() as s:
+        assert s.query(BugReport).filter(BugReport.translated_at.is_(None)).count() == 1
+
+
+def test_translator_speaks_libretranslate():
+    """The request and the answer of LibreTranslate (docs.libretranslate.com, API usage), with a local server."""
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from tisma_cloud.translate import TranslationError, Translator
+
+    seen = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):  # noqa: N802
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen.append((self.path, body))
+            answer = json.dumps({"detectedLanguage": {"confidence": 100.0, "language": "en"},
+                                 "translatedText": "Faltan los soportes"}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(answer)))
+            self.end_headers()
+            self.wfile.write(answer)
+
+        def log_message(self, *args):  # noqa: ANN002
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        out = Translator(f"http://127.0.0.1:{server.server_port}/", "es").translate("Supports are missing")
+        assert out == ("Faltan los soportes", "en")
+        assert seen == [("/translate", {"q": "Supports are missing", "source": "auto", "target": "es", "format": "text"})]
+    finally:
+        server.shutdown()
+    try:
+        Translator(f"http://127.0.0.1:{server.server_port}", "es", timeout=2).translate("x")
+        raise AssertionError("no error")
+    except TranslationError:
+        pass
