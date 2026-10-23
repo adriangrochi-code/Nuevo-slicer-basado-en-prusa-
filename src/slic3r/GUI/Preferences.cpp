@@ -17,6 +17,9 @@
 #include "libslic3r/AppConfig.hpp"
 #include <wx/notebook.h>
 #include "Notebook.hpp"
+#include <wx/treectrl.h>
+#include <wx/simplebook.h>
+#include "TismaWidgets.hpp"
 #include "ButtonsDescription.hpp"
 #include "OG_CustomCtrl.hpp"
 #include "GLCanvas3D.hpp"
@@ -132,8 +135,10 @@ void PreferencesDialog::show(const std::string& highlight_opt_key /*= std::strin
 	for ( ; selected_tab < int(tabs->GetPageCount()); selected_tab++)
 		if (tabs->GetPageText(selected_tab) == _(tab_name))
 			break;
-	if (selected_tab < int(tabs->GetPageCount()))
+	if (selected_tab < int(tabs->GetPageCount())) {
 		tabs->SetSelection(selected_tab);
+		m_sections->SetSelectionIndex(selected_tab);
+	}
 
 	if (!highlight_opt_key.empty())
 		init_highlighter(highlight_opt_key);
@@ -287,17 +292,8 @@ void PreferencesDialog::build()
 
 	auto app_config = get_app_config();
 
-#ifdef _MSW_DARK_MODE
-	tabs = new Notebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME | wxNB_DEFAULT);
-#else
-    tabs = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL  |wxNB_NOPAGETHEME | wxNB_DEFAULT );
-#ifdef __linux__
-	tabs->Bind(wxEVT_NOTEBOOK_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
-		e.Skip();
-		CallAfter([this]() { tabs->GetCurrentPage()->Layout(); });
-    });
-#endif
-#endif
+	// Tisma: a book without tabs; its sections are chosen in the list at the left (m_sections).
+	tabs = new wxSimplebook(this, wxID_ANY);
 
 	// Add "General" tab
 	m_optgroup_general = create_options_tab(L("General"), tabs);
@@ -767,8 +763,36 @@ void PreferencesDialog::build()
 	// update alignment of the controls for all tabs
 	update_ctrls_alignment();
 
+	// The sections, with the icons of the pages of Tisma.
+	m_sections = new TismaPageList(this, wxSize(16 * em_unit(), -1));
+	{
+		static const std::map<std::string, std::string> icons = {
+			{ "General", "cog" }, { "Camera", "tisma_view" }, { "GUI", "tisma_more" }, { "Other", "tisma_folder" },
+			{ "Render", "tisma_view_top" }, { "Dark mode", "eye_open" } };
+		wxVector<wxBitmapBundle> images;
+		for (size_t i = 0; i < tabs->GetPageCount(); ++i) {
+			std::string icon = "cog";
+			for (const auto& [name, file] : icons)
+				if (tabs->GetPageText(i) == _(name))
+					icon = file;
+			images.push_back(*get_bmp_bundle(icon));
+			m_sections->AppendItem(m_sections->GetRootItem(), tabs->GetPageText(i), int(i));
+		}
+		m_sections->SetImages(images);
+		m_sections->SetSelectionIndex(0);
+	}
+	m_sections->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent&) {
+		if (const int idx = m_sections->GetSelectionIndex(); idx >= 0 && idx < int(tabs->GetPageCount())) {
+			tabs->SetSelection(idx);
+			CallAfter([this]() { tabs->GetCurrentPage()->Layout(); });
+		}
+	});
+	auto body = new wxBoxSizer(wxHORIZONTAL);
+	body->Add(m_sections, 0, wxEXPAND | wxRIGHT, em_unit());
+	body->Add(tabs, 1, wxEXPAND);
+
 	auto sizer = new wxBoxSizer(wxVERTICAL);
-	sizer->Add(tabs, 1, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, 5);
+	sizer->Add(body, 1, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, 5);
 
 	auto buttons = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
 	wxGetApp().SetWindowVariantForButton(buttons->GetAffirmativeButton());

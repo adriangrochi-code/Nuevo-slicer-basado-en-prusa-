@@ -124,7 +124,8 @@ wxPoint OG_CustomCtrl::get_pos(const Line& line, Field* field_in/* = nullptr*/)
     auto correct_horiz_pos = [this](int& h_pos, Field* field) {
         if (m_max_win_width > 0 && field->getWindow()) {
             int win_width = field->getWindow()->GetSize().GetWidth();
-            if (dynamic_cast<CheckBox*>(field))
+            // The half of a check box (its window has room for a label); a switch is as wide as it is drawn.
+            if (dynamic_cast<CheckBox*>(field) && wxGetApp().suppress_round_corners())
                 win_width *= 0.5;
             h_pos += m_max_win_width - win_width;
         }

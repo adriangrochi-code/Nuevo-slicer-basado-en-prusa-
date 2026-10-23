@@ -50,6 +50,8 @@ namespace Slic3r {
 
 namespace GUI {
 
+class TismaPageList;
+
 class ConfigOptionsGroup;
 class OG_CustomCtrl;
 
@@ -86,6 +88,8 @@ class PreferencesDialog : public DPIDialog
 	DownloaderUtils::Worker*			downloader { nullptr };
 
 	wxBookCtrlBase*						tabs {nullptr};
+	// Tisma: the sections at the left, as the pages of the settings (the book has no tabs).
+	TismaPageList*						m_sections {nullptr};
 
     bool                                isOSX {false};
 	bool								m_settings_layout_changed {false};
