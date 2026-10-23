@@ -3,6 +3,9 @@ package uy.com.tisma.app.core
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -85,13 +88,73 @@ class PreviewMeshTest {
     }
 
     @Test
-    fun objPolygonsAndLargeModelsSampled() {
+    fun objPolygonsAndModelsUnderTheLimitWhole() {
         val obj = "v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nf 1/1 2/2 3/3 4/4\n"
         assertEquals(2, PreviewMesh.readObj(obj).triangleCount)
-        val big = buildString { for (i in 0 until 50_000) append("vertex 0 0 $i\nvertex 1 0 $i\nvertex 0 1 $i\n") }
+        // Every triangle is kept (sampling some of them showed large models as dots).
+        val big = buildString { for (i in 0 until 50_000) append("  vertex 0 0 $i\n\tvertex 1 0 $i\nvertex 0 1 $i\n") }
         val m = PreviewMesh.readStl(big.toByteArray())
-        assertTrue(m.triangleCount <= PreviewMesh.MAX_TRIANGLES)
-        assertTrue(m.triangleCount > PreviewMesh.MAX_TRIANGLES / 2)
+        assertEquals(50_000, m.triangleCount)
+        assertEquals(49_999f, m.max[2])
+    }
+
+    // A sphere of radius 50 with 2 · rings · (rings - 1) triangles or so.
+    private fun sphere(rings: Int): FloatArray {
+        val out = ArrayList<Float>()
+        fun point(i: Int, j: Int): List<Float> {
+            val theta = Math.PI * i / rings
+            val phi = 2 * Math.PI * j / rings
+            return listOf((50 * sin(theta) * cos(phi)).toFloat(), (50 * sin(theta) * sin(phi)).toFloat(), (50 * cos(theta)).toFloat())
+        }
+        for (i in 0 until rings) for (j in 0 until rings) {
+            val a = point(i, j); val b = point(i + 1, j); val c = point(i + 1, j + 1); val d = point(i, j + 1)
+            if (i > 0) out += a + b + d
+            if (i < rings - 1) out += d + b + c
+        }
+        return out.toFloatArray()
+    }
+
+    private fun area(v: FloatArray): Double = (0 until v.size / 9).sumOf { t ->
+        val b = t * 9
+        val ax = v[b + 3] - v[b]; val ay = v[b + 4] - v[b + 1]; val az = v[b + 5] - v[b + 2]
+        val bx = v[b + 6] - v[b]; val by = v[b + 7] - v[b + 1]; val bz = v[b + 8] - v[b + 2]
+        0.5 * sqrt(((ay * bz - az * by) * (ay * bz - az * by) + (az * bx - ax * bz) * (az * bx - ax * bz) +
+            (ax * by - ay * bx) * (ax * by - ay * bx)).toDouble())
+    }
+
+    @Test
+    fun largeModelsAreSimplifiedAndStaySolid() {
+        val full = sphere(300)
+        assertTrue(full.size / 9 > 150_000)
+        val simple = cluster(ArraySource(full), 20_000)
+        val count = simple.size / 9
+        assertTrue("$count triangles", count in 10_000..20_000)
+        // The same closed surface: its area stays (sampling one triangle in k would keep 1 / k of it), every corner
+        // stays on the sphere and no triangle is a line.
+        assertEquals(area(full), area(simple), area(full) * 0.02)
+        for (i in 0 until simple.size / 3) {
+            val r = sqrt(simple[i * 3] * simple[i * 3] + simple[i * 3 + 1] * simple[i * 3 + 1] + simple[i * 3 + 2] * simple[i * 3 + 2])
+            assertEquals(50f, r, 1f)
+        }
+        val m = PreviewMesh(simple)
+        for (t in 0 until m.triangleCount) assertTrue(m.normals[t * 3] * m.normals[t * 3] + m.normals[t * 3 + 2] * m.normals[t * 3 + 2] + m.normals[t * 3 + 1] * m.normals[t * 3 + 1] > 0.99f)
+    }
+
+    @Test
+    fun neighborsAcrossSharedEdges() {
+        // Two triangles of a square share the edge from (1, 0) to (0, 1); the other edges have none.
+        val v = floatArrayOf(0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f, 0f, 1f, 0f, 0f, 1f, 1f, 0f, 0f, 1f, 0f)
+        assertEquals(listOf(-1, 1, -1, -1, -1, 0), neighbors(v).toList())
+        assertEquals(listOf(0, 1, 2, 1, 4, 2), weld(v).toList())
+    }
+
+    @Test
+    fun longIntMapGrows() {
+        val map = LongIntMap(4)
+        for (i in 0 until 100_000) map.put(i * 7_919L shl 21, i)
+        assertEquals(100_000, map.size)
+        for (i in 0 until 100_000) assertEquals(i, map.get(i * 7_919L shl 21))
+        assertEquals(-1, map.get(3L))
     }
 }
 
