@@ -93,6 +93,10 @@ class Settings:
     login_per_minute: int = field(default_factory=lambda: _int("TISMA_LOGIN_PER_MINUTE", 10))
     # Requests per minute of a computing node (claims, progress, heartbeats).
     node_requests_per_minute: int = field(default_factory=lambda: _int("TISMA_NODE_REQUESTS_PER_MINUTE", 600))
+    # Remote printers: requests per minute of an account for its bridges and the phone (states, commands, camera
+    # images), apart from the requests of its plan; minutes a command waits for its bridge before it fails.
+    remote_requests_per_minute: int = field(default_factory=lambda: _int("TISMA_REMOTE_REQUESTS_PER_MINUTE", 600))
+    remote_command_minutes: int = field(default_factory=lambda: _int("TISMA_REMOTE_COMMAND_MINUTES", 10))
 
     def __post_init__(self) -> None:
         self.storage_dir = Path(self.storage_dir)

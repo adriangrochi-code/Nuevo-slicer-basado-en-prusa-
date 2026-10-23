@@ -30,6 +30,9 @@ Send = Callable
 UPLOADS = (
     (re.compile(r"^/v1/jobs$"), "user"),
     (re.compile(r"^/v1/node/jobs/[^/]+/result$"), "node"),
+    # Remote printers: a G-code to print sent by the phone, an image of a camera sent by the bridge.
+    (re.compile(r"^/v1/remote/bridges/[^/]+/printers/[^/]+/print$"), "user"),
+    (re.compile(r"^/v1/bridges/[^/]+/printers/[^/]+/camera$"), "user"),
 )
 # Pages that need no account (limited per address).
 ANONYMOUS = re.compile(r"^/(v1/(health|plans|auth/.*|billing/webhook/.*|billing/play/notify|billing/test/.*)|cuenta.*|admin)?$")

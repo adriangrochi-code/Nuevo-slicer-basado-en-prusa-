@@ -19,12 +19,12 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
-from . import __version__, alerts, billing, codes, google_play, scheduler
+from . import __version__, alerts, billing, codes, google_play, remote, scheduler
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, mailer_for
 from .db import Database
 from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles, plan_job
-from .models import Alert, ApiToken, Job, Node, Payment, Plan, User, utcnow
+from .models import Alert, ApiToken, Bridge, Job, Node, Payment, Plan, RemoteCommand, User, utcnow
 from .guard import Guard
 from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, hash_password, hash_token, new_token, verify_password
@@ -41,6 +41,7 @@ class Services:
         self.db.create_all()
         self.sync_internal_accounts()
         self.storage = Storage(settings.storage_dir)
+        self.remote_files = remote.RemoteFiles(settings.storage_dir)
         self.limiter = RateLimiter()
         # A slower window for the e-mails sent to one address (at most a few per hour).
         self.hourly = RateLimiter(3600.)
@@ -65,7 +66,9 @@ class Services:
                     user.unlimited = True
 
     def sweep(self) -> None:
-        """Requeues the jobs of lost nodes and removes the files of old jobs."""
+        """Requeues the jobs of lost nodes, removes the files of old jobs and fails the remote commands not taken."""
+        with self.db.session() as s:
+            remote.expire(s, self.remote_files, self.settings.remote_command_minutes)
         with self.db.session() as s:
             scheduler.requeue_stale(s, self.settings.node_timeout_s, self.settings.max_attempts)
             # Jobs ended by the sweep itself (nodes lost): the recent ones are enough, the others were cleaned before.
@@ -179,6 +182,17 @@ def check_priorities(priorities: list[str]) -> str:
     if len(set(priorities)) != len(priorities):
         raise HTTPException(422, "A job class is repeated")
     return ",".join(priorities)
+
+
+class BridgeBody(BaseModel):
+    """What a bridge sends every few seconds: its name and its printers with their state (see remote.clean_printers)."""
+    name: str = Field(default="", max_length=100)
+    printers: list[Any] = Field(default_factory=list)
+
+
+class CommandResultBody(BaseModel):
+    ok: bool
+    error: str = Field(default="", max_length=2000)
 
 
 class ClaimBody(BaseModel):
@@ -401,7 +415,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not cfg.site_key or not hmac.compare_digest(token.encode(), cfg.site_key.encode()):
             raise HTTPException(401, "Invalid site key", headers={"WWW-Authenticate": "Bearer"})
 
+    def current_remote_user(request: Request, authorization: Annotated[str | None, Header()] = None) -> User:
+        """The account, for its remote printers: limited apart from the plan (the bridge sends its state every few
+        seconds and the images of a camera while someone looks)."""
+        token = bearer(authorization)
+        with db.session() as s:
+            row = s.execute(
+                select(ApiToken, User).join(User, User.id == ApiToken.user_id).where(ApiToken.token_hash == hash_token(token))
+            ).one_or_none()
+            if row is None or not row[1].enabled:
+                raise HTTPException(401, "Invalid access token", headers={"WWW-Authenticate": "Bearer"})
+            user = row[1]
+        if not limiter.allow(f"remote:{user.id}", cfg.remote_requests_per_minute):
+            raise HTTPException(429, "Too many requests: wait a minute", headers={"Retry-After": "60"})
+        return user
+
     UserDep = Annotated[User, Depends(current_user)]
+    RemoteDep = Annotated[User, Depends(current_remote_user)]
     AdminDep = Annotated[User, Depends(current_admin)]
     NodeDep = Annotated[Node, Depends(current_node)]
     SiteDep = Annotated[None, Depends(current_site)]
@@ -936,6 +966,187 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 scheduler.fail(s, job, body.error)
             services.storage.remove_input(job.id)
             return {"ok": True}
+
+    # ---- remote printers: a bridge at home (Tisma left open) relays them, the phone sees and commands them (remote.py)
+    def own_bridge(s, user: User, bridge_id: str, create: bool = False) -> Bridge:  # noqa: ANN001
+        if not remote.ID.match(bridge_id):
+            raise HTTPException(404, "No such bridge")
+        bridge = s.get(Bridge, bridge_id)
+        if bridge is None and create:
+            if s.execute(select(func.count()).select_from(Bridge).where(Bridge.user_id == user.id)).scalar_one() >= 10:
+                raise HTTPException(409, "Too many bridges: remove an old one")
+            bridge = Bridge(id=bridge_id, user_id=user.id)
+            s.add(bridge)
+        if bridge is None or bridge.user_id != user.id:
+            raise HTTPException(404, "No such bridge")
+        return bridge
+
+    def bridge_printer(bridge: Bridge, printer_id: str, action: str | None = None) -> dict:
+        printer = next((p for p in bridge.printer_list if p["id"] == printer_id), None)
+        if printer is None:
+            raise HTTPException(404, "No such printer")
+        if action is not None and action not in printer["actions"]:
+            raise HTTPException(422, f"The printer cannot {action} from afar")
+        return printer
+
+    def new_command(s, bridge: Bridge, printer_id: str, action: str, file_name: str = "") -> RemoteCommand:  # noqa: ANN001
+        if not remote.is_online(bridge):
+            raise HTTPException(409, "The bridge is offline: open Tisma on the computer at home")
+        command = RemoteCommand(bridge_id=bridge.id, printer_id=printer_id, action=action, file_name=file_name)
+        s.add(command)
+        s.flush()
+        return command
+
+    # The bridge.
+    @app.put("/v1/bridges/{bridge_id}")
+    def bridge_state(user: RemoteDep, bridge_id: str, body: BridgeBody) -> dict:
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id, create=True)
+            bridge.name = body.name.strip()[:100]
+            bridge.printers = json.dumps(remote.clean_printers(body.printers))
+            bridge.last_seen = utcnow()
+            # The printers whose camera someone is looking at: the bridge sends their images.
+            return {"watch": remote.watched(bridge)}
+
+    @app.get("/v1/bridges/{bridge_id}/commands")
+    async def bridge_commands(user: RemoteDep, bridge_id: str, wait: int = 20) -> dict:
+        def take() -> list[dict]:
+            with db.session() as s:
+                bridge = own_bridge(s, user, bridge_id)
+                bridge.last_seen = utcnow()
+                queued = s.execute(select(RemoteCommand).where(RemoteCommand.bridge_id == bridge.id,
+                                                               RemoteCommand.status == "queued")
+                                   .order_by(RemoteCommand.created_at)).scalars().all()
+                for c in queued:
+                    c.status, c.updated_at = "sent", utcnow()
+                return [remote.command_view(c) for c in queued]
+
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + max(0, min(wait, 25))
+        while True:
+            commands = await run_in_threadpool(take)
+            if commands or loop.time() >= deadline:
+                return {"commands": commands}
+            await asyncio.sleep(1.)
+
+    @app.get("/v1/bridges/{bridge_id}/commands/{command_id}/file")
+    def bridge_command_file(user: RemoteDep, bridge_id: str, command_id: str) -> FileResponse:
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            command = s.get(RemoteCommand, command_id)
+            if command is None or command.bridge_id != bridge.id or command.action != "print" or command.status != "sent":
+                raise HTTPException(404, "No such command")
+        path = services.remote_files.print_file(command.id)
+        if not path.exists():
+            raise HTTPException(410, "The file was removed")
+        return FileResponse(path, media_type="application/octet-stream", filename=command.file_name)
+
+    @app.post("/v1/bridges/{bridge_id}/commands/{command_id}")
+    def bridge_command_result(user: RemoteDep, bridge_id: str, command_id: str, body: CommandResultBody) -> dict:
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            command = s.get(RemoteCommand, command_id)
+            if command is None or command.bridge_id != bridge.id or command.status != "sent":
+                raise HTTPException(404, "No such command")
+            command.status = "done" if body.ok else "failed"
+            command.error = "" if body.ok else (body.error or "The printer refused the command")
+            command.updated_at = utcnow()
+            services.remote_files.remove_command(command.id)
+            return remote.command_view(command)
+
+    @app.post("/v1/bridges/{bridge_id}/printers/{printer_id}/camera")
+    async def bridge_camera(user: RemoteDep, bridge_id: str, printer_id: str, request: Request) -> dict:
+        def check() -> None:
+            with db.session() as s:
+                bridge_printer(own_bridge(s, user, bridge_id), printer_id)
+
+        await run_in_threadpool(check)
+        data = bytearray()
+        async for chunk in request.stream():
+            data += chunk
+            if len(data) > remote.MAX_IMAGE_BYTES:
+                raise HTTPException(413, "The image is too large")
+        if not data.startswith(b"\xff\xd8"):
+            raise HTTPException(422, "Not a JPEG image")
+        path = services.remote_files.image(bridge_id, printer_id)
+        tmp = path.with_suffix(".part")
+        tmp.write_bytes(bytes(data))
+        tmp.replace(path)
+        return {"ok": True}
+
+    # The phone.
+    @app.get("/v1/remote/printers")
+    def remote_printers(user: RemoteDep) -> dict:
+        now = utcnow()
+        with db.session() as s:
+            bridges = s.execute(select(Bridge).where(Bridge.user_id == user.id).order_by(Bridge.created_at)).scalars()
+            return {"bridges": [remote.bridge_view(b, now) for b in bridges]}
+
+    @app.delete("/v1/remote/bridges/{bridge_id}")
+    def remote_remove_bridge(user: RemoteDep, bridge_id: str) -> dict:
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            for c in s.execute(select(RemoteCommand).where(RemoteCommand.bridge_id == bridge.id)).scalars():
+                services.remote_files.remove_command(c.id)
+            for p in bridge.printer_list:
+                services.remote_files.image(bridge.id, p["id"]).unlink(missing_ok=True)
+            s.delete(bridge)
+            return {"ok": True}
+
+    @app.post("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/print", status_code=201)
+    def remote_print(user: RemoteDep, request: Request, bridge_id: str, printer_id: str,
+                     file: Annotated[UploadFile, File()]) -> dict:
+        max_bytes = cfg.max_upload_mb << 20
+        length = request.headers.get("content-length")
+        if length and length.isdigit() and int(length) > max_bytes + (1 << 20):
+            raise HTTPException(413, f"The file is larger than {cfg.max_upload_mb} MB")
+        name = safe_filename(file.filename or "", "tisma.gcode")
+        if not name.lower().endswith(remote.PRINT_EXTENSIONS):
+            raise HTTPException(422, "Send a G-code (.gcode or .bgcode)")
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            bridge_printer(bridge, printer_id, "print")
+            command = new_command(s, bridge, printer_id, "print", name)
+            # Saved before the command is visible to the bridge (the session commits at the end).
+            try:
+                file.file.seek(0)
+                services.storage.save_stream(file.file, services.remote_files.print_file(command.id), max_bytes)
+            except TooLarge:
+                services.remote_files.remove_command(command.id)
+                raise HTTPException(413, f"The file is larger than {cfg.max_upload_mb} MB") from None
+            return remote.command_view(command)
+
+    @app.post("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/{action}", status_code=201)
+    def remote_action(user: RemoteDep, bridge_id: str, printer_id: str, action: str) -> dict:
+        if action not in ("pause", "resume", "stop"):
+            raise HTTPException(404, "No such action")
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            bridge_printer(bridge, printer_id, action)
+            return remote.command_view(new_command(s, bridge, printer_id, action))
+
+    @app.get("/v1/remote/commands/{command_id}")
+    def remote_command(user: RemoteDep, command_id: str) -> dict:
+        with db.session() as s:
+            command = s.get(RemoteCommand, command_id)
+            bridge = s.get(Bridge, command.bridge_id) if command else None
+            if command is None or bridge is None or bridge.user_id != user.id:
+                raise HTTPException(404, "No such command")
+            return remote.command_view(command)
+
+    @app.get("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/camera")
+    def remote_camera(user: RemoteDep, bridge_id: str, printer_id: str) -> Response:
+        """The last image of the camera (and the bridge is asked for the next ones); 204 while there is none recent."""
+        with db.session() as s:
+            bridge = own_bridge(s, user, bridge_id)
+            printer = bridge_printer(bridge, printer_id)
+            if not printer["camera"]:
+                raise HTTPException(409, "The printer has no camera the bridge can relay")
+            remote.watch(bridge, printer_id)
+        path = services.remote_files.image(bridge_id, printer_id)
+        if not path.exists() or time.time() - path.stat().st_mtime > remote.WATCH_S:
+            return Response(status_code=204)
+        return Response(path.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     # ---- administrator
     @app.get("/v1/admin/nodes")

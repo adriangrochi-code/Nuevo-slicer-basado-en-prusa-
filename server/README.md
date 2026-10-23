@@ -407,11 +407,29 @@ La misma información está en la API de administración (`/v1/admin/...`, con e
 | página web | `PUT /v1/site/plans/{nombre}`, `PUT /v1/site/users/{id_web}`, `GET /v1/site/users/{id_web}` | planes, usuarios, pagos |
 | nodo | `POST /v1/node/claim`, `/heartbeat`, `GET /v1/node/jobs/{id}/input`, `POST .../progress`, `.../result`, `.../fail` | trabajar |
 | administrador | `/v1/admin/nodes`, `/v1/admin/users`, `/v1/admin/plans/{nombre}`, `/v1/admin/queue` | administrar |
+| puente (PC) | `PUT /v1/bridges/{id}` `{name, printers}`, `GET /v1/bridges/{id}/commands?wait=20` | impresoras y su estado; esperar órdenes |
+| puente (PC) | `GET /v1/bridges/{id}/commands/{orden}/file`, `POST /v1/bridges/{id}/commands/{orden}` `{ok, error}`, `POST /v1/bridges/{id}/printers/{imp}/camera` (JPEG) | archivo a imprimir, resultado, imagen de la cámara |
+| usuario | `GET /v1/remote/printers`, `DELETE /v1/remote/bridges/{id}` | impresoras remotas, quitar un puente |
+| usuario | `POST /v1/remote/bridges/{id}/printers/{imp}/print` (multipart `file`, G-code), `.../pause`, `.../resume`, `.../stop`, `GET /v1/remote/commands/{orden}`, `GET .../camera` | imprimir y controlar desde afuera |
 
 Parámetros de `fea`: `mode` (`analyze`, `lightest-infill`, `resin-structure`), `quality` (`fast`, `normal`, `high`,
 `ultra`), `object`, `instance`, `solid`, `zones`, `ribs`. La documentación interactiva queda en `/docs`.
 
 Para agregar otro tipo de trabajo: una clase en `jobs.py` (con sus parámetros) y un ejecutor en `node/runners.py`.
+
+## Impresoras remotas (como Bambu Handy)
+
+Tisma abierto en una PC de la casa hace de **puente**: manda a la cuenta sus impresoras de la red local y su estado
+cada pocos segundos, y espera órdenes (`GET .../commands`, que espera hasta 20 s). El teléfono las ve desde cualquier
+lado y manda un G-code a imprimir, pausa, reanuda o cancela; la cámara se pide desde el teléfono y el puente manda
+imágenes solo mientras alguien mira. No hace falta abrir puertos en la casa: el puente siempre se conecta hacia afuera.
+
+- Una orden que el puente no toma en `TISMA_REMOTE_COMMAND_MINUTES` (10) minutos falla y su archivo se borra: una
+  impresión nunca arranca mucho después de pedirla. Con el puente apagado no se aceptan órdenes.
+- El archivo a imprimir se borra cuando el puente cuenta cómo terminó. Solo G-code (`.gcode`, `.bgcode`); el puente lo
+  empaqueta para las Bambu Lab.
+- Estas llamadas tienen su propio límite por cuenta, `TISMA_REMOTE_REQUESTS_PER_MINUTE` (600), aparte del plan.
+- Cada cuenta ve y controla solo sus puentes (hasta 10).
 
 ## Tests
 

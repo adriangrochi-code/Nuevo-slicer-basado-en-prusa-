@@ -1,5 +1,5 @@
 """Tables: plans, users (accounts of the web site, with their payment state), access tokens, monthly usage, nodes
-(computing servers) and jobs."""
+(computing servers), jobs, and the bridges that relay the printers of a home to the account with their commands."""
 
 from __future__ import annotations
 
@@ -252,3 +252,56 @@ class Job(Base):
             return json.loads(self.summary or "{}")
         except ValueError:
             return {}
+
+
+class Bridge(Base):
+    """A computer at home (Tisma Slicer left open) that relays the printers of its local network to the account: their
+    state goes up, the commands sent from the phone come down (see remote.py)."""
+
+    __tablename__ = "bridges"
+
+    # Made by the computer once (a UUID), so that it is the same bridge after a restart.
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100), default="")
+    # The printers and their state, a JSON list (remote.clean_printers).
+    printers: Mapped[str] = mapped_column(Text, default="[]")
+    # The printers whose camera is being looked at: JSON {printer id: until (ISO 8601)}.
+    watching: Mapped[str] = mapped_column(Text, default="{}")
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    @property
+    def printer_list(self) -> list[dict]:
+        try:
+            value = json.loads(self.printers or "[]")
+        except ValueError:
+            return []
+        return value if isinstance(value, list) else []
+
+    @property
+    def watching_dict(self) -> dict:
+        try:
+            value = json.loads(self.watching or "{}")
+        except ValueError:
+            return {}
+        return value if isinstance(value, dict) else {}
+
+
+class RemoteCommand(Base):
+    """A command for a printer of a bridge: print a file, pause, resume or stop."""
+
+    __tablename__ = "remote_commands"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    bridge_id: Mapped[str] = mapped_column(ForeignKey("bridges.id", ondelete="CASCADE"), index=True)
+    printer_id: Mapped[str] = mapped_column(String(64))
+    # print, pause, resume, stop
+    action: Mapped[str] = mapped_column(String(10))
+    # print: the name of the file for the printer (the file is in storage_dir/remote/<id>).
+    file_name: Mapped[str] = mapped_column(String(200), default="")
+    # queued (waiting for the bridge), sent (the bridge took it), done, failed
+    status: Mapped[str] = mapped_column(String(10), default="queued", index=True)
+    error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
