@@ -19,6 +19,7 @@
 ///|/
 #include "Plater.hpp"
 #include "slic3r/GUI/BitmapCache.hpp"
+#include "slic3r/GUI/CalibrationDialog.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
 #include "slic3r/GUI/USBMonitorPanel.hpp"
 #include "slic3r/Utils/PrinterProbe.hpp"
@@ -1313,7 +1314,8 @@ void Plater::priv::update(unsigned int flags)
         this->schedule_background_process();
 }
 
-// The groups of tools of the plate (the arrangement of the Android app): File, View, Arrange, Engineering, Slice.
+// The groups of tools of the plate (the arrangement of the Android app): File, View, Arrange, Paint, Engineering,
+// Calibrate, Slice.
 PlateTools* Plater::priv::create_plate_tools()
 {
     auto *tools = new PlateTools(q);
@@ -1473,6 +1475,19 @@ PlateTools* Plater::priv::create_plate_tools()
              [this]() { return q->is_engineering_open(); }),
     };
     tools->add_group(std::move(engineering));
+
+    // The calibrations, each one a tool (the tests of the printer in use: filament or resin), and applying a result.
+    PlateTools::Group calibrate;
+    calibrate.label     = _L("Calibrate");
+    calibrate.tooltip   = _L("Calibration prints: temperature, flow, pressure advance, retraction, vibrations (input shaping), "
+                             "first layer... and writing the value read on the print to its setting");
+    calibrate.icon      = "tisma_calibrate";
+    calibrate.on_select = to_plate;
+    for (const bool resin : { false, true })
+        for (CalibrationAction &action : calibration_actions(q, resin))
+            calibrate.tools.push_back(tool(action.label, action.tooltip, action.icon, std::move(action.run), nullptr, nullptr,
+                                           resin ? std::function<bool()>(is_sla) : std::function<bool()>(is_fff)));
+    tools->add_group(std::move(calibrate));
 
     // Slice: the preview by layers, the G-code and where it goes.
     auto has_host = [this]() {

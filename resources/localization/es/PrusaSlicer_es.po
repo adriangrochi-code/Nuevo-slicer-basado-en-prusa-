@@ -34251,3 +34251,36 @@ msgstr "La cámara USB no manda imágenes. Desconectala, volvé a conectarla y s
 
 msgid "Could not show the USB camera: %1%"
 msgstr "No se pudo mostrar la cámara USB: %1%"
+
+msgid "Calibrate"
+msgstr "Calibrar"
+
+msgid "Calibration prints: temperature, flow, pressure advance, retraction, vibrations (input shaping), first layer... and writing the value read on the print to its setting"
+msgstr "Impresiones de calibración: temperatura, flujo, avance de presión, retracción, vibraciones (input shaping), primera capa... y escribir el valor leído en la impresión en su ajuste"
+
+msgid "Max flow"
+msgstr "Caudal máx."
+
+msgid "Acceleration"
+msgstr "Aceleración"
+
+msgid "Corners"
+msgstr "Esquinas"
+
+msgid "Vibrations"
+msgstr "Vibraciones"
+
+msgid "Arc speed"
+msgstr "Vel. arcos"
+
+msgid "Arc length"
+msgstr "Largo arcos"
+
+msgid "Strength"
+msgstr "Resistencia"
+
+msgid "Apply result"
+msgstr "Aplicar resultado"
+
+msgid "Correction"
+msgstr "Corrección"

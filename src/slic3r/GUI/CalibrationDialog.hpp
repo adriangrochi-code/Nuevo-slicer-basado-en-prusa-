@@ -6,6 +6,12 @@
 #ifndef slic3r_CalibrationDialog_hpp_
 #define slic3r_CalibrationDialog_hpp_
 
+#include <functional>
+#include <string>
+#include <vector>
+
+#include <wx/string.h>
+
 class wxWindow;
 class wxMenu;
 
@@ -18,6 +24,18 @@ namespace GUI {
 wxMenu* create_calibration_menu(wxWindow* parent, bool resin = false, bool models_only = false);
 // Opens the menu at the mouse position.
 void    show_calibration_menu(wxWindow* parent);
+
+// A calibration as a tool of the Calibrate group of the plate: a short name under its icon, the title and what it is
+// for in the tooltip, and what it opens (the dialog of the test, or of applying a result).
+struct CalibrationAction
+{
+    wxString              label;
+    wxString              tooltip;
+    std::string           icon;
+    std::function<void()> run;
+};
+// All the calibrations of filament printers (or of resin printers with resin = true), as in the menu.
+std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin);
 
 } // namespace GUI
 } // namespace Slic3r

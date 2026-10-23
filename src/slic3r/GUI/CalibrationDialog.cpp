@@ -948,15 +948,38 @@ static void load_stagger_coupons(wxWindow* parent)
                  _L("Staggered perimeters: strength coupons"), wxOK | wxICON_INFORMATION, parent);
 }
 
+static void apply_result(wxWindow* parent)
+{
+    ApplyResultDialog dlg(parent);
+    if (dlg.ShowModal() == wxID_OK)
+        dlg.apply_result();
+}
+
 static void append_apply_result(wxMenu* menu, wxWindow* parent)
 {
     const int apply_id = wxWindow::NewControlId();
     menu->Append(apply_id, _L("Apply a calibration result") + dots, _L("Writes the value read on a calibration print to its setting."));
-    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
-        ApplyResultDialog dlg(parent);
-        if (dlg.ShowModal() == wxID_OK)
-            dlg.apply_result();
-    }, apply_id);
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { apply_result(parent); }, apply_id);
+}
+
+static void run_resin_test(wxWindow* parent, size_t i)
+{
+    // The exposure of each band is written by the archives that keep an exposure per layer.
+    const DynamicPrintConfig& printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+    if (printer.opt_string("sla_archive_format") != "GOO") {
+        wxMessageBox(_L("The exposure tower needs a printer whose archive keeps the exposure of each layer: for now "
+                        "the Elegoo printers (GOO format). With other printers, print a small test once per exposure "
+                        "time."), resin_tests()[i].title, wxOK | wxICON_INFORMATION, parent);
+        return;
+    }
+    run_test(parent, resin_tests()[i]);
+}
+
+static void resin_dimensions_correction(wxWindow* parent)
+{
+    ResinDimensionsDialog dlg(parent);
+    if (dlg.ShowModal() == wxID_OK)
+        dlg.apply();
 }
 
 static wxMenu* create_resin_calibration_menu(wxWindow* parent, bool models_only)
@@ -966,17 +989,7 @@ static wxMenu* create_resin_calibration_menu(wxWindow* parent, bool models_only)
     for (size_t i = 0; i < all.size(); ++ i) {
         const int id = wxWindow::NewControlId();
         menu->Append(id, all[i].title + dots, all[i].description);
-        menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) {
-            // The exposure of each band is written by the archives that keep an exposure per layer.
-            const DynamicPrintConfig& printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-            if (printer.opt_string("sla_archive_format") != "GOO") {
-                wxMessageBox(_L("The exposure tower needs a printer whose archive keeps the exposure of each layer: for now "
-                                "the Elegoo printers (GOO format). With other printers, print a small test once per exposure "
-                                "time."), resin_tests()[i].title, wxOK | wxICON_INFORMATION, parent);
-                return;
-            }
-            run_test(parent, resin_tests()[i]);
-        }, id);
+        menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) { run_resin_test(parent, i); }, id);
     }
     const int block_id = wxWindow::NewControlId();
     menu->Append(block_id, _L("Resin dimensions block") + dots, _L("A block to measure the shrinkage of the resin in X, Y and Z."));
@@ -986,11 +999,7 @@ static wxMenu* create_resin_calibration_menu(wxWindow* parent, bool models_only)
     const int dims_id = wxWindow::NewControlId();
     menu->Append(dims_id, _L("Resin dimensional correction") + dots,
                  _L("Calculates the scaling correction of the material from the measured sizes of the dimensions block."));
-    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
-        ResinDimensionsDialog dlg(parent);
-        if (dlg.ShowModal() == wxID_OK)
-            dlg.apply();
-    }, dims_id);
+    menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { resin_dimensions_correction(parent); }, dims_id);
     menu->AppendSeparator();
     append_apply_result(menu, parent);
     return menu;
@@ -1017,6 +1026,56 @@ wxMenu* create_calibration_menu(wxWindow* parent, bool resin, bool models_only)
     menu->AppendSeparator();
     append_apply_result(menu, parent);
     return menu;
+}
+
+std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
+{
+    std::vector<CalibrationAction> out;
+    auto add = [&out](const wxString& label, const wxString& title, const wxString& description, const std::string& icon,
+                      std::function<void()> run) {
+        out.push_back({ label, title + "\n" + description, icon, std::move(run) });
+    };
+    if (resin) {
+        for (size_t i = 0; i < resin_tests().size(); ++ i)
+            add(_L("Exposure"), resin_tests()[i].title, resin_tests()[i].description, "resin",
+                [parent, i]() { run_resin_test(parent, i); });
+        add(_L("Dimensions"), _L("Resin dimensions block"), _L("A block to measure the shrinkage of the resin in X, Y and Z."),
+            "measure", [parent]() { load_resin_dimension_block(parent); });
+        add(_L("Correction"), _L("Resin dimensional correction"),
+            _L("Calculates the scaling correction of the material from the measured sizes of the dimensions block."), "scale",
+            [parent]() { resin_dimensions_correction(parent); });
+    } else {
+        // A short name and an icon for each test (the titles are too long to be read under an icon).
+        auto short_name = [](CalibMode mode) -> std::pair<wxString, std::string> {
+            switch (mode) {
+            case CalibMode::Temperature:         return { _L("Temperature"), "burn" };
+            case CalibMode::PressureAdvance:     return { _L("Pressure"), "funnel" };
+            case CalibMode::Retraction:          return { _L("Retraction"), "legend_retract" };
+            case CalibMode::VolumetricSpeed:     return { _L("Max flow"), "spool" };
+            case CalibMode::PerimeterSpeed:      return { "VFA", "layers" };
+            case CalibMode::Acceleration:        return { _L("Acceleration"), "move" };
+            case CalibMode::Cornering:           return { _L("Corners"), "rotate" };
+            case CalibMode::InputShaping:        return { _L("Vibrations"), "tisma_vibration" };
+            case CalibMode::FirstLayerOffset:    return { _L("First layer"), "drop_to_bed" };
+            case CalibMode::FlowRate:            return { _L("Flow"), "infill" };
+            case CalibMode::Coasting:            return { _L("Coasting"), "legend_deretract" };
+            case CalibMode::ArcOverhangSpeed:    return { _L("Arc speed"), "time" };
+            case CalibMode::ArcOverhangDistance: return { _L("Arc length"), "measure" };
+            default:                             return { wxString(), "tisma_calibrate" };
+            }
+        };
+        for (size_t i = 0; i < tests().size(); ++ i) {
+            const auto [label, icon] = short_name(tests()[i].mode);
+            add(label.empty() ? tests()[i].title : label, tests()[i].title, tests()[i].description, icon,
+                [parent, i]() { run_test(parent, tests()[i]); });
+        }
+        add(_L("Strength"), _L("Staggered perimeters: strength coupons"),
+            _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."),
+            "test", [parent]() { load_stagger_coupons(parent); });
+    }
+    add(_L("Apply result"), _L("Apply a calibration result"), _L("Writes the value read on a calibration print to its setting."),
+        "wrench", [parent]() { apply_result(parent); });
+    return out;
 }
 
 void show_calibration_menu(wxWindow* parent)
