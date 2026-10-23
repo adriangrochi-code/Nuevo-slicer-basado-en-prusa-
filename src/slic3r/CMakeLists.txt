@@ -252,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/Serial.cpp
     Utils/USBPrinter.cpp
     Utils/USBPrinter.hpp
+    Utils/PrinterProbe.cpp
+    Utils/PrinterProbe.hpp
     Utils/Serial.hpp
     GUI/ConfigWizard.cpp
     GUI/ConfigWizard.hpp

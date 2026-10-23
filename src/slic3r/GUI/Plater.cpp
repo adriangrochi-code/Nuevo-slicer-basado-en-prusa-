@@ -21,6 +21,7 @@
 #include "slic3r/GUI/BitmapCache.hpp"
 #include "slic3r/GUI/Jobs/UIThreadWorker.hpp"
 #include "slic3r/GUI/USBMonitorPanel.hpp"
+#include "slic3r/Utils/PrinterProbe.hpp"
 #include "slic3r/Utils/PrusaConnect.hpp"
 
 #include <cstddef>
@@ -31,6 +32,8 @@
 #include <string>
 #include <regex>
 #include <future>
+#include <atomic>
+#include <thread>
 #include <utility>
 #include <boost/algorithm/string.hpp>
 #include <boost/nowide/cstdio.hpp>
@@ -650,6 +653,18 @@ struct Plater::priv
 
     // Caching last value of show_action_buttons parameter for show_action_buttons(), so that a callback which does not know this state will not override it.
     mutable bool    			ready_to_slice = { false };
+    // Tisma: the network printer of the printer in use (a physical printer of its profile with a network address) when
+    // no physical printer is selected, and whether it answers, probed in the background: after slicing, the main button
+    // sends to it, as it prints on a USB printer.
+    mutable std::string         network_target;
+    mutable bool                network_target_answers { false };
+    mutable bool                network_probe_running  { false };
+    std::thread                 network_probe_thread;
+    // Cleared when the plater goes, for the answers posted after.
+    std::shared_ptr<std::atomic<bool>> network_probe_alive { std::make_shared<std::atomic<bool>>(true) };
+    std::unique_ptr<wxTimer>    network_probe_timer;
+    std::string                 find_network_target() const;
+    void                        probe_network_target() const;
     // Flag indicating that the G-code export targets a removable device, therefore the show_action_buttons() needs to be called at any case when the background processing finishes.
     ExportingStatus             exporting_status { NOT_EXPORTING };
     std::string                 last_output_path;
@@ -1270,6 +1285,11 @@ void Plater::priv::init()
 
 Plater::priv::~priv()
 {
+    *network_probe_alive = false;
+    if (network_probe_timer)
+        network_probe_timer->Stop();
+    if (network_probe_thread.joinable())
+        network_probe_thread.join();
     if (config != nullptr)
         delete config;
     // Saves the database of visited (already shown) hints into hints.ini.
@@ -1455,10 +1475,11 @@ PlateTools* Plater::priv::create_plate_tools()
     tools->add_group(std::move(engineering));
 
     // Slice: the preview by layers, the G-code and where it goes.
-    auto has_host = []() {
+    auto has_host = [this]() {
         const DynamicPrintConfig *cfg = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
         const auto *host = cfg ? cfg->option<ConfigOptionString>("print_host") : nullptr;
-        return host != nullptr && ! host->value.empty();
+        // Tisma: or the network printer of the printer in use, when it answers.
+        return (host != nullptr && ! host->value.empty()) || (! network_target.empty() && network_target_answers);
     };
     PlateTools::Group slice;
     slice.label     = _L("Slice");
@@ -4450,7 +4471,14 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
-    const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
+    // Tisma: also the network printer of the printer in use when it answers (find_network_target()).
+    if (const std::string target = find_network_target(); target != network_target) {
+        network_target         = target;
+        network_target_answers = false;
+        probe_network_target();
+    }
+    const bool send_gcode_shown = (print_host_opt != nullptr && !print_host_opt->value.empty()) ||
+                                  (! network_target.empty() && network_target_answers);
     const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // Tisma: a USB printer was connected once.
     const bool usb_print_shown = printer_technology == ptFFF && USBMonitorPanel::has_printer();
@@ -4479,6 +4507,99 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
+}
+
+namespace {
+// Defined with send_gcode().
+bool load_secret(const std::string& id, const std::string& opt, std::string& usr, std::string& psswd);
+}
+
+std::string Plater::priv::find_network_target() const
+{
+    const PresetBundle &bundle = *wxGetApp().preset_bundle;
+    // A selected physical printer is the one the G-code is sent to.
+    if (bundle.physical_printers.has_selection())
+        return std::string();
+    const std::string preset = bundle.printers.get_selected_preset_name();
+    const std::string last   = wxGetApp().app_config->get("tisma_send_printer");
+    std::string found;
+    for (PhysicalPrinterCollection::ConstIterator it = bundle.physical_printers.begin(); it != bundle.physical_printers.end(); ++it) {
+        const PhysicalPrinter &printer = *it;
+        const auto *type = printer.config.option<ConfigOptionEnum<PrintHostType>>("host_type");
+        // Prusa Connect is a service on the internet, not a printer of the network.
+        if (printer.config.opt_string("print_host").empty() || printer.get_preset_names().count(preset) == 0 ||
+            (type != nullptr && (type->value == htPrusaConnect || type->value == htPrusaConnectNew)))
+            continue;
+        if (found.empty() || printer.name == last)
+            found = printer.name;
+    }
+    return found;
+}
+
+void Plater::priv::probe_network_target() const
+{
+    if (network_target.empty() || network_probe_running)
+        return;
+    const PhysicalPrinter *printer = wxGetApp().preset_bundle->physical_printers.find_printer(network_target);
+    if (printer == nullptr)
+        return;
+    const auto *type = printer->config.option<ConfigOptionEnum<PrintHostType>>("host_type");
+    const auto [host, port] = print_host_endpoint(printer->config.opt_string("print_host"), type ? type->value : htOctoPrint);
+    if (host.empty())
+        return;
+    auto *self = const_cast<Plater::priv*>(this);
+    if (self->network_probe_thread.joinable())
+        self->network_probe_thread.join();
+    network_probe_running = true;
+    self->network_probe_thread = std::thread([name = network_target, host = host, port = port, alive = network_probe_alive]() {
+        const bool answers = network_printer_answers(host, port, std::chrono::milliseconds(1500));
+        wxTheApp->CallAfter([name, answers, alive]() {
+            if (*alive)
+                if (Plater *plater = wxGetApp().plater())
+                    plater->network_printer_probed(name, answers);
+        });
+    });
+    // Probed again from time to time: a printer turned on later gets the button, one turned off loses it.
+    if (! network_probe_timer) {
+        struct Timer : wxTimer {
+            const Plater::priv *p;
+            explicit Timer(const Plater::priv *p) : p(p) {}
+            void Notify() override { p->probe_network_target(); }
+        };
+        self->network_probe_timer = std::make_unique<Timer>(this);
+        self->network_probe_timer->Start(20000);
+    }
+}
+
+void Plater::network_printer_probed(const std::string &physical_printer, bool answers)
+{
+    p->network_probe_running = false;
+    if (physical_printer != p->network_target) {
+        // Another printer got in use meanwhile.
+        p->probe_network_target();
+        return;
+    }
+    if (answers != p->network_target_answers) {
+        p->network_target_answers = answers;
+        p->show_action_buttons(p->ready_to_slice);
+    }
+}
+
+void Plater::send_gcode_to(const std::string &physical_printer)
+{
+    const PhysicalPrinter *printer = wxGetApp().preset_bundle->physical_printers.find_printer(physical_printer);
+    if (printer == nullptr || p->model.objects.empty())
+        return;
+    DynamicPrintConfig config = printer->config;
+    // Passwords stored secretly, as send_gcode().
+    if (config.opt_string("printhost_password") == "stored") {
+        std::string username, password;
+        const bool loaded = load_secret(printer->name, "printhost_password", username, password);
+        config.opt_string("printhost_user")     = loaded ? username : std::string();
+        config.opt_string("printhost_password") = loaded ? password : std::string();
+    }
+    wxGetApp().app_config->set("tisma_send_printer", printer->name);
+    send_gcode_inner(&config);
 }
 
 void Plater::priv::show_autoslicing_action_buttons() const {
@@ -7386,7 +7507,13 @@ void Plater::send_gcode()
 {
     // if physical_printer is selected, send gcode for this printer
     DynamicPrintConfig* physical_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
-    if (! physical_printer_config || p->model.objects.empty())
+    if (! physical_printer_config) {
+        // Tisma: no physical printer selected: the network printer of the printer in use.
+        if (const std::string target = p->find_network_target(); ! target.empty())
+            send_gcode_to(target);
+        return;
+    }
+    if (p->model.objects.empty())
         return;
 
     // Passwords and API keys

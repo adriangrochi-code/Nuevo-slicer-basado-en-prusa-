@@ -9,6 +9,7 @@ add_executable(${_TEST_NAME}_tests
     bambu_lan_tests.cpp
     print_host_fake_tests.cpp
     flashforge_tests.cpp
+    printer_probe_tests.cpp
     )
 
 # mold linker for successful linking needs also to link TBB library and link it before libslic3r.
