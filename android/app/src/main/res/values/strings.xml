@@ -244,4 +244,37 @@
     <string name="zoom_out">Zoom out</string>
     <string name="zoom_fit">Frame the part</string>
     <string name="group_temperatures">Temperatures</string>
+    <string name="report_screen">Report a problem</string>
+    <string name="report_screen_hint">Something that does not work, or a suggestion, for the Tisma team</string>
+    <string name="report_intro">Tell what went wrong, or what you would like Tisma to do. It goes to the Tisma team, which groups the reports of the same problem to fix the most frequent ones first. E-mails, addresses, keys and serial numbers are removed before it is kept.</string>
+    <string name="report_kind">Kind</string>
+    <string name="report_kind_bug">Something does not work</string>
+    <string name="report_kind_crash">The app closed</string>
+    <string name="report_kind_suggestion">Suggestion</string>
+    <string name="report_title">In a few words</string>
+    <string name="report_title_hint">e.g. The camera of the printer does not open</string>
+    <string name="report_description">What happened</string>
+    <string name="report_steps">Steps to make it happen again</string>
+    <string name="report_expected">What you expected</string>
+    <string name="report_attach">Attach the version, the phone, the printer chosen and the log of the app</string>
+    <string name="report_with_account">Sent with your Tisma Cloud account: you can see its state here, and a useful report can be rewarded with days of your plan.</string>
+    <string name="report_without_account">Sent without an account (log in to Tisma Cloud to follow it).</string>
+    <string name="report_send">Send</string>
+    <string name="report_need_title">Write in a few words what happened.</string>
+    <string name="report_sent">Thank you: the report was sent to the Tisma team.</string>
+    <string name="report_too_many">Too many reports for now: try again in an hour.</string>
+    <string name="report_mine">Your reports</string>
+    <string name="report_status_new">Received</string>
+    <string name="report_status_confirmed">Confirmed</string>
+    <string name="report_status_fixed">Fixed</string>
+    <string name="report_status_wontfix">Will not be changed</string>
+    <string name="report_status_duplicate">Already reported</string>
+    <plurals name="report_similar">
+        <item quantity="one">The same problem was reported once before: it is among the ones to fix.</item>
+        <item quantity="other">The same problem was reported %1$d times before: it is among the ones to fix.</item>
+    </plurals>
+    <plurals name="report_rewarded">
+        <item quantity="one">rewarded with %1$d day</item>
+        <item quantity="other">rewarded with %1$d days</item>
+    </plurals>
 </resources>

@@ -136,4 +136,29 @@ class CloudClientTest {
         server.close()
         assertEquals(CloudErrorKind.NETWORK, failure { CloudClient("http://127.0.0.1:$port").account() })
     }
+
+    @Test
+    fun reportGoesWithTheAccountWhenThereIsOne() {
+        answer = { 201 to """{"id":"r1","signature":"abc","similar":2}""" }
+        assertEquals(2, client("t1").report(mapOf("app" to "android", "kind" to "bug", "title" to "No abre la camara")))
+        assertEquals(0, client().also { answer = { 201 to """{"id":"r2","signature":"abc"}""" } }.report(mapOf("title" to "x")))
+        val (path, auth, body) = requests.first()
+        assertEquals("/v1/reports", path)
+        assertEquals("Bearer t1", auth)
+        assertEquals("No abre la camara", body!!.getString("title"))
+        assertNull(requests.last().second)
+        answer = { 429 to """{"detail":"Too many reports: try again in an hour"}""" }
+        assertEquals(CloudErrorKind.TOO_MANY, failure { client().report(mapOf("title" to "x")) })
+    }
+
+    @Test
+    fun myReportsWithTheirStateAndReward() {
+        answer = { 200 to """{"reports":[{"id":"r1","title":"No abre","status":"fixed","created_at":"2026-10-23T18:00:00Z",""" +
+            """"reward_days":7},{"id":"r2","title":"Otro","status":"new","created_at":"2026-10-22T10:00:00Z","reward_days":0}]}""" }
+        val list = client("t1").myReports()
+        assertEquals(listOf("No abre", "Otro"), list.map { it.title })
+        assertEquals(7, list[0].rewardDays)
+        assertEquals("fixed", list[0].status)
+        assertEquals("/v1/me/reports", requests.single().first)
+    }
 }

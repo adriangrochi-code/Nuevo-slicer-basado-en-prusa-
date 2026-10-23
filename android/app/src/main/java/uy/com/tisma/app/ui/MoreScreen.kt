@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,9 +34,9 @@ import uy.com.tisma.app.core.TismaCore
 enum class Page { PLATE, PRINT, FILAMENT, PRINTER, MORE }
 
 /** What "More" opens. */
-enum class MorePage { PRINTERS, ACCOUNT, ABOUT }
+enum class MorePage { PRINTERS, ACCOUNT, REPORT, ABOUT }
 
-/** The rest of the app: the printers over Wi-Fi, the Tisma Cloud account, about the app. */
+/** The rest of the app: the printers over Wi-Fi, the Tisma Cloud account, report a problem, about the app. */
 @Composable
 fun MoreScreen(workspace: Workspace, open: MorePage?, onOpen: (MorePage?) -> Unit, modifier: Modifier = Modifier) {
     if (open != null) {
@@ -50,6 +51,7 @@ fun MoreScreen(workspace: Workspace, open: MorePage?, onOpen: (MorePage?) -> Uni
             when (open) {
                 MorePage.PRINTERS -> PrintersScreen(workspace, Modifier.weight(1f))
                 MorePage.ACCOUNT -> AccountScreen(Modifier.weight(1f))
+                MorePage.REPORT -> ReportScreen(workspace, Modifier.weight(1f))
                 MorePage.ABOUT -> About()
             }
         }
@@ -81,12 +83,14 @@ private fun About() {
 private fun MorePage.title(): Int = when (this) {
     MorePage.PRINTERS -> R.string.more_printers
     MorePage.ACCOUNT -> R.string.cloud_title
+    MorePage.REPORT -> R.string.report_screen
     MorePage.ABOUT -> R.string.more_about
 }
 
 private fun MorePage.hint(): Int = when (this) {
     MorePage.PRINTERS -> R.string.more_printers_hint
     MorePage.ACCOUNT -> R.string.more_account_hint
+    MorePage.REPORT -> R.string.report_screen_hint
     MorePage.ABOUT -> R.string.more_about_hint
 }
 
@@ -94,5 +98,6 @@ private fun MorePage.hint(): Int = when (this) {
 private fun MorePage.icon(): Painter = when (this) {
     MorePage.PRINTERS -> painterResource(R.drawable.ic_printer)
     MorePage.ACCOUNT -> rememberVectorPainter(Icons.Filled.AccountCircle)
+    MorePage.REPORT -> rememberVectorPainter(Icons.Filled.Warning)
     MorePage.ABOUT -> rememberVectorPainter(Icons.Filled.Info)
 }

@@ -16,6 +16,9 @@ data class CloudAccount(
     val activeJobs: Int,
 )
 
+/** A problem reported with the account and its state on the master (GET /v1/me/reports). */
+data class CloudReport(val title: String, val status: String, val createdAt: String, val rewardDays: Int)
+
 /** Why a call failed, for the screens (they pick the text). */
 enum class CloudErrorKind { WRONG_LOGIN, NOT_VERIFIED, ALREADY_EXISTS, WRONG_CODE, TOO_MANY, NOT_LOGGED_IN, INVALID, NETWORK, SERVER }
 
@@ -58,6 +61,25 @@ class CloudClient(baseUrl: String, var token: String? = null, private val device
             hoursUsed = json.getDouble("hours_used"),
             activeJobs = json.getInt("active_jobs"),
         )
+    }
+
+    /**
+     * Sends a problem report (POST /v1/reports; fields app, kind, title, description, steps, expected, app_version, os,
+     * log), with the account when logged in. Returns how many reports of the same problem the master has besides it.
+     */
+    fun report(fields: Map<String, String>): Int {
+        val body = JSONObject()
+        for ((key, value) in fields) body.put(key, value)
+        return post("/v1/reports", body).optInt("similar", 0)
+    }
+
+    /** The problems reported with the account, the newest first. */
+    fun myReports(): List<CloudReport> {
+        val list = request("GET", "/v1/me/reports", null).getJSONArray("reports")
+        return (0 until list.length()).map { i ->
+            val r = list.getJSONObject(i)
+            CloudReport(r.getString("title"), r.getString("status"), r.getString("created_at"), r.optInt("reward_days", 0))
+        }
     }
 
     /** Ends the session of this device on the master (the token stops working). */

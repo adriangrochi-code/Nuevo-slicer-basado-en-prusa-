@@ -242,4 +242,39 @@
     <string name="zoom_out">Alejar</string>
     <string name="zoom_fit">Encuadrar la pieza</string>
     <string name="group_temperatures">Temperaturas</string>
+    <string name="report_screen">Informar de un problema</string>
+    <string name="report_screen_hint">Algo que no funciona, o una sugerencia, para el equipo de Tisma</string>
+    <string name="report_intro">Contá qué salió mal o qué te gustaría que haga Tisma. Llega al equipo de Tisma, que agrupa los informes del mismo problema para arreglar primero los más frecuentes. Los correos, las direcciones, las claves y los números de serie se quitan antes de guardarlo.</string>
+    <string name="report_kind">Tipo</string>
+    <string name="report_kind_bug">Algo no funciona</string>
+    <string name="report_kind_crash">La app se cerró</string>
+    <string name="report_kind_suggestion">Sugerencia</string>
+    <string name="report_title">En pocas palabras</string>
+    <string name="report_title_hint">p. ej.: No abre la cámara de la impresora</string>
+    <string name="report_description">Qué pasó</string>
+    <string name="report_steps">Pasos para que vuelva a pasar</string>
+    <string name="report_expected">Qué esperabas</string>
+    <string name="report_attach">Adjuntar la versión, el teléfono, la impresora elegida y el registro de la app</string>
+    <string name="report_with_account">Se envía con tu cuenta de Tisma Cloud: acá ves su estado, y un informe útil puede premiarse con días de tu plan.</string>
+    <string name="report_without_account">Se envía sin cuenta (entrá a Tisma Cloud para seguirlo).</string>
+    <string name="report_send">Enviar</string>
+    <string name="report_need_title">Escribí en pocas palabras qué pasó.</string>
+    <string name="report_sent">Gracias: el informe se envió al equipo de Tisma.</string>
+    <string name="report_too_many">Demasiados informes por ahora: probá de nuevo en una hora.</string>
+    <string name="report_mine">Tus informes</string>
+    <string name="report_status_new">Recibido</string>
+    <string name="report_status_confirmed">Confirmado</string>
+    <string name="report_status_fixed">Arreglado</string>
+    <string name="report_status_wontfix">No se va a cambiar</string>
+    <string name="report_status_duplicate">Ya informado</string>
+    <plurals name="report_similar">
+        <item quantity="one">El mismo problema se informó una vez antes: está entre los que hay que arreglar.</item>
+        <item quantity="other">El mismo problema se informó %1$d veces antes: está entre los que hay que arreglar.</item>
+        <item quantity="many">El mismo problema se informó %1$d veces antes: está entre los que hay que arreglar.</item>
+    </plurals>
+    <plurals name="report_rewarded">
+        <item quantity="one">premiado con %1$d día</item>
+        <item quantity="other">premiado con %1$d días</item>
+        <item quantity="many">premiado con %1$d días</item>
+    </plurals>
 </resources>
