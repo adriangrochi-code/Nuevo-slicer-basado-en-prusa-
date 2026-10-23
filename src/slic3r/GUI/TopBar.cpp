@@ -1,4 +1,6 @@
 #include "TopBar.hpp"
+#include "TismaCloudDialog.hpp"
+#include "TismaWidgets.hpp"
 #include "TopBarMenus.hpp"
 
 #include "GUI_App.hpp"
@@ -246,6 +248,8 @@ void TopBarItemsCtrl::CreateSearch()
     m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(/*42*/30*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
+    // Tisma: a rounded search field, as the chips of the bar.
+    m_search->SetCornerRadius(1.4 * em_unit(this));
 
     m_search->Bind(wxEVT_TEXT, [](wxEvent& e)
     {
@@ -483,6 +487,31 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
 
+    // Tisma: chips of the settings mode and of the Tisma Cloud account instead of the mode button and the account of
+    // Prusa.
+    m_workspace_btn->Hide();
+    m_account_btn->Hide();
+    m_mode_chip = new Slic3r::GUI::TismaChip(this, "", "", [this]() {
+        wxMenu menu;
+        const wxString names[] = { _L("Simple"), _L("Advanced"), _L("Expert") };
+        const wxString hints[] = { _L("The settings most prints need"), _L("More settings"), _L("All the settings") };
+        for (int mode = Slic3r::comSimple; mode <= Slic3r::comExpert; ++mode) {
+            const int id = wxWindow::NewControlId();
+            menu.AppendRadioItem(id, names[mode] + "  —  " + hints[mode])->Check(int(wxGetApp().get_mode()) == mode);
+            menu.Bind(wxEVT_MENU, [mode](wxCommandEvent&) { wxGetApp().save_mode(mode); }, id);
+        }
+        PopupMenu(&menu, m_mode_chip->GetPosition() + wxPoint(0, m_mode_chip->GetSize().y));
+    });
+    m_mode_chip->SetToolTip(_L("Settings shown: simple, advanced or expert"));
+    m_cloud_chip = new Slic3r::GUI::TismaChip(this, "Tisma Cloud", "user", [this]() {
+        Slic3r::GUI::show_cloud_account_dialog(this);
+        update_tisma_chips();
+    });
+    m_cloud_chip->SetToolTip(_L("Tisma Cloud account: slicing and analysis on the servers"));
+    right_sizer->Add(m_mode_chip, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
+    right_sizer->Add(m_cloud_chip, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, m_btn_margin);
+    update_tisma_chips();
+
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
@@ -495,13 +524,28 @@ void TopBarItemsCtrl::UpdateMode()
     wxBitmapBundle bmp = *m_menus->get_workspace_bitmap();
     m_workspace_btn->SetBitmapBundle(bmp);
     m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name());
+    update_tisma_chips();
 
     this->Layout();
 }
 
-void TopBarItemsCtrl::ShowUserAccount(bool show)
+void TopBarItemsCtrl::update_tisma_chips()
 {
-    m_account_btn->Show(show);
+    if (m_mode_chip) {
+        const int mode = int(wxGetApp().get_mode());
+        m_mode_chip->set_text(mode == Slic3r::comSimple ? _L("Simple") : mode == Slic3r::comAdvanced ? _L("Advanced") : _L("Expert"));
+        m_mode_chip->set_dot(wxColour(wxString::FromUTF8(wxGetApp().get_mode_btn_color(mode))));
+    }
+    if (m_cloud_chip) {
+        const Slic3r::GUI::CloudAccess access = Slic3r::GUI::cloud_access();
+        m_cloud_chip->set_text(access.logged_in() && ! access.email.empty() ? wxString::FromUTF8(access.email) : wxString("Tisma Cloud"));
+    }
+}
+
+void TopBarItemsCtrl::ShowUserAccount(bool)
+{
+    // Tisma: the account of Prusa is not shown; the Tisma Cloud chip is.
+    m_account_btn->Hide();
     this->Layout();
 }
 
@@ -633,7 +677,7 @@ void TopBarItemsCtrl::ShowFull()
         m_menu_btn->Show();
     if (m_settings_btn)
         m_settings_btn->Show();
-    m_account_btn->Show();
+    // Tisma: the account of Prusa stays hidden (the Tisma Cloud chip is shown instead).
     update_btns_width();
     UpdateSearchSizeAndPosition();
 }

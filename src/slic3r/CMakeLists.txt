@@ -155,6 +155,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/NavRail.hpp
     GUI/PlateTools.cpp
     GUI/PlateTools.hpp
+    GUI/TismaWidgets.cpp
+    GUI/TismaWidgets.hpp
     GUI/QuickSettings.cpp
     GUI/QuickSettings.hpp
     GUI/TismaTheme.cpp

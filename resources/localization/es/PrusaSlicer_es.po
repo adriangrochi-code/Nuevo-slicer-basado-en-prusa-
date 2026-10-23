@@ -34098,3 +34098,18 @@ msgstr "Deshacer (Ctrl+Z)"
 
 msgid "Variable layer height: thinner layers where the surface needs them"
 msgstr "Altura de capa variable: capas más finas donde la superficie las necesita"
+
+msgid "All the settings"
+msgstr "Todos los ajustes"
+
+msgid "More settings"
+msgstr "Más ajustes"
+
+msgid "Settings shown: simple, advanced or expert"
+msgstr "Ajustes visibles: simple, avanzado o experto"
+
+msgid "The settings most prints need"
+msgstr "Los ajustes que necesitan casi todas las impresiones"
+
+msgid "Tisma Cloud account: slicing and analysis on the servers"
+msgstr "Cuenta de Tisma Cloud: laminado y análisis en los servidores"

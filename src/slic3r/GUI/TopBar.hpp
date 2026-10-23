@@ -6,6 +6,7 @@
 #include "Widgets/TextInput.hpp"
 
 class TopBarMenus;
+namespace Slic3r { namespace GUI { class TismaChip; } }
 
 // custom message the TopBarItemsCtrl sends to its parent (TopBar) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
@@ -124,6 +125,10 @@ private:
     ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_account_btn   {nullptr};
+    // Tisma: the settings mode and the Tisma Cloud account, instead of the two buttons above (hidden).
+    Slic3r::GUI::TismaChip*         m_mode_chip     {nullptr};
+    Slic3r::GUI::TismaChip*         m_cloud_chip    {nullptr};
+    void                            update_tisma_chips();
     Button*                         m_settings_btn  {nullptr};
     Button*                         m_project_btn   {nullptr};
     wxWindow*                       m_workspace_tabs{nullptr};
