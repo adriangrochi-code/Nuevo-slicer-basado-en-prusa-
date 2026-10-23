@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include "TCPConsole.hpp"
 
@@ -32,15 +33,26 @@ void TCPConsole::transmit_next_command()
         return;
     }
 
-    std::string cmd = m_cmd_queue.front();
+    if (m_queue_delay.count() > 0)
+        std::this_thread::sleep_for(m_queue_delay);
+
+    QueuedItem item = std::move(m_cmd_queue.front());
     m_cmd_queue.pop_front();
 
-    BOOST_LOG_TRIVIAL(debug) << boost::format("TCPConsole: transmitting '%3%' to %1%:%2%")
-        % m_host_name
-        % m_port_name
-        % cmd;
-
-    m_send_buffer = cmd + m_newline;
+    if (item.raw) {
+        BOOST_LOG_TRIVIAL(trace) << boost::format("TCPConsole: transmitting %3% bytes of data to %1%:%2%")
+            % m_host_name
+            % m_port_name
+            % item.text.size();
+        m_send_buffer = std::move(item.text);
+    } else {
+        BOOST_LOG_TRIVIAL(debug) << boost::format("TCPConsole: transmitting '%3%' to %1%:%2%")
+            % m_host_name
+            % m_port_name
+            % item.text;
+        m_send_buffer = item.text + m_newline;
+    }
+    m_expect_reply = !item.raw;
 
     set_deadline_in(m_write_timeout);
     boost::asio::async_write(
@@ -115,8 +127,11 @@ void TCPConsole::handle_write(
 
         m_io_context.stop();
     }
-    else {
+    else if (m_expect_reply) {
         wait_next_line();
+    }
+    else {
+        transmit_next_command();
     }
 }
 

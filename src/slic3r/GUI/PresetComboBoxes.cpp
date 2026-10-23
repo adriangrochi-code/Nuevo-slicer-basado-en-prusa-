@@ -6,6 +6,8 @@
 #include "PresetComboBoxes.hpp"
 
 #include <cstddef>
+#include <map>
+#include <set>
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
@@ -1087,6 +1089,35 @@ void PlaterPresetComboBox::update()
     if (!presets.front().is_visible)
         this->set_label_marker(this->Append(separator(L("System presets")), NullBitmapBndl()));
 
+    // Tisma: a printer model is listed once, as in OrcaSlicer; its nozzle is chosen apart (Sidebar::update_printer_parts()).
+    // The preset shown for a model: the selected one, else the one with the nozzle of the selected printer, else 0.4 mm,
+    // else the first one.
+    std::set<size_t> other_nozzles;
+    if (m_type == Preset::TYPE_PRINTER) {
+        const Preset &selected = m_collection->get_selected_preset();
+        const std::string selected_variant = selected.config.opt_string("printer_variant");
+        std::map<std::pair<const VendorProfile*, std::string>, std::vector<size_t>> models;
+        for (size_t i = 0; i < presets.size(); ++i)
+            if (const Preset &p = presets[i]; p.is_system && p.is_visible && p.vendor != nullptr &&
+                                              ! p.config.opt_string("printer_model").empty())
+                models[{ p.vendor, p.config.opt_string("printer_model") }].push_back(i);
+        for (const auto &[model, idxs] : models) {
+            if (idxs.size() < 2)
+                continue;
+            auto score = [&](size_t i) {
+                const std::string variant = presets[i].config.opt_string("printer_variant");
+                return i == m_collection->get_selected_idx() ? 3 : variant == selected_variant ? 2 : variant == "0.4" ? 1 : 0;
+            };
+            size_t shown = idxs.front();
+            for (size_t i : idxs)
+                if (score(i) > score(shown))
+                    shown = i;
+            for (size_t i : idxs)
+                if (i != shown)
+                    other_nozzles.insert(i);
+        }
+    }
+
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i) 
     {
         const Preset& preset = presets[i];
@@ -1098,7 +1129,7 @@ void PlaterPresetComboBox::update()
 
         const bool is_compatible = m_type == Preset::TYPE_FILAMENT ? extruder_filaments.filament(i).is_compatible : preset.is_compatible;
 
-        if (!preset.is_visible || (!is_compatible && !is_selected))
+        if (!preset.is_visible || (!is_compatible && !is_selected) || other_nozzles.count(i) > 0)
             continue;
 
         std::string bitmap_key, filament_rgb, extruder_rgb, material_rgb;

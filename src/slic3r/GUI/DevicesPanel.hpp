@@ -8,6 +8,8 @@
 #ifndef slic3r_DevicesPanel_hpp_
 #define slic3r_DevicesPanel_hpp_
 
+#include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,8 +21,12 @@ class wxButton;
 class wxCheckBox;
 
 namespace Slic3r {
+
+class DynamicPrintConfig;
+
 namespace GUI {
 
+class BambuCameraView;
 class PrinterWebViewPanel;
 class USBMonitorPanel;
 
@@ -28,6 +34,7 @@ class DevicesPanel : public wxPanel
 {
 public:
     explicit DevicesPanel(wxWindow *parent);
+    ~DevicesPanel() override;
 
     // Reloads the list of printers (after adding or editing one).
     void update_list();
@@ -46,8 +53,13 @@ private:
     void on_select();
     void add_network_printer();
     void edit_printer();
+    // Asks for the new access code / API key of the selected printer, tests it and saves it.
+    void change_access_code();
     void send_sliced();
     void open_in_browser();
+    // The camera of a Bambu Lab printer (A1, P1), streamed in the background while the printer is selected.
+    void start_camera(const DynamicPrintConfig &config);
+    void stop_camera();
     // URL of the web interface of a physical printer.
     static std::string web_url(const std::string &print_host, int host_type);
 
@@ -56,11 +68,15 @@ private:
     wxStaticText        *m_title      { nullptr };
     wxStaticText        *m_hint       { nullptr };
     wxButton            *m_btn_edit   { nullptr };
+    wxButton            *m_btn_code   { nullptr };
     wxButton            *m_btn_send   { nullptr };
     wxButton            *m_btn_browser{ nullptr };
     wxCheckBox          *m_start      { nullptr };
     PrinterWebViewPanel *m_web        { nullptr };
     USBMonitorPanel     *m_usb        { nullptr };
+    BambuCameraView     *m_camera     { nullptr };
+    // Set to end the camera stream in flight.
+    std::shared_ptr<std::atomic<bool>> m_camera_stop;
     bool                 m_web_created{ false };
     std::string          m_url;
     // Bambu Lab printers: the status request in flight (older answers are ignored).

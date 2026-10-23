@@ -26,6 +26,8 @@ namespace Fea {
 // - Damped Jacobi smoothing; the coarsest level is solved directly (sparse Cholesky).
 // - A node of a coarse level is fixed when a fixed node of the finer level is next to it.
 // The V-cycle is symmetric (as many smoothing sweeps before as after), so it is a valid preconditioner.
+// On a GPU (Vulkan, Gpu.hpp) the V-cycle runs in single precision but for the direct solve of the coarsest level, which
+// stays on the CPU (docs/FEA.md, "GPU").
 class Multigrid
 {
 public:
@@ -43,6 +45,12 @@ public:
         std::vector<char>               fixed;       // per dof
         std::vector<double>             diag;        // diagonal of the matrix, per dof
         Multiply                        multiply;    // y = K x (fixed dofs of y set to zero)
+        // For the GPU: the matrix of element e is element_scale[e][0] * matrices[element_matrix[e][0]] +
+        // element_scale[e][1] * matrices[element_matrix[e][1]] (an index -1: no second matrix). Empty: no GPU.
+        bool                                gpu { false };
+        std::vector<Matrix24d>              matrices;
+        std::vector<std::array<int, 2>>     element_matrix;
+        std::vector<std::array<float, 2>>   element_scale;
     };
 
     Multigrid();
@@ -56,6 +64,8 @@ public:
     size_t levels() const;
     // Degrees of freedom of the coarsest level (solved directly).
     size_t coarsest_dofs() const;
+    // The V-cycle runs on the GPU.
+    bool on_gpu() const { return m_gpu != nullptr; }
 
 private:
     struct Level;
@@ -63,8 +73,15 @@ private:
     struct Direct;
     std::unique_ptr<Direct>             m_direct;
 
+    struct Gpu;
+    std::unique_ptr<Gpu>                m_gpu;
+
     void smooth(const Level &level, const std::vector<double> &b, std::vector<double> &x, int sweeps) const;
     void cycle(size_t l, const std::vector<double> &b, std::vector<double> &x) const;
+    // Solution of the coarsest level (fixed dofs of b ignored, of x zero).
+    void solve_coarsest(const std::vector<double> &b, std::vector<double> &x) const;
+    bool build_gpu(const FineLevel &table);
+    bool apply_gpu(const std::vector<double> &r, std::vector<double> &z) const;
 };
 
 } // namespace Fea

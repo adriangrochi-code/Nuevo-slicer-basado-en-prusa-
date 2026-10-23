@@ -88,7 +88,7 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          cmake --build %APP_BUILD% --config Release --target TismaSlicer_app_gui TismaSlicer_app_console TismaSlicer_app_gcodeviewer OCCTWrapper -- /m /v:minimal
+          cmake --build %APP_BUILD% --config Release --target TismaSlicer_app_gui TismaSlicer_app_console TismaSlicer_app_gcodeviewer OCCTWrapper tisma-fea -- /m /v:minimal
 
       # The Bambu Lab LAN client goes through Schannel on Windows (certificate revocation check, TLS session reuse of
       # the FTPS data connection): test it against the fake printer, docs/BAMBU_LAN.md.

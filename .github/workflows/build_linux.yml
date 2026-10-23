@@ -97,7 +97,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="$DEPS_DEST/usr/local" -DSLIC3R_BUILD_TESTS=${{ inputs.run_tests && 'ON' || 'OFF' }}
 
       - name: Build
-        run: cmake --build build --target TismaSlicer
+        run: cmake --build build --target TismaSlicer tisma-fea
 
       - name: Build tests
         if: ${{ inputs.run_tests }}

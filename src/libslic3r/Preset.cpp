@@ -526,6 +526,10 @@ static std::vector<std::string> s_Preset_filament_options {
     "max_fan_speed", "bridge_fan_speed", "disable_fan_first_layers", "full_fan_speed_layer", "fan_below_layer_time", "slowdown_below_layer_time", "min_print_speed",
     "custom_parameters_filament", "start_filament_gcode", "end_filament_gcode", "enable_dynamic_fan_speeds", "chamber_temperature", "chamber_minimal_temperature",
     "overhang_fan_speed_0", "overhang_fan_speed_1", "overhang_fan_speed_2", "overhang_fan_speed_3",
+    // Tisma: the bed temperatures for each bed type (BedType.hpp).
+    "cool_plate_temp_initial_layer", "cool_plate_temp", "eng_plate_temp_initial_layer", "eng_plate_temp",
+    "hot_plate_temp_initial_layer", "hot_plate_temp", "textured_plate_temp_initial_layer", "textured_plate_temp",
+    "textured_cool_plate_temp_initial_layer", "textured_cool_plate_temp", "supertack_plate_temp_initial_layer", "supertack_plate_temp",
     // Retract overrides
     "filament_retract_length", "filament_retract_lift", "filament_retract_lift_above", "filament_retract_lift_below", "filament_retract_speed", "filament_deretract_speed", "filament_retract_restart_extra", "filament_retract_before_travel",
     "filament_retract_layer_change", "filament_wipe", "filament_retract_before_wipe", "filament_retract_length_toolchange", "filament_retract_restart_extra_toolchange", "filament_travel_ramping_lift",
@@ -549,7 +553,7 @@ static std::vector<std::string> s_Preset_machine_limits_options {
 
 static std::vector<std::string> s_Preset_printer_options {
     "printer_technology", "autoemit_temperature_commands",
-    "bed_shape", "bed_custom_texture", "bed_custom_model", "binary_gcode", "belt_printer", "belt_angle", "belt_axis_z", "nonplanar_head_clearance_height", "nonplanar_head_clearance_radius", "nonplanar_head_profile", "nonplanar_head_free_angle_x", "nonplanar_head_free_angle_y", "z_offset", "gcode_flavor", "use_relative_e_distances",
+    "bed_shape", "bed_custom_texture", "bed_custom_model", "support_multi_bed_types", "default_bed_type", "binary_gcode", "belt_printer", "belt_angle", "belt_axis_z", "nonplanar_head_clearance_height", "nonplanar_head_clearance_radius", "nonplanar_head_profile", "nonplanar_head_free_angle_x", "nonplanar_head_free_angle_y", "z_offset", "gcode_flavor", "use_relative_e_distances",
     "use_firmware_retraction", "use_volumetric_e", "variable_layer_height", "prefer_clockwise_movements",
     //FIXME the print host keys are left here just for conversion from the Printer preset to Physical Printer preset.
     "host_type", "print_host", "printhost_apikey", "printhost_cafile",
@@ -1772,8 +1776,9 @@ static std::vector<std::string> s_PhysicalPrinter_opts {
     "printhost_user",
     "printhost_password",
     "printhost_ssl_ignore_revoke",
-    // Tisma: Bambu Lab printers in LAN mode.
-    "bambu_use_ams"
+    // Tisma: Bambu Lab printers in LAN mode, Flashforge printers.
+    "bambu_use_ams",
+    "flashforge_serial_number"
 };
 
 const std::vector<std::string>& PhysicalPrinter::printer_options()

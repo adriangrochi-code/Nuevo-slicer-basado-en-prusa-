@@ -29,6 +29,11 @@ ln -s tisma-slicer "$app/usr/bin/tisma-gcodeviewer"
 # The binary finds its data in ../resources (src/CLI/Setup.cpp).
 cp -r "$src_dir/resources" "$app/usr/resources"
 strip --strip-unneeded "$app/usr/bin/tisma-slicer" || true
+# The structural analysis from the command line (computing servers): usr/bin/tisma-fea of the extracted AppImage.
+if [ -x "$build_dir/src/tisma-fea" ]; then
+    cp "$build_dir/src/tisma-fea" "$app/usr/bin/tisma-fea"
+    strip --strip-unneeded "$app/usr/bin/tisma-fea" || true
+fi
 
 cat > "$app/AppRun" <<'EOF'
 #!/bin/sh

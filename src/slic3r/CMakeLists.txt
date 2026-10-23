@@ -147,6 +147,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/CalibrationDialog.hpp
     GUI/FeaMaterialsDialog.cpp
     GUI/FeaMaterialsDialog.hpp
+    GUI/TismaCloudDialog.cpp
+    GUI/TismaCloudDialog.hpp
     GUI/FragmentDialog.cpp
     GUI/FragmentDialog.hpp
     GUI/NavRail.cpp
@@ -373,6 +375,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/AppUpdater.cpp
     Utils/AppUpdater.hpp
     Utils/Http.cpp
+    Utils/TismaCloud.hpp
+    Utils/TismaCloud.cpp
     Utils/Http.hpp
     Utils/FixModelByWin10.cpp
     Utils/FixModelByWin10.hpp
@@ -384,6 +388,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/BambuLan.hpp
     Utils/BambuLanClient.cpp
     Utils/BambuLanClient.hpp
+    Utils/Flashforge.cpp
+    Utils/Flashforge.hpp
     Utils/OctoPrint.cpp
     Utils/OctoPrint.hpp
     Utils/Duet.cpp

@@ -1,0 +1,29 @@
+#version 450
+// Tisma Slicer: restriction of the residual to the next coarser level of the multigrid (src/libtisma_fea/src/
+// GpuMultigrid.cpp): every coarse node gathers the fine nodes it interpolates, with their trilinear weights.
+layout(local_size_x = 64) in;
+
+layout(push_constant) uniform Params {
+    uint nodes;   // coarse nodes
+} params;
+
+layout(std430, binding = 0) readonly buffer Offsets  { uint offsets[]; };
+layout(std430, binding = 1) readonly buffer Children { int child_node[]; };
+layout(std430, binding = 2) readonly buffer Weights  { float child_weight[]; };
+layout(std430, binding = 3) readonly buffer Free     { float free_dof[]; };
+layout(std430, binding = 4) readonly buffer Fine     { float fine[]; };
+layout(std430, binding = 5) writeonly buffer Coarse  { float coarse[]; };
+
+void main()
+{
+    uint c = gl_GlobalInvocationID.x;
+    if (c >= params.nodes)
+        return;
+    vec3 s = vec3(0.0);
+    for (uint i = offsets[c]; i < offsets[c + 1u]; ++i) {
+        uint f = uint(child_node[i]);
+        s += child_weight[i] * vec3(fine[3u * f], fine[3u * f + 1u], fine[3u * f + 2u]);
+    }
+    for (uint k = 0u; k < 3u; ++k)
+        coarse[3u * c + k] = free_dof[3u * c + k] * s[k];
+}

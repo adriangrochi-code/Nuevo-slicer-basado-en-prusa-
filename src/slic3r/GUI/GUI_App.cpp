@@ -110,6 +110,7 @@
 #include "BitmapCache.hpp"
 //#include "Notebook.hpp"
 #include "TopBar.hpp"
+#include "TismaCloudDialog.hpp"
 
 #ifdef __WXMSW__
 #include <dbt.h>
@@ -2754,6 +2755,8 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
         local_menu->AppendSeparator();
         local_menu->Append(config_id_base + ConfigMenuFlashFirmware, _L("Flash Printer &Firmware"), _L("Upload a firmware image into an Arduino based printer"));
         local_menu->Append(config_id_base + ConfigMenuUSBPrint, _L("Print via &USB") + dots, _L("Print a G-code file on a printer connected by USB (serial port)"));
+        // Tisma: the account of the computing servers.
+        local_menu->Append(config_id_base + ConfigMenuTismaCloud, _L("Tisma &Cloud Account") + dots, _L("Log in to slice and analyze on the Tisma Cloud servers"));
         // TODO: for when we're able to flash dictionaries
         // local_menu->Append(config_id_base + FirmwareMenuDict,  _L("Flash Language File"),    _L("Upload a language dictionary file into a Prusa printer"));
     }
@@ -2859,6 +2862,9 @@ wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
             break;
         case ConfigMenuUSBPrint:
             USBMonitorPanel::show();
+            break;
+        case ConfigMenuTismaCloud:
+            show_cloud_account_dialog(mainframe);
             break;
         case ConfigMenuWifiConfigFile:
         {

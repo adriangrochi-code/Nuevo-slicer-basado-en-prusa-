@@ -39,6 +39,19 @@ float tisma_shadow(vec3 eye_pos, float NdotL)
     return 1.0 - tisma_shadow_intensity * shadow / 9.0;
 }
 
+// Tisma Slicer (phase 7c): output to the G-buffer of the deferred shading (see src/slic3r/GUI/TismaShading.cpp), disabled
+// by default: the color before lighting, the material in the alpha and the eye normal. Octahedral normal encoding of
+// PrusaSlicer 3.0 (gbuffer_ao.fs, Copyright (c) Prusa Research, AGPLv3).
+uniform bool tisma_gbuffer;
+uniform float tisma_material;
+out vec2 tisma_out_normal;
+
+vec2 tisma_encode_normal(vec3 n)
+{
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    return (n.z >= 0.0) ? n.xy : (1.0 - abs(n.yx)) * vec2(n.x >= 0.0 ? 1.0 : -1.0, n.y >= 0.0 ? 1.0 : -1.0);
+}
+
 // Tisma Slicer (phase 7): lighting computed per pixel (the same lights as the vertex shader), disabled by default.
 uniform bool tisma_per_pixel;
 
@@ -104,7 +117,7 @@ void main()
     if (any(lessThan(clipping_planes_dots, ZERO)))
         discard;
 
-    vec2 light = (tisma_per_pixel || tisma_shadows) ? tisma_lighting(eye_normal, tisma_eye_pos) : intensity;
+    vec2 light = (!tisma_gbuffer && (tisma_per_pixel || tisma_shadows)) ? tisma_lighting(eye_normal, tisma_eye_pos) : intensity;
 
     vec4 color;
 	if (use_color_clip_plane) {
@@ -134,6 +147,12 @@ void main()
 		pv_check_max = vec3(0.0, 0.0, world_pos.z - print_volume.z_data.y);
 	}
 	color.rgb = (any(lessThan(pv_check_min, ZERO)) || any(greaterThan(pv_check_max, ZERO))) ? mix(color.rgb, ZERO, 0.3333) : color.rgb;
+
+    if (tisma_gbuffer) {
+        out_color = vec4(color.rgb, tisma_material);
+        tisma_out_normal = tisma_encode_normal(normalize(eye_normal));
+        return;
+    }
 	
 #ifdef ENABLE_ENVIRONMENT_MAP
     if (use_environment_tex)

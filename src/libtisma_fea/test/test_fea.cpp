@@ -27,6 +27,17 @@ using namespace Slic3r;
 using namespace Slic3r::Fea;
 using Catch::Approx;
 
+// The tests may use a Vulkan device that runs on the CPU (lavapipe, SwiftShader) for the multigrid on the GPU: set
+// before the first analysis creates the context. Without a Vulkan driver (CI) the analyses run on the CPU.
+static const bool s_allow_cpu_vulkan = []() {
+#ifdef _WIN32
+    _putenv_s("TISMA_FEA_GPU_ALLOW_CPU", "1");
+#else
+    setenv("TISMA_FEA_GPU_ALLOW_CPU", "1", 0);
+#endif
+    return true;
+}();
+
 // Triangles of the box whose normal is along the axis with the sign.
 static std::vector<int> side(const indexed_triangle_set &its, int axis, bool positive)
 {
@@ -2004,4 +2015,53 @@ TEST_CASE("Resin print settings reach the analysis", "[FEA][Resin]")
     apply_resin_structure(object, 0., 0.);
     REQUIRE(build_analysis_input(object, 0, "Generic", input, error, &config));
     CHECK(! input.setup.infill.enabled);
+}
+
+TEST_CASE("Multigrid on the GPU", "[FEA][Multigrid][GPU]")
+{
+    if (gpu_device_name().empty()) {
+        SKIP("No Vulkan device");
+    }
+    auto run = [](Setup setup, const indexed_triangle_set &its, bool on_gpu, double &seconds) {
+        setup.gpu = on_gpu;
+        const auto t0 = std::chrono::steady_clock::now();
+        Result res = analyze(its, setup);
+        seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        return res;
+    };
+    auto compare = [&run](const char *name, const Setup &setup, const indexed_triangle_set &its) {
+        double tc = 0., tg = 0.;
+        const Result cpu = run(setup, its, false, tc);
+        const Result gpu = run(setup, its, true, tg);
+        REQUIRE(cpu.ok);
+        REQUIRE(gpu.ok);
+        CHECK(cpu.gpu_device.empty());
+        CHECK(gpu.gpu_device == gpu_device_name());
+        CHECK(gpu.multigrid_levels == cpu.multigrid_levels);
+        // The same solution: the conjugate gradient runs in double precision, only the preconditioner in single.
+        CHECK(gpu.max_displacement == Approx(cpu.max_displacement).epsilon(1e-5));
+        CHECK(gpu.max_von_mises == Approx(cpu.max_von_mises).epsilon(1e-4));
+        CHECK(gpu.iterations <= cpu.iterations + 3);
+        WARN(name << ", " << gpu.voxels.size() << " voxels: CPU " << cpu.iterations << " iterations " << tc << " s, GPU ("
+             << gpu.gpu_device << ") " << gpu.iterations << " iterations " << tg << " s");
+    };
+    SECTION("solid cantilever") {
+        const indexed_triangle_set its = its_make_cube(60., 10., 10.);
+        Setup setup;
+        setup.material   = "PLA";
+        setup.voxel_size = 0.5;
+        setup.fixtures.push_back({ side(its, 0, false) });
+        Load load;
+        load.type      = Load::Type::Faces;
+        load.triangles = side(its, 0, true);
+        load.force     = Vec3d(0., 0., -100.);
+        setup.loads.push_back(load);
+        compare("solid cantilever", setup, its);
+    }
+    SECTION("printed cantilever (walls and infill)") {
+        indexed_triangle_set its;
+        Setup setup = printed_cantilever(its, 5., 0.);
+        setup.voxel_size = 0.5;
+        compare("printed cantilever", setup, its);
+    }
 }

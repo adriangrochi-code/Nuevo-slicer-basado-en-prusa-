@@ -32140,12 +32140,8 @@ msgstr "El refuerzo no ahorra material aquí: las tensiones no se concentran en 
 msgid "Rendering quality"
 msgstr "Calidad de render"
 
-msgid ""
-"Quality of the 3D view of the objects, of the bed and of the G-code preview. "
-"Classic: lighting per vertex, as Tisma Slicer 2.9. Per pixel: smooth "
-"lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and "
-"shadows of the main light (needs a faster graphics card)."
-msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como Tisma Slicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal (necesita una tarjeta gráfica más rápida)."
+msgid "Quality of the 3D view of the objects, of the bed and of the G-code preview. Classic: lighting per vertex, as PrusaSlicer 2.9. Per pixel: smooth lighting and highlights, rounded toolpaths. Shadows: per pixel lighting and shadows of the main light. Ambient occlusion: shadows and darker corners, joints and contacts with the bed. Realistic materials: ambient occlusion and physically based lighting, glossier \"Silk\" and rougher \"Matte\" filaments. The last modes need a faster graphics card."
+msgstr "Calidad de la vista 3D de las piezas, de la cama y de la vista previa del G-code. Clásico: iluminación por vértice, como PrusaSlicer 2.9. Por píxel: iluminación y brillos suaves, trayectorias redondeadas. Sombras: iluminación por píxel y sombras de la luz principal. Oclusión ambiental: sombras y rincones, uniones y contactos con la cama más oscuros. Materiales realistas: oclusión ambiental e iluminación física, filamentos «Silk» más brillantes y «Matte» más ásperos. Los últimos modos necesitan una tarjeta gráfica más rápida."
 
 msgid "Per pixel"
 msgstr "Por píxel"
@@ -32656,8 +32652,23 @@ msgstr "Boquilla %1% °C, cama %2% °C."
 msgid "Progress %1% %%, %2% min left."
 msgstr "Progreso %1% %%, faltan %2% min."
 
-msgid "Select it again to refresh. Tisma does not show the camera of Bambu Lab printers yet."
-msgstr "Selecciónala de nuevo para actualizar. Tisma todavía no muestra la cámara de las impresoras Bambu Lab."
+msgid "Select it again to refresh."
+msgstr "Selecciónala de nuevo para actualizar."
+
+msgid "Connecting to the camera of the printer..."
+msgstr "Conectando con la cámara de la impresora..."
+
+msgid "This printer sends its camera by RTSPS (X1, P2S and H2 series), which Tisma does not show yet. The camera of the A1 and P1 series is shown here."
+msgstr "Esta impresora envía su cámara por RTSPS (series X1, P2S y H2), que Tisma todavía no muestra. Aquí se muestra la cámara de las series A1 y P1."
+
+msgid "The printer closed the camera connection before sending an image: check the access code, and that the camera is on and not in use by another program."
+msgstr "La impresora cerró la conexión de la cámara antes de enviar una imagen: revisa el código de acceso y que la cámara esté encendida y no la use otro programa."
+
+msgid "The printer ended the camera stream. Select the printer again to reconnect."
+msgstr "La impresora terminó la transmisión de la cámara. Selecciona la impresora de nuevo para reconectar."
+
+msgid "Could not show the camera: %1%"
+msgstr "No se pudo mostrar la cámara: %1%"
 
 msgid "The printer rejected the access code."
 msgstr "La impresora rechazó el código de acceso."
@@ -33754,3 +33765,141 @@ msgstr "Pieza impresa (vaciado y relleno interior del perfil)"
 
 msgid "Walls %1$.1f mm: no room for a cavity (solid)"
 msgstr "Paredes de %1$.1f mm: no queda lugar para una cavidad (maciza)"
+
+msgid "Ambient occlusion"
+msgstr "Oclusión ambiental"
+
+msgid "Realistic materials"
+msgstr "Materiales realistas"
+
+msgid "Structural analysis on the graphics card"
+msgstr "Análisis estructural en la tarjeta gráfica"
+
+msgid "When checked, the structural analysis (Engineering) uses the graphics card through Vulkan when there is one, which makes the fine analyses and the searches of infill and walls faster. Uncheck it if the graphics driver gives problems: the analysis then runs on the processor, with the same results."
+msgstr "Si está marcado, el análisis estructural (Ingeniería) usa la tarjeta gráfica mediante Vulkan cuando hay una, lo que acelera los análisis finos y las búsquedas de relleno y paredes. Desmarcalo si el driver de video da problemas: el análisis se hace entonces en el procesador, con los mismos resultados."
+
+msgid "Computed on the graphics card (%1%)."
+msgstr "Calculado en la tarjeta gráfica (%1%)."
+
+msgid "%1% min"
+msgstr "%1% min"
+
+msgid "%1$.1f h"
+msgstr "%1$.1f h"
+
+msgid "Tisma Cloud account"
+msgstr "Cuenta de Tisma Cloud"
+
+msgid "Slice and run the structural analyses on the Tisma Cloud servers. The account and the plan are managed on the web site."
+msgstr "Laminá y hacé los análisis estructurales en los servidores de Tisma Cloud. La cuenta y el plan se administran en la página web."
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "E-mail"
+msgstr "Correo electrónico"
+
+msgid "Not logged in."
+msgstr "No iniciaste sesión."
+
+msgid "Logged in as %1%, but the server does not answer: %2%"
+msgstr "Sesión iniciada como %1%, pero el servidor no responde: %2%"
+
+msgid "Logged in as %1%. Plan %2%: %3% of %4% used this month."
+msgstr "Sesión iniciada como %1%. Plan %2%: usaste %3% de %4% este mes."
+
+msgid "Paid until %1%."
+msgstr "Pagado hasta el %1%."
+
+msgid "The plan is not paid: renew it on the web site to use the servers."
+msgstr "El plan no está pagado: renovalo en la página web para usar los servidores."
+
+msgid "Enter the server, the e-mail and the password."
+msgstr "Ingresá el servidor, el correo y la contraseña."
+
+msgid "Could not log in: %1%"
+msgstr "No se pudo iniciar sesión: %1%"
+
+msgid "Sending the project to the servers..."
+msgstr "Enviando el proyecto a los servidores..."
+
+msgid "Waiting for a free computing server..."
+msgstr "Esperando un servidor de cálculo libre..."
+
+msgid "Computing on the servers: %1% %%"
+msgstr "Calculando en los servidores: %1% %%"
+
+msgid "Downloading the result..."
+msgstr "Descargando el resultado..."
+
+msgid "The project could not be saved for the servers."
+msgstr "No se pudo guardar el proyecto para los servidores."
+
+msgid "The session ended: log in again (Configuration > Tisma Cloud account)."
+msgstr "La sesión terminó: iniciá sesión de nuevo (Configuración > Cuenta de Tisma Cloud)."
+
+msgid "Cancelled."
+msgstr "Cancelado."
+
+msgid "Slicing in the cloud is available for filament printers. Resin printers are sliced on this computer."
+msgstr "El laminado en la nube es para impresoras de filamento. Las de resina se laminan en esta computadora."
+
+msgid "There is nothing to slice."
+msgstr "No hay nada para laminar."
+
+msgid "Slice in the cloud"
+msgstr "Laminar en la nube"
+
+msgid "Slicing in the cloud failed: %1%"
+msgstr "El laminado en la nube falló: %1%"
+
+msgid "Save the G-code as:"
+msgstr "Guardar el G-code como:"
+
+msgid "Could not save %1%: %2%"
+msgstr "No se pudo guardar %1%: %2%"
+
+msgid "Sliced in the cloud in %1$.1f s: %2%."
+msgstr "Laminado en la nube en %1$.1f s: %2%."
+
+msgid "Print time %1%."
+msgstr "Tiempo de impresión %1%."
+
+msgid "Slice in the &Cloud and Export G-code"
+msgstr "Laminar en la &nube y exportar G-code"
+
+msgid "Slice the current plate on the Tisma Cloud servers and save the G-code"
+msgstr "Lamina la placa actual en los servidores de Tisma Cloud y guarda el G-code"
+
+msgid "Tisma &Cloud Account"
+msgstr "Cuenta de Tisma &Cloud"
+
+msgid "Log in to slice and analyze on the Tisma Cloud servers"
+msgstr "Iniciá sesión para laminar y analizar en los servidores de Tisma Cloud"
+
+msgid "Log in to Tisma Cloud first (Configuration > Tisma Cloud account), or compute on this computer."
+msgstr "Primero iniciá sesión en Tisma Cloud (Configuración > Cuenta de Tisma Cloud), o calculá en esta computadora."
+
+msgid "%1% is one of your own materials: it is computed on this computer."
+msgstr "%1% es uno de tus materiales propios: se calcula en esta computadora."
+
+msgid "Tisma Cloud: %1%"
+msgstr "Tisma Cloud: %1%"
+
+msgid "Compute in the cloud"
+msgstr "Calcular en la nube"
+
+msgid "On the Tisma Cloud servers (%1%): the analysis, the lightest infill and the walls of resin parts."
+msgstr "En los servidores de Tisma Cloud (%1%): el análisis, el relleno mínimo y las paredes de las piezas de resina."
+
+msgid "Log in first: Configuration > Tisma Cloud account."
+msgstr "Primero iniciá sesión: Configuración > Cuenta de Tisma Cloud."
+
+msgid "Create an account or pay the plan on the web site"
+msgstr "Crear una cuenta o pagar el plan en la página web"
+
+msgid "The plan is not paid: pay it on the web site (Configuration > Tisma Cloud account has the link)."
+msgstr "El plan no está pagado: pagalo en la página web (el enlace está en Configuración > Cuenta de Tisma Cloud)."
+
+msgid "Confirm your e-mail first with the code we sent to it (the link below opens the account page)."
+msgstr "Primero confirmá tu correo con el código que te mandamos (el enlace de abajo abre la página de la cuenta)."

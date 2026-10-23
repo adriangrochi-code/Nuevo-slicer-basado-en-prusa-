@@ -46,6 +46,7 @@
 
 namespace Slic3r {
 class SLAPrintObject;
+class GLShaderProgram;
 enum  SLAPrintObjectStep : unsigned int;
 class BuildVolume;
 class DynamicPrintConfig;
@@ -372,6 +373,10 @@ public:
         //   [0] = min z, [1] = max z
         std::array<float, 2> zs;
     };
+
+    // Tisma Slicer (phase 7c): called by render() before each volume is drawn with the shader in use, to set the
+    // material of the volume in the G-buffer of the deferred shading (empty out of the G-buffer pass).
+    std::function<void(GLShaderProgram&, const GLVolume&)> tisma_set_material;
 
 private:
     PrintVolume m_print_volume;

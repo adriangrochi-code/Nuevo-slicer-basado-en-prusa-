@@ -27,6 +27,9 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Releases come from main, whatever the default branch of the repository is (the config and manifest are
+          # read from it).
+          target-branch: main
 
   packages:
     needs: release-please

@@ -11,6 +11,7 @@
 #include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/BeltPrinter.hpp>
 #include <libslic3r/NonPlanar.hpp>
+#include <libslic3r/SLA/InteriorInfill.hpp>
 
 #include "tisma_fea/Structures.hpp"
 #include "tisma_fea/Ribs.hpp"
@@ -92,6 +93,22 @@ static void infill_from_config(const ModelObject &object, const DynamicPrintConf
 bool is_resin(const DynamicPrintConfig &print_config)
 {
     return print_config.has("printer_technology") && print_config.opt_serialize("printer_technology") == "SLA";
+}
+
+const std::vector<double> RESIN_WALLS = { 1., 1.5, 2., 3., 4., 5. };
+
+double resin_infill_cell(const ModelObject &object, const DynamicPrintConfig &print_config)
+{
+    DynamicPrintConfig cfg = print_config;
+    cfg.apply(object.config.get(), true);
+    const ConfigOption *cell = cfg.option("hollowing_infill_cell");
+    return cell ? std::max(1., cell->getFloat()) : 8.;
+}
+
+double resin_min_infill(double cell)
+{
+    const double w = sla::INFILL_MIN_STRUT / std::max(cell, 1e-3);
+    return std::min(RESIN_MAX_INFILL, std::max(0.05, double(sla::INFILL_DIRECTIONS) * w * w));
 }
 
 // Resin printers: a solid part, or a hollowed one (hollowing_enable): walls of hollowing_min_thickness and the struts

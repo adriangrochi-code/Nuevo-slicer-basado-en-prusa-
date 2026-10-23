@@ -54,11 +54,57 @@ Preferencias → Cámara → **Calidad de render** (`tisma_render_quality` en `P
 |---|---|---|
 | 0 | Clásico | Como PrusaSlicer 2.9 (luz por vértice). |
 | 1 | Por píxel | 7a. |
-| 2 | Sombras (predeterminado) | 7a + 7b. |
+| 2 | Sombras | 7a + 7b. |
+| 3 | Oclusión ambiental (predeterminado) | 7b + 7c, luz Phong. |
+| 4 | Materiales realistas | 7b + 7c + 7d, luz PBR. |
 
-Solo con OpenGL 3.2 o superior; con OpenGL 2.x (shaders `110`) y OpenGL ES se usa siempre el modo Clásico.
+Solo con OpenGL 3.2 o superior; con OpenGL 2.x (shaders `110`) y OpenGL ES se usa siempre el modo Clásico. Si el
+G-buffer no se puede crear, los modos 3 y 4 quedan como Sombras.
 
-## Pendiente (no autorizado todavía)
+### 7c. G-buffer y oclusión ambiental (autorizado como refactor del render)
 
-- 7c: oclusión ambiental (SSAO), necesita un G-buffer y adaptar transparencias, gizmos y antialiasing.
-- 7d: brillo por material del filamento (PBR) y ocultar trayectorias al girar en escenas densas.
+Como los modos «AO» y «PBR» de PrusaSlicer 3.0, con luz diferida:
+
+1. **G-buffer** (`TismaShading::begin_gbuffer()`): las piezas opacas, la cama vista desde arriba (modelo y textura) y
+   las trayectorias se dibujan con sus mismos shaders a un framebuffer propio: profundidad (24 bits), color antes de la
+   luz con el material en el alfa (RGBA8) y la normal en el espacio de la cámara codificada en dos números (RG16F,
+   codificación octaédrica de la 3.0). Los shaders `gouraud`, `mm_gouraud`, `gouraud_light`, `printbed` y los de
+   libvgcode lo escriben cuando su uniforme `tisma_gbuffer` está activo; al terminar la pasada se apaga.
+2. **Oclusión ambiental** a media resolución (`tisma_ssao.fs`): 32 muestras en una semiesfera alrededor de la normal,
+   rotadas por una textura de ruido de 4×4, radio 30 mm, sesgo 1,5, umbral 5 mm; luego un desenfoque de caja de 5×5
+   en dos pasadas (`tisma_blur.fs`). Son los valores de la 3.0 (`GraphicsSettings.hpp`).
+3. **Luz** (`tisma_deferred.fs`): una pasada a pantalla completa ilumina cada píxel con las sombras de la luz principal
+   y la oclusión sobre la luz ambiente, y escribe la profundidad del G-buffer. Después se dibuja lo demás como antes
+   (objetos transparentes, selección, gizmos, cama vista desde abajo, ejes, leyendas), sobre esa profundidad.
+   Los shaders que no escriben material (contornos, pintura de los gizmos, alturas variables) quedan como se
+   dibujaron, sin luz nueva.
+
+Queda fuera del G-buffer, como en la 3.0, lo transparente: la cama por defecto (sin modelo ni textura, o con modelos
+superpuestos en varias planchas), la cama vista desde abajo y los objetos transparentes. El G-buffer no tiene
+antialiasing multimuestra: los bordes de las piezas opacas se ven como en la 3.0.
+
+### 7d. Materiales (PBR)
+
+Cook-Torrance (GGX, Smith, Fresnel-Schlick) con tonemapping de Reinhard y las mismas dos luces, como `ao_lighting.fs`
+de la 3.0 (intensidad 20, ambiente 0,5). Metalicidad, rugosidad e índice de refracción de la 3.0
+(`LightingHelper.hpp`):
+
+| Material | Metal | Rugosidad | IOR |
+|---|---|---|---|
+| Piezas | 0 | 0,25 | 1,5 |
+| Piezas de filamento «Silk» (nombre del perfil) | 0,2 | 0,12 | 1,5 |
+| Piezas de filamento «Matte» | 0 | 0,7 | 1,5 |
+| Soportes y pad SLA | 0 | 0,5 | 1,4 |
+| Cama (textura y modelo) | 0,5 | 0,5 | 1,5 |
+| Trayectorias | 0 | 0,5 | 1,5 |
+| Opciones de la vista previa (retracciones, ...) | 0 | 0,2 | 2,0 |
+
+«Silk» y «Matte» son una aproximación visual de Tisma (más brillante y más áspero que el valor de la 3.0), no datos
+de los fabricantes. El brillo por material se aplica a las piezas; las trayectorias usan el material de la 3.0 porque
+su color depende de la vista (tipo de extrusión, velocidad, ...).
+
+## Pendiente
+
+- Ocultar trayectorias al girar la cámara en escenas muy densas (la 3.0 lo hace).
+- Medir el rendimiento de los modos 3 y 4 en gráficos integrados: en el entorno de desarrollo solo hay render por
+  software (llvmpipe).

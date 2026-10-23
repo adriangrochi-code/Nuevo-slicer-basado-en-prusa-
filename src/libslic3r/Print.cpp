@@ -96,6 +96,8 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "avoid_crossing_perimeters_max_detour",
         "bed_shape",
         "bed_temperature",
+        // Tisma: the plate chosen sets the bed temperatures (apply_bed_type()).
+        "curr_bed_type",
         "before_layer_gcode",
         "between_objects_gcode",
         "binary_gcode",

@@ -83,6 +83,7 @@ class PhysicalPrinterDialog : public DPIDialog
     wxString            m_stored_host;
     // Tisma: how to fill the fields for a Bambu Lab printer.
     wxStaticText*       m_bambu_hint                    {nullptr};
+    wxStaticText*       m_flashforge_hint               {nullptr};
     PrintHostType       m_last_host_type;
     bool                m_opened_as_connect {false};
 
@@ -97,6 +98,7 @@ public:
     void        update(bool printer_change = false);
     void        update_host_type(bool printer_change);
     void        update_printhost_buttons();
+    void        browse_flashforge();
     void        update_printers();
     wxString    get_printer_name();
     void        update_full_printer_names();

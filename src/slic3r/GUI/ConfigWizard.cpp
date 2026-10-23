@@ -2027,15 +2027,15 @@ PageBrands::PageBrands(ConfigWizard *parent)
             if (! converted)
                 brand.name = from_u8(name);
 
-            for (const VendorProfile::PrinterModel &model : vendor->models)
-                for (const VendorProfile::PrinterVariant &variant : model.variants) {
-                    Entry entry { repo.id_name, vendor, &model, variant.name };
-                    entry.label = from_u8(model.name);
-                    if (model.technology == ptFFF)
-                        entry.label += "  -  " + format_wxstr("%1% %2% %3%", variant.name, _L("mm"), _L("nozzle"));
-                    brand.entries.push_back(m_entries.size());
-                    m_entries.push_back(std::move(entry));
-                }
+            // One row per model: its nozzles are checked apart, so a model is not repeated for each nozzle.
+            for (const VendorProfile::PrinterModel &model : vendor->models) {
+                if (model.variants.empty())
+                    continue;
+                Entry entry { repo.id_name, vendor, &model };
+                entry.label = from_u8(model.name);
+                brand.entries.push_back(m_entries.size());
+                m_entries.push_back(std::move(entry));
+            }
         }
 
     std::sort(m_brands.begin(), m_brands.end(), [](const Brand &a, const Brand &b) { return lower(a.name) < lower(b.name); });
@@ -2047,8 +2047,10 @@ PageBrands::PageBrands(ConfigWizard *parent)
             entry.full_label = lower(entry.label).find(brand_lower) == std::wstring::npos ?
                 brand.name + "  " + entry.label : entry.label;
             entry.search_text = brand_lower + L" " + lower(entry.label) + L" " + lower(from_u8(entry.vendor->name));
+            for (const VendorProfile::PrinterVariant &variant : entry.model->variants)
+                entry.search_text += L" " + lower(from_u8(variant.name));
         }
-        // Models in alphabetic order, the nozzles of a model in the order of the vendor.
+        // Models in alphabetic order.
         std::stable_sort(brand.entries.begin(), brand.entries.end(), [this](size_t a, size_t b) {
             return lower(from_u8(m_entries[a].model->name)) < lower(from_u8(m_entries[b].model->name));
         });
@@ -2090,6 +2092,12 @@ PageBrands::PageBrands(ConfigWizard *parent)
     m_preview_name = new wxStaticText(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(20 * em, -1), wxALIGN_CENTER_HORIZONTAL | wxST_NO_AUTORESIZE);
     m_preview_name->SetFont(m_preview_name->GetFont().Bold());
     preview_sizer->Add(m_preview_name, 0, wxEXPAND);
+    // The nozzles of the model shown, as the nozzle selector of OrcaSlicer.
+    m_nozzles_label = new wxStaticText(this, wxID_ANY, _L("Nozzles"));
+    m_nozzles_label->SetFont(m_nozzles_label->GetFont().Bold());
+    preview_sizer->Add(m_nozzles_label, 0, wxTOP | wxBOTTOM, em);
+    m_nozzles_sizer = new wxBoxSizer(wxVERTICAL);
+    preview_sizer->Add(m_nozzles_sizer, 0, wxEXPAND);
     lists->Add(preview_sizer, 0);
 
     append(lists, 1, wxEXPAND | wxTOP | wxBOTTOM, 5);
@@ -2122,14 +2130,30 @@ void PageBrands::on_activate()
         m_custom->SetValue(wizard_p()->page_custom->custom_wanted());
 }
 
+bool PageBrands::is_selected(const Entry &entry, const std::string &variant) const
+{
+    return wizard_p()->appconfig_new.get_variant(entry.vendor->id, entry.model->id, variant);
+}
+
 bool PageBrands::is_selected(const Entry &entry) const
 {
-    return wizard_p()->appconfig_new.get_variant(entry.vendor->id, entry.model->id, entry.variant);
+    return selected_count(entry) > 0;
+}
+
+size_t PageBrands::selected_count(const Entry &entry) const
+{
+    return std::count_if(entry.model->variants.begin(), entry.model->variants.end(),
+                         [this, &entry](const VendorProfile::PrinterVariant &v) { return is_selected(entry, v.name); });
 }
 
 size_t PageBrands::selected_count(const Brand &brand) const
 {
     return std::count_if(brand.entries.begin(), brand.entries.end(), [this](size_t i) { return is_selected(m_entries[i]); });
+}
+
+bool PageBrands::pick(const Entry &entry, const std::string &variant, bool enable)
+{
+    return wizard_p()->pick_printer(entry.vendor, *entry.model, variant, enable);
 }
 
 bool PageBrands::matches(const Entry &entry) const
@@ -2248,14 +2272,43 @@ void PageBrands::update_preview()
         m_preview->SetBitmap(wxNullBitmap);
     m_preview_name->SetLabel(from_u8(entry.model->name));
     m_preview_name->Wrap(m_preview->GetMinSize().GetWidth());
+    update_nozzles(&entry);
     Layout();
+}
+
+void PageBrands::update_nozzles(const Entry *entry)
+{
+    m_nozzles_sizer->Clear(true);
+    m_nozzle_boxes.clear();
+    // Resin printers and the printers with only one nozzle have nothing to choose.
+    const bool show = entry != nullptr && entry->model->technology == ptFFF;
+    m_nozzles_label->Show(show);
+    if (! show)
+        return;
+    for (const VendorProfile::PrinterVariant &variant : entry->model->variants) {
+        auto *box = new wxCheckBox(this, wxID_ANY, format_wxstr("%1% %2%", variant.name, _L("mm")));
+        wxGetApp().UpdateDarkUI(box);
+        box->SetValue(is_selected(*entry, variant.name));
+        const std::string name = variant.name;
+        box->Bind(wxEVT_CHECKBOX, [this, entry, name, box](wxCommandEvent &) {
+            if (! pick(*entry, name, box->GetValue()))
+                box->SetValue(! box->GetValue());
+            // The row of the model is checked while one of its nozzles is.
+            const int row = m_printers_list->GetSelection();
+            if (row != wxNOT_FOUND && row < int(m_shown_entries.size()) && &m_entries[m_shown_entries[row]] == entry)
+                m_printers_list->Check(row, is_selected(*entry));
+            update_counts();
+        });
+        m_nozzles_sizer->Add(box, 0, wxBOTTOM, 3);
+        m_nozzle_boxes.push_back(box);
+    }
 }
 
 void PageBrands::update_summary()
 {
     size_t selected = 0;
-    for (const Brand &brand : m_brands)
-        selected += selected_count(brand);
+    for (const Entry &entry : m_entries)
+        selected += selected_count(entry);
     m_summary->SetLabel(selected == 0 ? _L("No printer selected.") :
         format_wxstr(_L_PLURAL("%1% printer selected. Finish installs it with its settings and filaments.",
                                "%1% printers selected. Finish installs them with their settings and filaments.", selected), selected));
@@ -2267,9 +2320,29 @@ void PageBrands::on_check(int row)
         return;
     const Entry &entry = m_entries[m_shown_entries[row]];
     const bool enable = m_printers_list->IsChecked(row);
-    if (! wizard_p()->pick_printer(entry.vendor, *entry.model, entry.variant, enable))
-        m_printers_list->Check(row, ! enable);
+    if (enable) {
+        // The nozzle of the model which comes with the printer: 0.4 mm, or the first one of the vendor.
+        const auto &variants = entry.model->variants;
+        auto it = std::find_if(variants.begin(), variants.end(), [](const VendorProfile::PrinterVariant &v) { return v.name == "0.4"; });
+        if (it == variants.end())
+            it = variants.begin();
+        if (! pick(entry, it->name, true))
+            m_printers_list->Check(row, false);
+    } else {
+        for (const VendorProfile::PrinterVariant &variant : entry.model->variants)
+            if (is_selected(entry, variant.name))
+                pick(entry, variant.name, false);
+        m_printers_list->Check(row, is_selected(entry));
+    }
+    // Show the nozzles of the model checked.
+    if (m_printers_list->GetSelection() != row)
+        m_printers_list->SetSelection(row);
+    update_preview();
+    update_counts();
+}
 
+void PageBrands::update_counts()
+{
     // The counts of the brands.
     for (size_t r = 0; r < m_shown_brands.size(); ++ r)
         if (m_shown_brands[r] >= 0) {

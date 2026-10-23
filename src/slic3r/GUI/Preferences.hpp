@@ -36,7 +36,9 @@ namespace Slic3r {
 	enum  TismaRenderQualityMode {
 		TismaRenderClassic,
 		TismaRenderPerPixel,
-		TismaRenderShadows
+		TismaRenderShadows,
+		TismaRenderAmbientOcclusion,
+		TismaRenderPBR
 	};
 
 namespace GUI {

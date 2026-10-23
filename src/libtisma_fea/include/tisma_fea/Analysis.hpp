@@ -161,6 +161,8 @@ struct Setup
     double               tolerance { 1e-7 };
     // Preconditioner of the conjugate gradient: geometric multigrid (fewer iterations on fine grids) or Jacobi.
     bool                 multigrid { true };
+    // The multigrid runs on the GPU when there is one (Vulkan) and it is enabled (set_gpu_enabled()).
+    bool                 gpu { true };
     // Walls and infill of the print; disabled = solid part.
     InfillModel          infill;
     // Direction in which the layers are stacked (the Z of the printer) in the coordinates of the setup. The
@@ -236,6 +238,8 @@ struct Result
     int                 iterations { 0 };
     // Levels of the multigrid preconditioner (0: Jacobi).
     size_t              multigrid_levels { 0 };
+    // The graphics card that ran the multigrid, empty: on the CPU.
+    std::string         gpu_device;
     // Number of material orientations used (1 with flat layers).
     size_t              layer_orientations { 1 };
     // Voxels with aligned infill (ribs).
@@ -245,6 +249,12 @@ struct Result
 
 // Runs the analysis of a closed mesh (in the coordinates of the setup). cancel() is polled and the analysis
 // stops with an error when it returns true; progress() receives 0..100.
+// The GPU (Vulkan compute) for the multigrid of the analyses: enabled by default when there is one. The name of the
+// graphics card used, empty when the analyses run on the CPU (no Vulkan driver, no suitable device or disabled).
+void        set_gpu_enabled(bool enabled);
+bool        gpu_enabled();
+std::string gpu_device_name();
+
 Result analyze(const indexed_triangle_set &mesh, const Setup &setup,
                std::function<bool()> cancel = nullptr, std::function<void(int)> progress = nullptr);
 
