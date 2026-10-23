@@ -1,18 +1,16 @@
 package uy.com.tisma.app.ui
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -22,25 +20,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -61,10 +55,10 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
 
-private enum class Tool { FIX, LOAD }
+enum class EngineeringTool { FIX, LOAD }
 
 /** Directions of a new load; [INTO_FACE] pushes against the face that is touched. */
-private enum class LoadDirection(val vector: DoubleArray?) {
+enum class LoadDirection(val vector: DoubleArray?) {
     DOWN(doubleArrayOf(0.0, 0.0, -1.0)), UP(doubleArrayOf(0.0, 0.0, 1.0)),
     X_PLUS(doubleArrayOf(1.0, 0.0, 0.0)), X_MINUS(doubleArrayOf(-1.0, 0.0, 0.0)),
     Y_PLUS(doubleArrayOf(0.0, 1.0, 0.0)), Y_MINUS(doubleArrayOf(0.0, -1.0, 0.0)),
@@ -74,39 +68,61 @@ private enum class LoadDirection(val vector: DoubleArray?) {
 private val FIXED_COLOR = Color(0xFF3B82F6)
 private val LOAD_COLOR = Color(0xFFF97316)
 // Neutral, so that the fixed faces, the loads and the result stand out.
-private val MODEL_COLOR = Color(0xFFB8B8C8)
+internal val ENGINEERING_MODEL_COLOR = Color(0xFFB8B8C8)
 
 /**
  * Structural analysis of the model on the phone, with the analysis of the desktop program (libtisma_fea): where the
- * part is held, the loads, the material; whether it holds, and the lightest infill that does.
+ * part is held, the loads, the material; whether it holds, and the lightest infill that does. The setup and the
+ * answer live in the workspace; this holds the tool in use and runs the analysis.
  */
-@Composable
-fun EngineeringScreen(workspace: Workspace, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val mesh = workspace.mesh
-    val state = workspace.engineering
-    val req = state.request
-    var tool by rememberSaveable { mutableStateOf(Tool.FIX) }
-    var force by rememberSaveable { mutableStateOf(20.0) }
-    var direction by rememberSaveable { mutableStateOf(LoadDirection.DOWN) }
-    var wholeFace by rememberSaveable { mutableStateOf(false) }
-    var progress by remember { mutableStateOf<Int?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val cancel = remember { AtomicBoolean(false) }
-    var materials by remember { mutableStateOf<List<AnalysisMaterial>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        if (TismaCore.available) materials = withContext(Dispatchers.Default) { TismaCore.materials() }
+@Stable
+class EngineeringController(private val workspace: Workspace, private val context: Context, private val scope: CoroutineScope) {
+    var tool by mutableStateOf(EngineeringTool.FIX)
+    var force by mutableStateOf(20.0)
+    var direction by mutableStateOf(LoadDirection.DOWN)
+    var wholeFace by mutableStateOf(false)
+    var progress by mutableStateOf<Int?>(null)
+        private set
+    var error by mutableStateOf<String?>(null)
+    var materials by mutableStateOf<List<AnalysisMaterial>>(emptyList())
+        private set
+    private val cancel = AtomicBoolean(false)
+
+    val request get() = workspace.engineering.request
+    val ready get() = TismaCore.available && request.ready && progress == null
+
+    suspend fun loadMaterials() {
+        if (TismaCore.available && materials.isEmpty()) materials = withContext(Dispatchers.Default) { TismaCore.materials() }
     }
+
     fun setup(change: (EngineeringRequest) -> EngineeringRequest) {
         // A new setup: the result no longer applies.
-        workspace.engineering = EngineeringState(change(req))
+        workspace.engineering = EngineeringState(change(request))
         error = null
     }
 
-    fun run(lightest: Boolean) {
+    /** A tap on the model: a fixed face or a load, as the tool says. */
+    fun tap(hit: PreviewHit) {
+        val face = PickedFace(hit.point.map { it.toDouble() }, hit.normal.map { it.toDouble() })
+        when (tool) {
+            EngineeringTool.FIX -> setup { it.copy(fixtures = it.fixtures + face) }
+            EngineeringTool.LOAD -> {
+                val dir = direction.vector ?: doubleArrayOf(-face.normal[0], -face.normal[1], -face.normal[2])
+                setup { it.copy(loads = it.loads + EngineeringLoad(face, dir.map { d -> d * force }, wholeFace)) }
+            }
+        }
+    }
+
+    fun clear() = setup { EngineeringRequest(material = it.material, safetyFactor = it.safetyFactor,
+        temperature = it.temperature, quality = it.quality) }
+
+    fun cancel() = cancel.set(true)
+
+    /** Analyses the setup; [lightest] also looks for the lightest infill that holds. */
+    fun run(lightest: Boolean, onDone: () -> Unit = {}) {
         val model = workspace.model ?: return
-        val m = mesh ?: return
+        val m = workspace.mesh ?: return
+        val req = request
         error = null
         cancel.set(false)
         progress = 0
@@ -127,6 +143,7 @@ fun EngineeringScreen(workspace: Workspace, modifier: Modifier = Modifier) {
                 }
                 val colors = withContext(Dispatchers.Default) { resultColors(m, FieldMap.read(field), req.safetyFactor) }
                 workspace.engineering = EngineeringState(req, answer, colors)
+                onDone()
             } catch (e: Exception) {
                 error = e.message ?: e.toString()
             } finally {
@@ -135,127 +152,87 @@ fun EngineeringScreen(workspace: Workspace, modifier: Modifier = Modifier) {
         }
     }
 
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        if (mesh == null) {
-            Text(stringResource(if (workspace.model == null) R.string.eng_no_model else R.string.eng_no_preview),
-                style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 24.dp))
-            return@Column
-        }
-        // The model: fixed faces in blue, loads in orange, or the result.
-        Card(Modifier.fillMaxWidth()) {
-            Box(Modifier.fillMaxWidth().height(340.dp)) {
-                val highlight = remember(mesh, req) { setupColors(mesh, req) }
-                ModelPreview(
-                    mesh = mesh,
-                    bedX = workspace.settings.bedX.toFloat(),
-                    bedY = workspace.settings.bedY.toFloat(),
-                    modelColor = MODEL_COLOR,
-                    bedColor = MaterialTheme.colorScheme.surfaceVariant,
-                    gridColor = MaterialTheme.colorScheme.outlineVariant,
-                    modifier = Modifier.fillMaxSize(),
-                    triangleColors = state.resultColors ?: highlight,
-                    markers = req.loads.filter { !it.wholeFace }.map { l ->
-                        val mag = l.magnitude.coerceAtLeast(1e-9)
-                        PreviewMarker(l.at.point.map { it.toFloat() }.toFloatArray(),
-                            l.force.map { (it / mag).toFloat() }.toFloatArray(), LOAD_COLOR)
-                    },
-                    fitModel = true,
-                    onTap = { hit ->
-                        val face = PickedFace(hit.point.map { it.toDouble() }, hit.normal.map { it.toDouble() })
-                        when (tool) {
-                            Tool.FIX -> setup { it.copy(fixtures = it.fixtures + face) }
-                            Tool.LOAD -> {
-                                val dir = direction.vector ?: doubleArrayOf(-face.normal[0], -face.normal[1], -face.normal[2])
-                                setup { it.copy(loads = it.loads + EngineeringLoad(face, dir.map { d -> d * force }, wholeFace)) }
-                            }
-                        }
-                    },
-                )
-                Text(stringResource(if (tool == Tool.FIX) R.string.eng_tap_fix else R.string.eng_tap_load),
-                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp))
-                if (state.resultColors != null)
-                    Legend(Modifier.align(Alignment.BottomStart).padding(12.dp))
-            }
-        }
+    /** The colours of the model: the result, or the fixed faces and the loads. */
+    fun colors(mesh: PreviewMesh): IntArray = workspace.engineering.resultColors ?: setupColors(mesh, request)
 
-        Choices(stringResource(R.string.eng_tool), Tool.entries, tool,
-            { stringResource(if (it == Tool.FIX) R.string.eng_tool_fix else R.string.eng_tool_load) }) { tool = it }
-        when (tool) {
-            Tool.FIX -> {
-                SwitchRow(stringResource(R.string.eng_bed_fixture), req.bedFixture) { v -> setup { it.copy(bedFixture = v) } }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.eng_fixed_faces, req.fixtures.size), Modifier.weight(1f))
-                    if (req.fixtures.isNotEmpty())
-                        TextButton(onClick = { setup { it.copy(fixtures = emptyList()) } }) { Text(stringResource(R.string.eng_clear)) }
-                }
-            }
-            Tool.LOAD -> {
-                NumberField(stringResource(R.string.eng_force), force, "N", Modifier.fillMaxWidth()) { force = it }
-                Choices(stringResource(R.string.eng_direction), LoadDirection.entries, direction, { stringResource(it.label()) }) {
-                    direction = it
-                }
-                Choices(stringResource(R.string.eng_load_on), listOf(false, true), wholeFace,
-                    { stringResource(if (it) R.string.eng_whole_face else R.string.eng_point) }) { wholeFace = it }
-            }
-        }
-        req.loads.forEachIndexed { i, l ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.width(10.dp).height(10.dp).background(LOAD_COLOR, RoundedCornerShape(5.dp)))
-                Text(stringResource(if (l.wholeFace) R.string.eng_load_face else R.string.eng_load_point, i + 1, num(l.magnitude)),
-                    Modifier.weight(1f).padding(start = 8.dp))
-                IconButton(onClick = { setup { it.copy(loads = it.loads.filterIndexed { j, _ -> j != i }) } }) {
-                    Icon(Icons.Filled.Delete, contentDescription = null)
-                }
-            }
-        }
+    /** The loads on a point, with an arrow of their force. */
+    fun markers(): List<PreviewMarker> = request.loads.filter { !it.wholeFace }.map { l ->
+        val mag = l.magnitude.coerceAtLeast(1e-9)
+        PreviewMarker(l.at.point.map { it.toFloat() }.toFloatArray(), l.force.map { (it / mag).toFloat() }.toFloatArray(), LOAD_COLOR)
+    }
+}
 
-        Section(stringResource(R.string.eng_requirements),
-            stringResource(R.string.eng_requirements_summary, req.material.ifEmpty { workspace.settings.material.type },
-                num(req.safetyFactor), num(req.temperature))) {
-            val fromFilament = stringResource(R.string.eng_material_filament, workspace.settings.material.type)
-            Choices(stringResource(R.string.eng_material), listOf("") + materials.filter { it.linear }.map { it.key }, req.material,
-                { key -> if (key.isEmpty()) fromFilament else materials.firstOrNull { it.key == key }?.name ?: key }) { k ->
-                setup { it.copy(material = k) }
-            }
-            Choices(stringResource(R.string.eng_safety_factor), listOf(1.5, 2.0, 3.0, 4.0), req.safetyFactor, { num(it) }) { v ->
-                setup { it.copy(safetyFactor = v) }
-            }
-            NumberField(stringResource(R.string.eng_temperature), req.temperature, "°C", Modifier.fillMaxWidth()) { v ->
-                setup { it.copy(temperature = v) }
-            }
-            Choices(stringResource(R.string.eng_quality), AnalysisQuality.entries, req.quality, { stringResource(it.label()) }) { q ->
-                setup { it.copy(quality = q) }
-            }
-        }
+/** Where the part is held: by the bed, by the faces tapped. */
+@Composable
+fun FixturesPanel(c: EngineeringController) {
+    val req = c.request
+    SwitchRow(stringResource(R.string.eng_bed_fixture), req.bedFixture) { v -> c.setup { it.copy(bedFixture = v) } }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.eng_fixed_faces, req.fixtures.size), Modifier.weight(1f))
+        if (req.fixtures.isNotEmpty())
+            TextButton(onClick = { c.setup { it.copy(fixtures = emptyList()) } }) { Text(stringResource(R.string.eng_clear)) }
+    }
+}
 
-        if (!TismaCore.available)
-            Text(stringResource(R.string.core_missing), color = MaterialTheme.colorScheme.error)
-        else if (!req.ready)
-            Text(stringResource(R.string.eng_not_ready), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        val enabled = TismaCore.available && req.ready && progress == null
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { run(false) }, enabled = enabled, modifier = Modifier.weight(1f).height(52.dp)) {
-                Text(stringResource(R.string.eng_analyze))
+/** The loads there are, and the load the next tap adds. */
+@Composable
+fun LoadsPanel(c: EngineeringController) {
+    val req = c.request
+    req.loads.forEachIndexed { i, l ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(10.dp).height(10.dp).background(LOAD_COLOR, RoundedCornerShape(5.dp)))
+            Text(stringResource(if (l.wholeFace) R.string.eng_load_face else R.string.eng_load_point, i + 1, num(l.magnitude)),
+                Modifier.weight(1f).padding(start = 8.dp))
+            IconButton(onClick = { c.setup { it.copy(loads = it.loads.filterIndexed { j, _ -> j != i }) } }) {
+                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.eng_remove_load))
             }
-            OutlinedButton(onClick = { run(true) }, enabled = enabled, modifier = Modifier.weight(1f).height(52.dp)) {
-                Text(stringResource(R.string.eng_lightest))
-            }
         }
-        progress?.let { p ->
-            LinearProgressIndicator(progress = { p / 100f }, modifier = Modifier.fillMaxWidth())
-            TextButton(onClick = { cancel.set(true) }) { Text(stringResource(R.string.eng_cancel)) }
-        }
-        error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
-        state.answer?.let { a ->
-            AnswerCard(a, req.safetyFactor, onUseInfill = { percent ->
-                workspace.update(workspace.settings.copy(infillPercent = percent))
-            }, currentInfill = workspace.settings.infillPercent)
-        }
-        Box(Modifier.height(24.dp))
+    }
+    NumberField(stringResource(R.string.eng_force), c.force, "N", Modifier.fillMaxWidth()) { c.force = it }
+    Choices(stringResource(R.string.eng_direction), LoadDirection.entries, c.direction, { stringResource(it.label()) }) {
+        c.direction = it
+    }
+    Choices(stringResource(R.string.eng_load_on), listOf(false, true), c.wholeFace,
+        { stringResource(if (it) R.string.eng_whole_face else R.string.eng_point) }) { c.wholeFace = it }
+}
+
+/** Material, safety factor, temperature and the fineness of the analysis. */
+@Composable
+fun RequirementsPanel(c: EngineeringController, filament: String) {
+    val req = c.request
+    val fromFilament = stringResource(R.string.eng_material_filament, filament)
+    Choices(stringResource(R.string.eng_material), listOf("") + c.materials.filter { it.linear }.map { it.key }, req.material,
+        { key -> if (key.isEmpty()) fromFilament else c.materials.firstOrNull { it.key == key }?.name ?: key }) { k ->
+        c.setup { it.copy(material = k) }
+    }
+    Choices(stringResource(R.string.eng_safety_factor), listOf(1.5, 2.0, 3.0, 4.0), req.safetyFactor, { num(it) }) { v ->
+        c.setup { it.copy(safetyFactor = v) }
+    }
+    NumberField(stringResource(R.string.eng_temperature), req.temperature, "°C", Modifier.fillMaxWidth()) { v ->
+        c.setup { it.copy(temperature = v) }
+    }
+    Choices(stringResource(R.string.eng_quality), AnalysisQuality.entries, req.quality, { stringResource(it.label()) }) { q ->
+        c.setup { it.copy(quality = q) }
+    }
+}
+
+/** The analysis running, its error, or its answer. */
+@Composable
+fun AnalysisPanel(c: EngineeringController, workspace: Workspace) {
+    if (!TismaCore.available)
+        Text(stringResource(R.string.core_missing), color = MaterialTheme.colorScheme.error)
+    else if (!c.request.ready)
+        Text(stringResource(R.string.eng_not_ready), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    c.progress?.let { p ->
+        Text(stringResource(R.string.eng_running, p), style = MaterialTheme.typography.bodyMedium)
+        LinearProgressIndicator(progress = { p / 100f }, modifier = Modifier.fillMaxWidth())
+        TextButton(onClick = { c.cancel() }) { Text(stringResource(R.string.eng_cancel)) }
+    }
+    c.error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
+    workspace.engineering.answer?.let { a ->
+        AnswerCard(a, c.request.safetyFactor, onUseInfill = { percent ->
+            workspace.update(workspace.settings.copy(infillPercent = percent))
+        }, currentInfill = workspace.settings.infillPercent)
     }
 }
 
@@ -294,7 +271,7 @@ private fun AnswerCard(a: EngineeringAnswer, required: Double, currentInfill: In
 }
 
 @Composable
-private fun Legend(modifier: Modifier) {
+internal fun Legend(modifier: Modifier) {
     Column(modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(8.dp)).padding(8.dp)) {
         Box(Modifier.width(160.dp).height(10.dp).background(Brush.horizontalGradient(SCALE.map { Color(it.second) }),
             RoundedCornerShape(5.dp)))

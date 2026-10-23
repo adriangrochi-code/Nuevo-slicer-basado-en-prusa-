@@ -2,21 +2,28 @@ package uy.com.tisma.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,17 +31,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import uy.com.tisma.app.core.TismaCore
-import uy.com.tisma.app.ui.AccountScreen
-import uy.com.tisma.app.ui.EngineeringScreen
-import uy.com.tisma.app.ui.PrepareScreen
-import uy.com.tisma.app.ui.PrintersScreen
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import uy.com.tisma.app.ui.FilamentPage
+import uy.com.tisma.app.ui.MorePage
+import uy.com.tisma.app.ui.MoreScreen
+import uy.com.tisma.app.ui.Page
+import uy.com.tisma.app.ui.PlateScreen
+import uy.com.tisma.app.ui.PrintPage
+import uy.com.tisma.app.ui.PrinterPage
 import uy.com.tisma.app.ui.TismaTheme
 import uy.com.tisma.app.ui.Workspace
 
@@ -46,57 +56,80 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab { SLICE, ENGINEERING, PRINTERS, ACCOUNT }
-
-/** The tabs of the app: slicing and structural analysis on the phone, the printers over Wi-Fi, the Tisma Cloud account. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The app: the sections in a bar at the top (at the side in landscape), as in the mobile slicers: the plate, the
+ * print, filament and printer settings, and the rest (printers over Wi-Fi, Tisma Cloud account, about).
+ */
 @Composable
-fun TismaApp() {
-    var tab by rememberSaveable { mutableStateOf(Tab.SLICE) }
-    val context = LocalContext.current
-    val workspace = remember { Workspace(context) }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    if (TismaCore.available)
-                        Text(stringResource(R.string.core_version, TismaCore.version()),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(end = 12.dp))
-                },
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(selected = tab == Tab.SLICE, onClick = { tab = Tab.SLICE },
-                    icon = { Icon(Icons.Filled.Build, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_slice)) })
-                NavigationBarItem(selected = tab == Tab.ENGINEERING, onClick = { tab = Tab.ENGINEERING },
-                    icon = { Icon(painterResource(R.drawable.ic_engineering), contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_engineering)) })
-                NavigationBarItem(selected = tab == Tab.PRINTERS, onClick = { tab = Tab.PRINTERS },
-                    icon = { Icon(painterResource(R.drawable.ic_printer), contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_printers)) })
-                NavigationBarItem(selected = tab == Tab.ACCOUNT, onClick = { tab = Tab.ACCOUNT },
-                    icon = { Icon(Icons.Filled.AccountCircle, contentDescription = null) },
-                    label = { Text(stringResource(R.string.tab_account)) })
+fun TismaApp(workspace: Workspace = LocalContext.current.let { remember { Workspace(it) } }) {
+    var page by rememberSaveable { mutableStateOf(Page.PLATE) }
+    var more by rememberSaveable { mutableStateOf<MorePage?>(null) }
+    // Back from a section returns to the plate.
+    BackHandler(enabled = page != Page.PLATE && more == null) { page = Page.PLATE }
+
+    val content: @Composable (Modifier) -> Unit = { m ->
+        // The plate stays composed, so switching sections keeps the model, the view and the slice (and a slice running).
+        Box(m) {
+            PlateScreen(workspace, onPage = { page = it }, onSendToPrinter = {
+                more = MorePage.PRINTERS
+                page = Page.MORE
+            }, Modifier.hiddenIf(page != Page.PLATE))
+            val pageModifier = Modifier.navigationBarsPadding()
+            when (page) {
+                Page.PLATE -> {}
+                Page.PRINT -> PrintPage(workspace, pageModifier)
+                Page.FILAMENT -> FilamentPage(workspace, pageModifier)
+                Page.PRINTER -> PrinterPage(workspace, pageModifier)
+                Page.MORE -> MoreScreen(workspace, more, onOpen = { more = it }, pageModifier)
             }
-        },
-    ) { padding ->
-        // The slice screen stays composed, so switching tabs keeps the model and the slice result (and a slice running).
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            PrepareScreen(workspace, onSendToPrinter = { tab = Tab.PRINTERS }, Modifier.hiddenIf(tab != Tab.SLICE))
-            if (tab == Tab.ENGINEERING) EngineeringScreen(workspace)
-            if (tab == Tab.PRINTERS) PrintersScreen(workspace)
-            if (tab == Tab.ACCOUNT) AccountScreen()
+        }
+    }
+    Surface(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            if (maxWidth > maxHeight) {
+                // The tools of the plate take the left side: the sections go to the right.
+                Row(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                    content(Modifier.weight(1f))
+                    NavigationRail {
+                        for (p in Page.entries)
+                            NavigationRailItem(selected = p == page, onClick = { page = p },
+                                icon = { Icon(p.icon(), contentDescription = null) }, label = { Text(stringResource(p.title())) })
+                    }
+                }
+            } else {
+                androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
+                    NavigationBar(windowInsets = WindowInsets.statusBars) {
+                        for (p in Page.entries)
+                            NavigationBarItem(selected = p == page, onClick = { page = p },
+                                icon = { Icon(p.icon(), contentDescription = null) }, label = { Text(stringResource(p.title()), maxLines = 1) })
+                    }
+                    content(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
 
-/** Keeps a screen composed (its state survives) but neither drawn nor touchable. */
+private fun Page.title(): Int = when (this) {
+    Page.PLATE -> R.string.page_plate
+    Page.PRINT -> R.string.page_print
+    Page.FILAMENT -> R.string.page_filament
+    Page.PRINTER -> R.string.page_printer
+    Page.MORE -> R.string.page_more
+}
+
+@Composable
+private fun Page.icon(): Painter = when (this) {
+    Page.PLATE -> painterResource(R.drawable.ic_plate)
+    Page.PRINT -> painterResource(R.drawable.ic_print)
+    Page.FILAMENT -> painterResource(R.drawable.ic_filament)
+    Page.PRINTER -> painterResource(R.drawable.ic_printer)
+    Page.MORE -> rememberVectorPainter(Icons.Filled.MoreVert)
+}
+
+/** Keeps a screen composed (its state survives) but neither drawn, touchable nor read by accessibility services. */
 private fun Modifier.hiddenIf(hidden: Boolean) =
-    if (!hidden) this else layout { measurable, constraints ->
+    if (!hidden) this else clearAndSetSemantics {}.layout { measurable, constraints ->
         measurable.measure(constraints)
         layout(0, 0) {}
     }

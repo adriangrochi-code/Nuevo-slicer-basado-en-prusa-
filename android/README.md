@@ -21,6 +21,17 @@ Without `-PtismaDepsDir` the app is built without the core (the screen says so):
 
 Open a model (STL, 3MF, OBJ), slice it on the phone, see the print time and filament, save or share the G-code.
 
+The layout follows the mobile slicers (Slice Beam's arrangement; the code is the app's own):
+
+- **Sections** in a bar at the top (at the right in landscape): *Plate*, *Print*, *Filament*, *Printer* and *More*
+  (printers over Wi-Fi, Tisma Cloud account, about).
+- **Plate**: the bed and the model fill the screen, with the settings in use over it (each one opens its page). Under
+  it a strip of tools, and at the bottom the groups of tools: *File* (open, info, remove), *View* (3D, top, front,
+  left, right, back), *Engineering* and *Slice* (slice, result, save, share, send to a printer). A tool with options
+  opens a card under the plate, so the model stays in view.
+- **Zoom**: the + and − buttons and *Frame the part* on the plate, a double tap (zooms in on that point) or a pinch
+  (zooms towards the fingers and moves the view). One finger turns the view.
+
 - **Printer**: any FFF printer of Tisma's profiles (brand, model, then nozzle and variant), with the bed, firmware,
   custom G-code, machine limits and the default print profile of its manufacturer; or a custom printer typed by hand.
   The catalog (`assets/printers.json`) is made when the app is built, from `resources/profiles`, by

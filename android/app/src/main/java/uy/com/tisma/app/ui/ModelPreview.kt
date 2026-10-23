@@ -3,9 +3,14 @@ package uy.com.tisma.app.ui
 import android.graphics.Canvas
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -21,12 +26,79 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import uy.com.tisma.app.core.PreviewMesh
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+
+/**
+ * Where the view looks from: turned about the vertical axis ([yaw]), tilted from straight above (pitch 0) to level
+ * (pitch π/2), and the zoom. Shared by the preview and the buttons that choose a view.
+ */
+@Stable
+class PreviewCamera {
+    var yaw by mutableFloatStateOf(ISO_YAW)
+    var pitch by mutableFloatStateOf(ISO_PITCH)
+    var zoom by mutableFloatStateOf(1f)
+    /** Shift of the view on the screen, in pixels. */
+    var offsetX by mutableFloatStateOf(0f)
+    var offsetY by mutableFloatStateOf(0f)
+
+    fun look(yaw: Float, pitch: Float) {
+        this.yaw = yaw
+        this.pitch = pitch
+        reset()
+    }
+
+    /** The whole bed in view. */
+    fun reset() {
+        zoom = 1f
+        offsetX = 0f
+        offsetY = 0f
+    }
+
+    /** Zooms by [factor] keeping the point [focusX], [focusY] (from the centre of the view, in pixels) in place. */
+    fun zoomAt(factor: Float, focusX: Float = 0f, focusY: Float = 0f) {
+        val z = (zoom * factor).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val f = z / zoom
+        offsetX = focusX - (focusX - offsetX) * f
+        offsetY = focusY - (focusY - offsetY) * f
+        zoom = z
+    }
+
+    /** The model filling the view (it stands on the centre of the bed). */
+    fun fit(mesh: PreviewMesh?, bedX: Float, bedY: Float) {
+        if (mesh == null || mesh.triangleCount == 0) return reset()
+        val bed = extent(max(bedX, bedY) / 2, mesh.max[2] - mesh.min[2])
+        val model = extent(max(mesh.max[0] - mesh.min[0], mesh.max[1] - mesh.min[1]) / 2, mesh.max[2] - mesh.min[2])
+        offsetX = 0f
+        offsetY = 0f
+        zoom = (bed / model.coerceAtLeast(1e-3f)).coerceIn(1f, MAX_ZOOM)
+    }
+
+    // Views of the printer, whose front is at y = 0 (-Y).
+    fun iso() = look(ISO_YAW, ISO_PITCH)
+    fun top() = look(0f, 0f)
+    fun front() = look(0f, LEVEL)
+    fun back() = look(PI, LEVEL)
+    fun left() = look(PI / 2, LEVEL)
+    fun right() = look(-PI / 2, LEVEL)
+
+    companion object {
+        const val ISO_YAW = -0.6f
+        const val ISO_PITCH = 0.95f
+        private const val PI = Math.PI.toFloat()
+        const val LEVEL = PI / 2
+        const val MIN_ZOOM = 0.5f
+        const val MAX_ZOOM = 20f
+    }
+}
+
+/** Half the size on the screen (before scaling) of what spans [half] around the centre and [height] up. */
+private fun extent(half: Float, height: Float) = sqrt(2f) * half + height * 0.7f
 
 /** A point of the model shown over it: a load, with the direction of its force (pointing to the point). */
 class PreviewMarker(val point: FloatArray, val direction: FloatArray?, val color: Color)
@@ -40,7 +112,7 @@ class PreviewHit(val triangle: Int, val point: FloatArray, val normal: FloatArra
  * ([pitch]); parallel projection.
  */
 private class Projection(mesh: PreviewMesh?, val bedX: Float, val bedY: Float, yaw: Float, pitch: Float, size: Size,
-                         fitModel: Boolean = false) {
+                         fitModel: Boolean = false, zoom: Float = 1f, offset: Offset = Offset.Zero) {
     val dx: Float
     val dy: Float
     val dz: Float
@@ -64,9 +136,8 @@ private class Projection(mesh: PreviewMesh?, val bedX: Float, val bedY: Float, y
         val half = if (fitModel && mesh != null && mesh.triangleCount > 0)
             max(mesh.max[0] - mesh.min[0], mesh.max[1] - mesh.min[1]) / 2
         else max(bedX, bedY) / 2
-        val extent = sqrt(2f) * half + modelHeight * 0.7f
-        scale = 0.9f * min(size.width, size.height) / (2 * extent)
-        origin = Offset(size.width / 2, size.height / 2 + modelHeight * scale * 0.25f)
+        scale = zoom * 0.9f * min(size.width, size.height) / (2 * extent(half, modelHeight))
+        origin = Offset(size.width / 2 + offset.x, size.height / 2 + modelHeight * scale * 0.25f + offset.y)
     }
 
     /** Screen x, screen y and distance from the viewer (larger: farther) of a point of the bed. */
@@ -124,7 +195,8 @@ private class Projection(mesh: PreviewMesh?, val bedX: Float, val bedY: Float, y
 
 /**
  * The bed of the printer and the model standing on its centre, as the slicer will place it. Dragging turns the
- * view; a tap on the model calls [onTap]. Drawn on the canvas: flat shaded triangles sorted back to front (no depth
+ * view; two fingers zoom (towards them) and move it, a double tap zooms in on its point ([camera]); a tap on the
+ * model calls [onTap]. Drawn on the canvas: flat shaded triangles sorted back to front (no depth
  * buffer needed for a preview). [triangleColors]: a colour per triangle, or per corner of each triangle (3 per
  * triangle, blended), instead of [modelColor] (ARGB, 0 = the model colour). [fitModel]: the view fills with the model instead of the whole bed.
  */
@@ -141,9 +213,8 @@ fun ModelPreview(
     markers: List<PreviewMarker> = emptyList(),
     onTap: ((PreviewHit) -> Unit)? = null,
     fitModel: Boolean = false,
+    camera: PreviewCamera = remember { PreviewCamera() },
 ) {
-    var yaw by remember { mutableFloatStateOf(-0.6f) }
-    var pitch by remember { mutableFloatStateOf(0.95f) }
     val paint = remember { Paint().apply { isAntiAlias = true } }
     val currentMesh by rememberUpdatedState(mesh)
     val currentTap by rememberUpdatedState(onTap)
@@ -152,24 +223,43 @@ fun ModelPreview(
         modifier
             // Fitted to the model, the bed goes past the view.
             .clipToBounds()
-            .pointerInput(Unit) {
-                detectDragGestures { change, drag ->
-                    change.consume()
-                    yaw += drag.x * 0.01f
-                    pitch = (pitch + drag.y * 0.01f).coerceIn(0.1f, 1.5f)
+            .pointerInput(camera) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        val fingers = event.changes.count { it.pressed }
+                        if (fingers >= 2) {
+                            // Pinch: zoom towards the fingers, and move with them.
+                            val c = event.calculateCentroid()
+                            val pan = event.calculatePan()
+                            camera.zoomAt(event.calculateZoom(), c.x - size.width / 2f, c.y - size.height / 2f)
+                            camera.offsetX += pan.x
+                            camera.offsetY += pan.y
+                        } else if (fingers == 1) {
+                            val d = event.changes.first { it.pressed }.positionChange()
+                            camera.yaw += d.x * 0.01f
+                            camera.pitch = (camera.pitch + d.y * 0.01f).coerceIn(0f, PreviewCamera.LEVEL)
+                        }
+                        event.changes.forEach { if (it.positionChange() != Offset.Zero) it.consume() }
+                    } while (event.changes.any { it.pressed })
                 }
             }
-            .pointerInput(bedX, bedY, fitModel) {
-                detectTapGestures { at ->
-                    val m = currentMesh ?: return@detectTapGestures
-                    val tap = currentTap ?: return@detectTapGestures
-                    val size = Size(this.size.width.toFloat(), this.size.height.toFloat())
-                    Projection(m, bedX, bedY, yaw, pitch, size, fitModel).pick(m, at)?.let(tap)
-                }
+            .pointerInput(bedX, bedY, fitModel, camera) {
+                detectTapGestures(
+                    onDoubleTap = { at -> camera.zoomAt(2f, at.x - size.width / 2f, at.y - size.height / 2f) },
+                    onTap = tap@{ at ->
+                        val m = currentMesh ?: return@tap
+                        val tap = currentTap ?: return@tap
+                        val size = Size(this.size.width.toFloat(), this.size.height.toFloat())
+                        Projection(m, bedX, bedY, camera.yaw, camera.pitch, size, fitModel, camera.zoom,
+                            Offset(camera.offsetX, camera.offsetY)).pick(m, at)?.let(tap)
+                    },
+                )
             }
     ) {
-        val proj = Projection(mesh, bedX, bedY, yaw, pitch, size, fitModel)
-        val cy = cos(yaw); val sy = sin(yaw)
+        val proj = Projection(mesh, bedX, bedY, camera.yaw, camera.pitch, size, fitModel, camera.zoom, Offset(camera.offsetX, camera.offsetY))
+        val cy = cos(camera.yaw); val sy = sin(camera.yaw)
 
         // Bed: the plate and a 10 mm grid.
         val p = FloatArray(12)
