@@ -57,5 +57,16 @@ mkdir -p "$stage"
 mv "$app" "$stage/"
 ln -s /Applications "$stage/Applications"
 output="$out_dir/TismaSlicer-$version-macos-$arch.dmg"
-hdiutil create -volname "Tisma Slicer $version" -srcfolder "$stage" -ov -format UDZO "$output"
+# hdiutil fails now and then with "create failed - Resource busy" on the macOS runners of GitHub Actions while the disk
+# image service is still busy: try again a few times before giving up.
+for attempt in 1 2 3 4 5; do
+    if hdiutil create -volname "Tisma Slicer $version" -srcfolder "$stage" -ov -format UDZO "$output"; then
+        break
+    fi
+    if [ "$attempt" -eq 5 ]; then
+        echo "hdiutil failed $attempt times" >&2
+        exit 1
+    fi
+    sleep $((attempt * 10))
+done
 echo "$output"
