@@ -45,6 +45,8 @@
 #include "MsgDialog.hpp"
 #include "Plater.hpp"
 #include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
+#include "Widgets/Button.hpp"
 #include "format.hpp"
 #include "../Utils/Serial.hpp"
 #include "../Utils/USBPrinter.hpp"
@@ -243,7 +245,7 @@ struct USBMonitorPanel::priv
     // Controls.
     wxComboBox   *port { nullptr };
     wxComboBox   *baud { nullptr };
-    wxButton     *btn_connect { nullptr };
+    ::Button     *btn_connect { nullptr };
     wxCheckBox   *autoconnect { nullptr };
     wxStaticText *conn_status { nullptr };
     wxStaticText *hotend_now { nullptr };
@@ -259,10 +261,10 @@ struct USBMonitorPanel::priv
     wxStaticText *job { nullptr };
     wxStaticText *job_times { nullptr };
     wxGauge      *progress { nullptr };
-    wxButton     *btn_print_sliced { nullptr };
-    wxButton     *btn_print_file { nullptr };
-    wxButton     *btn_pause { nullptr };
-    wxButton     *btn_cancel { nullptr };
+    ::Button     *btn_print_sliced { nullptr };
+    ::Button     *btn_print_file { nullptr };
+    ::Button     *btn_pause { nullptr };
+    ::Button     *btn_cancel { nullptr };
     TempGraph    *graph { nullptr };
     wxTextCtrl   *console { nullptr };
     wxCheckBox   *hide_temps { nullptr };
@@ -663,14 +665,18 @@ USBMonitorPanel::USBMonitorPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY), 
     const bool dark = wxGetApp().dark_mode();
     SetBackgroundColour(TismaTheme::panel_bg(dark));
 
+    // Tisma: a section is a title of Tisma over its controls, without the frame of a static box; the buttons of Tisma.
     auto section = [this](wxSizer *parent_sizer, const wxString &title, int proportion = 0) {
-        auto *box = new wxStaticBoxSizer(wxVERTICAL, this, title);
+        auto *box = new wxBoxSizer(wxVERTICAL);
+        box->Add(new TismaTitle(this, title), 0, wxLEFT | wxBOTTOM, wxGetApp().em_unit() / 2);
         parent_sizer->Add(box, proportion, wxEXPAND | wxBOTTOM, wxGetApp().em_unit());
         return box;
     };
     auto button = [this](const wxString &label, int width_em = 0) {
-        auto *b = new wxButton(this, wxID_ANY, label, wxDefaultPosition,
-                               width_em > 0 ? wxSize(width_em * wxGetApp().em_unit(), -1) : wxDefaultSize, width_em > 0 ? wxBU_EXACTFIT : 0);
+        auto *b = new ::Button(this, label);
+        if (width_em > 0)
+            b->SetMinSize(wxSize(width_em * wxGetApp().em_unit(), b->GetMinSize().GetHeight()));
+        style_tisma_button(b, false);
         return b;
     };
 
@@ -929,6 +935,12 @@ void USBMonitorPanel::sys_color_changed()
 {
     SetBackgroundColour(TismaTheme::panel_bg(wxGetApp().dark_mode()));
     wxGetApp().UpdateDarkUI(this);
+    for (wxWindow *child : GetChildren()) {
+        if (auto *title = dynamic_cast<TismaTitle*>(child))
+            title->sys_color_changed();
+        else if (auto *btn = dynamic_cast<::Button*>(child))
+            style_tisma_button(btn, false);
+    }
     p->graph->Refresh();
     Refresh();
 }
