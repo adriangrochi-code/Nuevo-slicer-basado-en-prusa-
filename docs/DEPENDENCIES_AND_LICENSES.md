@@ -163,4 +163,5 @@ dependencias nuevas, y usar CalculiX como referencia externa de validación. Ver
 | signpath/github-action-submit-signing-request | Firma de Windows con SignPath | MIT **(sin verificar)** |
 | actions/checkout, cache, upload-artifact, download-artifact (GitHub) | Workflows | MIT |
 | CalculiX ccx 2.21 (calculix.de, paquete `calculix-ccx` de Debian/Ubuntu) | Resultados de referencia para validar el análisis estructural (`src/libtisma_fea/test/calculix/run_calculix.py`); se ejecuta aparte, no se enlaza ni se distribuye: en el repositorio solo quedan los números (`calculix_reference.hpp`) | GPL-2.0 |
+| NumPy (numpy.org) | Simulación del estudio de pressure advance en el G-code (`tools/research/pressure_advance_sim.py`, `docs/FIRMWARE_FEATURES_IN_GCODE.md`); se ejecuta aparte | BSD-3-Clause |
 | obra/superpowers (skills `systematic-debugging` y `verification-before-completion`, copiadas en `.claude/skills/`) | Instrucciones para Claude Code | MIT (`.claude/skills/LICENSE-superpowers`) |
