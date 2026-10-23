@@ -111,6 +111,13 @@
 
     <h2>Últimos pagos</h2>
     <div class="table-wrap"><table id="payments"></table></div>
+
+    <h2>Problemas informados</h2>
+    <p class="muted">Los informes de Tisma y de la app agrupados por problema, el más informado primero, sin datos personales.
+      El catálogo (los abiertos: nuevos y confirmados) es para el programador o la IA que programa.</p>
+    <p><button type="button" id="catalog-md">Descargar catálogo (Markdown)</button>
+      <button type="button" id="catalog-jsonl">Descargar catálogo (JSON lines)</button></p>
+    <div class="table-wrap"><table id="reports"></table></div>
   </main>
 </div>
 
@@ -331,6 +338,50 @@ function renderUsers(users, pays) {
     : [el("tr", {}, el("td", { colspan: 7, class: "muted" }, "Ninguno"))]));
 }
 
+const KINDS = { bug: "error", crash: "cierre", suggestion: "sugerencia" };
+const REPORT_STATUS = { new: "nuevo", confirmed: "confirmado", fixed: "arreglado", wontfix: "no se arregla", duplicate: "repetido" };
+
+async function setGroup(g, status) {
+  try {
+    await api(`/v1/admin/report-groups/${encodeURIComponent(g.signature)}`, { method: "PATCH", body: JSON.stringify({ status }) });
+    refreshReports();
+  } catch (e) { if (e.message !== "auth") alert(e.message); }
+}
+
+async function refreshReports() {
+  try {
+    const groups = (await api("/v1/admin/reports")).groups;
+    $("reports").replaceChildren(el("tr", {}, ["Informes", "App", "Tipo", "Problema", "Versiones", "Último", ""].map((h) => el("th", {}, h))),
+      ...(groups.length ? groups.map((g) => el("tr", {},
+        el("td", {}, g.reports), el("td", {}, g.app), el("td", {}, g.kinds.map((k) => KINDS[k] || k).join(", ")),
+        el("td", {}, g.title, g.first_error ? el("div", { class: "muted" }, g.first_error) : null,
+          el("div", { class: "muted" }, Object.entries(g.statuses).map(([k, v]) => `${REPORT_STATUS[k] || k}: ${v}`).join(" · "))),
+        el("td", { class: "muted" }, g.versions.join(", ") || "–"),
+        el("td", { class: "muted" }, ago(g.last_seen)),
+        el("td", {}, el("button", { type: "button", onclick: () => setGroup(g, "confirmed") }, "Confirmar"), " ",
+          el("button", { type: "button", onclick: () => setGroup(g, "fixed") }, "Arreglado"), " ",
+          el("button", { type: "button", onclick: () => setGroup(g, "wontfix") }, "No se arregla"))))
+      : [el("tr", {}, el("td", { colspan: 7, class: "muted" }, "Ninguno abierto"))]));
+  } catch (e) {
+    if (e.message !== "auth") $("app-error").textContent = `No se pudieron leer los problemas: ${e.message}`;
+  }
+}
+
+async function downloadCatalog(format) {
+  try {
+    const r = await fetch(`/v1/admin/reports/catalog?format=${format}`, { headers: { "Authorization": `Bearer ${token}` } });
+    if (!r.ok) throw new Error(`Error ${r.status}`);
+    const url = URL.createObjectURL(await r.blob());
+    const a = el("a", { href: url, download: format === "md" ? "tisma-problemas.md" : "tisma-problemas.jsonl" });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { alert(`No se pudo descargar: ${e.message}`); }
+}
+$("catalog-md").onclick = () => downloadCatalog("md");
+$("catalog-jsonl").onclick = () => downloadCatalog("jsonl");
+
 async function refresh() {
   try {
     const [nodes, queue, jobs, users, pays, alerts] = await Promise.all([api("/v1/admin/nodes"), api("/v1/admin/queue"),
@@ -362,12 +413,18 @@ async function refresh() {
   }
 }
 
+let reportsTimer = null;
+
 function start() {
   $("login").classList.add("hidden");
   $("app").classList.remove("hidden");
   refresh();
+  refreshReports();
   if (timer) clearInterval(timer);
   timer = setInterval(refresh, 5000);
+  // The reports change slowly (and grouping them reads them all): once a minute.
+  if (reportsTimer) clearInterval(reportsTimer);
+  reportsTimer = setInterval(refreshReports, 60000);
 }
 
 if (token) start(); else showLogin();

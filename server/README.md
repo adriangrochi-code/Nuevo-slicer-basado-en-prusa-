@@ -214,6 +214,7 @@ El objetivo es guardar lo mínimo para dar el servicio, y que lo guardado sirva 
 | Archivo a imprimir de una orden remota | mandarlo a la impresora | hasta que el puente lo toma (10 min como mucho) |
 | Imágenes de las cámaras | verlas en vivo | solo en memoria, 30 s; nunca en disco |
 | Direcciones IP | frenar ataques | solo en memoria (límites y bloqueos); no hay registro de accesos (`TISMA_ACCESS_LOG=1` lo prende) |
+| Problemas informados (textos y parte del registro, sin datos personales) | arreglar Tisma | 365 días (`TISMA_REPORT_DAYS`); se borran con la cuenta |
 
 **Datos personales cifrados en la base** (`crypto.py`): el correo, los nombres de las sesiones, de los puentes, de las
 impresoras y de los archivos, las notas de los pagos y los datos de las compras de Google Play se guardan cifrados con
@@ -542,6 +543,31 @@ python -m tisma_cloud.admin user-set equipo@tisma.com.uy --unlimited   # cuenta 
 
 La misma información está en la API de administración (`/v1/admin/...`, con el token de un administrador).
 
+## Problemas informados (catálogo para programar)
+
+Tisma (Más > Ayuda > Informar de un problema) y la app mandan los problemas que encuentra la gente a
+`POST /v1/reports`: qué pasó, los pasos, qué se esperaba, la versión, el sistema y, si la persona quiere, el registro
+de Tisma. Con cuenta o sin ella (sin cuenta, 5 por hora por dirección, `TISMA_ANONYMOUS_REPORTS_PER_HOUR`; con cuenta,
+20, `TISMA_REPORTS_PER_HOUR`; 512 KB como mucho).
+
+- **Nada personal** (`reports.py`, `redact`): antes de guardarlos se quitan de los textos y del registro los correos,
+  las direcciones IP y MAC, el usuario del sistema en las rutas (`C:\Users\<user>`, `/home/<user>`), los tokens, las
+  claves, los códigos de acceso y los números de serie de las impresoras; del registro quedan las líneas de error con
+  dos alrededor y las últimas 40 (20 000 caracteres). Además se guardan cifrados, como los demás datos personales. La
+  dirección de quien informa no se guarda.
+- **Agrupados por problema**: los informes con la misma primera línea de error del registro (sin números, rutas ni
+  horas), o sin registro con las mismas palabras en el título, son el mismo problema (`signature`). Quien informa ve
+  cuántos informaron lo mismo.
+- **Catálogo**: el panel (sección «Problemas informados») muestra los problemas abiertos, el más informado primero, y
+  descarga el catálogo en Markdown (una sección por problema: los pasos, lo esperado, lo que pasó y el registro) o en
+  JSON lines (un problema por línea), para dárselo al programador o a la IA que programa. Cada problema se marca
+  confirmado, arreglado o que no se arregla (todos sus informes juntos), y sale del catálogo al arreglarlo. Por comandos:
+
+```
+python -m tisma_cloud.admin reports --out problemas.md            # los abiertos (nuevos y confirmados)
+python -m tisma_cloud.admin reports --format jsonl --app android
+```
+
 ## API
 
 | Quién | Método y ruta | Qué hace |
@@ -552,6 +578,9 @@ La misma información está en la API de administración (`/v1/admin/...`, con e
 | usuario | `GET /v1/me/sessions`, `DELETE /v1/me/sessions/{id}`, `POST /v1/me/sessions/close-others` | dispositivos con sesión abierta; cerrar uno o todos los demás |
 | usuario | `POST /v1/me/password` `{current_password, new_password}` | cambiar la contraseña (cierra las otras sesiones) |
 | usuario | `GET /v1/me/export` | una copia (JSON) de todo lo que el servicio guarda de la cuenta |
+| todos | `POST /v1/reports` `{app, kind, title, description, steps, expected, actual, app_version, os, log}` | informar un problema (con o sin token); responde su `signature` y cuántos `similar` hay |
+| usuario | `GET /v1/me/reports` | los problemas informados con la cuenta y su estado |
+| administrador | `GET /v1/admin/reports`, `GET /v1/admin/reports/catalog?format=md\|jsonl`, `GET\|PATCH /v1/admin/reports/{id}`, `PATCH /v1/admin/report-groups/{signature}` `{status, note}` | problemas agrupados, catálogo, estado |
 | usuario | `POST /v1/me/delete/code`, `POST /v1/me/delete` `{password}` o `{code}` | borrar la cuenta y sus datos |
 | usuario | `GET /v1/billing/play/account`, `POST /v1/billing/play/purchase` `{purchase_token}` | suscripción de Google Play (app) |
 | Google | `POST /v1/billing/play/notify` | avisos de Google Play (Pub/Sub, con token de Google) |

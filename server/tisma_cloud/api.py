@@ -21,19 +21,19 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import bindparam, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import __version__, alerts, billing, codes, crypto, google_play, remote, scheduler
+from . import __version__, alerts, billing, codes, crypto, google_play, remote, reports, scheduler
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, exists_message, mailer_for
 from .db import Database
 from .jobs import (ESTIMATE_MAX_TRIANGLES, JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles,
                    estimate_seconds, plan_job)
-from .models import (Alert, ApiToken, Bridge, EmailCode, Job, Node, Payment, Plan, PlaySubscription, RemoteCommand,
-                     Usage, User, utcnow)
+from .models import (Alert, ApiToken, Bridge, BugReport, EmailCode, Job, Node, Payment, Plan, PlaySubscription,
+                     RemoteCommand, Usage, User, utcnow)
 from .guard import Guard
 from .presence import Presence
 from .ratelimit import RateLimiter
@@ -179,7 +179,8 @@ class Services:
     def forget_old_data(self, now: datetime | None = None) -> None:
         """Keeps only what the service needs (privacy): the jobs ended long ago (their files went before; the hours used
         stay in the monthly usage), the remote commands ended, the e-mail codes expired, the sessions not used for
-        session_days and the bridges not seen for remote.FORGET_BRIDGE_DAYS."""
+        session_days, the bridges not seen for remote.FORGET_BRIDGE_DAYS and the problem reports older than
+        report_days."""
         now = now or utcnow()
         sessions = now - timedelta(days=self.settings.session_days)
         with self.db.session() as s:
@@ -189,6 +190,7 @@ class Services:
                                                   RemoteCommand.updated_at < now - timedelta(days=1)))
             s.execute(delete(EmailCode).where(EmailCode.expires_at < now))
             s.execute(delete(ApiToken).where(func.coalesce(ApiToken.last_used, ApiToken.created_at) < sessions))
+            s.execute(delete(BugReport).where(BugReport.created_at < now - timedelta(days=self.settings.report_days)))
             stale = s.execute(select(Bridge.id).where(
                 func.coalesce(Bridge.last_seen, Bridge.created_at) < now - timedelta(days=remote.FORGET_BRIDGE_DAYS))
             ).scalars().all()
@@ -205,7 +207,7 @@ class Services:
             bridges = s.execute(select(Bridge.id).where(Bridge.user_id == user_id)).scalars().all()
             commands = s.execute(select(RemoteCommand.id).where(RemoteCommand.bridge_id.in_(bridges))).scalars().all() \
                 if bridges else []
-            for model in (ApiToken, EmailCode, Usage, PlaySubscription, Job, Bridge):
+            for model in (ApiToken, EmailCode, Usage, PlaySubscription, Job, Bridge, BugReport):
                 s.execute(delete(model).where(model.user_id == user_id))
             if commands:
                 s.execute(delete(RemoteCommand).where(RemoteCommand.id.in_(commands)))
@@ -412,6 +414,34 @@ class ProgressBody(BaseModel):
     progress: int = Field(ge=0, le=100)
 
 
+class ReportBody(BaseModel):
+    """A problem reported from Tisma (pc), the app (android) or the web site."""
+    app: str = Field(pattern="^(" + "|".join(reports.APPS) + ")$")
+    kind: str = Field(default="bug", pattern="^(" + "|".join(reports.KINDS) + ")$")
+    title: str = Field(min_length=3, max_length=reports.TITLE_MAX)
+    description: str = Field(default="", max_length=reports.TEXT_MAX)
+    steps: str = Field(default="", max_length=reports.TEXT_MAX)
+    expected: str = Field(default="", max_length=reports.TEXT_MAX)
+    actual: str = Field(default="", max_length=reports.TEXT_MAX)
+    app_version: str = Field(default="", max_length=40)
+    os: str = Field(default="", max_length=80)
+    log: str = Field(default="", max_length=reports.LOG_MAX)
+
+
+class ReportUpdateBody(BaseModel):
+    status: str | None = Field(default=None, pattern="^(" + "|".join(reports.STATUSES) + ")$")
+    note: str | None = Field(default=None, max_length=2000)
+
+
+def report_view(r: BugReport, texts: bool = False) -> dict[str, Any]:
+    out = {"id": r.id, "app": r.app, "kind": r.kind, "title": r.title, "status": r.status, "signature": r.signature,
+           "app_version": r.app_version, "os": r.os, "created_at": r.created_at.isoformat() + "Z",
+           "updated_at": r.updated_at.isoformat() + "Z"}
+    if texts:
+        out.update(description=r.description, steps=r.steps, expected=r.expected, actual=r.actual, log=r.log)
+    return out
+
+
 class FailBody(BaseModel):
     error: str = Field(max_length=4000)
     cancelled: bool = False
@@ -567,6 +597,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     cfg = services.settings
 
     limiter = services.limiter
+    # Problem reports, per hour.
+    report_limiter = RateLimiter(3600.)
 
     admin_networks = parse_networks(cfg.admin_networks)
     site_networks = parse_networks(cfg.site_networks)
@@ -645,6 +677,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(429, "Too many requests: wait a minute", headers={"Retry-After": "60"})
         request.state.token_hash = token_hash
         return user
+
+    def optional_user(request: Request, authorization: Annotated[str | None, Header()] = None) -> User | None:
+        """The account of the token when one is sent (a wrong one is refused, as everywhere), none without one."""
+        return current_user(request, authorization) if authorization else None
 
     def current_admin(_local: Annotated[None, Depends(local_only)], user: Annotated[User, Depends(current_user)]) -> User:
         if not user.is_admin:
@@ -844,6 +880,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                              "created_at": b.created_at.isoformat() + "Z",
                              "last_seen": b.last_seen.isoformat() + "Z" if b.last_seen else None}
                             for b in s.execute(select(Bridge).where(Bridge.user_id == u.id)).scalars()],
+                "problem_reports": [report_view(r, texts=True) for r in
+                                    s.execute(select(BugReport).where(BugReport.user_id == u.id)).scalars()],
             }
         return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="tisma-cloud-mis-datos.json"',
                                            "Cache-Control": "no-store"})
@@ -861,7 +899,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/v1/me/delete")
     def delete_account(user: UserDep, request: Request, body: DeleteAccountBody) -> dict:
         """Deletes the account and its data: sessions, jobs and their files, bridges, commands, store purchases,
-        usage. Only the payments stay, without anything personal (the account is left as "deleted-<id>"), for the
+        usage, problem reports. Only the payments stay, without anything personal (the account is left as "deleted-<id>"), for the
         accounting of the service."""
         if not code_attempt_allowed(request, user.email):
             raise HTTPException(429, "Too many attempts: wait a minute", headers={"Retry-After": "60"})
@@ -886,6 +924,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return {"email": u.email, **acc.as_dict(), "remote_printers": remote.printer_allowance(u, acc.paid),
                     "extra_printers": u.extra_printers, "extra_printer_cents": u.plan.extra_printer_cents,
                     "has_password": bool(u.password_hash)}
+
+    # ---- problem reports (reports.py)
+    @app.post("/v1/reports", status_code=201)
+    def send_report(request: Request, body: ReportBody, user: Annotated[User | None, Depends(optional_user)]) -> dict:
+        """A problem reported from Tisma, the app or the web site, with or without an account. What could identify the
+        person is removed from the texts and the log before they are kept; the address is not kept."""
+        if user is not None:
+            allowed = report_limiter.allow(f"user:{user.id}", cfg.reports_per_hour)
+        else:
+            allowed = report_limiter.allow(f"ip:{client_key(request)}", cfg.anonymous_reports_per_hour)
+        if not allowed:
+            raise HTTPException(429, "Too many reports: try again in an hour", headers={"Retry-After": "3600"})
+        fields = reports.clean(**body.model_dump())
+        with db.session() as s:
+            report = BugReport(user_id=user.id if user is not None else None, **fields)
+            s.add(report)
+            s.flush()
+            similar = s.execute(select(func.count()).select_from(BugReport)
+                                .where(BugReport.signature == report.signature, BugReport.id != report.id)).scalar()
+            return {"id": report.id, "signature": report.signature, "similar": similar}
+
+    @app.get("/v1/me/reports")
+    def my_reports(user: UserDep) -> dict:
+        """The problems reported with the account and their state."""
+        with db.session() as s:
+            rows = s.execute(select(BugReport).where(BugReport.user_id == user.id)
+                             .order_by(BugReport.created_at.desc()).limit(100)).scalars().all()
+            return {"reports": [report_view(r) for r in rows]}
 
     @app.get("/v1/plans")
     def plans() -> dict:
@@ -1875,6 +1941,73 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 return {**job_view(job), "user": email, "node": node}
 
             return {"active": [view(r) for r in active], "ended": [view(r) for r in ended]}
+
+    def report_rows(s, status: str, app_name: str):  # noqa: ANN001, ANN202
+        query = select(BugReport)
+        statuses = [x for x in status.split(",") if x] if status else ["new", "confirmed"]
+        if any(x not in reports.STATUSES for x in statuses):
+            raise HTTPException(422, "Unknown status")
+        query = query.where(BugReport.status.in_(statuses))
+        if app_name:
+            query = query.where(BugReport.app == app_name)
+        return s.execute(query.order_by(BugReport.created_at.desc()).limit(5000)).scalars().all()
+
+    @app.get("/v1/admin/reports")
+    def admin_reports(_admin: AdminDep, status: str = "", app: str = "") -> dict:
+        """The problem reports grouped (the open ones by default: status=new,confirmed), the most frequent first."""
+        with db.session() as s:
+            groups = reports.catalog(report_rows(s, status, app))
+        return {"groups": [g.as_dict() for g in groups]}
+
+    @app.get("/v1/admin/reports/catalog")
+    def admin_reports_catalog(_admin: AdminDep, status: str = "", app: str = "", format: str = "md") -> Response:
+        """The catalog of the problems for the programmers (and the AI that programs with them): Markdown, or JSON lines
+        (format=jsonl), one group per line."""
+        if format not in ("md", "jsonl"):
+            raise HTTPException(422, "format is md or jsonl")
+        with db.session() as s:
+            groups = reports.catalog(report_rows(s, status, app))
+        if format == "jsonl":
+            return PlainTextResponse(reports.to_jsonl(groups), media_type="application/x-ndjson",
+                                     headers={"Content-Disposition": 'attachment; filename="tisma-problems.jsonl"'})
+        return PlainTextResponse(reports.to_markdown(groups), media_type="text/markdown; charset=utf-8",
+                                 headers={"Content-Disposition": 'attachment; filename="tisma-problems.md"'})
+
+    @app.get("/v1/admin/reports/{report_id}")
+    def admin_report(_admin: AdminDep, report_id: str) -> dict:
+        with db.session() as s:
+            r = s.get(BugReport, report_id)
+            if r is None:
+                raise HTTPException(404, "No such report")
+            return {**report_view(r, texts=True), "note": r.note}
+
+    @app.patch("/v1/admin/reports/{report_id}")
+    def admin_update_report(_admin: AdminDep, report_id: str, body: ReportUpdateBody) -> dict:
+        """The state of a report (confirmed, fixed...) and a note of the programmers."""
+        with db.session() as s:
+            r = s.get(BugReport, report_id)
+            if r is None:
+                raise HTTPException(404, "No such report")
+            if body.status is not None:
+                r.status = body.status
+            if body.note is not None:
+                r.note = body.note
+            r.updated_at = utcnow()
+            return {**report_view(r), "note": r.note}
+
+    @app.patch("/v1/admin/report-groups/{signature}")
+    def admin_update_report_group(_admin: AdminDep, signature: str, body: ReportUpdateBody) -> dict:
+        """The same for every report of a problem (all the reports with its signature)."""
+        values: dict[str, Any] = {"updated_at": utcnow()}
+        if body.status is not None:
+            values["status"] = body.status
+        if body.note is not None:
+            values["note"] = body.note
+        with db.session() as s:
+            count = s.execute(update(BugReport).where(BugReport.signature == signature).values(**values)).rowcount
+        if not count:
+            raise HTTPException(404, "No reports with this signature")
+        return {"updated": count}
 
     # ---- the administration panel (a single page that uses the API above)
     @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)

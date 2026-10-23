@@ -35,7 +35,9 @@ UPLOADS = (
     (re.compile(r"^/v1/bridges/[^/]+/printers/[^/]+/camera$"), "user"),
 )
 # Pages that need no account (limited per address).
-ANONYMOUS = re.compile(r"^/(v1/(health|plans|auth/.*|billing/webhook/.*|billing/play/notify|billing/test/.*)|cuenta.*|admin)?$")
+ANONYMOUS = re.compile(r"^/(v1/(health|plans|auth/.*|billing/webhook/.*|billing/play/notify|billing/test/.*|reports)|cuenta.*|admin)?$")
+# Small bodies that need no account: (path, largest body [KB]).
+SMALL = ((re.compile(r"^/v1/reports$"), 512),)
 # Answers that count against the address that caused them.
 REFUSED = {400, 401, 403, 404, 405, 411, 413, 422, 429}
 
@@ -147,11 +149,24 @@ class Guard:
             return
 
         upload = next((kind for rx, kind in UPLOADS if method == "POST" and rx.match(path)), None)
-        if upload is None:
+        small = next((kb for rx, kb in SMALL if method == "POST" and rx.match(path)), None)
+        if upload is None and small is None:
             await self.app(scope, receive, counted_send)
             return
 
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        if upload is None:
+            length = headers.get("content-length", "")
+            if not length.isdigit():
+                refuse_counted(411)
+                await _answer(send, 411, "Content-Length is required")
+                return
+            if int(length) > small << 10:
+                refuse_counted(413)
+                await _answer(send, 413, "The request is too large")
+                return
+            await self.app(scope, receive, counted_send)
+            return
         limit = (self.settings.max_upload_mb if upload == "user" else self.settings.max_result_mb) << 20
         length = headers.get("content-length", "")
         if not length.isdigit():

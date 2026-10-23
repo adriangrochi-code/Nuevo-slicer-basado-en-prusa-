@@ -11,6 +11,7 @@
     python -m tisma_cloud.admin node-token NAME
     python -m tisma_cloud.admin node-list
     python -m tisma_cloud.admin queue
+    python -m tisma_cloud.admin reports [--status new,confirmed] [--app pc] [--format md | jsonl] [--out FILE]
 
 Tokens are shown once, when they are created. In production the web site creates the users and records their
 payments through /v1/site (see README.md); these commands are for the administrator and for tests.
@@ -25,10 +26,10 @@ from datetime import datetime
 
 from sqlalchemy import func, select
 
-from . import crypto
+from . import crypto, reports
 from .db import Database
 from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES
-from .models import ApiToken, Job, Node, Plan, User
+from .models import ApiToken, BugReport, Job, Node, Plan, User
 from .scheduler import account
 from .security import hash_password, hash_token, new_token
 from .settings import Settings
@@ -106,6 +107,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("name")
     sub.add_parser("node-list")
     sub.add_parser("queue", help="jobs waiting and running by class")
+    p = sub.add_parser("reports", help="the catalog of the problems reported, for the programmers (and their AI)")
+    p.add_argument("--status", default="new,confirmed", help="comma separated: " + ", ".join(reports.STATUSES))
+    p.add_argument("--app", choices=reports.APPS)
+    p.add_argument("--format", choices=("md", "jsonl"), default="md")
+    p.add_argument("--out", help="file to write (the screen without it)")
 
     args = parser.parse_args(argv)
     settings = Settings()
@@ -217,6 +223,23 @@ def main(argv: list[str] | None = None) -> int:
             counts = {(c, st): n for c, st, n in rows}
             for c in JOB_CLASSES:
                 print(f"{c:14} queued {counts.get((c, 'queued'), 0):5}  running {counts.get((c, 'running'), 0):5}")
+        elif args.command == "reports":
+            statuses = [x for x in args.status.split(",") if x]
+            unknown = [x for x in statuses if x not in reports.STATUSES]
+            if unknown:
+                print(f"Unknown status: {', '.join(unknown)}", file=sys.stderr)
+                return 2
+            query = select(BugReport).where(BugReport.status.in_(statuses))
+            if args.app:
+                query = query.where(BugReport.app == args.app)
+            groups = reports.catalog(s.execute(query).scalars().all())
+            text = reports.to_jsonl(groups) if args.format == "jsonl" else reports.to_markdown(groups)
+            if args.out:
+                with open(args.out, "w", encoding="utf-8", newline="\n") as out:
+                    out.write(text)
+                print(f"{len(groups)} problems written to {args.out}")
+            else:
+                sys.stdout.write(text)
     return 0
 
 

@@ -1,5 +1,6 @@
 """Tables: plans, users (accounts of the web site, with their payment state), access tokens, monthly usage, nodes
-(computing servers), jobs, and the bridges that relay the printers of a home to the account with their commands."""
+(computing servers), jobs, the bridges that relay the printers of a home to the account with their commands, and the
+problems reported from Tisma and the app."""
 
 from __future__ import annotations
 
@@ -324,4 +325,34 @@ class RemoteCommand(Base):
     status: Mapped[str] = mapped_column(String(10), default="queued", index=True)
     error: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BugReport(Base):
+    """A problem reported from Tisma on a computer or from the app (reports.py): its texts and an excerpt of the log
+    without anything personal (removed before they are kept, and encrypted besides), the account that sent it (none
+    without an account) and the signature that groups the reports of the same problem."""
+
+    __tablename__ = "bug_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    # pc, android, web
+    app: Mapped[str] = mapped_column(String(10))
+    # bug, crash, suggestion
+    kind: Mapped[str] = mapped_column(String(10))
+    app_version: Mapped[str] = mapped_column(String(40), default="")
+    os: Mapped[str] = mapped_column(String(80), default="")
+    title: Mapped[str] = mapped_column(Encrypted, default="")
+    description: Mapped[str] = mapped_column(Encrypted, default="")
+    steps: Mapped[str] = mapped_column(Encrypted, default="")
+    expected: Mapped[str] = mapped_column(Encrypted, default="")
+    actual: Mapped[str] = mapped_column(Encrypted, default="")
+    log: Mapped[str] = mapped_column(Encrypted, default="")
+    signature: Mapped[str] = mapped_column(String(16), index=True)
+    # new, confirmed, fixed, wontfix, duplicate (reports.STATUSES)
+    status: Mapped[str] = mapped_column(String(10), default="new", index=True)
+    # Of the programmers: what was found, the commit that fixed it.
+    note: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
