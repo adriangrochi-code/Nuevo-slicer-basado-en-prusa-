@@ -66,6 +66,7 @@
 #include "DevicesPanel.hpp"
 #include "MorePage.hpp"
 #include "CalibrationDialog.hpp"
+#include "PlateTools.hpp"
 #include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -734,6 +735,9 @@ void MainFrame::init_tabpanel()
 
         wxWindow* panel = m_tabpanel->GetCurrentPage();
         Tab* tab = dynamic_cast<Tab*>(panel);
+        // The tools of the plate are in the top bar while the plate is shown.
+        if (m_plater && m_plater->plate_tools() && m_plater->plate_tools()->IsShown() != (panel == m_plater))
+            m_tabpanel->GetTopBarItemsCtrl()->ShowCenterWindow(panel == m_plater);
         // The Printer section of the top bar opens again the page of the two used last (also when it was opened from
         // the plate panel or the printer chip).
         if (m_devices_panel && panel == m_devices_panel)
@@ -935,6 +939,12 @@ void MainFrame::create_nav_rail()
     // The pages are selected from the workspace tabs.
     top_bar->ShowPageButtons(false);
     top_bar->SetWorkspaceTabs(m_nav_rail);
+    // The groups of tools of the plate after them, while the plate is shown (the 3D view keeps the whole width).
+    if (PlateTools* tools = m_plater->plate_tools()) {
+        tools->Reparent(top_bar);
+        top_bar->AddCenterWindow(tools);
+        top_bar->ShowCenterWindow(m_tabpanel->GetCurrentPage() == m_plater);
+    }
 
     // Current printer and whether it has a connection (physical printer with a host).
     m_printer_chip = new PrinterChip(top_bar,

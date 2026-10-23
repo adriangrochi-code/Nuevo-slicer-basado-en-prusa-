@@ -69,6 +69,7 @@ class Mouse3DController;
 class NotificationManager;
 struct Camera;
 class GLToolbar;
+class PlateTools;
 class UserAccount;
 class PresetArchiveDatabase;
 enum class ArrangeSelectionMode;
@@ -98,6 +99,8 @@ public:
     bool is_project_temp() const;
 
     Sidebar& sidebar();
+    // The groups of tools of the plate (Tisma): in the top bar, placed by the main frame.
+    PlateTools* plate_tools();
     const Model& model() const;
     Model& model();
     //const Print& fff_print() const;

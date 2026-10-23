@@ -463,6 +463,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         wxGetApp().searcher().set_search_input(m_search);
 
     wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
+    m_search_sizer = search_sizer;
     search_sizer->Add(m_search, 1, wxEXPAND | wxALIGN_RIGHT);
     left_sizer->Add(search_sizer, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, m_btn_margin);
 
@@ -713,6 +714,29 @@ void TopBarItemsCtrl::SetWorkspaceTabs(wxWindow* tabs)
     update_btns_width();
     UpdateSearchSizeAndPosition();
     m_sizer->Layout();
+}
+
+void TopBarItemsCtrl::AddCenterWindow(wxWindow* win)
+{
+    m_center_window = win;
+    // After the workspace tabs (or first when there are none).
+    m_left_sizer->Insert(m_workspace_tabs ? 1 : 0, win, 1, wxEXPAND);
+    ShowCenterWindow(true);
+}
+
+void TopBarItemsCtrl::ShowCenterWindow(bool show)
+{
+    if (m_center_window == nullptr)
+        return;
+    m_center_window->Show(show);
+    // With the window, the search field keeps a fixed width and the window takes the rest; without it, the field
+    // grows again.
+    if (wxSizerItem* item = m_left_sizer->GetItem(m_search_sizer)) {
+        item->SetProportion(show ? 0 : 1);
+        m_search->SetMinSize(wxSize(show ? 16 * em_unit(this) : 2 * em_unit(this), -1));
+    }
+    m_sizer->Layout();
+    Refresh();
 }
 
 void TopBarItemsCtrl::AddRightWindow(wxWindow* win)

@@ -1,5 +1,5 @@
-///|/ Tisma Slicer: the groups of tools of the plate and their tools, at the left of the 3D view (the same arrangement
-///|/ as the Android app in landscape).
+///|/ Tisma Slicer: the groups of tools of the plate and their tools, in the top bar (horizontal) or at the left of the 3D
+///|/ view (the arrangement of the Android app in landscape).
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -17,10 +17,16 @@
 namespace Slic3r {
 namespace GUI {
 
-// Two columns: the groups (an icon over its name), then the tools of the group chosen. The state of the tools
-// (enabled, selected) is polled, so they follow the plater without extra notifications.
+class PlateToolsPopup;
+
+// Two columns: the groups (an icon over its name), then the tools of the group chosen. Horizontal (in the top bar,
+// the whole width for the 3D view): the groups in a row, an icon and its name (only the icons when the row is too
+// narrow), and the tools of a group in a panel under it when the group is clicked. The state of the tools (enabled,
+// selected) is polled, so they follow the plater without extra notifications.
 class PlateTools : public wxPanel
 {
+    friend class PlateToolsPopup;
+
 public:
     struct Tool {
         wxString                label;
@@ -50,8 +56,10 @@ public:
         wxBitmapBundle          bmp;
     };
 
-    explicit PlateTools(wxWindow* parent);
+    explicit PlateTools(wxWindow* parent, bool horizontal = false);
     ~PlateTools() override;
+
+    bool   horizontal() const { return m_horizontal; }
 
     void   add_group(Group group);
     void   select_group(size_t idx);
@@ -77,8 +85,15 @@ private:
     // Enabled and selected states of all the tools of the current group, to repaint only when they change.
     std::vector<int> state() const;
     // Indices of the tools of the current group which are shown.
-    std::vector<size_t> visible_tools() const;
+    std::vector<size_t> visible_tools(size_t group) const;
+    std::vector<size_t> visible_tools() const { return m_groups.empty() ? std::vector<size_t>() : visible_tools(current_group()); }
+    // Horizontal: the groups with their names (or only their icons), their places in the row.
+    bool   show_labels() const;
+    wxRect group_rect_h(size_t idx, bool labels) const;
+    int    group_width_h(size_t idx, bool labels) const;
+    void   open_tools(size_t group);
 
+    bool                m_horizontal { false };
     std::vector<Group>  m_groups;
     size_t              m_chosen  { 0 };
     int                 m_hovered { INT_MIN };

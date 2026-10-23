@@ -20,8 +20,9 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
 - **Barra superior**: logo, secciones (Placa, Impresión, Impresora, Más), búsqueda, impresora en uso y su conexión,
   cuenta. El filamento (o la resina) se elige y se edita desde el panel de la placa (su engranaje y los ajustes
   rápidos): no tiene sección propia.
-- **Placa**: a la izquierda los grupos de herramientas (Archivo, Vista, Organizar, Pintar, Ingeniería, Calibrar,
-  Laminar) y las herramientas del grupo elegido (en Calibrar, cada prueba: temperatura, presión, retracción, caudal
+- **Placa**: la vista 3D ocupa todo el ancho; los grupos de herramientas (Archivo, Vista, Organizar, Pintar, Ingeniería,
+  Calibrar, Laminar) están en la barra superior, después de las secciones, y cada uno abre debajo sus herramientas
+  (con poco ancho, solo los íconos, con su nombre al pasar el mouse) (en Calibrar, cada prueba: temperatura, presión, retracción, caudal
   máximo, VFA, aceleración, esquinas, vibraciones, primera capa, flujo, coasting, arcos, resistencia, y aplicar un
   resultado; las de resina con una impresora de resina); en el centro la vista 3D con los ajustes en uso arriba (chips que abren su página),
   el zoom a la derecha y el estado abajo; a la derecha el panel de la placa: objetos, propiedades de la selección,

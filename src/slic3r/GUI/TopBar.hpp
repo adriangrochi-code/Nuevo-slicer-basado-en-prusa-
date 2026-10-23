@@ -114,6 +114,10 @@ public:
     // stays in the window title) and a window (the printer chip) at the right end.
     void SetWorkspaceTabs(wxWindow* tabs);
     void AddRightWindow(wxWindow* win);
+    // A window after the workspace tabs taking the free width (the tools of the plate); shown or hidden with
+    // ShowCenterWindow (the search field then keeps its width).
+    void AddCenterWindow(wxWindow* win);
+    void ShowCenterWindow(bool show);
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
@@ -134,6 +138,8 @@ private:
     wxWindow*                       m_workspace_tabs{nullptr};
     wxBoxSizer*                     m_left_sizer    {nullptr};
     wxBoxSizer*                     m_right_sizer   {nullptr};
+    wxBoxSizer*                     m_search_sizer  {nullptr};
+    wxWindow*                       m_center_window {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

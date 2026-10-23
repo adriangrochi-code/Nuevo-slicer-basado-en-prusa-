@@ -804,14 +804,13 @@ void Plater::priv::init()
     // The 3D view with the status bar under it, the tools of the plate at its left.
     auto *center_sizer = new wxBoxSizer(wxVERTICAL);
     if (wxGetApp().is_editor()) {
+        // The tools of the plate go to the top bar (MainFrame): the 3D view takes the whole width.
         plate_tools = create_plate_tools();
+        plate_tools->Hide();
         // Their actions are the tools of the plate.
         view3D->get_canvas3d()->hide_toolbars(true);
         preview->get_canvas3d()->hide_toolbars(true);
-        auto *row = new wxBoxSizer(wxHORIZONTAL);
-        row->Add(plate_tools, 0, wxEXPAND);
-        row->Add(panel_sizer, 1, wxEXPAND);
-        center_sizer->Add(row, 1, wxEXPAND | wxALL, 0);
+        center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
     } else
         center_sizer->Add(panel_sizer, 1, wxEXPAND | wxALL, 0);
     if (wxGetApp().is_editor()) {
@@ -1318,7 +1317,7 @@ void Plater::priv::update(unsigned int flags)
 // Calibrate, Slice.
 PlateTools* Plater::priv::create_plate_tools()
 {
-    auto *tools = new PlateTools(q);
+    auto *tools = new PlateTools(q, true);
     auto canvas3d    = [this]() { return view3D->get_canvas3d(); };
     auto has_objects = [this]() { return ! model.objects.empty(); };
     auto has_selection = [this, canvas3d]() { return ! canvas3d()->get_selection().is_empty(); };
@@ -4943,6 +4942,7 @@ void Plater::render_project_state_debug_window() const { p->render_project_state
 #endif // ENABLE_PROJECT_DIRTY_STATE_DEBUG_WINDOW
 
 Sidebar&        Plater::sidebar()           { return *p->sidebar; }
+PlateTools*     Plater::plate_tools()       { return p->plate_tools; }
 const Model&    Plater::model() const       { return p->model; }
 Model&          Plater::model()             { return p->model; }
 
