@@ -5,15 +5,18 @@ to the account, so that the phone sees and commands them from anywhere, without 
   (GET /v1/bridges/{id}/commands, a long poll); it downloads the file of a print, runs the command on the printer and
   tells how it ended.
 - The phone lists the printers of its bridges (GET /v1/remote/printers), sends a G-code to print, pauses, resumes or
-  stops, and looks at the camera (the bridge sends images only while someone looks).
+  stops, and looks at the camera (the bridge sends images only while someone looks, and they are kept in memory only).
+- The bridge sends its state every 3 s while someone looks at its printers and every 30 s otherwise (state_s in the
+  answers); when the phone starts looking, the bridge's wait for commands ends at once to send it (presence.py).
 - A command the bridge does not take within a few minutes fails: a print never starts long after it was asked for.
 """
 
 from __future__ import annotations
 
-import json
 import math
 import re
+import threading
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -31,6 +34,8 @@ MAX_BRIDGES = 10
 PRINT_EXTENSIONS = (".gcode", ".bgcode")
 # A bridge is online while it asked for commands or sent its state this recently.
 ONLINE_S = 60
+# A bridge not seen for this long is forgotten (with its printers); it is made again if it comes back [days].
+FORGET_BRIDGE_DAYS = 180
 # The camera: the bridge sends images while someone looked at it this recently, and an image is shown this long.
 WATCH_S = 30
 MAX_IMAGE_BYTES = 2 << 20
@@ -85,18 +90,22 @@ def allowed_printers(session: Session, user: User, allowance: int) -> set[tuple[
     return out
 
 
-def is_online(bridge: Bridge, now: datetime | None = None) -> bool:
+def is_online(last_seen: datetime | None, now: datetime | None = None) -> bool:
     now = now or utcnow()
-    return bridge.last_seen is not None and (now - bridge.last_seen).total_seconds() < ONLINE_S
+    return last_seen is not None and (now - last_seen).total_seconds() < ONLINE_S
 
 
-def bridge_view(bridge: Bridge, now: datetime | None = None, allowed: set[tuple[str, str]] | None = None) -> dict:
-    """The bridge as the phone shows it; with allowed, the printers beyond the plan are locked."""
-    printers = bridge.printer_list
+def bridge_view(bridge: Bridge, now: datetime | None = None, allowed: set[tuple[str, str]] | None = None,
+                printers: list[dict] | None = None, last_seen: datetime | None = None) -> dict:
+    """The bridge as the phone shows it; with allowed, the printers beyond the plan are locked. printers and last_seen:
+    newer than the database's (presence.py)."""
+    printers = bridge.printer_list if printers is None else printers
+    last_seen = max(d for d in (bridge.last_seen, last_seen) if d is not None) \
+        if bridge.last_seen or last_seen else None
     if allowed is not None:
         printers = [{**p, "locked": (bridge.id, p["id"]) not in allowed} for p in printers]
-    return {"id": bridge.id, "name": bridge.name, "online": is_online(bridge, now),
-            "last_seen": bridge.last_seen.isoformat() + "Z" if bridge.last_seen else None,
+    return {"id": bridge.id, "name": bridge.name, "online": is_online(last_seen, now),
+            "last_seen": last_seen.isoformat() + "Z" if last_seen else None,
             "printers": printers}
 
 
@@ -106,29 +115,51 @@ def command_view(c: RemoteCommand) -> dict:
             "created_at": c.created_at.isoformat() + "Z", "updated_at": c.updated_at.isoformat() + "Z"}
 
 
-def watched(bridge: Bridge, now: datetime | None = None) -> list[str]:
-    """The printers of the bridge whose camera someone is looking at."""
-    now = now or utcnow()
-    out = []
-    for printer_id, until in bridge.watching_dict.items():
-        try:
-            if datetime.fromisoformat(str(until)) > now:
-                out.append(printer_id)
-        except ValueError:
-            continue
-    return sorted(out)
+class Images:
+    """The last image of each camera someone looks at, in memory only: images of the homes of the users are never
+    written to disk (nor to the backups), and are gone WATCH_S after they arrived. At most budget bytes in all (the
+    oldest go first)."""
 
+    def __init__(self, budget: int = 256 << 20) -> None:
+        self.budget = budget
+        self._lock = threading.Lock()
+        self._images: dict[tuple[str, str], tuple[float, bytes]] = {}
+        self._bytes = 0
 
-def watch(bridge: Bridge, printer_id: str, now: datetime | None = None) -> None:
-    """Someone looks at the camera of the printer: the bridge sends its images for a while."""
-    now = now or utcnow()
-    keep = {p: u for p, u in bridge.watching_dict.items() if p in watched(bridge, now)}
-    keep[printer_id] = (now + timedelta(seconds=WATCH_S)).isoformat()
-    bridge.watching = json.dumps(keep)
+    def put(self, bridge_id: str, printer_id: str, data: bytes) -> None:
+        with self._lock:
+            old = self._images.pop((bridge_id, printer_id), None)
+            self._bytes -= len(old[1]) if old else 0
+            self._images[(bridge_id, printer_id)] = (time.monotonic(), data)
+            self._bytes += len(data)
+            # Insertion order is age order: the oldest images go first.
+            while self._bytes > self.budget and self._images:
+                key = next(iter(self._images))
+                self._bytes -= len(self._images.pop(key)[1])
+
+    def get(self, bridge_id: str, printer_id: str) -> bytes | None:
+        with self._lock:
+            item = self._images.get((bridge_id, printer_id))
+        return item[1] if item and time.monotonic() - item[0] <= WATCH_S else None
+
+    def drop_bridge(self, bridge_id: str) -> None:
+        with self._lock:
+            for key in [k for k in self._images if k[0] == bridge_id]:
+                self._bytes -= len(self._images.pop(key)[1])
+
+    def drop_old(self) -> None:
+        limit = time.monotonic() - WATCH_S
+        with self._lock:
+            for key in [k for k, (t, _) in self._images.items() if t < limit]:
+                self._bytes -= len(self._images.pop(key)[1])
+
+    def size(self) -> int:
+        with self._lock:
+            return self._bytes
 
 
 class RemoteFiles:
-    """The files to print (until the bridge took them) and the last image of each camera, in storage_dir/remote."""
+    """The files to print, in storage_dir/remote, until the bridge took them."""
 
     def __init__(self, root: Path) -> None:
         self.root = Path(root) / "remote"
@@ -137,10 +168,6 @@ class RemoteFiles:
     def print_file(self, command_id: str) -> Path:
         # Command ids are UUIDs made by the server.
         return self.root / f"{command_id}.print"
-
-    def image(self, bridge_id: str, printer_id: str) -> Path:
-        # Both ids match ID: no separators, no dots.
-        return self.root / f"{bridge_id}__{printer_id}.jpg"
 
     def remove_command(self, command_id: str) -> None:
         self.print_file(command_id).unlink(missing_ok=True)

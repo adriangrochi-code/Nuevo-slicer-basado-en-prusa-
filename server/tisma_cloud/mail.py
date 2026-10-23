@@ -70,6 +70,20 @@ def code_message(purpose: str, code: str) -> tuple[str, str]:
         return ("Tu código para confirmar la cuenta de Tisma Cloud",
                 f"Hola:\n\nTu código para confirmar la cuenta de Tisma Cloud es:\n\n    {code}\n\n"
                 "Vence en 15 minutos. Si no creaste una cuenta, ignorá este correo.\n\nTisma Cloud")
+    if purpose == "delete":
+        return ("Tu código para borrar la cuenta de Tisma Cloud",
+                f"Hola:\n\nTu código para borrar tu cuenta de Tisma Cloud y todos sus datos es:\n\n    {code}\n\n"
+                "Vence en 15 minutos. Si no lo pediste, ignorá este correo y cambiá tu contraseña: tu cuenta no se "
+                "borra sin este código.\n\nTisma Cloud")
     return ("Tu código para cambiar la contraseña de Tisma Cloud",
             f"Hola:\n\nTu código para elegir una contraseña nueva en Tisma Cloud es:\n\n    {code}\n\n"
             "Vence en 15 minutos. Si no lo pediste, ignorá este correo: tu contraseña no cambia.\n\nTisma Cloud")
+
+
+def exists_message() -> tuple[str, str]:
+    """Someone tried to make an account with an address that has one (the page answers the same in both cases, so
+    that it does not tell which addresses have an account)."""
+    return ("Ya tenés una cuenta de Tisma Cloud",
+            "Hola:\n\nAlguien intentó crear una cuenta de Tisma Cloud con esta dirección, que ya tiene una. Si fuiste "
+            "vos, entrá con tu contraseña, o elegí una nueva con \"Olvidé mi contraseña\". Si no fuiste vos, ignorá "
+            "este correo: tu cuenta no cambia.\n\nTisma Cloud")

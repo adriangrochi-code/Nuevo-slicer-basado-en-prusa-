@@ -71,18 +71,44 @@ class _NoHealthChecks:
         return "/v1/health" not in record.getMessage()
 
 
+def raise_open_files(wanted: int) -> int:
+    """Raises the limit of open files of the process (each connection is one) up to wanted, within what the system
+    allows. Returns the limit in force (0: unknown, e.g. on Windows)."""
+    try:
+        import resource
+    except ImportError:
+        return 0
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    target = wanted if hard == resource.RLIM_INFINITY else min(wanted, hard)
+    if soft != resource.RLIM_INFINITY and soft < target:
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (target, hard))
+            soft = target
+        except (ValueError, OSError):
+            pass
+    return soft
+
+
 def serve_master(host: str, port: int) -> int:
     import logging
 
     import uvicorn
 
     from .api import create_app
+    from .settings import Settings
 
     logging.getLogger("uvicorn.access").addFilter(_NoHealthChecks())
 
-    # As deploy/Dockerfile.master: behind Caddy, at most 300 requests at a time, short keep-alive.
-    uvicorn.run(create_app(), host=host, port=port, proxy_headers=True, forwarded_allow_ips="*",
-                limit_concurrency=300, timeout_keep_alive=5, server_header=False)
+    settings = Settings()
+    # Room for the connections plus the database, the files being sent and the log.
+    files = raise_open_files(settings.max_connections + 1000)
+    if 0 < files < settings.max_connections + 100:
+        logging.getLogger("tisma_cloud").warning("Only %d open files allowed: fewer than TISMA_MAX_CONNECTIONS=%d",
+                                                 files, settings.max_connections)
+    # As deploy/Dockerfile.master: behind Caddy, short keep-alive.
+    uvicorn.run(create_app(settings), host=host, port=port, proxy_headers=True, forwarded_allow_ips="*",
+                limit_concurrency=settings.max_connections, timeout_keep_alive=5, server_header=False, backlog=4096,
+                access_log=settings.access_log)
     return 0
 
 

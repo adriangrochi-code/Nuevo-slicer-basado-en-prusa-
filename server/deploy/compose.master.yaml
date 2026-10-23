@@ -19,6 +19,9 @@ services:
     volumes: ["storage:/data"]
     # Port 8000 only for the nodes of the local network: do not forward it in the router.
     ports: ["8000:8000"]
+    # One open file per connection (TISMA_MAX_CONNECTIONS) and some more.
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
     depends_on: [db]
   db:
     image: postgres:16

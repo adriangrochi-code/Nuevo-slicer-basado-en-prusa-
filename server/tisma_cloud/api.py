@@ -1,6 +1,8 @@
 """The master server: the API of the users (Tisma, the app), of the computing nodes and of the administrator."""
 
 import asyncio
+import base64
+import hashlib
 import hmac
 import ipaddress
 import json
@@ -15,24 +17,76 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import bindparam, delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 
 from . import __version__, alerts, billing, codes, google_play, remote, scheduler
 from .google_auth import GoogleError, GoogleVerifier
-from .mail import code_message, mailer_for
+from .mail import code_message, exists_message, mailer_for
 from .db import Database
 from .jobs import (ESTIMATE_MAX_TRIANGLES, JOB_CLASS_DESCRIPTIONS, JOB_CLASSES, JobError, count_triangles,
                    estimate_seconds, plan_job)
-from .models import Alert, ApiToken, Bridge, Job, Node, Payment, Plan, RemoteCommand, User, utcnow
+from .models import (Alert, ApiToken, Bridge, EmailCode, Job, Node, Payment, Plan, PlaySubscription, RemoteCommand,
+                     Usage, User, utcnow)
 from .guard import Guard
+from .presence import Presence
 from .ratelimit import RateLimiter
-from .security import DUMMY_HASH, hash_password, hash_token, new_token, verify_password
+from .security import DUMMY_HASH, Busy, hash_password, hash_token, needs_rehash, new_token, verify_password
 from .settings import Settings
 from .storage import ALLOWED_RESULTS, Storage, TooLarge, safe_filename
+from .wakeup import Wakeup
 
 log = logging.getLogger("tisma_cloud")
+
+# Keys of the long polls (wakeup.py): the nodes wait for any job, a bridge for its own commands.
+JOBS = "jobs"
+
+
+def bridge_key(bridge_id: str) -> str:
+    return "bridge:" + bridge_id
+
+
+# The last seen of the bridges and their states kept in memory are written this often [s].
+FLUSH_S = 5.
+
+
+class TokenCache:
+    """The accounts of the access tokens used lately, so that the requests of a bridge (one every few seconds) do not
+    ask the database each time. An entry lives TTL_S; a session closed or an account disabled through this master is
+    dropped at once (by the administration program, another process, within TTL_S)."""
+
+    TTL_S = 60.
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._items: dict[str, tuple[int, float]] = {}
+
+    def get(self, token_hash: str) -> int | None:
+        with self._lock:
+            item = self._items.get(token_hash)
+            if item is None:
+                return None
+            if time.monotonic() > item[1]:
+                del self._items[token_hash]
+                return None
+            return item[0]
+
+    def put(self, token_hash: str, user_id: int) -> None:
+        with self._lock:
+            if len(self._items) > 100_000:
+                self._items.clear()
+            self._items[token_hash] = (user_id, time.monotonic() + self.TTL_S)
+
+    def drop(self, token_hash: str) -> None:
+        with self._lock:
+            self._items.pop(token_hash, None)
+
+    def drop_user(self, user_id: int) -> None:
+        with self._lock:
+            for key in [k for k, (u, _) in self._items.items() if u == user_id]:
+                del self._items[key]
 
 
 class Services:
@@ -43,7 +97,13 @@ class Services:
         self.sync_internal_accounts()
         self.storage = Storage(settings.storage_dir)
         self.remote_files = remote.RemoteFiles(settings.storage_dir)
+        # The bridges, their state and the camera images in memory (presence.py, remote.Images).
+        self.presence = Presence()
+        self.images = remote.Images()
+        self.tokens = TokenCache()
         self.limiter = RateLimiter()
+        # The long polls of the bridges and the nodes, woken by the commands and jobs created here.
+        self.wakeup = Wakeup()
         # A slower window for the e-mails sent to one address (at most a few per hour).
         self.hourly = RateLimiter(3600.)
         self.mailer = mailer_for(settings)
@@ -54,6 +114,8 @@ class Services:
         # When the alerts were last checked (time.monotonic(), None: never). Not 0: the monotonic clock counts from the
         # start of the machine, and a machine started less than a minute ago would skip the first check.
         self._alerts_checked: float | None = None
+        # When the old data was last forgotten (once an hour).
+        self._forgot_at: float | None = None
         self._alerts_lock = threading.Lock()
 
     def sync_internal_accounts(self) -> None:
@@ -70,13 +132,20 @@ class Services:
         """Requeues the jobs of lost nodes, removes the files of old jobs and fails the remote commands not taken."""
         with self.db.session() as s:
             remote.expire(s, self.remote_files, self.settings.remote_command_minutes)
+            # The bridges with commands waiting (after a restart, or made by another process).
+            self.presence.set_queued(set(s.execute(
+                select(RemoteCommand.bridge_id).where(RemoteCommand.status == "queued").distinct()).scalars()))
+        self.images.drop_old()
+        self.presence.drop_old_looks()
         with self.db.session() as s:
-            scheduler.requeue_stale(s, self.settings.node_timeout_s, self.settings.max_attempts)
+            requeued = scheduler.requeue_stale(s, self.settings.node_timeout_s, self.settings.max_attempts)
             # Jobs ended by the sweep itself (nodes lost): the recent ones are enough, the others were cleaned before.
             ended = s.execute(select(Job.id).where(Job.status.in_(scheduler.FINAL), Job.files_removed.is_(False),
                                                    Job.finished_at > utcnow() - timedelta(hours=1))).scalars()
             for job_id in ended:
                 self.storage.remove_input(job_id)
+        if requeued:
+            self.wakeup.notify(JOBS)
         limit = utcnow() - timedelta(hours=self.settings.retention_h)
         with self.db.session() as s:
             old = s.execute(
@@ -85,10 +154,75 @@ class Services:
             for job in old:
                 self.storage.remove_job(job.id)
                 job.files_removed = True
+        if self._forgot_at is None or time.monotonic() - self._forgot_at >= 3600:
+            self._forgot_at = time.monotonic()
+            self.forget_old_data()
         # The alerts of the administrators, once a minute.
         if self._alerts_checked is None or time.monotonic() - self._alerts_checked >= 60:
             self._alerts_checked = time.monotonic()
             self.check_alerts()
+
+    def forget_old_data(self, now: datetime | None = None) -> None:
+        """Keeps only what the service needs (privacy): the jobs ended long ago (their files went before; the hours used
+        stay in the monthly usage), the remote commands ended, the e-mail codes expired, the sessions not used for
+        session_days and the bridges not seen for remote.FORGET_BRIDGE_DAYS."""
+        now = now or utcnow()
+        sessions = now - timedelta(days=self.settings.session_days)
+        with self.db.session() as s:
+            s.execute(delete(Job).where(Job.status.in_(scheduler.FINAL), Job.files_removed.is_(True),
+                                        Job.finished_at < now - timedelta(days=self.settings.job_history_days)))
+            s.execute(delete(RemoteCommand).where(RemoteCommand.status.in_(("done", "failed")),
+                                                  RemoteCommand.updated_at < now - timedelta(days=1)))
+            s.execute(delete(EmailCode).where(EmailCode.expires_at < now))
+            s.execute(delete(ApiToken).where(func.coalesce(ApiToken.last_used, ApiToken.created_at) < sessions))
+            stale = s.execute(select(Bridge.id).where(
+                func.coalesce(Bridge.last_seen, Bridge.created_at) < now - timedelta(days=remote.FORGET_BRIDGE_DAYS))
+            ).scalars().all()
+            if stale:
+                s.execute(delete(Bridge).where(Bridge.id.in_(stale)))
+        for bridge_id in stale:
+            self.presence.forget(bridge_id)
+
+    def delete_account(self, user_id: int) -> None:
+        """Removes everything of the account but its payments (see the endpoint POST /v1/me/delete)."""
+        with self.db.session() as s:
+            user = s.get(User, user_id)
+            jobs = s.execute(select(Job.id).where(Job.user_id == user_id)).scalars().all()
+            bridges = s.execute(select(Bridge.id).where(Bridge.user_id == user_id)).scalars().all()
+            commands = s.execute(select(RemoteCommand.id).where(RemoteCommand.bridge_id.in_(bridges))).scalars().all() \
+                if bridges else []
+            for model in (ApiToken, EmailCode, Usage, PlaySubscription, Job, Bridge):
+                s.execute(delete(model).where(model.user_id == user_id))
+            if commands:
+                s.execute(delete(RemoteCommand).where(RemoteCommand.id.in_(commands)))
+            user.email = f"deleted-{user.id}@deleted.invalid"
+            user.password_hash, user.google_sub, user.play_account, user.external_id = "", None, None, None
+            user.enabled = user.email_verified = user.unlimited = False
+            user.extra_printers = 0
+        for job_id in jobs:
+            self.storage.remove_job(job_id)
+        for command_id in commands:
+            self.remote_files.remove_command(command_id)
+        for bridge_id in bridges:
+            self.presence.forget(bridge_id)
+            self.images.drop_bridge(bridge_id)
+        self.tokens.drop_user(user_id)
+
+    def flush_presence(self) -> None:
+        """Writes the last seen of the bridges and the states kept in memory (presence.py)."""
+        seen, states = self.presence.take_dirty()
+        if not seen and not states:
+            return
+        table = Bridge.__table__
+        with self.db.session() as s:
+            # Not the ORM's update by primary key: a bridge removed meanwhile must not fail the others.
+            rows = [{"bridge": b, "seen": t} for b, t in seen.items() if b not in states]
+            if rows:
+                s.execute(update(table).where(table.c.id == bindparam("bridge")).values(last_seen=bindparam("seen")),
+                          rows)
+            for bridge_id, (name, printers) in states.items():
+                s.execute(update(Bridge).where(Bridge.id == bridge_id).values(
+                    name=name, printers=json.dumps(printers), last_seen=seen.get(bridge_id) or utcnow()))
 
     def check_alerts(self, now: datetime | None = None) -> list[Alert]:
         """Opens, repeats and closes the alerts (one check at a time, so that an alert is never opened twice)."""
@@ -129,10 +263,24 @@ def node_view(node: Node, running: int = 0, timeout_s: int = 90) -> dict[str, An
 
 # The pages of the master load nothing from other sites, are not shown inside other pages and are not cached.
 PAGE_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; "
+    "Content-Security-Policy": "default-src 'self'; script-src {scripts}; style-src 'unsafe-inline'; img-src data:; "
                                "frame-ancestors 'none'; form-action 'self'; base-uri 'none'",
     "X-Frame-Options": "DENY", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
 }
+
+
+def script_hashes(page: str) -> str:
+    """The SHA-256 of each script of the page, for its Content Security Policy: only those scripts run, so that a
+    script slipped into the page (a name with HTML in it) would not."""
+    return " ".join("'sha256-" + base64.b64encode(hashlib.sha256(script.encode("utf-8")).digest()).decode() + "'"
+                    for script in re.findall(r"<script>(.*?)</script>", page, re.S))
+
+
+def static_page(name: str) -> tuple[str, dict[str, str]]:
+    page = resources.files("tisma_cloud").joinpath(f"static/{name}").read_text(encoding="utf-8")
+    headers = dict(PAGE_HEADERS)
+    headers["Content-Security-Policy"] = headers["Content-Security-Policy"].replace("{scripts}", script_hashes(page))
+    return page, headers
 
 
 def user_view(user: User) -> dict[str, Any]:
@@ -253,6 +401,17 @@ class RegisterBody(BaseModel):
     plan: str | None = None
 
 
+class PasswordBody(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+class DeleteAccountBody(BaseModel):
+    """The password of the account, or (accounts without one: Google) the code sent by e-mail."""
+    password: str | None = Field(default=None, max_length=200)
+    code: str | None = Field(default=None, min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
 class EmailBody(BaseModel):
     email: str = Field(min_length=3, max_length=200)
 
@@ -319,15 +478,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     log.exception("Sweep failed")
                 await asyncio.sleep(30)
 
-        task = asyncio.create_task(sweeper())
+        async def flusher() -> None:
+            while True:
+                await asyncio.sleep(FLUSH_S)
+                try:
+                    await run_in_threadpool(services.flush_presence)
+                except Exception:  # noqa: BLE001 (keep flushing)
+                    log.exception("Writing the bridges failed")
+
+        tasks = [asyncio.create_task(sweeper()), asyncio.create_task(flusher())]
         try:
             yield
         finally:
-            task.cancel()
+            for task in tasks:
+                task.cancel()
+            await run_in_threadpool(services.flush_presence)
             # The connections to the database are closed with the server.
             services.db.engine.dispose()
 
     app = FastAPI(title="Tisma Cloud", version=__version__, lifespan=lifespan)
+
+    @app.exception_handler(Busy)
+    async def busy(_request: Request, ex: Busy) -> Response:
+        return JSONResponse({"detail": str(ex)}, status_code=503, headers={"Retry-After": "5"})
     app.state.services = services
     db = services.db
     cfg = services.settings
@@ -384,22 +557,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(404, "Not Found")
 
     # ---- authentication
+    def session_expired(api_token: ApiToken, now: datetime) -> bool:
+        """A session not used for session_days is closed: a lost or forgotten device does not stay logged in."""
+        return (api_token.last_used or api_token.created_at) < now - timedelta(days=cfg.session_days)
+
     def current_user(request: Request, authorization: Annotated[str | None, Header()] = None) -> User:
-        token = bearer(authorization)
+        token_hash = hash_token(bearer(authorization))
+        expired = False
         with db.session() as s:
             row = s.execute(
-                select(ApiToken, User).join(User, User.id == ApiToken.user_id).where(ApiToken.token_hash == hash_token(token))
+                select(ApiToken, User).join(User, User.id == ApiToken.user_id).where(ApiToken.token_hash == token_hash)
             ).one_or_none()
             if row is None or not row[1].enabled:
                 raise HTTPException(401, "Invalid access token", headers={"WWW-Authenticate": "Bearer"})
             api_token, user = row
             now = utcnow()
-            if api_token.last_used is None or now - api_token.last_used > timedelta(minutes=5):
+            if session_expired(api_token, now):
+                s.delete(api_token)
+                expired = True
+            elif api_token.last_used is None or now - api_token.last_used > timedelta(minutes=5):
                 api_token.last_used = now
             limit = 10**6 if user.is_unlimited else user.plan.requests_per_minute
+        if expired:
+            raise HTTPException(401, "The session expired: log in again", headers={"WWW-Authenticate": "Bearer"})
         if not limiter.allow(f"user:{user.id}", limit):
             raise HTTPException(429, "Too many requests: wait a minute", headers={"Retry-After": "60"})
-        request.state.token_hash = hash_token(token)
+        request.state.token_hash = token_hash
         return user
 
     def current_admin(_local: Annotated[None, Depends(local_only)], user: Annotated[User, Depends(current_user)]) -> User:
@@ -425,23 +608,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not cfg.site_key or not hmac.compare_digest(token.encode(), cfg.site_key.encode()):
             raise HTTPException(401, "Invalid site key", headers={"WWW-Authenticate": "Bearer"})
 
-    def current_remote_user(request: Request, authorization: Annotated[str | None, Header()] = None) -> User:
-        """The account, for its remote printers: limited apart from the plan (the bridge sends its state every few
-        seconds and the images of a camera while someone looks)."""
-        token = bearer(authorization)
-        with db.session() as s:
-            row = s.execute(
-                select(ApiToken, User).join(User, User.id == ApiToken.user_id).where(ApiToken.token_hash == hash_token(token))
-            ).one_or_none()
-            if row is None or not row[1].enabled:
+    async def current_remote_user(request: Request, authorization: Annotated[str | None, Header()] = None) -> int:
+        """The id of the account, for its remote printers: limited apart from the plan (a bridge asks every few
+        seconds). The accounts of the tokens are kept TokenCache.TTL_S in memory: most of these requests do not ask
+        the database."""
+        token_hash = hash_token(bearer(authorization))
+        user_id = services.tokens.get(token_hash)
+        if user_id is None:
+            def load() -> int | None:
+                with db.session() as s:
+                    row = s.execute(select(ApiToken, User.enabled).join(User, User.id == ApiToken.user_id)
+                                    .where(ApiToken.token_hash == token_hash)).one_or_none()
+                    if row is None or not row[1]:
+                        return None
+                    api_token, now = row[0], utcnow()
+                    if session_expired(api_token, now):
+                        s.delete(api_token)
+                        return None
+                    if api_token.last_used is None or now - api_token.last_used > timedelta(minutes=5):
+                        api_token.last_used = now
+                    return api_token.user_id
+
+            user_id = await run_in_threadpool(load)
+            if user_id is None:
                 raise HTTPException(401, "Invalid access token", headers={"WWW-Authenticate": "Bearer"})
-            user = row[1]
-        if not limiter.allow(f"remote:{user.id}", cfg.remote_requests_per_minute):
+            services.tokens.put(token_hash, user_id)
+        if not limiter.allow(f"remote:{user_id}", cfg.remote_requests_per_minute):
             raise HTTPException(429, "Too many requests: wait a minute", headers={"Retry-After": "60"})
-        return user
+        return user_id
 
     UserDep = Annotated[User, Depends(current_user)]
-    RemoteDep = Annotated[User, Depends(current_remote_user)]
+    RemoteDep = Annotated[int, Depends(current_remote_user)]
     AdminDep = Annotated[User, Depends(current_admin)]
     NodeDep = Annotated[Node, Depends(current_node)]
     SiteDep = Annotated[None, Depends(current_site)]
@@ -476,7 +673,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(429, "Too many login attempts: wait a minute", headers={"Retry-After": "60"})
         with db.session() as s:
             user = s.execute(select(User).where(User.email == email)).scalar_one_or_none()
-            ok = verify_password(body.password, user.password_hash if user and user.password_hash else DUMMY_HASH)
+            stored = user.password_hash if user and user.password_hash else DUMMY_HASH
+            ok = verify_password(body.password, stored)
+            if ok and needs_rehash(stored):
+                # Made with weaker parameters: made again now that the password is known.
+                user.password_hash = hash_password(body.password)
+            elif not ok and needs_rehash(stored):
+                # As long as a failed login on an unknown e-mail, so that the time does not tell the account exists.
+                verify_password(body.password, DUMMY_HASH)
             if user is None or not ok or not user.enabled:
                 raise HTTPException(401, "Wrong e-mail or password")
             if not user.email_verified:
@@ -487,6 +691,118 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def logout(user: UserDep, request: Request) -> dict:
         with db.session() as s:
             s.execute(ApiToken.__table__.delete().where(ApiToken.token_hash == request.state.token_hash))
+        services.tokens.drop(request.state.token_hash)
+        return {"ok": True}
+
+    # ---- the account's own data: sessions, password, a copy of everything, deletion
+    @app.get("/v1/me/sessions")
+    def my_sessions(user: UserDep, request: Request) -> dict:
+        """The devices logged in to the account (to close a lost one)."""
+        with db.session() as s:
+            rows = s.execute(select(ApiToken).where(ApiToken.user_id == user.id)
+                             .order_by(ApiToken.created_at.desc())).scalars().all()
+            return {"sessions": [{"id": t.id, "device": t.label, "created_at": t.created_at.isoformat() + "Z",
+                                  "last_used": t.last_used.isoformat() + "Z" if t.last_used else None,
+                                  "current": t.token_hash == request.state.token_hash} for t in rows]}
+
+    @app.delete("/v1/me/sessions/{session_id}")
+    def close_session(user: UserDep, session_id: int) -> dict:
+        with db.session() as s:
+            token = s.get(ApiToken, session_id)
+            if token is None or token.user_id != user.id:
+                raise HTTPException(404, "No such session")
+            services.tokens.drop(token.token_hash)
+            s.delete(token)
+        return {"ok": True}
+
+    @app.post("/v1/me/sessions/close-others")
+    def close_other_sessions(user: UserDep, request: Request) -> dict:
+        with db.session() as s:
+            closed = s.execute(delete(ApiToken).where(ApiToken.user_id == user.id,
+                                                      ApiToken.token_hash != request.state.token_hash)).rowcount
+        services.tokens.drop_user(user.id)
+        return {"closed": closed}
+
+    @app.post("/v1/me/password")
+    def change_password(user: UserDep, request: Request, body: PasswordBody) -> dict:
+        """A new password, knowing the current one; the other devices are logged out."""
+        if not limiter.allow(f"password:{user.id}", cfg.login_per_minute):
+            raise HTTPException(429, "Too many attempts: wait a minute", headers={"Retry-After": "60"})
+        with db.session() as s:
+            u = s.get(User, user.id)
+            if not u.password_hash:
+                raise HTTPException(409, "The account has no password: choose one with \"Forgot my password\"")
+            ok = verify_password(body.current_password, u.password_hash)
+        if not ok:
+            raise HTTPException(403, "Wrong password")
+        new_hash = hash_password(body.new_password)
+        with db.session() as s:
+            s.get(User, user.id).password_hash = new_hash
+            s.execute(delete(ApiToken).where(ApiToken.user_id == user.id,
+                                             ApiToken.token_hash != request.state.token_hash))
+        services.tokens.drop_user(user.id)
+        return {"ok": True}
+
+    @app.get("/v1/me/export")
+    def export_my_data(user: UserDep) -> Response:
+        """Everything the service keeps about the account, as JSON (the projects and results are not kept)."""
+        with db.session() as s:
+            u = s.get(User, user.id)
+            data = {
+                "account": {"email": u.email, "created_at": u.created_at.isoformat() + "Z", "plan": u.plan_name,
+                            "paid_until": u.paid_until.isoformat() + "Z" if u.paid_until else None,
+                            "store_until": u.store_until.isoformat() + "Z" if u.store_until else None,
+                            "email_verified": u.email_verified, "google_linked": u.google_sub is not None,
+                            "has_password": bool(u.password_hash), "extra_printers": u.extra_printers},
+                "sessions": [{"device": t.label, "created_at": t.created_at.isoformat() + "Z",
+                              "last_used": t.last_used.isoformat() + "Z" if t.last_used else None}
+                             for t in s.execute(select(ApiToken).where(ApiToken.user_id == u.id)).scalars()],
+                "payments": [payment_view(p) for p in
+                             s.execute(select(Payment).where(Payment.user_id == u.id)).scalars()],
+                "store_subscriptions": [{"product": p.product_id, "plan": p.plan_name, "state": p.state,
+                                         "order_id": p.order_id,
+                                         "until": p.entitled_until.isoformat() + "Z" if p.entitled_until else None}
+                                        for p in s.execute(select(PlaySubscription)
+                                                           .where(PlaySubscription.user_id == u.id)).scalars()],
+                "usage": [{"month": x.month, "seconds": round(x.seconds, 1)}
+                          for x in s.execute(select(Usage).where(Usage.user_id == u.id)).scalars()],
+                "jobs": [job_view(j) for j in s.execute(select(Job).where(Job.user_id == u.id)).scalars()],
+                "bridges": [{"id": b.id, "name": b.name, "printers": b.printer_list,
+                             "created_at": b.created_at.isoformat() + "Z",
+                             "last_seen": b.last_seen.isoformat() + "Z" if b.last_seen else None}
+                            for b in s.execute(select(Bridge).where(Bridge.user_id == u.id)).scalars()],
+            }
+        return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="tisma-cloud-mis-datos.json"',
+                                           "Cache-Control": "no-store"})
+
+    @app.post("/v1/me/delete/code")
+    def delete_account_code(user: UserDep, request: Request) -> dict:
+        """A code by e-mail to delete the account (for the accounts without a password)."""
+        if not mail_allowed(request, user.email):
+            raise HTTPException(429, "Wait a minute before asking another code", headers={"Retry-After": "60"})
+        with db.session() as s:
+            code = codes.issue(s, s.get(User, user.id), "delete")
+        send_code(user.email, "delete", code)
+        return {"ok": True}
+
+    @app.post("/v1/me/delete")
+    def delete_account(user: UserDep, request: Request, body: DeleteAccountBody) -> dict:
+        """Deletes the account and its data: sessions, jobs and their files, bridges, commands, store purchases,
+        usage. Only the payments stay, without anything personal (the account is left as "deleted-<id>"), for the
+        accounting of the service."""
+        if not code_attempt_allowed(request, user.email):
+            raise HTTPException(429, "Too many attempts: wait a minute", headers={"Retry-After": "60"})
+        with db.session() as s:
+            u = s.get(User, user.id)
+            if u.is_admin:
+                raise HTTPException(409, "An administrator account is removed by another administrator")
+            if body.code:
+                ok = codes.check(s, u, "delete", body.code)
+            else:
+                ok = bool(u.password_hash and body.password) and verify_password(body.password, u.password_hash)
+        if not ok:
+            raise HTTPException(403, "Wrong password or code")
+        services.delete_account(user.id)
         return {"ok": True}
 
     @app.get("/v1/me")
@@ -495,7 +811,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             u = s.get(User, user.id)
             acc = scheduler.account(s, u, cfg.grace_days)
             return {"email": u.email, **acc.as_dict(), "remote_printers": remote.printer_allowance(u, acc.paid),
-                    "extra_printers": u.extra_printers, "extra_printer_cents": u.plan.extra_printer_cents}
+                    "extra_printers": u.extra_printers, "extra_printer_cents": u.plan.extra_printer_cents,
+                    "has_password": bool(u.password_hash)}
 
     @app.get("/v1/plans")
     def plans() -> dict:
@@ -512,26 +829,44 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/auth/register", status_code=201)
     def register(request: Request, body: RegisterBody) -> dict:
+        """The same answer whether the address has an account or not (the page must not tell who is a user): a new
+        account gets its code, an existing one an e-mail saying so."""
         email = body.email.strip().lower()
         if not limiter.allow(f"register-ip:{client_key(request)}", cfg.login_per_minute):
             raise HTTPException(429, "Too many attempts: wait a minute", headers={"Retry-After": "60"})
         if not EMAIL.match(email):
             raise HTTPException(422, "Not an e-mail address")
+        # Hashed in both cases, so that the time does not tell either.
+        password_hash = hash_password(body.password)
         with db.session() as s:
             if s.execute(select(User.id).where(User.email == email)).first():
-                raise HTTPException(409, "That e-mail already has an account: log in")
-            plan = s.get(Plan, body.plan) if body.plan else None
-            if plan is None or not plan.public:
-                plan = s.execute(select(Plan).where(Plan.public.is_(True)).order_by(Plan.price_cents)).scalars().first() \
-                    or s.get(Plan, "trial")
-            # Not verified nor paid yet: the code sent to the address confirms it; then the account can pay.
-            user = User(email=email, plan_name=plan.name, password_hash=hash_password(body.password),
-                        email_verified=False, unlimited=cfg.is_internal_email(email))
-            s.add(user)
-            s.flush()
-            code = codes.issue(s, user, "verify")
-        send_code(email, "verify", code)
+                code = None
+            else:
+                code = new_account(s, email, body.plan, password_hash)
+        if code is None:
+            # At most as often as the codes (silently: a refusal would tell the address has an account).
+            if mail_allowed(request, email):
+                subject, text = exists_message()
+                try:
+                    services.mailer.send(email, subject, text)
+                except Exception:  # noqa: BLE001 (nothing to tell the visitor: the answer is the same)
+                    log.exception("Could not send the existing account notice")
+        else:
+            send_code(email, "verify", code)
         return {"verification_required": True, "email": email}
+
+    def new_account(s, email: str, plan_name: str | None, password_hash: str) -> str:  # noqa: ANN001
+        """A self-registered account (not verified nor paid yet: the code sent to the address confirms it; then the
+        account can pay). Returns the code."""
+        plan = s.get(Plan, plan_name) if plan_name else None
+        if plan is None or not plan.public:
+            plan = s.execute(select(Plan).where(Plan.public.is_(True)).order_by(Plan.price_cents)).scalars().first() \
+                or s.get(Plan, "trial")
+        user = User(email=email, plan_name=plan.name, password_hash=password_hash,
+                    email_verified=False, unlimited=cfg.is_internal_email(email))
+        s.add(user)
+        s.flush()
+        return codes.issue(s, user, "verify")
 
     def open_session(s, user: User, device: str) -> str:  # noqa: ANN001
         token = new_token("tu")
@@ -610,6 +945,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 # The code reached the inbox: the address is theirs. The sessions of the devices are closed.
                 user.email_verified = True
                 s.execute(ApiToken.__table__.delete().where(ApiToken.user_id == user.id))
+                services.tokens.drop_user(user.id)
                 token = open_session(s, user, body.device)
         if token is None:
             raise HTTPException(400, "Wrong or expired code")
@@ -790,12 +1126,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/cuenta", response_class=HTMLResponse, include_in_schema=False)
     def account_page() -> HTMLResponse:
-        page = resources.files("tisma_cloud").joinpath("static/cuenta.html").read_text(encoding="utf-8")
-        headers = dict(PAGE_HEADERS)
+        page, headers = static_page("cuenta.html")
         if services.google.client_ids:
             # The Google button (Google Identity Services), as Google documents its Content Security Policy.
             headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'unsafe-inline' https://accounts.google.com/gsi/client; "
+                f"default-src 'self'; script-src {script_hashes(page)} https://accounts.google.com/gsi/client; "
                 "style-src 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; "
                 "connect-src 'self' https://accounts.google.com/gsi/; img-src data: https:; frame-ancestors 'none'; "
                 "form-action 'self'; base-uri 'none'")
@@ -845,7 +1180,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except TooLarge:
                 services.storage.remove_job(job.id)
                 raise HTTPException(413, f"The project is larger than {cfg.max_upload_mb} MB") from None
-            return job_view(job)
+            view = job_view(job)
+        # After the commit: a node woken before it would not see the job.
+        services.wakeup.notify(JOBS)
+        return view
 
     @app.get("/v1/jobs")
     def list_jobs(user: UserDep, limit: int = 50) -> dict:
@@ -906,15 +1244,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         n.info = json.dumps(body.info)[:4000]
             await run_in_threadpool(save_info)
         wait_s = cfg.claim_wait_s if wait is None else max(0, min(wait, cfg.claim_wait_s))
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + wait_s
-        while True:
-            job = await run_in_threadpool(try_claim, node.id, body.exclude)
-            if job is not None:
-                return {"job": job, "priorities": node.priority_list}
-            if loop.time() >= deadline:
-                return Response(status_code=204)
-            await asyncio.sleep(1.)
+        job = await services.wakeup.poll(JOBS, lambda: run_in_threadpool(try_claim, node.id, body.exclude), wait_s)
+        if job is None:
+            return Response(status_code=204)
+        return {"job": job, "priorities": node.priority_list}
 
     @app.post("/v1/node/heartbeat")
     def node_heartbeat(node: NodeDep, body: HeartbeatBody) -> dict:
@@ -987,84 +1320,146 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             services.storage.remove_input(job.id)
             return {"ok": True}
 
-    # ---- remote printers: a bridge at home (Tisma left open) relays them, the phone sees and commands them (remote.py)
-    def own_bridge(s, user: User, bridge_id: str, create: bool = False) -> Bridge:  # noqa: ANN001
-        if not remote.ID.match(bridge_id):
-            raise HTTPException(404, "No such bridge")
-        bridge = s.get(Bridge, bridge_id)
-        if bridge is None and create:
-            if s.execute(select(func.count()).select_from(Bridge).where(Bridge.user_id == user.id)).scalar_one() >= remote.MAX_BRIDGES:
-                raise HTTPException(409, "Too many bridges: remove an old one")
-            bridge = Bridge(id=bridge_id, user_id=user.id)
-            s.add(bridge)
-        if bridge is None or bridge.user_id != user.id:
+    # ---- remote printers: a bridge at home (Tisma left open) relays them, the phone sees and commands them (remote.py).
+    # What a bridge does most of the time (waiting for commands, sending its state) is answered from memory
+    # (presence.py); the database is asked when there is something to read or to keep.
+    presence = services.presence
+
+    def own_bridge(s, user_id: int, bridge_id: str) -> Bridge:  # noqa: ANN001
+        bridge = s.get(Bridge, bridge_id) if remote.ID.match(bridge_id) else None
+        if bridge is None or bridge.user_id != user_id:
             raise HTTPException(404, "No such bridge")
         return bridge
 
+    async def known_bridge(user_id: int, bridge_id: str, state: tuple[str, list[dict], datetime] | None = None) -> bool:
+        """The bridge is the account's; from memory when known. With state (what the bridge sends: name, printers,
+        time), a bridge not in memory is read, or made, and its state written in the same session; True then."""
+        if not remote.ID.match(bridge_id):
+            raise HTTPException(404, "No such bridge")
+        owner, written = presence.owner(bridge_id), False
+        if owner is None:
+            def load() -> int | None:
+                with db.session() as s:
+                    bridge = s.get(Bridge, bridge_id)
+                    if bridge is None:
+                        if state is None:
+                            return None
+                        if s.execute(select(func.count()).select_from(Bridge)
+                                     .where(Bridge.user_id == user_id)).scalar_one() >= remote.MAX_BRIDGES:
+                            raise HTTPException(409, "Too many bridges: remove an old one")
+                        bridge = Bridge(id=bridge_id, user_id=user_id)
+                        s.add(bridge)
+                    if state is not None and bridge.user_id == user_id:
+                        bridge.name, bridge.printers, bridge.last_seen = state[0], json.dumps(state[1]), state[2]
+                    return bridge.user_id
+
+            try:
+                owner = await run_in_threadpool(load)
+            except IntegrityError:
+                # Made at the same time by another request of the bridge.
+                owner = await run_in_threadpool(load)
+            if owner is not None:
+                presence.known(bridge_id, owner)
+            written = state is not None
+        if owner != user_id:
+            raise HTTPException(404, "No such bridge")
+        return written
+
+    def bridge_printers(bridge: Bridge) -> list[dict]:
+        printers = presence.printers(bridge.id)
+        return bridge.printer_list if printers is None else printers
+
     def bridge_printer(bridge: Bridge, printer_id: str, action: str | None = None) -> dict:
-        printer = next((p for p in bridge.printer_list if p["id"] == printer_id), None)
+        printer = next((p for p in bridge_printers(bridge) if p["id"] == printer_id), None)
         if printer is None:
             raise HTTPException(404, "No such printer")
         if action is not None and action not in printer["actions"]:
             raise HTTPException(422, f"The printer cannot {action} from afar")
         return printer
 
-    def remote_allowance(s, user: User) -> tuple[int, set[tuple[str, str]]]:  # noqa: ANN001
+    def bridge_online(bridge: Bridge) -> bool:
+        seen = [d for d in (bridge.last_seen, presence.last_seen(bridge.id)) if d is not None]
+        return remote.is_online(max(seen) if seen else None)
+
+    def remote_allowance(s, user_id: int) -> tuple[int, set[tuple[str, str]]]:  # noqa: ANN001
         """How many printers the plan lets use from afar, and which ones."""
-        u = s.get(User, user.id)
+        u = s.get(User, user_id)
         allowance = remote.printer_allowance(u, scheduler.account(s, u, cfg.grace_days).paid)
         return allowance, remote.allowed_printers(s, u, allowance)
 
-    def check_allowed(s, user: User, bridge: Bridge, printer_id: str) -> None:  # noqa: ANN001
-        allowance, allowed = remote_allowance(s, user)
+    def check_allowed(s, user_id: int, bridge: Bridge, printer_id: str) -> None:  # noqa: ANN001
+        allowance, allowed = remote_allowance(s, user_id)
         if (bridge.id, printer_id) not in allowed:
             raise HTTPException(402, "Remote printers are not in your plan: choose one on the account page" if allowance == 0
                                 else f"Your plan includes {allowance} remote printers: add more on the account page")
 
     def new_command(s, bridge: Bridge, printer_id: str, action: str, file_name: str = "") -> RemoteCommand:  # noqa: ANN001
-        if not remote.is_online(bridge):
+        if not bridge_online(bridge):
             raise HTTPException(409, "The bridge is offline: open Tisma on the computer at home")
         command = RemoteCommand(bridge_id=bridge.id, printer_id=printer_id, action=action, file_name=file_name)
         s.add(command)
         s.flush()
         return command
 
+    def command_made(bridge_id: str) -> None:
+        """After the commit of a command: the bridge's wait ends and reads it."""
+        presence.mark_queued(bridge_id)
+        services.wakeup.notify(bridge_key(bridge_id))
+
+    def wake_for_state(bridge_ids: list[str]) -> None:
+        for bridge_id in bridge_ids:
+            services.wakeup.notify(bridge_key(bridge_id))
+
     # The bridge.
     @app.put("/v1/bridges/{bridge_id}")
-    def bridge_state(user: RemoteDep, bridge_id: str, body: BridgeBody) -> dict:
-        with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id, create=True)
-            bridge.name = body.name.strip()[:100]
-            bridge.printers = json.dumps(remote.clean_printers(body.printers))
-            bridge.last_seen = utcnow()
-            # The printers whose camera someone is looking at: the bridge sends their images.
-            return {"watch": remote.watched(bridge)}
+    async def bridge_state(user_id: RemoteDep, bridge_id: str, body: BridgeBody) -> dict:
+        name, printers, now = body.name.strip()[:100], remote.clean_printers(body.printers), utcnow()
+        written = await known_bridge(user_id, bridge_id, (name, printers, now))
+        if presence.set_state(bridge_id, name, printers, now) and not written:
+            def write() -> None:
+                with db.session() as s:
+                    s.execute(update(Bridge).where(Bridge.id == bridge_id).values(
+                        name=name, printers=json.dumps(printers), last_seen=now))
+
+            await run_in_threadpool(write)
+        # The printers whose camera someone is looking at (the bridge sends their images), and how often to send the
+        # state.
+        return {"watch": presence.watched(bridge_id), "state_s": presence.state_every(bridge_id)}
 
     @app.get("/v1/bridges/{bridge_id}/commands")
-    async def bridge_commands(user: RemoteDep, bridge_id: str, wait: int = 20) -> dict:
+    async def bridge_commands(user_id: RemoteDep, bridge_id: str, wait: int = 20) -> dict:
+        await known_bridge(user_id, bridge_id)
+        presence.seen(bridge_id, utcnow())
+
         def take() -> list[dict]:
             with db.session() as s:
-                bridge = own_bridge(s, user, bridge_id)
-                bridge.last_seen = utcnow()
-                queued = s.execute(select(RemoteCommand).where(RemoteCommand.bridge_id == bridge.id,
+                queued = s.execute(select(RemoteCommand).where(RemoteCommand.bridge_id == bridge_id,
                                                                RemoteCommand.status == "queued")
                                    .order_by(RemoteCommand.created_at)).scalars().all()
                 for c in queued:
                     c.status, c.updated_at = "sent", utcnow()
                 return [remote.command_view(c) for c in queued]
 
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + max(0, min(wait, 25))
-        while True:
-            commands = await run_in_threadpool(take)
-            if commands or loop.time() >= deadline:
+        async def check() -> dict | None:
+            commands: list[dict] = []
+            # Only when a command may be waiting: an idle bridge costs no query.
+            if presence.take_queued(bridge_id):
+                try:
+                    commands = await run_in_threadpool(take)
+                except Exception:
+                    presence.mark_queued(bridge_id)
+                    raise
+            if commands or presence.take_state_wanted(bridge_id):
                 return {"commands": commands}
-            await asyncio.sleep(1.)
+            return None
+
+        answer = await services.wakeup.poll(bridge_key(bridge_id), check, min(wait, 25)) or {"commands": []}
+        return {**answer, "state_s": presence.state_every(bridge_id)}
 
     @app.get("/v1/bridges/{bridge_id}/commands/{command_id}/file")
-    def bridge_command_file(user: RemoteDep, bridge_id: str, command_id: str) -> FileResponse:
+    def bridge_command_file(user_id: RemoteDep, bridge_id: str, command_id: str) -> FileResponse:
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             command = s.get(RemoteCommand, command_id)
             if command is None or command.bridge_id != bridge.id or command.action != "print" or command.status != "sent":
                 raise HTTPException(404, "No such command")
@@ -1074,9 +1469,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return FileResponse(path, media_type="application/octet-stream", filename=command.file_name)
 
     @app.post("/v1/bridges/{bridge_id}/commands/{command_id}")
-    def bridge_command_result(user: RemoteDep, bridge_id: str, command_id: str, body: CommandResultBody) -> dict:
+    def bridge_command_result(user_id: RemoteDep, bridge_id: str, command_id: str, body: CommandResultBody) -> dict:
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             command = s.get(RemoteCommand, command_id)
             if command is None or command.bridge_id != bridge.id or command.status != "sent":
                 raise HTTPException(404, "No such command")
@@ -1087,12 +1482,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return remote.command_view(command)
 
     @app.post("/v1/bridges/{bridge_id}/printers/{printer_id}/camera")
-    async def bridge_camera(user: RemoteDep, bridge_id: str, printer_id: str, request: Request) -> dict:
-        def check() -> None:
-            with db.session() as s:
-                bridge_printer(own_bridge(s, user, bridge_id), printer_id)
+    async def bridge_camera(user_id: RemoteDep, bridge_id: str, printer_id: str, request: Request) -> dict:
+        await known_bridge(user_id, bridge_id)
+        printers = presence.printers(bridge_id)
+        if printers is None:
+            def load() -> list[dict]:
+                with db.session() as s:
+                    return own_bridge(s, user_id, bridge_id).printer_list
 
-        await run_in_threadpool(check)
+            printers = await run_in_threadpool(load)
+        if not any(p["id"] == printer_id for p in printers):
+            raise HTTPException(404, "No such printer")
         data = bytearray()
         async for chunk in request.stream():
             data += chunk
@@ -1100,34 +1500,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 raise HTTPException(413, "The image is too large")
         if not data.startswith(b"\xff\xd8"):
             raise HTTPException(422, "Not a JPEG image")
-        path = services.remote_files.image(bridge_id, printer_id)
-        tmp = path.with_suffix(".part")
-        tmp.write_bytes(bytes(data))
-        tmp.replace(path)
+        services.images.put(bridge_id, printer_id, bytes(data))
         return {"ok": True}
 
     # The phone.
     @app.get("/v1/remote/printers")
-    def remote_printers(user: RemoteDep) -> dict:
+    def remote_printers(user_id: RemoteDep) -> dict:
         now = utcnow()
+        # Someone looks: the bridges that sent their state slowly send it now, and then often.
+        wake_for_state(presence.looking_at(user_id))
         with db.session() as s:
-            allowance, allowed = remote_allowance(s, user)
-            bridges = s.execute(select(Bridge).where(Bridge.user_id == user.id).order_by(Bridge.created_at)).scalars()
-            return {"allowance": allowance, "bridges": [remote.bridge_view(b, now, allowed) for b in bridges]}
+            allowance, allowed = remote_allowance(s, user_id)
+            bridges = s.execute(select(Bridge).where(Bridge.user_id == user_id).order_by(Bridge.created_at)).scalars()
+            return {"allowance": allowance,
+                    "bridges": [remote.bridge_view(b, now, allowed, presence.printers(b.id), presence.last_seen(b.id))
+                                for b in bridges]}
 
     @app.delete("/v1/remote/bridges/{bridge_id}")
-    def remote_remove_bridge(user: RemoteDep, bridge_id: str) -> dict:
+    def remote_remove_bridge(user_id: RemoteDep, bridge_id: str) -> dict:
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             for c in s.execute(select(RemoteCommand).where(RemoteCommand.bridge_id == bridge.id)).scalars():
                 services.remote_files.remove_command(c.id)
-            for p in bridge.printer_list:
-                services.remote_files.image(bridge.id, p["id"]).unlink(missing_ok=True)
             s.delete(bridge)
-            return {"ok": True}
+        presence.forget(bridge_id)
+        services.images.drop_bridge(bridge_id)
+        return {"ok": True}
 
     @app.post("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/print", status_code=201)
-    def remote_print(user: RemoteDep, request: Request, bridge_id: str, printer_id: str,
+    def remote_print(user_id: RemoteDep, request: Request, bridge_id: str, printer_id: str,
                      file: Annotated[UploadFile, File()]) -> dict:
         max_bytes = cfg.max_upload_mb << 20
         length = request.headers.get("content-length")
@@ -1137,9 +1538,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not name.lower().endswith(remote.PRINT_EXTENSIONS):
             raise HTTPException(422, "Send a G-code (.gcode or .bgcode)")
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             bridge_printer(bridge, printer_id, "print")
-            check_allowed(s, user, bridge, printer_id)
+            check_allowed(s, user_id, bridge, printer_id)
             command = new_command(s, bridge, printer_id, "print", name)
             # Saved before the command is visible to the bridge (the session commits at the end).
             try:
@@ -1148,41 +1549,48 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except TooLarge:
                 services.remote_files.remove_command(command.id)
                 raise HTTPException(413, f"The file is larger than {cfg.max_upload_mb} MB") from None
-            return remote.command_view(command)
+            view = remote.command_view(command)
+        command_made(bridge_id)
+        return view
 
     @app.post("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/{action}", status_code=201)
-    def remote_action(user: RemoteDep, bridge_id: str, printer_id: str, action: str) -> dict:
+    def remote_action(user_id: RemoteDep, bridge_id: str, printer_id: str, action: str) -> dict:
         if action not in ("pause", "resume", "stop"):
             raise HTTPException(404, "No such action")
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             bridge_printer(bridge, printer_id, action)
-            check_allowed(s, user, bridge, printer_id)
-            return remote.command_view(new_command(s, bridge, printer_id, action))
+            check_allowed(s, user_id, bridge, printer_id)
+            view = remote.command_view(new_command(s, bridge, printer_id, action))
+        command_made(bridge_id)
+        return view
 
     @app.get("/v1/remote/commands/{command_id}")
-    def remote_command(user: RemoteDep, command_id: str) -> dict:
+    def remote_command(user_id: RemoteDep, command_id: str) -> dict:
         with db.session() as s:
             command = s.get(RemoteCommand, command_id)
             bridge = s.get(Bridge, command.bridge_id) if command else None
-            if command is None or bridge is None or bridge.user_id != user.id:
+            if command is None or bridge is None or bridge.user_id != user_id:
                 raise HTTPException(404, "No such command")
             return remote.command_view(command)
 
     @app.get("/v1/remote/bridges/{bridge_id}/printers/{printer_id}/camera")
-    def remote_camera(user: RemoteDep, bridge_id: str, printer_id: str) -> Response:
+    def remote_camera(user_id: RemoteDep, bridge_id: str, printer_id: str) -> Response:
         """The last image of the camera (and the bridge is asked for the next ones); 204 while there is none recent."""
         with db.session() as s:
-            bridge = own_bridge(s, user, bridge_id)
+            bridge = own_bridge(s, user_id, bridge_id)
             printer = bridge_printer(bridge, printer_id)
             if not printer["camera"]:
                 raise HTTPException(409, "The printer has no camera the bridge can relay")
-            check_allowed(s, user, bridge, printer_id)
-            remote.watch(bridge, printer_id)
-        path = services.remote_files.image(bridge_id, printer_id)
-        if not path.exists() or time.time() - path.stat().st_mtime > remote.WATCH_S:
+            check_allowed(s, user_id, bridge, printer_id)
+        presence.known(bridge_id, user_id)
+        if presence.watch(bridge_id, printer_id, remote.WATCH_S):
+            # Nobody was looking: the bridge is told now instead of at its next state.
+            wake_for_state([bridge_id])
+        image = services.images.get(bridge_id, printer_id)
+        if image is None:
             return Response(status_code=204)
-        return Response(path.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+        return Response(image, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     # ---- administrator
     @app.get("/v1/admin/nodes")
@@ -1317,6 +1725,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 user.paid_until = paid.astimezone(timezone.utc).replace(tzinfo=None) if paid.tzinfo else paid
             if body.enabled is not None:
                 user.enabled = body.enabled
+                if not body.enabled:
+                    services.tokens.drop_user(user.id)
             s.flush()
             s.refresh(user)
             return {"user": user_view(user), "account": scheduler.account(s, user, cfg.grace_days).as_dict()}
@@ -1377,7 +1787,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # ---- the administration panel (a single page that uses the API above)
     @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
     def admin_panel(_local: Annotated[None, Depends(local_only)]) -> HTMLResponse:
-        page = resources.files("tisma_cloud").joinpath("static/admin.html").read_text(encoding="utf-8")
-        return HTMLResponse(page, headers=PAGE_HEADERS)
+        page, headers = static_page("admin.html")
+        return HTMLResponse(page, headers=headers)
 
     return app

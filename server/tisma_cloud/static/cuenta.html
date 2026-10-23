@@ -39,6 +39,9 @@
   #pay-error:empty, #pay-note:empty { display: none; }
   #notice { margin-bottom: 12px; }
   #auth { max-width: 380px; margin: 40px auto 0; }
+  .sub { display: block; margin: 0 0 6px; } #password-form, #delete-form { margin-top: 20px; }
+  button.danger { border-color: var(--bad); color: var(--bad); }
+  #sessions-error:empty, #pw-error:empty, #del-error:empty { display: none; }
 </style>
 </head>
 <body>
@@ -90,8 +93,34 @@
     <p class="muted" id="pay-note"></p>
     <h2>Pagos</h2>
     <div class="box"><table id="payments"></table></div>
+    <h2>Privacidad y seguridad</h2>
+    <div class="box">
+      <div class="row"><b class="sub">Sesiones abiertas</b><button type="button" id="close-others">Cerrar las demás</button></div>
+      <table id="sessions"></table>
+      <p class="error" id="sessions-error"></p>
+      <form id="password-form" class="hidden" autocomplete="on">
+        <b class="sub">Cambiar la contraseña</b>
+        <label>Contraseña actual<input id="pw-current" type="password" autocomplete="current-password" required maxlength="200"></label>
+        <label>Contraseña nueva<input id="pw-new" type="password" autocomplete="new-password" required minlength="8" maxlength="200"></label>
+        <p class="error" id="pw-error"></p>
+        <button type="submit">Cambiar</button>
+      </form>
+      <div class="row" style="margin-top:12px"><b class="sub">Tus datos</b><button type="button" id="export">Descargar mis datos</button></div>
+      <form id="delete-form" autocomplete="off">
+        <b class="sub">Borrar mi cuenta</b>
+        <p class="muted">Se borran la cuenta, sus sesiones, trabajos, impresoras remotas y compras de la tienda. Solo quedan los pagos, sin tu correo ni ningún dato tuyo, para la contabilidad.</p>
+        <label id="del-password-label">Contraseña<input id="del-password" type="password" autocomplete="current-password" maxlength="200"></label>
+        <div id="del-code-box" class="hidden">
+          <button type="button" id="del-send-code">Mandarme un código</button>
+          <label>Código de 6 números<input id="del-code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code"></label>
+        </div>
+        <p class="error" id="del-error"></p>
+        <button type="submit" id="del-submit" class="danger">Borrar mi cuenta</button>
+      </form>
+    </div>
     <p class="muted" style="margin-top:24px">Tus proyectos se borran de nuestros servidores cuando termina cada trabajo, y los resultados a los 3 días.
-      Los datos de la tarjeta se ingresan en la página del medio de pago, nunca en la nuestra.</p>
+      La lista de tus trabajos se borra a los 90 días, y las imágenes de las cámaras nunca se guardan. Los datos de la tarjeta se ingresan
+      en la página del medio de pago, nunca en la nuestra. No registramos desde dónde te conectás.</p>
   </section>
 </main>
 <script>
@@ -259,6 +288,44 @@ function renderPlans() {
     .filter(Boolean).join(" ");
 }
 
+function renderSessions(list) {
+  $("sessions").replaceChildren(el("tr", {}, ["Dispositivo", "Último uso", ""].map((h) => el("th", {}, h))),
+    ...list.map((x) => el("tr", {}, el("td", {}, x.device || "Sin nombre", x.current ? el("span", { class: "muted" }, " (este)") : null),
+      el("td", {}, fmtDate(x.last_used || x.created_at)),
+      el("td", {}, x.current ? "" : el("button", { type: "button", onclick: async () => {
+        try { await api(`/v1/me/sessions/${x.id}`, { method: "DELETE" }); renderSessions((await api("/v1/me/sessions")).sessions); }
+        catch (e) { $("sessions-error").textContent = e.message; } } }, "Cerrar")))));
+}
+$("close-others").onclick = async () => {
+  try { await api("/v1/me/sessions/close-others", { method: "POST" }); renderSessions((await api("/v1/me/sessions")).sessions); }
+  catch (e) { $("sessions-error").textContent = e.message; }
+};
+$("password-form").onsubmit = async (ev) => {
+  ev.preventDefault();
+  try {
+    await api("/v1/me/password", { method: "POST", body: JSON.stringify({ current_password: $("pw-current").value, new_password: $("pw-new").value }) });
+    $("pw-error").className = "ok"; $("pw-error").textContent = "Contraseña cambiada. Se cerraron las otras sesiones.";
+    $("password-form").reset(); renderSessions((await api("/v1/me/sessions")).sessions);
+  } catch (e) { $("pw-error").className = "error"; $("pw-error").textContent = e.status === 403 ? "La contraseña actual no es esa." : e.message; }
+};
+$("export").onclick = async () => {
+  const r = await fetch("/v1/me/export", { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return;
+  const a = el("a", { href: URL.createObjectURL(await r.blob()), download: "tisma-cloud-mis-datos.json" });
+  document.body.append(a); a.click(); a.remove();
+};
+$("del-send-code").onclick = async () => {
+  try { await api("/v1/me/delete/code", { method: "POST" }); $("del-error").className = "muted"; $("del-error").textContent = `Te mandamos un código a ${me.email}.`; }
+  catch (e) { $("del-error").className = "error"; $("del-error").textContent = e.message; }
+};
+$("delete-form").onsubmit = async (ev) => {
+  ev.preventDefault();
+  if (!confirm("¿Borrar tu cuenta y todos sus datos? No se puede deshacer.")) return;
+  const body = me.has_password ? { password: $("del-password").value } : { code: $("del-code").value };
+  try { await api("/v1/me/delete", { method: "POST", body: JSON.stringify(body) }); setToken(null); location.reload(); }
+  catch (e) { $("del-error").className = "error"; $("del-error").textContent = e.status === 403 ? "La contraseña o el código no son correctos." : e.message; }
+};
+
 async function show() {
   const health = await fetch("/v1/health").then((r) => r.json()).catch(() => ({}));
   payments = !!health.payments;
@@ -278,6 +345,10 @@ async function show() {
     $("until").textContent = fmtDate(me.paid_until);
     $("remote").textContent = String(me.remote_printers);
     renderPlans();
+    renderSessions((await api("/v1/me/sessions")).sessions);
+    $("password-form").classList.toggle("hidden", !me.has_password);
+    $("del-password-label").classList.toggle("hidden", !me.has_password);
+    $("del-code-box").classList.toggle("hidden", me.has_password);
     $("payments").replaceChildren(el("tr", {}, ["Fecha", "Plan", "Importe", "Estado"].map((h) => el("th", {}, h))),
       ...(pays.payments.length ? pays.payments.map((p) => el("tr", {}, el("td", {}, fmtDate(p.created_at)), el("td", {}, `${p.plan} · ${p.months} mes${p.months > 1 ? "es" : ""}`),
         el("td", {}, money(p.amount_cents, p.currency)), el("td", { class: p.status === "approved" ? "ok" : p.status === "rejected" ? "error" : "muted" }, STATUS[p.status] || p.status)))

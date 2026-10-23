@@ -33,6 +33,17 @@ class Settings:
     large_slice_triangles: int = field(default_factory=lambda: _int("TISMA_LARGE_SLICE_TRIANGLES", 300_000))
     # The queue takes the shortest jobs first: a job waits at most this much longer than in arrival order [s].
     queue_size_wait_max_s: int = field(default_factory=lambda: _int("TISMA_QUEUE_SIZE_WAIT_MAX_S", 600))
+    # Connections the master serves at once; past it, new ones get 503 at once. Each bridge and node waiting for work
+    # keeps one open (see "Capacidad" in README.md).
+    max_connections: int = field(default_factory=lambda: _int("TISMA_MAX_CONNECTIONS", 4000))
+    # The log of every request (with the address of each visitor): off, so that the master does not keep who connected
+    # from where. 1: on (to look into a problem for a while).
+    access_log: bool = field(default_factory=lambda: os.environ.get("TISMA_ACCESS_LOG", "0") == "1")
+    # A session (a device logged in) not used for this long is closed [days].
+    session_days: int = field(default_factory=lambda: _int("TISMA_SESSION_DAYS", 90))
+    # The list of the jobs of an account (names of the files, times) is kept this long after they ended [days]; the
+    # hours used stay in the monthly usage.
+    job_history_days: int = field(default_factory=lambda: _int("TISMA_JOB_HISTORY_DAYS", 90))
     # Results and projects older than this are deleted [h].
     retention_h: int = field(default_factory=lambda: _int("TISMA_RETENTION_H", 72))
     # Networks from which the administration (/admin and /v1/admin) can be used: the local network only. From any other

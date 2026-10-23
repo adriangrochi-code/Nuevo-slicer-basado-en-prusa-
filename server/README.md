@@ -177,12 +177,60 @@ Límite honesto: un ataque más grande que la conexión a internet (32 Mbps de s
 llegar al central; eso solo lo puede frenar el proveedor de internet. Todo lo demás (inundaciones de conexiones,
 peticiones, subidas, fuerza bruta de contraseñas) se frena en el central.
 
-**Privacidad:** el proyecto del usuario se borra del central apenas termina el trabajo (aprobado, fallado o cancelado);
-el resultado se borra a las 72 h. Contraseñas con scrypt y tokens con SHA-256 (no se guardan en claro). Los datos de las
-tarjetas nunca pasan por el central. Las páginas no cargan nada de otros sitios.
+**Privacidad:** ver la sección siguiente.
 
 **Transferencias:** el G-code y los resultados del análisis viajan comprimidos (Caddy con zstd o gzip; Tisma los pide y
 los descomprime): un G-code de 218 KB baja en 26 KB.
+
+## Seguridad de las cuentas y privacidad
+
+El objetivo es guardar lo mínimo para dar el servicio, y que lo guardado sirva de poco a quien lo robe.
+
+**Contraseñas y sesiones**
+
+- Contraseñas con **scrypt N=2^17, r=8, p=1** (128 MiB y medio segundo por intento), el primer ajuste que recomienda
+  el [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+  Las hechas antes (2^14) siguen sirviendo y se rehacen con los parámetros nuevos la próxima vez que la persona entra.
+  Como mucho 2 a la vez, para que una ola de intentos no se coma la memoria (el resto espera hasta 10 s o recibe 503).
+- Los tokens (sesiones de cada dispositivo, nodos) son de 256 bits al azar y se guardan como SHA-256: la base robada no
+  sirve para entrar. Una sesión que no se usa en `TISMA_SESSION_DAYS` (90) días se cierra sola.
+- La cuenta ve sus sesiones abiertas y cierra cualquiera, o todas las demás; cambiar o recuperar la contraseña cierra
+  las otras. Los intentos de entrar, de códigos y de registro están limitados por dirección y por correo.
+- El registro responde lo mismo si el correo ya tiene cuenta (al dueño le llega un aviso): la página no sirve para
+  averiguar quién es cliente. Entrar con un correo desconocido tarda lo mismo que con uno conocido.
+- Las páginas solo ejecutan su propio script (CSP con su SHA-256, sin `unsafe-inline`).
+
+**Qué se guarda y cuánto tiempo**
+
+| Dato | Para qué | Cuánto |
+|---|---|---|
+| Correo, hash de la contraseña, plan, pagado hasta | la cuenta | mientras exista la cuenta |
+| Pagos (importe, fecha, referencia del medio de pago) | contabilidad | siempre; al borrar la cuenta quedan sin correo ni datos de la persona |
+| Sesiones (nombre del dispositivo, fechas) | entrar sin la contraseña | hasta cerrarlas o 90 días sin uso |
+| Proyecto subido | laminarlo o analizarlo | se borra al terminar el trabajo |
+| Resultado (G-code, análisis) | descargarlo | 72 h (`TISMA_RETENTION_H`) |
+| Lista de trabajos (nombre del archivo, tiempos) | ver los trabajos | 90 días (`TISMA_JOB_HISTORY_DAYS`); las horas usadas quedan en el uso del mes |
+| Impresoras remotas y su último estado | verlas desde el teléfono | hasta quitar el puente o 180 días sin verlo |
+| Archivo a imprimir de una orden remota | mandarlo a la impresora | hasta que el puente lo toma (10 min como mucho) |
+| Imágenes de las cámaras | verlas en vivo | solo en memoria, 30 s; nunca en disco |
+| Direcciones IP | frenar ataques | solo en memoria (límites y bloqueos); no hay registro de accesos (`TISMA_ACCESS_LOG=1` lo prende) |
+
+Nunca pasan por el central los datos de las tarjetas (se cargan en la página del medio de pago). Las páginas no cargan
+nada de otros sitios (salvo el botón de Google si está activado).
+
+**Lo que la persona puede hacer**: descargar una copia de todo lo que guardamos de su cuenta (`Descargar mis datos`, en
+JSON) y borrar la cuenta (con la contraseña, o con un código por correo si entra con Google). Al borrar se van las
+sesiones, trabajos y sus archivos, impresoras remotas y órdenes, compras de la tienda y el uso; quedan los pagos sin
+nada personal.
+
+**Lo que depende de la instalación** (no lo puede hacer el programa):
+
+- Disco cifrado en el central (LUKS en Linux, BitLocker en Windows): si alguien se lleva el disco, la base y las
+  copias no se leen.
+- Copias de seguridad en otro disco o máquina, también cifrado (`BACKUP_DIR`, sección «Copias de seguridad»).
+- La red entre el central y los nodos va sin cifrar (puerto 8000 en la red local): los proyectos viajan en claro dentro
+  de esa red. Si los nodos están en otro lugar, unirlos con una VPN (WireGuard).
+- Mantener el sistema y Docker al día.
 
 ## Seguridad de los nodos
 
@@ -395,6 +443,37 @@ Por eso:
 - **Un análisis estructural a la vez por nodo** (`fea_slots = 1`): usan mucha memoria y la placa de video; mientras
   corre uno, los otros lugares del nodo siguen laminando.
 
+### Puentes conectados (impresoras remotas)
+
+Cada puente (Tisma abierto en una PC) tiene siempre abierta una espera de órdenes. Medido en la misma máquina (4
+núcleos, maestro, PostgreSQL 16 y los puentes simulados juntos; un usuario haciendo 20 consultas por segundo y el
+teléfono mandando órdenes mientras tanto):
+
+| Versión | Puentes | CPU del maestro | Consulta normal (mediana / p95) | Orden hasta el puente (mediana / p95) |
+|---|---|---|---|---|
+| Antes: cada espera mira la base cada 1 s | 250 | 112 % (saturado) | 1029 / 1450 ms | 1491 / 2335 ms |
+| Antes, con el límite de 300 conexiones | 1000 | — | 93 % de las consultas rechazadas (503) | — |
+| Antes, con el límite subido | 1000 | 107 % (saturado) | 18 311 ms | 12 645 ms |
+| Ahora: aviso en memoria, la base solo cuando hay algo | 250 | 34 % | 13 / 24 ms | 28 / 55 ms |
+| Ahora | 2000 | 40 % | 13 / 44 ms | 32 / 109 ms |
+
+Con 4000 y 8000 puentes el maestro usó 44 % y 65 % de un núcleo y 225 y 318 MB de memoria, pero los puentes simulados
+ocupaban casi los 4 núcleos de la máquina de prueba y las demoras medidas son del simulador: falta medirlo en el i5
+con los puentes simulados en otra máquina.
+
+Por eso:
+
+- **Una espera no pregunta nada a la base mientras no haya novedades** (`wakeup.py`, `presence.py`): una orden nueva
+  despierta en el momento la espera de su puente; de quién es cada puente, cuándo se lo vio y su último estado están en
+  memoria y se escriben juntos cada 5 s; el estado que solo cambia lecturas (temperaturas, avance) se escribe cada 60 s.
+  Las cuentas de los tokens se recuerdan 60 s. Es un solo proceso de maestro (como se instala); otro proceso sobre la
+  misma base vería a los puentes unos segundos tarde.
+- **Hasta `TISMA_MAX_CONNECTIONS` conexiones a la vez** (4000; antes 300): cada puente y cada nodo esperando ocupa una.
+  `tisma-cloud master` sube el límite de archivos abiertos del proceso; con Docker lo da `ulimits` en
+  `compose.master.yaml`.
+- Lo que más cuesta ahora es cuando muchos puentes llegan juntos (al reiniciar el maestro, todos vuelven a la vez):
+  cada uno escribe una vez en la base al llegar.
+
 ## Administración
 
 **Panel web:** `http://<central>:8000/admin` (o `https://<tu dominio>/admin`). Se entra con un usuario administrador
@@ -425,6 +504,10 @@ La misma información está en la API de administración (`/v1/admin/...`, con e
 | todos | `GET /v1/health`, `GET /v1/plans` | estado, planes |
 | usuario | `POST /v1/auth/login` `{email, password, device}` | token del dispositivo |
 | usuario | `POST /v1/auth/logout`, `GET /v1/me` | cerrar sesión; plan, al día, horas, trabajos activos |
+| usuario | `GET /v1/me/sessions`, `DELETE /v1/me/sessions/{id}`, `POST /v1/me/sessions/close-others` | dispositivos con sesión abierta; cerrar uno o todos los demás |
+| usuario | `POST /v1/me/password` `{current_password, new_password}` | cambiar la contraseña (cierra las otras sesiones) |
+| usuario | `GET /v1/me/export` | una copia (JSON) de todo lo que el servicio guarda de la cuenta |
+| usuario | `POST /v1/me/delete/code`, `POST /v1/me/delete` `{password}` o `{code}` | borrar la cuenta y sus datos |
 | usuario | `GET /v1/billing/play/account`, `POST /v1/billing/play/purchase` `{purchase_token}` | suscripción de Google Play (app) |
 | Google | `POST /v1/billing/play/notify` | avisos de Google Play (Pub/Sub, con token de Google) |
 | usuario | `POST /v1/jobs` (multipart: `kind` slice\|fea, `params` JSON, `file` 3MF) | enviar un trabajo |
@@ -432,7 +515,7 @@ La misma información está en la API de administración (`/v1/admin/...`, con e
 | página web | `PUT /v1/site/plans/{nombre}`, `PUT /v1/site/users/{id_web}`, `GET /v1/site/users/{id_web}` | planes, usuarios, pagos |
 | nodo | `POST /v1/node/claim`, `/heartbeat`, `GET /v1/node/jobs/{id}/input`, `POST .../progress`, `.../result`, `.../fail` | trabajar |
 | administrador | `/v1/admin/nodes`, `/v1/admin/users`, `/v1/admin/plans/{nombre}`, `/v1/admin/queue` | administrar |
-| puente (PC) | `PUT /v1/bridges/{id}` `{name, printers}`, `GET /v1/bridges/{id}/commands?wait=20` | impresoras y su estado; esperar órdenes |
+| puente (PC) | `PUT /v1/bridges/{id}` `{name, printers}`, `GET /v1/bridges/{id}/commands?wait=20` | impresoras y su estado; esperar órdenes (las dos respuestas traen `state_s`: cada cuánto mandar el estado) |
 | puente (PC) | `GET /v1/bridges/{id}/commands/{orden}/file`, `POST /v1/bridges/{id}/commands/{orden}` `{ok, error}`, `POST /v1/bridges/{id}/printers/{imp}/camera` (JPEG) | archivo a imprimir, resultado, imagen de la cámara |
 | usuario | `GET /v1/remote/printers`, `DELETE /v1/remote/bridges/{id}` | impresoras remotas, quitar un puente |
 | usuario | `POST /v1/remote/bridges/{id}/printers/{imp}/print` (multipart `file`, G-code), `.../pause`, `.../resume`, `.../stop`, `GET /v1/remote/commands/{orden}`, `GET .../camera` | imprimir y controlar desde afuera |
@@ -444,10 +527,16 @@ Para agregar otro tipo de trabajo: una clase en `jobs.py` (con sus parámetros) 
 
 ## Impresoras remotas (como Bambu Handy)
 
-Tisma abierto en una PC de la casa hace de **puente**: manda a la cuenta sus impresoras de la red local y su estado
-cada pocos segundos, y espera órdenes (`GET .../commands`, que espera hasta 20 s). El teléfono las ve desde cualquier
-lado y manda un G-code a imprimir, pausa, reanuda o cancela; la cámara se pide desde el teléfono y el puente manda
-imágenes solo mientras alguien mira. No hace falta abrir puertos en la casa: el puente siempre se conecta hacia afuera.
+Tisma abierto en una PC de la casa hace de **puente**: manda a la cuenta sus impresoras de la red local y su estado, y
+espera órdenes (`GET .../commands`, que espera hasta 20 s). El teléfono las ve desde cualquier lado y manda un G-code a
+imprimir, pausa, reanuda o cancela; la cámara se pide desde el teléfono y el puente manda imágenes solo mientras alguien
+mira. No hace falta abrir puertos en la casa: el puente siempre se conecta hacia afuera.
+
+- El puente manda su estado cada `state_s` segundos (viene en cada respuesta): **3 s mientras alguien mira** sus
+  impresoras o una cámara, **30 s** el resto del tiempo. Cuando el teléfono empieza a mirar, la espera de órdenes del
+  puente termina en el momento (sin órdenes) para que mande su estado ya.
+- Las imágenes de las cámaras quedan **solo en memoria** unos segundos: nunca se escriben en disco ni entran en las
+  copias de seguridad.
 
 - Una orden que el puente no toma en `TISMA_REMOTE_COMMAND_MINUTES` (10) minutos falla y su archivo se borra: una
   impresión nunca arranca mucho después de pedirla. Con el puente apagado no se aceptan órdenes.

@@ -40,6 +40,15 @@ def make_3mf(triangles: int = 12, config: str | None = None, extra: dict[str, st
     return buf.getvalue()
 
 
+@pytest.fixture(autouse=True)
+def fast_passwords(monkeypatch):
+    """Passwords hashed with lighter parameters in the tests (the real ones take half a second each);
+    test_privacy.py checks the real ones."""
+    from tisma_cloud import security
+
+    monkeypatch.setattr(security, "_N", 1 << 12)
+
+
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     url = os.environ.get("TISMA_TEST_DATABASE_URL") or f"sqlite:///{tmp_path / 'test.db'}"

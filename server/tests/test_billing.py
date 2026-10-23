@@ -54,7 +54,8 @@ def test_register_and_plans(shop):
     # Not paid: no jobs yet.
     r = shop.post("/v1/jobs", headers=user, data={"kind": "slice"}, files={"file": ("a.3mf", make_3mf())})
     assert r.status_code == 402
-    assert shop.post("/v1/auth/register", json={"email": "ana@correo.com", "password": "otra clave larga"}).status_code == 409
+    # Registering the address again neither tells it has an account nor changes it.
+    assert shop.post("/v1/auth/register", json={"email": "ana@correo.com", "password": "otra clave larga"}).status_code == 201
     assert shop.post("/v1/auth/register", json={"email": "no-es-correo", "password": "una clave larga"}).status_code == 422
     assert shop.post("/v1/auth/register", json={"email": "b@correo.com", "password": "corta"}).status_code == 422
     # A private plan cannot be chosen.
