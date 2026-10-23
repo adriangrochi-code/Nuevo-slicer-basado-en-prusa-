@@ -128,3 +128,28 @@ def test_jobs_back_in_the_queue_wake_the_nodes(client, f):
     assert keys == ["jobs"]
     with f.db.session() as s:
         assert s.get(Job, job["id"]).status == "queued"
+
+
+def test_a_sweep_in_flight_ends_before_the_server_stops(settings):
+    """The sweep runs in a thread: stopping the server waits for it (before, the database was closed and the tables of
+    the next test dropped under its DELETE, a deadlock in PostgreSQL)."""
+    import threading
+    import time
+
+    from fastapi.testclient import TestClient
+
+    from conftest import new_app
+
+    app = new_app(settings)
+    services = app.state.services
+    started, ended = threading.Event(), threading.Event()
+
+    def slow_sweep() -> None:
+        started.set()
+        time.sleep(0.5)
+        ended.set()
+
+    services.sweep = slow_sweep
+    with TestClient(app):
+        assert started.wait(5)
+    assert ended.is_set()

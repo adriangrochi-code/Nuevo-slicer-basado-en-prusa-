@@ -521,17 +521,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
+        # The loops end by themselves when the server stops, after the sweep or flush in flight (a cancel would not
+        # stop its thread: the database would be closed under it, and the tests would drop the tables under it).
+        stopping = asyncio.Event()
+
+        async def pause(seconds: float) -> None:
+            try:
+                await asyncio.wait_for(stopping.wait(), seconds)
+            except asyncio.TimeoutError:
+                pass
+
         async def sweeper() -> None:
-            while True:
+            while not stopping.is_set():
                 try:
                     await run_in_threadpool(services.sweep)
                 except Exception:  # noqa: BLE001 (keep sweeping)
                     log.exception("Sweep failed")
-                await asyncio.sleep(30)
+                await pause(30)
 
         async def flusher() -> None:
-            while True:
-                await asyncio.sleep(FLUSH_S)
+            while not stopping.is_set():
+                await pause(FLUSH_S)
                 try:
                     await run_in_threadpool(services.flush_presence)
                 except Exception:  # noqa: BLE001 (keep flushing)
@@ -541,8 +551,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             yield
         finally:
-            for task in tasks:
-                task.cancel()
+            stopping.set()
+            await asyncio.gather(*tasks, return_exceptions=True)
             await run_in_threadpool(services.flush_presence)
             # The processes that read G-code and the connections to the database end with the server.
             services.close()
