@@ -33618,6 +33618,15 @@ msgstr "Otra boquilla se puede elegir después, junto a la impresora."
 msgid "Slice automatically"
 msgstr "Laminar automáticamente"
 
+msgid "Add calibration model"
+msgstr "Agregar modelo de calibración"
+
+msgid "Prints a tower of blocks, one per temperature, with the temperature written on the front of each block. Each block has a bridge, two pillars and a pin for the strings, an overhang going from vertical to 75° and a pin to snap off to compare how well the layers stick."
+msgstr "Imprime una torre de bloques, uno por temperatura, con la temperatura escrita al frente de cada bloque. Cada bloque tiene un puente, dos pilares y una espiga para ver los hilos, un voladizo que va de vertical a 75° y una espiga para quebrar y comparar qué tan bien se pegan las capas."
+
+msgid "Compare the blocks: the bridge should not sag, the gap should be free of strings and the overhang on the right should stay clean as high as possible: the marks on the pillar next to it are at 30°, 45° and 60° (its top is 75°). Then push the pin on the left of each block sideways until it snaps: the harder it is to break, the better the layers stick. Choose the temperature written on the best block."
+msgstr "Compará los bloques: el puente no debe colgar, el hueco no debe tener hilos y el voladizo de la derecha debe quedar limpio lo más arriba posible: las marcas del pilar de al lado están a 30°, 45° y 60° (su parte de arriba es 75°). Después empujá de costado la espiga de la izquierda de cada bloque hasta quebrarla: cuanto más cuesta romperla, mejor se pegan las capas. Elegí la temperatura escrita en el mejor bloque."
+
 msgid "Slice again right after any change of the objects or of the settings."
 msgstr "Vuelve a laminar apenas cambia algún objeto o algún ajuste."
 

@@ -234,7 +234,8 @@ punto 2 de la conclusión: en lugar de curvar las capas enteras, solo el relleno
 
 ## Calibraciones no planares (Tisma)
 
-En el menú Calibración:
+**Quitadas del programa** (se van a rehacer de otra manera): la tabla describe las que hubo, cuyo código queda en la
+historia de git.
 
 | Prueba | Qué mide |
 |---|---|

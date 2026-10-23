@@ -8,7 +8,6 @@
 #include <array>
 #include <cmath>
 #include <functional>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -23,7 +22,6 @@
 
 #include "libslic3r/MeshBoolean.hpp"
 #include "libslic3r/Model.hpp"
-#include "libslic3r/NonPlanar.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/TriangleMesh.hpp"
@@ -61,10 +59,6 @@ struct Machine
 {
     double nozzle   { 0.4 };
     double layer    { 0.2 };
-    // Non-planar tests: height where the curved layers are complete (NonPlanar::nonplanar_test_start_height()).
-    double nonplanar_start { 8.6 };
-    // Height where the curved layers of the print settings (not of a test) are complete: flat below + transition.
-    double nonplanar_curved { 5.6 };
     double first_layer     { 0.2 };
 };
 
@@ -109,85 +103,6 @@ void add_cylinder(ModelObject& obj, double cx, double cy, double z, double r, do
     obj.add_volume(TriangleMesh(std::move(its)));
 }
 
-// Prism along Y (from y to y + depth) whose cross-section in XZ is a trapezoid centered at cx: bottom_width at z,
-// top_width at z + height.
-void add_trapezoid_prism(ModelObject& obj, double cx, double y, double z, double bottom_width, double top_width, double height, double depth)
-{
-    indexed_triangle_set its;
-    const double xs[4] = { cx - 0.5 * bottom_width, cx + 0.5 * bottom_width, cx + 0.5 * top_width, cx - 0.5 * top_width };
-    const double zs[4] = { z, z, z + height, z + height };
-    for (double yy : { y, y + depth })
-        for (int i = 0; i < 4; ++i)
-            its.vertices.emplace_back(float(xs[i]), float(yy), float(zs[i]));
-    // Front (y), back (y + depth) and the four sides, facing out.
-    const int f[12][3] = { { 0, 2, 1 }, { 0, 3, 2 }, { 4, 5, 6 }, { 4, 6, 7 },
-                           { 0, 1, 5 }, { 0, 5, 4 }, { 1, 2, 6 }, { 1, 6, 5 },
-                           { 2, 3, 7 }, { 2, 7, 6 }, { 3, 0, 4 }, { 3, 4, 7 } };
-    for (const auto& t : f)
-        its.indices.emplace_back(t[0], t[1], t[2]);
-    obj.add_volume(TriangleMesh(std::move(its)));
-}
-
-// Block [0, size_x] x [0, size_y] whose top is at height + top(x, y): a closed mesh on a grid of the given step.
-void add_heightfield_block(ModelObject& obj, double size_x, double size_y, double step, const std::function<double(double, double)>& top)
-{
-    const int nx = std::max(2, int(std::ceil(size_x / step)) + 1);
-    const int ny = std::max(2, int(std::ceil(size_y / step)) + 1);
-    indexed_triangle_set its;
-    // Top grid, then bottom grid.
-    for (int level = 0; level < 2; ++level)
-        for (int j = 0; j < ny; ++j)
-            for (int i = 0; i < nx; ++i) {
-                const double x = size_x * i / (nx - 1), y = size_y * j / (ny - 1);
-                its.vertices.emplace_back(float(x), float(y), level == 0 ? float(top(x, y)) : 0.f);
-            }
-    const int bottom = nx * ny;
-    auto v = [nx](int i, int j) { return j * nx + i; };
-    for (int j = 0; j + 1 < ny; ++j)
-        for (int i = 0; i + 1 < nx; ++i) {
-            // Top faces up, bottom faces down.
-            its.indices.emplace_back(v(i, j), v(i + 1, j), v(i + 1, j + 1));
-            its.indices.emplace_back(v(i, j), v(i + 1, j + 1), v(i, j + 1));
-            its.indices.emplace_back(bottom + v(i, j), bottom + v(i + 1, j + 1), bottom + v(i + 1, j));
-            its.indices.emplace_back(bottom + v(i, j), bottom + v(i, j + 1), bottom + v(i + 1, j + 1));
-        }
-    // Side walls, outwards.
-    auto wall = [&](int a, int b) { // a -> b along the boundary, counter-clockwise seen from above
-        its.indices.emplace_back(a, bottom + a, bottom + b);
-        its.indices.emplace_back(a, bottom + b, b);
-    };
-    for (int i = 0; i + 1 < nx; ++i) {
-        wall(v(i, 0), v(i + 1, 0));                      // y = 0
-        wall(v(i + 1, ny - 1), v(i, ny - 1));            // y = size_y
-    }
-    for (int j = 0; j + 1 < ny; ++j) {
-        wall(v(nx - 1, j), v(nx - 1, j + 1));            // x = size_x
-        wall(v(0, j + 1), v(0, j));                      // x = 0
-    }
-    obj.add_volume(TriangleMesh(std::move(its)));
-}
-
-
-// Prism along X (from x, width dx) of a convex profile in the YZ plane (counter-clockwise seen from +X), shifted by y0.
-void add_prism_x(ModelObject& obj, double x, double dx, double y0, const std::vector<Vec2d>& profile)
-{
-    indexed_triangle_set its;
-    const int n = int(profile.size());
-    for (int side = 0; side < 2; ++side)
-        for (const Vec2d& p : profile)
-            its.vertices.emplace_back(float(x + side * dx), float(y0 + p.x()), float(p.y()));
-    for (int i = 1; i + 1 < n; ++i) {
-        its.indices.emplace_back(0, i + 1, i);             // face x = x (normal -X)
-        its.indices.emplace_back(n, n + i, n + i + 1);     // face x = x + dx (normal +X)
-    }
-    for (int i = 0; i < n; ++i) {
-        const int j = (i + 1) % n;
-        its.indices.emplace_back(i, j, n + j);
-        its.indices.emplace_back(i, n + j, n + i);
-    }
-    obj.add_volume(TriangleMesh(std::move(its)));
-}
-
 // Prism of a profile in the XZ plane (x, z) at x0, extruded along Y from y to y + dy.
 void add_prism_y(ModelObject& obj, double x0, double y, double dy, const std::vector<Vec2d>& profile)
 {
@@ -209,6 +124,37 @@ void add_prism_y(ModelObject& obj, double x0, double y, double dy, const std::ve
     if (its_volume(its) < 0.f)
         its_flip_triangles(its);
     obj.add_volume(TriangleMesh(std::move(its)));
+}
+
+// Raised text of seven segment digits on the front face (y = 0, raised towards -y by depth), centered at x, from
+// z to z + height. Strokes of 0.8 mm: two lines of a 0.4 mm nozzle.
+void add_digits(ModelObject& obj, const std::string& text, double x, double z, double height, double depth)
+{
+    // The segments of each digit: a top, b top right, c bottom right, d bottom, e bottom left, f top left, g middle.
+    static const char* const SEGMENTS[10] = { "abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg", "abc", "abcdefg", "abcdfg" };
+    constexpr double stroke = 0.8;
+    const double width = std::max(2. * stroke + 0.6, 0.55 * height), spacing = stroke;
+    double cx = x - 0.5 * (text.size() * width + (text.size() - 1) * spacing);
+    for (char ch : text) {
+        if (ch == '-')
+            add_box(obj, cx, -depth, z + 0.5 * (height - stroke), width, depth, stroke);
+        else if (ch >= '0' && ch <= '9')
+            for (const char* seg = SEGMENTS[ch - '0']; *seg != 0; ++seg) {
+                const double half = 0.5 * (height + stroke);
+                // The right strokes, in the middle of the cell for a 1.
+                const double right = ch == '1' ? cx + 0.5 * (width - stroke) : cx + width - stroke;
+                switch (*seg) {
+                case 'a': add_box(obj, cx, -depth, z + height - stroke, width, depth, stroke); break;
+                case 'b': add_box(obj, right, -depth, z + 0.5 * (height - stroke), stroke, depth, half); break;
+                case 'c': add_box(obj, right, -depth, z, stroke, depth, half); break;
+                case 'd': add_box(obj, cx, -depth, z, width, depth, stroke); break;
+                case 'e': add_box(obj, cx, -depth, z, stroke, depth, half); break;
+                case 'f': add_box(obj, cx, -depth, z + 0.5 * (height - stroke), stroke, depth, half); break;
+                case 'g': add_box(obj, cx, -depth, z + 0.5 * (height - stroke), width, depth, stroke); break;
+                }
+            }
+        cx += width + spacing;
+    }
 }
 
 void set(ModelObject& obj, const std::string& key, const std::string& value)
@@ -241,19 +187,52 @@ std::vector<Test> make_tests()
     std::vector<Test> tests;
 
     tests.push_back({ _L("Temperature tower"),
-        _L("Prints a tower of blocks with bridges and gaps. The nozzle temperature changes at each block."),
-        _L("Choose the block with the best bridge, the least stringing and good layer adhesion. "
-           "Its temperature is the start value plus the block number (from the bottom, starting at 0) times the step."),
+        _L("Prints a tower of blocks, one per temperature, with the temperature written on the front of each block. Each "
+           "block has a bridge, two pillars and a pin for the strings, an overhang going from vertical to 75° and a pin "
+           "to snap off to compare how well the layers stick."),
+        _L("Compare the blocks: the bridge should not sag, the gap should be free of strings and the overhang on the "
+           "right should stay clean as high as possible: the marks on the pillar next to it are at 30°, 45° and 60° "
+           "(its top is 75°). Then push the pin on the left of each block sideways until it snaps: the harder it is to "
+           "break, the better the layers stick. Choose the temperature written on the best block."),
         "°C", CalibMode::Temperature, { 230., 190., 5., 10. }, 0, 1., 350.,
         [](ModelObject& obj, const Params& p, const Machine& m) {
+            constexpr double depth = 12.;                    // Y
+            constexpr double pillar_a = 14., gap = 16., pillar_b = 6., raised = 0.6;
+            constexpr double max_angle = 75.;                // of the overhang, from the vertical
             const double b = p.band;
+            const double x_b = pillar_a + gap, x_overhang = x_b + pillar_b;
+            // Overhang: a quarter of a circle of radius r from x_overhang, its angle from the vertical is the angle
+            // on the circle, up to max_angle at 1 mm below the next block.
+            const double r = std::max(1., b - 1.) / std::sin(max_angle * PI / 180.);
+            // A plate below the tower, so that it stands firm.
+            add_box(obj, -6., -4., 0., x_overhang + r + 8., depth + 8., 1.);
             for (int i = 0; i < p.steps(); ++i) {
                 const double z = i * b;
-                add_box(obj, 0, 0, z, 30, 10, 1.);                 // floor of the block
-                add_box(obj, 0, 0, z, 8, 10, b - 1.5);            // left pillar
-                add_box(obj, 22, 0, z, 8, 10, b - 1.5);           // right pillar
-                add_box(obj, 0, 0, z + b - 1.5, 30, 10, 1.5);      // bridge over the gap
-                add_cylinder(obj, 15, 5, z + 1., 1.5, b - 2.5);    // pin in the gap: stringing
+                add_box(obj, 0., 0., z, pillar_a, depth, b);                       // pillar A, with the temperature
+                add_box(obj, x_b, 0., z, pillar_b, depth, b);                       // pillar B
+                add_box(obj, pillar_a, 0., z + b - 1., gap, depth, 1.);             // bridge between them
+                if (b > 3.)                                                         // stringing pin in the gap
+                    add_cylinder(obj, pillar_a + 0.5 * gap, 0.5 * depth, z, 1.2, b - 2.);
+                // The temperature, raised on the front of pillar A (seven segment digits).
+                const int temperature = int(std::round(p.start + i * p.signed_step()));
+                const double h = std::min(7., 0.6 * b);
+                add_digits(obj, std::to_string(temperature), 0.5 * pillar_a, z + 0.5 * (b - h), h, raised);
+                // The overhang, in steps of 5°.
+                std::vector<Vec2d> profile { { 0., z + b - 1. }, { 0., z } };
+                for (double a = 5.; a <= max_angle + EPSILON; a += 5.)
+                    profile.emplace_back(r * (1. - std::cos(a * PI / 180.)), z + r * std::sin(a * PI / 180.));
+                add_prism_y(obj, x_overhang, 0., depth, profile);
+                if (b >= 6.) {
+                    // The marks of 30°, 45° and 60° on the front of pillar B, longer for a larger angle.
+                    for (double a : { 30., 45., 60. }) {
+                        const double length = 1.5 + 0.05 * a;
+                        add_box(obj, x_overhang - length, -raised, z + r * std::sin(a * PI / 180.) - 0.2, length, raised, 0.4);
+                    }
+                    // A corbel at 45° on the left of pillar A, and on it the pin to snap off.
+                    const double corbel = std::min(4., 0.4 * b);
+                    add_prism_y(obj, 0., 0., depth, { { 0., z }, { 0., z + corbel }, { -corbel, z + corbel } });
+                    add_cylinder(obj, -0.5 * corbel, 0.5 * depth, z + corbel, 1.2, b - corbel - 0.6);
+                }
             }
             set_layer_height(obj, m.layer);
             set(obj, "perimeters", "2");
@@ -449,210 +428,6 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "arc_overhang_distance";
 
-    // --- Non-planar layers (Tisma): what the non-planar slicing needs to know about the printer.
-
-    tests.push_back({ _L("Non-planar: free nozzle angle gauge (static)"),
-        _L("Prints, with normal flat layers, V grooves with different opening angles φ and different depths: φ grows "
-           "in steps along each row, and the rows are H/3, 2H/3 and H deep (all with the same flat top). In the first "
-           "block the walls of the grooves slope along X (rows from the front), in the second along Y (rows from the "
-           "left). It is measured with the printer cold, nothing curved is printed: the first, safe step of the "
-           "calibration."),
-        _L("With the printer cold and the nozzle clean, put the gauge on the bed as printed and lower the nozzle into "
-           "a groove until its tip touches the bottom. The groove is free if nothing else touches the gauge: no other "
-           "part of the nozzle, the heater block, its sock, the cooling duct or the probe. In each row, the narrowest "
-           "free groove gives φ = start + step × groove number (starting at 0). Enter the depth of the row as the free "
-           "height and the φ of each block in the non-planar calibration assistant (once for each depth): the free "
-           "angle of the head at that height is (180° − φ) / 2. The slicer keeps the non-planar layers where the head "
-           "fits and checks the rest."),
-        "°", CalibMode::Disabled, { 60., 150., 10., 3. }, 0, 5., 170.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            const double deepest = std::clamp(p.band, 1.5, 15.), base = 1., land = 4., length = 10., block_gap = 6.;
-            // All the rows have the same flat top, a shallower row has a thicker floor: nothing higher than the top
-            // of the row stands next to the nozzle.
-            const double top = base + deepest;
-            // A row of grooves of one depth across u (X or Y), each one made of two convex halves (the prisms are fans).
-            auto row = [&](bool along_x, double offset, double depth) {
-                double u = 0.;
-                auto add = [&](const std::vector<Vec2d>& profile) {
-                    if (along_x)
-                        add_prism_y(obj, u, offset, length, profile);
-                    else
-                        add_prism_x(obj, offset, length, u, profile);
-                };
-                for (int i = 0; i < p.steps(); ++i) {
-                    const double phi = std::clamp(p.start + i * p.signed_step(), 5., 170.);
-                    const double w = depth * std::tan(0.5 * phi * M_PI / 180.);   // half width at the top
-                    const double c = 0.5 * land + w;                             // half width of the cell
-                    add({ { 0., 0. }, { c, 0. }, { c, top - depth }, { c - w, top }, { 0., top } });
-                    u += c;
-                    add({ { 0., 0. }, { c, 0. }, { c, top }, { w, top }, { 0., top - depth } });
-                    u += c;
-                }
-                return u;
-            };
-            // Walls sloping along X: the grooves run along Y, side by side along X, the rows one behind the other.
-            double width = 0.;
-            for (int k = 0; k < NONPLANAR_GAUGE_ROWS; ++k)
-                width = std::max(width, row(true, k * length, deepest * (k + 1) / NONPLANAR_GAUGE_ROWS));
-            // Walls sloping along Y: the grooves run along X, side by side along Y, at the right.
-            for (int k = 0; k < NONPLANAR_GAUGE_ROWS; ++k)
-                row(false, width + block_gap + k * length, deepest * (k + 1) / NONPLANAR_GAUGE_ROWS);
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "15%");
-        }, _L("Deepest groove H") });
-    tests.back().key = "nonplanar_free_angle";
-
-    tests.push_back({ _L("Non-planar: maximum layer slope"),
-        _L("Prints a block whose top layers are curved ridges. The slope of the ridges grows in steps along X "
-           "(from left to right). Uses its own curved layers, not the non-planar settings of the print."),
-        _L("Look at the top surface from the left: find the first step where the nozzle scrapes or drags the "
-           "surface, or the lines stop sticking. The step before it is the steepest one your nozzle prints well: "
-           "its slope is start + step × step number (from the left, starting at 0). Enter it as \"Maximum layer "
-           "slope\" (Print Settings > Non-planar)."),
-        "°", CalibMode::NonPlanarSlope, { 10., 40., 5., 10. }, 0, 1., 60.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            // The top follows the curved layers of the test, so that the last layers are whole curved layers.
-            const double size_x = std::max(20., p.steps() * p.band), size_y = 24., height = m.nonplanar_start + 4.;
-            NonPlanar::FieldParams field = NonPlanar::slope_test_field(p.start, p.signed_step(), p.end, p.band);
-            field.center   = Vec2d(0.5 * size_x, 0.5 * size_y);
-            field.slope_x0 = 0.;
-            const NonPlanar::Field f(field);
-            add_heightfield_block(obj, size_x, size_y, 0.4, [&](double x, double y) { return height + f.g(x, y, height); });
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "15%");
-            set(obj, "top_solid_layers", "4");
-        }, _L("Width of each step") });
-
-    tests.back().key = "nonplanar_slope";
-
-    tests.push_back({ _L("Non-planar: Z axis speed"),
-        _L("Prints a cylinder with wavy layers. The Z speed allowed to the curved moves grows at each step above "
-           "the transition (about 9 mm). Uses its own curved layers, not the non-planar settings of the print."),
-        _L("Find the first step where the layers look squashed or shifted, the wall gets rough, or the Z motor "
-           "skips (the top ends lower than the rest). The step before it is the fastest Z speed that works: start + "
-           "step × floor((height − 9 mm) / step height). Enter it as the maximum Z feed rate of the machine limits "
-           "(Printer Settings > Machine limits). If the firmware limits Z (M203), the steps above that limit look "
-           "the same."),
-        "mm/s", CalibMode::NonPlanarZSpeed, { 2., 12., 2., 5. }, 1, 0.5, 100.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            add_cylinder(obj, 0, 0, 0, 20., m.nonplanar_start + p.height());
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "15%");
-            set(obj, "perimeter_speed", "60");
-            set(obj, "infill_speed", "80");
-        } });
-
-    tests.back().key = "nonplanar_z_speed";
-
-    tests.push_back({ _L("Non-planar: print head clearance gauge"),
-        _L("Prints a staircase gauge (nothing is printed near the print head). Put it on the cold bed with the nozzle "
-           "touching the bed and slide it under the print head."),
-        _L("The highest step that fits under the lowest point of the print head (heater block with its sock, cooling "
-           "duct, probe) without touching it is the head clearance height: start + step × step number (from the "
-           "lowest, starting at 0). Measure also the farthest point of those parts from the nozzle: it is the head "
-           "clearance radius. Enter both in Printer Settings > General > Print head."),
-        "mm", CalibMode::Disabled, { 1., 8., 1., 8. }, 1, 0.5, 30.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            for (int i = 0; i < p.steps(); ++i)
-                add_box(obj, i * p.band, 0, 0, p.band, 25., p.start + i * p.signed_step());
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "20%");
-        }, _L("Width of each step") });
-
-    tests.back().key = "nonplanar_head_gauge";
-
-    // Tisma: the automatic non-planar mode on two shapes of the tests (tests/fff_print/test_nonplanar_print.cpp).
-    tests.push_back({ _L("Non-planar: automatic mode test pieces"),
-        _L("Prints, in one go, a mushroom whose underside flares out at the overhang angle (stem of 10 mm, flare up to "
-           "15 mm, cap up to 18 mm) and a 30 mm block whose top slopes at the top angle. It uses the non-planar mode "
-           "Automatic and supports where needed (both set in the print settings, shown as modified). Print it again "
-           "with Non-planar layers set to Disabled to compare."),
-        _L("Supports: with flat layers the flare of the mushroom needs supports; with the automatic mode it should print "
-           "without them, or with far fewer (look at the preview before printing). Finish: compare the top of the block "
-           "with that of the flat print, the stairs of the layers should be much smaller. The flare is printable only "
-           "if the free angle of the print head is at least the overhang angle minus 45°."),
-        "°", CalibMode::Disabled, { 48., 48., 1., 6. }, 0, 1., 75.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            // Mushroom: profile (radius, z) turned around the Z axis, centered at (12, 15).
-            const double angle = std::clamp(p.start, 0., 70.);
-            const double r_cap = 5. + 5. * std::tan(angle * M_PI / 180.);
-            const std::vector<Vec2d> profile { { 5., 0. }, { 5., 10. }, { r_cap, 15. }, { r_cap, 18. } };
-            constexpr int segments = 72;
-            const Vec2d center(std::max(12., r_cap + 1.), 15.);
-            indexed_triangle_set its;
-            const int n = int(profile.size());
-            for (int s = 0; s < segments; ++ s) {
-                const double a = 2. * M_PI * s / segments;
-                for (const Vec2d &q : profile)
-                    its.vertices.emplace_back(float(center.x() + q.x() * std::cos(a)), float(center.y() + q.x() * std::sin(a)), float(q.y()));
-            }
-            const int bottom = int(its.vertices.size());
-            its.vertices.emplace_back(float(center.x()), float(center.y()), 0.f);
-            const int top = int(its.vertices.size());
-            its.vertices.emplace_back(float(center.x()), float(center.y()), float(profile.back().y()));
-            for (int s = 0; s < segments; ++ s) {
-                const int a = s * n, b = ((s + 1) % segments) * n;
-                for (int i = 0; i + 1 < n; ++ i) {
-                    its.indices.emplace_back(a + i, b + i, b + i + 1);
-                    its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
-                }
-                its.indices.emplace_back(bottom, b, a);
-                its.indices.emplace_back(top, a + n - 1, b + n - 1);
-            }
-            obj.add_volume(TriangleMesh(std::move(its)));
-            // Block with its top sloping along X, next to the mushroom.
-            const double slope = std::tan(std::clamp(p.band, 0., 30.) * M_PI / 180.);
-            add_heightfield_block(obj, 30., 30., 1., [slope](double x, double) { return 18. + slope * x; });
-            obj.volumes.back()->translate(Vec3d(2. * center.x() + 5., 0., 0.));
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "15%");
-            set(obj, "top_solid_layers", "4");
-        }, _L("Slope of the top of the block") });
-    tests.back().key = "nonplanar_automatic";
-    tests.back().single_label = _L("Overhang angle of the mushroom");
-    tests.back().print_settings = { { "nonplanar_mode", "automatic" }, { "support_material", "1" },
-                                    { "support_material_auto", "1" } };
-
-    // Tisma: strength across the layers with curved (wave) layers against flat ones. A comparative test, not a standard
-    // one: the same bars printed both ways and broken the same way.
-    tests.push_back({ _L("Non-planar: layer strength test pieces"),
-        _L("Prints three solid bars standing up, 5 mm thick, on pedestals tall enough for the bars to start where the "
-           "curved layers are complete; a wedge at the top holds the string. It uses the non-planar wave layers "
-           "(interlocking layers, set in the print settings, shown as modified) and 100 % infill. Print it again with "
-           "Non-planar layers set to Disabled to compare."),
-        _L("Clamp each pedestal in a vise with the bar horizontal and the 5 mm side vertical, hang a bucket by a string "
-           "just below the wedge and add water until the bar breaks; weigh the bucket. The bar breaks across the layers "
-           "at the pedestal. Compare the average of the three bars printed with curved layers with that of the three "
-           "printed flat: their ratio is the gain in strength between layers. The stress at the break is "
-           "6 x F x L / (W x T²), with F the weight in N (kg x 9.81), L the distance from the pedestal to the string, W "
-           "the width of the bar and T = 5 mm."),
-        "mm", CalibMode::Disabled, { 20., 20., 1., 40. }, 0, 1., 40.,
-        [](ModelObject& obj, const Params& p, const Machine& m) {
-            const double width = std::clamp(p.start, 10., 40.), length = std::clamp(p.band, 20., 80.), thickness = 5.;
-            // Pedestal: 2 mm above where the curved layers are complete (the bars break at its top), at least 6 mm to clamp.
-            const double pedestal = std::max(6., m.nonplanar_curved + 2.);
-            const double pitch = width + 20.;
-            for (int i = 0; i < 3; ++i) {
-                const double x0 = i * pitch;
-                add_box(obj, x0, 0., 0., width + 10., 20., pedestal);
-                add_box(obj, x0 + 5., 7.5, pedestal, width, thickness, length);
-                // Wedge widening at 45° (no supports), then a cap: the string stays below it.
-                add_trapezoid_prism(obj, x0 + 5. + 0.5 * width, 7.5, pedestal + length, width, width + 6., 3., thickness);
-                add_box(obj, x0 + 2., 7.5, pedestal + length + 3., width + 6., thickness, 2.);
-            }
-            set_layer_height(obj, m.layer);
-            set(obj, "perimeters", "2");
-            set(obj, "fill_density", "100%");
-        }, _L("Length of the bars") });
-    tests.back().key = "nonplanar_strength";
-    tests.back().single_label = _L("Width of the bars");
-    tests.back().print_settings = { { "nonplanar_mode", "wave" } };
-
     return tests;
 }
 
@@ -702,8 +477,6 @@ public:
 
         m_along_x = ! test.band_label.empty();
         m_base_band = test.mode == CalibMode::ResinExposure;
-        // The V groove gauge: the band is the depth of the grooves, not a length.
-        m_count_only = test.key == "nonplanar_free_angle";
         m_summary = new wxStaticText(this, wxID_ANY, "");
         main->Add(m_summary, 0, wxALL, em);
 
@@ -740,9 +513,7 @@ private:
             Layout();
             return;
         }
-        m_summary->SetLabel(m_count_only ? format_wxstr(_L("%1% grooves in each row, rows %2%, %3% and %4% mm deep."), p.steps(),
-                                                        wxString::Format("%.1f", p.band / 3.), wxString::Format("%.1f", 2. * p.band / 3.),
-                                                        wxString::Format("%.1f", p.band)) : m_along_x ?
+        m_summary->SetLabel(m_along_x ?
             format_wxstr(_L("%1% steps, %2% mm long."), p.steps(), wxString::Format("%.1f", p.height())) :
             format_wxstr(_L("%1% steps, tower height %2% mm."), p.steps(), wxString::Format("%.1f", p.height() + (m_base_band ? p.band : 0.))));
         Layout();
@@ -755,7 +526,6 @@ private:
     wxStaticText*     m_summary { nullptr };
     bool              m_along_x { false };
     bool              m_base_band { false }; // a base below the steps (resin exposure tower)
-    bool              m_count_only { false };
     bool              m_single { false };
 };
 
@@ -777,12 +547,6 @@ void run_test(wxWindow* parent, const Test& test, const Params* initial = nullpt
     machine.layer = std::round(machine.nozzle * 50.) / 100.; // half of the nozzle diameter, rounded to 0.01 mm
     if (const ConfigOptionFloatOrPercent* fl = wxGetApp().preset_bundle->prints.get_edited_preset().config.option<ConfigOptionFloatOrPercent>("first_layer_height"))
         machine.first_layer = fl->get_abs_value(machine.nozzle);
-    {
-        PrintConfig print_config;
-        print_config.apply(wxGetApp().preset_bundle->full_config(), true);
-        machine.nonplanar_start = NonPlanar::nonplanar_test_start_height(print_config);
-        machine.nonplanar_curved = print_config.nonplanar_flat_below.value + print_config.nonplanar_ramp_height.value;
-    }
 
     Model model;
     ModelObject* obj = model.add_object();
@@ -1000,14 +764,6 @@ private:
     wxStaticText*                    m_result   { nullptr };
 };
 
-const Test* find_test(const std::string& key)
-{
-    for (const Test& t : tests())
-        if (t.key == key)
-            return &t;
-    return nullptr;
-}
-
 // --- Apply a calibration result ------------------------------------------------------------------------------
 // The value read on the print goes to the setting it calibrates, without calculations.
 
@@ -1157,230 +913,6 @@ private:
 };
 
 // --- Non-planar calibration assistant ------------------------------------------------------------------------
-// Two steps for the maximum layer slope: a static gauge measured with the printer cold (safe), then the printed test
-// in fine steps around that value; the result is applied with a tolerance. It also manages the print head clearance
-// and the Z speed. The measured values are kept in the application settings between the prints.
-
-class NonPlanarAssistant : public wxDialog
-{
-public:
-    explicit NonPlanarAssistant(wxWindow* parent)
-        : wxDialog(parent, wxID_ANY, _L("Non-planar calibration assistant"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
-    {
-        wxGetApp().UpdateDlgDarkUI(this);
-        const int em = wxGetApp().em_unit();
-        const DynamicPrintConfig& printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-        const DynamicPrintConfig& print   = wxGetApp().preset_bundle->prints.get_edited_preset().config;
-        AppConfig& app = *wxGetApp().app_config;
-        auto stored = [&app](const char* key, double fallback) {
-            const std::string v = app.get(key);
-            return v.empty() ? fallback : std::atof(v.c_str());
-        };
-
-        auto main = new wxBoxSizer(wxVERTICAL);
-        auto intro = new wxStaticText(this, wxID_ANY,
-            _L("Measure what the non-planar layers need to know about your printer. The maximum layer slope is found in "
-               "two steps: first a static gauge measured with the printer cold, then a printed test in small steps around "
-               "that value. The result is applied with a safety tolerance."));
-        intro->Wrap(55 * em);
-        main->Add(intro, 0, wxALL, em);
-
-        auto grid = new wxFlexGridSizer(4, em / 2, em);
-        grid->AddGrowableCol(0);
-        auto add_row = [&](const wxString& label, double value, double min, double max, double inc, int digits,
-                           const wxString& unit, const wxString& button, std::function<void()> on_button) {
-            grid->Add(new wxStaticText(this, wxID_ANY, label), 0, wxALIGN_CENTER_VERTICAL);
-            auto ctrl = new wxSpinCtrlDouble(this, wxID_ANY, wxEmptyString, wxDefaultPosition, spin_ctrl_size(this, 10),
-                                             wxSP_ARROW_KEYS, min, max, value, inc);
-            ctrl->SetDigits(digits);
-            grid->Add(ctrl, 0);
-            grid->Add(new wxStaticText(this, wxID_ANY, unit), 0, wxALIGN_CENTER_VERTICAL);
-            if (on_button) {
-                auto btn = new wxButton(this, wxID_ANY, button);
-                btn->Bind(wxEVT_BUTTON, [this, on_button](wxCommandEvent&) { this->save(); on_button(); });
-                grid->Add(btn, 0, wxEXPAND);
-            } else
-                grid->AddSpacer(1);
-            return ctrl;
-        };
-        // The test is loaded once the assistant is closed (see run_after()).
-        auto print_test = [this](const std::string& key, std::optional<Params> params) {
-            if (const Test* t = find_test(key)) {
-                wxWindow* parent = GetParent();
-                m_after = [parent, t, params]() { run_test(parent, *t, params ? &*params : nullptr); };
-                this->EndModal(wxID_CANCEL);
-            }
-        };
-
-        // Print head.
-        m_head_height = add_row(_L("Head clearance height"), printer.opt_float("nonplanar_head_clearance_height"), 0., 50., 0.5, 1,
-                                _L("mm"), _L("Print the gauge"),
-                                [print_test]() { print_test("nonplanar_head_gauge", {}); });
-        m_head_radius = add_row(_L("Head clearance radius"), printer.opt_float("nonplanar_head_clearance_radius"), 0., 100., 0.5, 1,
-                                _L("mm"), wxString(), nullptr);
-        // Maximum slope, step 1: static gauge of V grooves of several angles and depths; for a depth (free height),
-        // the narrowest free groove φ with the walls sloping along X and along Y (the print head is not symmetric:
-        // cooling duct, probe on one side).
-        m_gauge_depth = add_row(_L("Step 1: deepest groove H of the gauge"), stored("nonplanar_calib_gauge_depth", 3.), 1.5, 15., 0.5, 1,
-                                _L("mm"), _L("Print the gauge"), [this, print_test]() {
-                                    print_test("nonplanar_free_angle", Params{ 60., 150., 10., m_gauge_depth->GetValue() });
-                                });
-        m_groove_depth = add_row(_L("Step 1: free height (depth of the row read)"), stored("nonplanar_calib_groove_depth", 3.), 0.5, 15., 0.5, 1,
-                                 _L("mm"), wxString(), nullptr);
-        m_phi_x = add_row(_L("Step 1: narrowest free groove φ in that row, walls along X (first block)"), stored("nonplanar_calib_groove_x", 0.),
-                          0., 170., 5., 0, "°", wxString(), nullptr);
-        m_phi_y = add_row(_L("Step 1: narrowest free groove φ in that row, walls along Y (second block)"), stored("nonplanar_calib_groove_y", 0.),
-                          0., 170., 5., 0, "°", wxString(), nullptr);
-        // Step 2: printed test around the free angle.
-        m_printed_angle = add_row(_L("Step 2: steepest good step of the printed test"), stored("nonplanar_calib_printed_angle", 0.), 0., 75., 0.5, 1,
-                                  "°", _L("Print the test"), [this, print_test]() {
-                                      const double a = this->lowest_free_angle();
-                                      if (a <= 0.) {
-                                          wxMessageBox(_L("Measure the free angle on the static gauge first (step 1)."),
-                                                       _L("Non-planar calibration assistant"), wxOK | wxICON_INFORMATION, this);
-                                          return;
-                                      }
-                                      // Small steps from 10° below the free angle to 5° above it.
-                                      print_test("nonplanar_slope",
-                                                 Params{ std::max(5., a - 10.), std::min(75., a + 5.), 2.5, 10. });
-                                  });
-        m_tolerance = add_row(_L("Safety tolerance"), stored("nonplanar_calib_tolerance", 3.), 0., 20., 0.5, 1, "°", wxString(), nullptr);
-        // Z speed.
-        double z_speed = 0.;
-        if (const ConfigOptionFloats* z = printer.option<ConfigOptionFloats>("machine_max_feedrate_z"); z && ! z->values.empty())
-            z_speed = z->values.front();
-        m_z_speed = add_row(_L("Fastest good Z speed of the printed test"), z_speed, 0., 200., 0.5, 1, _L("mm/s"), _L("Print the test"),
-                            [print_test]() { print_test("nonplanar_z_speed", {}); });
-        main->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT, em);
-
-        m_result = new wxStaticText(this, wxID_ANY, wxEmptyString);
-        main->Add(m_result, 0, wxALL, em);
-        m_current_slope = print.opt_float("nonplanar_max_slope");
-
-        auto buttons = new wxBoxSizer(wxHORIZONTAL);
-        auto apply = new wxButton(this, wxID_APPLY, _L("Apply to the presets"));
-        apply->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { this->save(); this->apply(); });
-        buttons->Add(apply, 0, wxRIGHT, em);
-        buttons->Add(new wxButton(this, wxID_CANCEL, _L("Close")));
-        main->Add(buttons, 0, wxALIGN_RIGHT | wxALL, em);
-
-        for (wxSpinCtrlDouble* ctrl : { m_groove_depth, m_phi_x, m_phi_y, m_printed_angle, m_tolerance }) {
-            ctrl->Bind(wxEVT_SPINCTRLDOUBLE, [this](wxSpinDoubleEvent&) { update_result(); });
-            ctrl->Bind(wxEVT_TEXT, [this](wxCommandEvent&) { update_result(); });
-        }
-        update_result();
-        SetSizerAndFit(main);
-        CenterOnParent();
-    }
-
-    void run_after() { if (m_after) m_after(); }
-
-private:
-    std::function<void()> m_after;
-
-    // The smaller measured of two values, 0 = none measured.
-    static double smaller(double a, double b) { return a > 0. && b > 0. ? std::min(a, b) : std::max(a, b); }
-
-    // Free angle of the head from the narrowest free V groove: its walls slope (180° - φ) / 2. 0 = not measured.
-    static double groove_free_angle(double phi) { return phi > 0. ? 0.5 * (180. - phi) : 0.; }
-    double static_x() const { return groove_free_angle(m_phi_x->GetValue()); }
-    double static_y() const { return groove_free_angle(m_phi_y->GetValue()); }
-    double lowest_free_angle() const { return smaller(static_x(), static_y()); }
-
-    // A free angle confirmed by the printed test (step 2) minus the tolerance, 0 = unknown.
-    double with_tolerance(double free_angle) const
-    {
-        const double measured = smaller(free_angle, m_printed_angle->GetValue());
-        return measured > 0. ? std::max(1., measured - m_tolerance->GetValue()) : 0.;
-    }
-
-    // Maximum layer slope from the measurements: the smaller of the two steps minus the tolerance, 0 = unknown.
-    double slope() const { return this->with_tolerance(this->lowest_free_angle()); }
-    // Free angles of the print head along X and Y to apply (only measured along their own axis), 0 = unknown.
-    double free_angle_x() const { return static_x() > 0. ? this->with_tolerance(static_x()) : 0.; }
-    double free_angle_y() const { return static_y() > 0. ? this->with_tolerance(static_y()) : 0.; }
-
-    void update_result()
-    {
-        const double s = this->slope();
-        wxString text = s <= 0. ? _L("Maximum layer slope: not measured yet.") :
-            format_wxstr(_L("Maximum layer slope to apply: %1%° (now %2%°)."), wxString::Format("%.1f", s),
-                         wxString::Format("%.1f", m_current_slope));
-        if (this->free_angle_x() > 0. || this->free_angle_y() > 0.)
-            text += "\n" + format_wxstr(_L("Free angles of the print head to apply: %1%° along X, %2%° along Y (the "
-                                           "non-planar layers use them instead of the maximum layer slope)."),
-                                        wxString::Format("%.1f", this->free_angle_x()), wxString::Format("%.1f", this->free_angle_y()));
-        if (this->lowest_free_angle() > 0. && m_printed_angle->GetValue() <= 0.)
-            text += "\n" + _L("Not confirmed with the printed test (step 2) yet.");
-        m_result->SetLabel(text);
-        Layout();
-        Fit();
-    }
-
-    void save()
-    {
-        AppConfig& app = *wxGetApp().app_config;
-        app.set("nonplanar_calib_gauge_depth",  float_to_string_decimal_point(m_gauge_depth->GetValue(), 1));
-        app.set("nonplanar_calib_groove_depth", float_to_string_decimal_point(m_groove_depth->GetValue(), 1));
-        app.set("nonplanar_calib_groove_x", float_to_string_decimal_point(m_phi_x->GetValue(), 1));
-        app.set("nonplanar_calib_groove_y", float_to_string_decimal_point(m_phi_y->GetValue(), 1));
-        app.set("nonplanar_calib_printed_angle", float_to_string_decimal_point(m_printed_angle->GetValue(), 1));
-        app.set("nonplanar_calib_tolerance",     float_to_string_decimal_point(m_tolerance->GetValue(), 1));
-    }
-
-    void apply()
-    {
-        if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINTER)) {
-            DynamicPrintConfig conf = *tab->get_config();
-            conf.set_key_value("nonplanar_head_clearance_height", new ConfigOptionFloat(m_head_height->GetValue()));
-            conf.set_key_value("nonplanar_head_clearance_radius", new ConfigOptionFloat(m_head_radius->GetValue()));
-            // Measured profile of the head (height:angle): the free angle at the depth of the row read replaces the
-            // one measured before at the same depth, the other depths are kept (one apply for each row).
-            std::string profile;
-            if (const double a = this->lowest_free_angle(); a > 0.) {
-                auto pairs = NonPlanar::parse_head_profile(conf.opt_string("nonplanar_head_profile"));
-                const double h = m_groove_depth->GetValue();
-                pairs.erase(std::remove_if(pairs.begin(), pairs.end(), [h](const auto& p) { return std::abs(p.first - h) < 1e-3; }), pairs.end());
-                pairs.emplace_back(h, a);
-                std::sort(pairs.begin(), pairs.end());
-                for (const auto& [ph, pa] : pairs)
-                    profile += (profile.empty() ? "" : ";") + float_to_string_decimal_point(ph, 1) + ":" + float_to_string_decimal_point(pa, 1);
-            }
-            if (const double a = this->free_angle_x(); a > 0.)
-                conf.set_key_value("nonplanar_head_free_angle_x", new ConfigOptionFloat(a));
-            if (const double a = this->free_angle_y(); a > 0.)
-                conf.set_key_value("nonplanar_head_free_angle_y", new ConfigOptionFloat(a));
-            if (! profile.empty())
-                conf.set_key_value("nonplanar_head_profile", new ConfigOptionString(profile));
-            if (m_z_speed->GetValue() > 0.)
-                // Normal and silent (stealth) modes.
-                conf.set_key_value("machine_max_feedrate_z", new ConfigOptionFloats({ m_z_speed->GetValue(), m_z_speed->GetValue() }));
-            tab->load_config(conf);
-        }
-        if (const double s = this->slope(); s > 0.)
-            if (Tab* tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
-                DynamicPrintConfig conf = *tab->get_config();
-                conf.set_key_value("nonplanar_max_slope", new ConfigOptionFloat(s));
-                tab->load_config(conf);
-                m_current_slope = s;
-            }
-        update_result();
-        wxMessageBox(_L("The values were applied to the print and printer settings. Save the presets to keep them."),
-                     _L("Non-planar calibration assistant"), wxOK | wxICON_INFORMATION, this);
-    }
-
-    wxSpinCtrlDouble* m_head_height   { nullptr };
-    wxSpinCtrlDouble* m_head_radius   { nullptr };
-    wxSpinCtrlDouble* m_gauge_depth   { nullptr };   // deepest V grooves of the static gauge (rows H/3, 2H/3, H)
-    wxSpinCtrlDouble* m_groove_depth  { nullptr };   // depth of the row read: the free height of the angles
-    wxSpinCtrlDouble* m_phi_x         { nullptr };   // narrowest free groove, walls sloping along X
-    wxSpinCtrlDouble* m_phi_y         { nullptr };
-    wxSpinCtrlDouble* m_printed_angle { nullptr };
-    wxSpinCtrlDouble* m_tolerance     { nullptr };
-    wxSpinCtrlDouble* m_z_speed       { nullptr };
-    wxStaticText*     m_result        { nullptr };
-    double            m_current_slope { 0. };
-};
 
 } // namespace
 
@@ -1427,7 +959,7 @@ static void append_apply_result(wxMenu* menu, wxWindow* parent)
     }, apply_id);
 }
 
-static wxMenu* create_resin_calibration_menu(wxWindow* parent)
+static wxMenu* create_resin_calibration_menu(wxWindow* parent, bool models_only)
 {
     auto menu = new wxMenu();
     const std::vector<Test>& all = resin_tests();
@@ -1449,6 +981,8 @@ static wxMenu* create_resin_calibration_menu(wxWindow* parent)
     const int block_id = wxWindow::NewControlId();
     menu->Append(block_id, _L("Resin dimensions block") + dots, _L("A block to measure the shrinkage of the resin in X, Y and Z."));
     menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_resin_dimension_block(parent); }, block_id);
+    if (models_only)
+        return menu;
     const int dims_id = wxWindow::NewControlId();
     menu->Append(dims_id, _L("Resin dimensional correction") + dots,
                  _L("Calculates the scaling correction of the material from the measured sizes of the dimensions block."));
@@ -1462,25 +996,13 @@ static wxMenu* create_resin_calibration_menu(wxWindow* parent)
     return menu;
 }
 
-wxMenu* create_calibration_menu(wxWindow* parent, bool resin)
+wxMenu* create_calibration_menu(wxWindow* parent, bool resin, bool models_only)
 {
     if (resin)
-        return create_resin_calibration_menu(parent);
+        return create_resin_calibration_menu(parent, models_only);
     auto menu = new wxMenu();
     const std::vector<Test>& all = tests();
     for (size_t i = 0; i < all.size(); ++i) {
-        if (i > 0 && all[i].key.rfind("nonplanar", 0) == 0 && all[i - 1].key.rfind("nonplanar", 0) != 0) {
-            // Non-planar group: the assistant first.
-            menu->AppendSeparator();
-            const int aid = wxWindow::NewControlId();
-            menu->Append(aid, _L("Non-planar calibration assistant") + dots,
-                         _L("Measures and applies the maximum layer slope (in two steps), the print head clearance and the Z speed."));
-            menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) {
-                NonPlanarAssistant dlg(parent);
-                dlg.ShowModal();
-                dlg.run_after();
-            }, aid);
-        }
         const int id = wxWindow::NewControlId();
         menu->Append(id, all[i].title + dots, all[i].description);
         menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) { run_test(parent, tests()[i]); }, id);
@@ -1490,6 +1012,8 @@ wxMenu* create_calibration_menu(wxWindow* parent, bool resin)
     menu->Append(coupons_id, _L("Staggered perimeters: strength coupons") + dots,
                  _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."));
     menu->Bind(wxEVT_MENU, [parent](wxCommandEvent&) { load_stagger_coupons(parent); }, coupons_id);
+    if (models_only)
+        return menu;
     menu->AppendSeparator();
     append_apply_result(menu, parent);
     return menu;

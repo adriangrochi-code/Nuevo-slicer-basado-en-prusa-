@@ -3958,8 +3958,11 @@ void Plater::priv::on_right_click(RBtnEvent& evt)
         if (evt.data.second) { // right button was clicked on empty space
             if (!get_selection().is_empty()) // several objects are selected in 3DScene
                 return;
-            if (s_multiple_beds.get_last_hovered_bed() != -1)
+            if (s_multiple_beds.get_last_hovered_bed() != -1) {
+                // Tisma Slicer: its calibration models are those of the printer selected now.
+                menus.update_default_menu();
                 menu = menus.default_menu();
+            }
         }
         else
             menu = menus.multi_selection_menu();

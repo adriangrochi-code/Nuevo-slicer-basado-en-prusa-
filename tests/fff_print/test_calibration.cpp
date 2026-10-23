@@ -85,6 +85,16 @@ TEST_CASE("Calibration: temperature tower", "[Calibration]")
     REQUIRE(std::set<double>(m117.begin(), m117.end()) == std::set<double>{ 215., 220., 225., 230. });
 }
 
+TEST_CASE("Calibration: temperature tower heats up to its first band", "[Calibration]")
+{
+    // The first layer temperature of the filament is 200 °C (the default): the printer waits for the 230 °C of the
+    // first band instead, so that the first band is not printed while the nozzle is still heating up.
+    const std::string gcode = slice_calibration("temperature", 230., 215., -5., "marlin2");
+    const std::vector<double> waits = command_values(gcode, "M109 ", "S");
+    REQUIRE(! waits.empty());
+    REQUIRE(waits.front() == Approx(230.));
+}
+
 TEST_CASE("Calibration: pressure advance by firmware", "[Calibration]")
 {
     SECTION("Klipper") {

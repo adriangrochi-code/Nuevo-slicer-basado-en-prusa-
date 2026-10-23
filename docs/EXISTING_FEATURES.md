@@ -44,7 +44,7 @@ Todas comparten un mecanismo: opciones de proyecto `calib_*` y un valor que camb
 
 | Prueba | Modelo | Qué varía en el G-code | Verificación |
 |---|---|---|---|
-| Torre de temperatura | Bloques con puente y pin | `M104` | GUI + G-code |
+| Torre de temperatura | Un bloque por temperatura: el número en relieve al frente, puente, dos pilares y una espiga para los hilos, voladizo de 0° a 75° con marcas a 30°, 45° y 60°, y una espiga para quebrar (adhesión entre capas) | `M104`; espera inicial (`M109`) a la temperatura de la primera franja | GUI + G-code |
 | Pressure advance | Torre cuadrada de pared fina | `M900` / `SET_PRESSURE_ADVANCE` / `M572` | G-code |
 | Retracción | Dos columnas | Longitud de retracción | G-code |
 | Velocidad volumétrica máxima | Cilindro de una pared | Velocidad real de la pared | G-code |
@@ -54,6 +54,9 @@ Todas comparten un mecanismo: opciones de proyecto `calib_*` y un valor que camb
 | Input shaping | Torre de pared fina | `SET_INPUT_SHAPER` / `M593` | G-code |
 
 "G-code" = verificado leyendo el G-code generado por línea de comandos. Ninguna prueba se ha impreso todavía.
+
+Los modelos se agregan desde el menú Calibración o con clic derecho en la cama, "Agregar modelo de calibración" (solo
+los modelos; aplicar un resultado queda en el menú).
 
 **Faltan** respecto a OrcaSlicer: flujo (pasadas 1 y 2; necesita factor de flujo por objeto), patrón y línea de
 PA, tolerancias, y la numeración en relieve de los bloques.
