@@ -156,6 +156,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/PlateTools.cpp
     GUI/PlateTools.hpp
     GUI/TismaWidgets.cpp
+    GUI/MorePage.cpp
+    GUI/MorePage.hpp
     GUI/TismaWidgets.hpp
     GUI/QuickSettings.cpp
     GUI/QuickSettings.hpp

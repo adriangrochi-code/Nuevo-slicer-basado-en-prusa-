@@ -50,6 +50,7 @@ class GalleryDialog;
 class ConnectWebViewPanel; 
 class PrinterWebViewPanel;
 class PrintablesWebViewPanel;
+class MorePage;
 class DevicesPanel;
 class ThingiverseWebViewPanel;
 
@@ -111,6 +112,8 @@ class MainFrame : public DPIFrame
     ThingiverseWebViewPanel* m_thingiverse_webview{ nullptr };
     // Tisma: Devices workspace (USB and network printers, their web interface).
     DevicesPanel*           m_devices_panel{ nullptr };
+    // Tisma: the More page of the navigation (instead of the menus of PrusaSlicer).
+    MorePage*               m_more_page{ nullptr };
     bool                    m_printables_webview_added{ false };
     PrinterWebViewPanel*    m_printer_webview{ nullptr };
     bool                    m_printer_webview_added{ false };

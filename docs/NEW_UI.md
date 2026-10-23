@@ -67,7 +67,8 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
    Falta: chips de ajustes sobre la vista.
 6. Páginas de ajustes nuevas (Impresión, Filamento, Impresora; también resina).
 7. Barra superior propia y menú reorganizado (en macOS el menú del sistema sigue).
-8. Página Más (incluye preferencias propias).
+8. Página Más (hecho: tarjetas armadas desde los menús, con sus atajos y su estado, más Thingiverse, la cuenta de
+   Tisma Cloud y las preferencias; falta: preferencias propias).
 9. Borrar lo de PrusaSlicer que quedó sin uso; pruebas de pantalla de todas las secciones; documentación.
 
 Cada etapa se prueba con el programa en Xvfb (capturas de las pantallas cambiadas) y con `ctest`.

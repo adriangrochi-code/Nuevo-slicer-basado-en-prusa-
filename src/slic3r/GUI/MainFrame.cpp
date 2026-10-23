@@ -64,6 +64,7 @@
 #include "NavRail.hpp"
 #include "USBMonitorPanel.hpp"
 #include "DevicesPanel.hpp"
+#include "MorePage.hpp"
 #include "CalibrationDialog.hpp"
 #include "ConfigWizard.hpp"
 #include "GUI_Factories.hpp"
@@ -833,36 +834,6 @@ void MainFrame::register_win32_callbacks()
 // A copy of a menu for a popup: the same ids, labels, kinds, states and submenus. The events of the copy go to the
 // window which shows it (the main frame, where the menu items have their handlers); the handlers bound to the menu
 // itself get them through it.
-static wxMenu* copy_menu_for_popup(wxMenu* src)
-{
-    auto *out = new wxMenu();
-    for (wxMenuItem* item : src->GetMenuItems()) {
-        if (item->IsSeparator()) {
-            out->AppendSeparator();
-            continue;
-        }
-        if (wxMenu* sub = item->GetSubMenu()) {
-            wxMenuItem* copy = out->AppendSubMenu(copy_menu_for_popup(sub), item->GetItemLabel(), item->GetHelp());
-            copy->Enable(item->IsEnabled());
-            continue;
-        }
-        auto *copy = new wxMenuItem(out, item->GetId(), item->GetItemLabel(), item->GetHelp(), item->GetKind());
-        if (item->GetBitmapBundle().IsOk())
-            copy->SetBitmap(item->GetBitmapBundle());
-        out->Append(copy);
-        if (item->IsCheckable())
-            copy->Check(item->IsChecked());
-        copy->Enable(item->IsEnabled());
-    }
-    out->Bind(wxEVT_MENU, [src](wxCommandEvent& evt) {
-        wxCommandEvent forwarded(evt);
-        forwarded.SetEventObject(src);
-        if (! src->ProcessEvent(forwarded))
-            evt.Skip();
-    });
-    return out;
-}
-
 void MainFrame::create_nav_rail()
 {
     // Órbita Pro: the workspaces are tabs of the top bar.
@@ -921,31 +892,29 @@ void MainFrame::create_nav_rail()
     devices.is_selected = [this, current_page]() { return m_devices_panel && current_page() == m_devices_panel; };
     m_nav_rail->add_item(devices);
 
-    // More: calibration, Thingiverse (instead of Printables, whose page needs the Prusa account of PrusaSlicer),
-    // the Tisma Cloud account, preferences and the configuration wizard.
+    // More: a page with the actions of Tisma (Thingiverse instead of Printables, whose page needs the Prusa account of
+    // PrusaSlicer; the Tisma Cloud account; preferences) and the cards made from the menus of the program (File, Edit,
+    // Window, View, Configuration, Calibration, Help).
     NavRail::Item more;
     more.label       = _L("More");
     more.tooltip     = _L("Calibration, Thingiverse, Tisma Cloud account, preferences");
     more.icon        = "tisma_more";
-    more.is_selected = [this, current_page]() { return m_thingiverse_webview && current_page() == m_thingiverse_webview; };
+    more.is_selected = [this, current_page]() {
+        return (m_more_page && current_page() == m_more_page) || (m_thingiverse_webview && current_page() == m_thingiverse_webview);
+    };
     more.on_click    = [this, select_page]() {
-        wxMenu menu;
-        auto add = [&menu](const wxString& label, std::function<void()> action) {
-            const int id = wxWindow::NewControlId();
-            menu.Append(id, label);
-            menu.Bind(wxEVT_MENU, [action](wxCommandEvent&) { action(); }, id);
-        };
+        if (m_more_page == nullptr)
+            return;
+        std::vector<MorePage::Action> actions;
         if (m_thingiverse_webview)
-            add("Thingiverse", [this, select_page]() { select_page(m_thingiverse_webview); update_nav_rail(); });
-        add(_L("Tisma Cloud account") + dots, [this]() { show_cloud_account_dialog(this); });
-        add(_L("Preferences") + dots, []() { wxGetApp().open_preferences(); });
-        // The menus of the program (File, Edit, Window, View, Configuration, Calibration, Help).
-        if (m_menubar != nullptr) {
-            menu.AppendSeparator();
-            for (size_t i = 0; i < m_menubar->GetMenuCount(); ++i)
-                menu.AppendSubMenu(copy_menu_for_popup(m_menubar->GetMenu(i)), m_menubar->GetMenuLabel(i));
-        }
-        PopupMenu(&menu, ScreenToClient(wxGetMousePosition()));
+            actions.push_back({ "Thingiverse", _L("Models to print from Thingiverse"),
+                                [this, select_page]() { select_page(m_thingiverse_webview); update_nav_rail(); } });
+        actions.push_back({ _L("Tisma Cloud account") + dots, _L("Tisma Cloud account: slicing and analysis on the servers"),
+                            [this]() { show_cloud_account_dialog(this); } });
+        actions.push_back({ _L("Preferences") + dots, wxEmptyString, []() { wxGetApp().open_preferences(); } });
+        m_more_page->set_actions(std::move(actions));
+        m_more_page->update(m_menubar, this);
+        select_page(m_more_page);
     };
     m_nav_rail->add_item(more);
 
@@ -1007,6 +976,8 @@ void MainFrame::create_preset_tabs()
     m_tabpanel->AddNewPage(m_devices_panel, _L("Devices"), "");
     m_thingiverse_webview = new ThingiverseWebViewPanel(m_tabpanel);
     m_tabpanel->AddNewPage(m_thingiverse_webview, "Thingiverse", "");
+    m_more_page = new MorePage(m_tabpanel);
+    m_tabpanel->AddNewPage(m_more_page, _L("More"), "");
     // The browser is created and the site loaded the first time the page is shown.
     m_thingiverse_webview->set_create_browser();
     add_printables_webview_tab();
@@ -1521,6 +1492,8 @@ void MainFrame::on_sys_color_changed()
         m_printer_webview->sys_color_changed();
     if (m_devices_panel)
         m_devices_panel->sys_color_changed();
+    if (m_more_page)
+        m_more_page->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 
