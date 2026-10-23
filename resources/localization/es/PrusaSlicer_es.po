@@ -34185,3 +34185,9 @@ msgstr "Perfil de impresora"
 
 msgid "Add a printer profile"
 msgstr "Añadir un perfil de impresora"
+
+msgid "Finish"
+msgstr "Terminar"
+
+msgid "Nozzles"
+msgstr "Boquillas"

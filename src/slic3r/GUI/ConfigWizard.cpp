@@ -65,6 +65,8 @@
 #include "slic3r/Config/Snapshot.hpp"
 #include "format.hpp"
 #include "MsgDialog.hpp"
+#include "TismaTheme.hpp"
+#include "TismaWidgets.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "UpdatesUIManager.hpp"
 #include "Plater.hpp" // #ysFIXME - implement getter for preset_archive_database from GetApp()???
@@ -552,12 +554,16 @@ ConfigWizardPage::ConfigWizardPage(ConfigWizard *parent, wxString title, wxStrin
     , indent(indent)
 {
     wxGetApp().UpdateDarkUI(this);
+    // Tisma: the background of the cards and the title of the page as the titles of Tisma.
+    SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
 
     auto *text = new wxStaticText(this, wxID_ANY, std::move(title), wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT);
-    const auto font = GetFont().MakeBold().Scaled(1.5);
+    auto font = GetFont().Scaled(1.5);
+    font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
     text->SetFont(font);
+    text->SetForegroundColour(TismaTheme::accent_text(wxGetApp().dark_mode()));
     sizer->Add(text, 0, wxALIGN_LEFT, 0);
     sizer->AddSpacer(10);
 
@@ -2661,7 +2667,7 @@ void PageTemperatures::apply_custom_config(DynamicPrintConfig &config)
 
 ConfigWizardIndex::ConfigWizardIndex(wxWindow *parent)
     : wxPanel(parent)
-    , bg(ScalableBitmap(parent, "PrusaSlicer_192px_transparent.png", 192))
+    , bg(ScalableBitmap(parent, "PrusaSlicer_192px_transparent.png", 96))
     , bullet_black(ScalableBitmap(parent, "bullet_black.png"))
     , bullet_blue(ScalableBitmap(parent, "bullet_blue.png"))
     , bullet_white(ScalableBitmap(parent, "bullet_white.png"))
@@ -2672,6 +2678,8 @@ ConfigWizardIndex::ConfigWizardIndex(wxWindow *parent)
 #ifndef __WXOSX__ 
     SetDoubleBuffered(true);// SetDoubleBuffered exists on Win and Linux/GTK, but is missing on OSX
 #endif //__WXOSX__
+    // Tisma: the list of the steps on the background of the panels of Tisma.
+    SetBackgroundColour(TismaTheme::panel_bg(wxGetApp().dark_mode()));
     SetMinSize(bg.GetSize());
 
     const wxSize size = GetTextExtent("m");
@@ -2810,15 +2818,29 @@ void ConfigWizardIndex::on_paint(wxPaintEvent & evt)
         const Item& item = items[i];
         unsigned x = em_w/2 + item.indent * em_w;
 
-        if (i == item_active || (item_hover >= 0 && i == (size_t)item_hover)) {
-            dc.DrawBitmap(bullet_blue.get_bitmap(), x, y + yoff_icon, false);
+        // Tisma: a dot in the accent color for the step shown (filled) and the steps done (smaller), a ring for the
+        // steps to come; the step shown in the accent color.
+        const bool dark   = wxGetApp().dark_mode();
+        const bool active = i == item_active || (item_hover >= 0 && i == (size_t)item_hover);
+        const wxPoint center(x + bullet_w / 2, y + yoff_icon + bullet_h / 2);
+        const int     r = std::max(3, std::min(bullet_w, bullet_h) / 2 - 1);
+        if (active || i < item_active) {
+            dc.SetPen(wxPen(TismaTheme::accent()));
+            dc.SetBrush(wxBrush(TismaTheme::accent()));
+            dc.DrawCircle(center, active ? r : r * 2 / 3);
+        } else {
+            dc.SetPen(wxPen(TismaTheme::text_muted(dark)));
+            dc.SetBrush(*wxTRANSPARENT_BRUSH);
+            dc.DrawCircle(center, r * 2 / 3);
         }
-        else if (i < item_active)  { dc.DrawBitmap(bullet_black.get_bitmap(), x, y + yoff_icon, false); }
-        else if (i > item_active)  { dc.DrawBitmap(bullet_white.get_bitmap(), x, y + yoff_icon, false); }
 
         x += + bullet_w + em_w/2;
+        wxFont font = GetFont();
+        if (i == item_active)
+            font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+        dc.SetFont(font);
         const auto text_size = dc.GetTextExtent(item.label);
-        dc.SetTextForeground(wxGetApp().get_label_clr_default());
+        dc.SetTextForeground(i == item_active ? TismaTheme::accent_text(dark) : TismaTheme::text(dark));
         dc.DrawText(item.label, x, y + yoff_text);
 
         y += yinc;
@@ -4445,9 +4467,8 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     : DPIDialog(parent, wxID_ANY, wxString(SLIC3R_APP_NAME) + " - " + _(name()), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , p(new priv(this))
 {
-#ifdef __APPLE__
-    this->SetBackgroundColour(wxGetApp().get_window_default_clr());
-#endif
+    // Tisma: the background of the cards of Tisma.
+    this->SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     wxBusyCursor wait;
 
     this->SetFont(wxGetApp().normal_font());
@@ -4461,12 +4482,12 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     auto *vsizer = new wxBoxSizer(wxVERTICAL);
     auto *topsizer = new wxBoxSizer(wxHORIZONTAL);
-    auto* hline = new StaticLine(this);
     p->btnsizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Initially we _do not_ SetScrollRate in order to figure out the overall width of the Wizard  without scrolling.
     // Later, we compare that to the size of the current screen and set minimum width based on that (see below).
     p->hscroll = new wxScrolledWindow(this);
+    p->hscroll->SetBackgroundColour(TismaTheme::card_bg(wxGetApp().dark_mode()));
     p->hscroll_sizer = new wxBoxSizer(wxHORIZONTAL);
     p->hscroll->SetSizer(p->hscroll_sizer);
 
@@ -4479,27 +4500,22 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     // Tisma Slicer: the printers are chosen in the list of all the printers.
     p->btn_sel_all->Hide();
 
-    p->btn_prev = new wxButton(this, wxID_ANY, _L("< &Back"));
-    p->btn_next = new wxButton(this, wxID_ANY, _L("&Next >"));
-    p->btn_finish = new wxButton(this, wxID_APPLY, _L("&Finish"));
-    p->btn_cancel = new wxButton(this, wxID_CANCEL, _L("Cancel"));   // Note: The label needs to be present, otherwise we get accelerator bugs on Mac
+    // Tisma: the buttons of Tisma, Next and Finish filled with the accent color; Cancel at the left.
+    p->btn_prev = tisma_dialog_button(this, wxID_ANY, _L("Back"));
+    p->btn_next = tisma_dialog_button(this, wxID_ANY, _L("Next"), true);
+    p->btn_finish = tisma_dialog_button(this, wxID_APPLY, _L("Finish"), true);
+    p->btn_cancel = tisma_dialog_button(this, wxID_CANCEL);
+    p->btn_cancel->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) { this->EndModal(wxID_CANCEL); });
+    tisma_dialog_keys(this);
+    p->btnsizer->Add(p->btn_cancel, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->AddStretchSpacer();
     p->btnsizer->Add(p->btn_prev, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->Add(p->btn_next, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->Add(p->btn_finish, 0, wxLEFT, BTN_SPACING);
-    p->btnsizer->Add(p->btn_cancel, 0, wxLEFT, BTN_SPACING);
 
     wxGetApp().UpdateDarkUI(p->btn_sel_all);
-    wxGetApp().UpdateDarkUI(p->btn_prev);
-    wxGetApp().UpdateDarkUI(p->btn_next);
-    wxGetApp().UpdateDarkUI(p->btn_finish);
-    wxGetApp().UpdateDarkUI(p->btn_cancel);
 
     wxGetApp().SetWindowVariantForButton(p->btn_sel_all);
-    wxGetApp().SetWindowVariantForButton(p->btn_prev);
-    wxGetApp().SetWindowVariantForButton(p->btn_next);
-    wxGetApp().SetWindowVariantForButton(p->btn_finish);
-    wxGetApp().SetWindowVariantForButton(p->btn_cancel);
 
     p->add_page(p->page_welcome = new PageWelcome(this));
     p->add_page(p->page_login = new ConfigWizardWebViewPage(this));
@@ -4524,7 +4540,6 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     p->add_page(p->page_temps    = new PageTemperatures(this));
 
     vsizer->Add(topsizer, 1, wxEXPAND | wxALL, DIALOG_MARGIN);
-    vsizer->Add(hline, 0, wxEXPAND | wxLEFT | wxRIGHT, VERTICAL_SPACING);
     vsizer->Add(p->btnsizer, 0, wxEXPAND | wxALL, DIALOG_MARGIN);
 
     SetSizer(vsizer);
@@ -4690,11 +4705,9 @@ void ConfigWizard::on_dpi_changed(const wxRect &suggested_rect)
 
     const int em = em_unit();
 
-    msw_buttons_rescale(this, em, { wxID_APPLY, 
-                                    wxID_CANCEL,
-                                    p->btn_sel_all->GetId(),
-                                    p->btn_next->GetId(),
-                                    p->btn_prev->GetId() });
+    msw_buttons_rescale(this, em, { p->btn_sel_all->GetId() });
+    for (::Button *btn : { p->btn_prev, p->btn_next, p->btn_finish, p->btn_cancel })
+        btn->Rescale();
 
     for (auto page : p->pages_fff)
         for (auto printer_picker : page->printer_pickers)

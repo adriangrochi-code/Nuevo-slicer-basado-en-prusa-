@@ -35,6 +35,7 @@
 #include "SavePresetDialog.hpp"
 #include "wxExtensions.hpp"
 
+#include "Widgets/Button.hpp"
 #include "Widgets/SpinInput.hpp"
 
 namespace fs = boost::filesystem;
@@ -688,10 +689,11 @@ struct ConfigWizard::priv
     ConfigWizardPage *page_current = nullptr;
     ConfigWizardIndex *index = nullptr;
     wxButton *btn_sel_all = nullptr;
-    wxButton *btn_prev = nullptr;
-    wxButton *btn_next = nullptr;
-    wxButton *btn_finish = nullptr;
-    wxButton *btn_cancel = nullptr;
+    // Tisma: the buttons of Tisma.
+    ::Button *btn_prev = nullptr;
+    ::Button *btn_next = nullptr;
+    ::Button *btn_finish = nullptr;
+    ::Button *btn_cancel = nullptr;
 
     PageWelcome      *page_welcome = nullptr;
     PageBrands       *page_brands = nullptr;
