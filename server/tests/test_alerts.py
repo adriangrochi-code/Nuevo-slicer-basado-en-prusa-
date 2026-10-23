@@ -84,7 +84,7 @@ def test_admin_alerts_api_and_sweep(client, f):
     f.node("i5")
     set_node_seen(client, "i5", utcnow() - timedelta(hours=1))
     services = client.app.state.services
-    services._alerts_checked = 0.                       # the sweep at start-up already checked: once a minute
+    services._alerts_checked = None                     # the sweep at start-up already checked: once a minute
     services.sweep()                                    # the periodic sweep runs the check
     alerts_ = client.get("/v1/admin/alerts", headers=admin).json()["alerts"]
     assert len(alerts_) == 1 and alerts_[0]["resolved_at"] is None and "i5" in alerts_[0]["message"]

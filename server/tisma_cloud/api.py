@@ -49,7 +49,9 @@ class Services:
         self.play = google_play.store_for(settings.play_package, settings.play_credentials, settings.play_products)
         self.play_push = (google_play.PushVerifier(settings.play_push_audience, settings.play_push_account)
                           if settings.play_push_audience and settings.play_push_account else None)
-        self._alerts_checked = 0.
+        # When the alerts were last checked (time.monotonic(), None: never). Not 0: the monotonic clock counts from the
+        # start of the machine, and a machine started less than a minute ago would skip the first check.
+        self._alerts_checked: float | None = None
         self._alerts_lock = threading.Lock()
 
     def sync_internal_accounts(self) -> None:
@@ -80,7 +82,7 @@ class Services:
                 self.storage.remove_job(job.id)
                 job.files_removed = True
         # The alerts of the administrators, once a minute.
-        if time.monotonic() - self._alerts_checked >= 60:
+        if self._alerts_checked is None or time.monotonic() - self._alerts_checked >= 60:
             self._alerts_checked = time.monotonic()
             self.check_alerts()
 
