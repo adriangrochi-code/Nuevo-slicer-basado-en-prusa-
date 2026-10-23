@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/dialog.h>
@@ -1005,6 +1007,46 @@ static wxMenu* create_resin_calibration_menu(wxWindow* parent, bool models_only)
     return menu;
 }
 
+// Whether a test is of use with the printer in use (docs/EXISTING_FEATURES.md, section 3, has the sources):
+// - Bambu Lab printers calibrate the nozzle height, the vibration compensation (Bambu Lab wiki, Printer Calibration
+//   Guide: "Auto-Calibration ... automatically adjusts ... bed leveling, nozzle height, vibration compensation and motor
+//   noise") and the flow dynamics (pressure advance: every printer of Bambu Studio's resources/printers declares
+//   auto_pa_cali_thumbnail_image) by themselves.
+// - The Prusa CORE One, MK4/S, MK3.9/S and XL calibrate the first layer with their LoadCell (Prusa Knowledge Base,
+//   Live adjust Z).
+// - Bambu Lab does not document a command for the corners (jerk or junction deviation, M205) and Bambu Studio has no
+//   test for them (src/libslic3r/Calib.hpp, CalibMode).
+// - Pressure advance, corners and vibrations change the printer by G-code commands that only Klipper, RepRapFirmware
+//   and Marlin understand (M593, the input shaping of Marlin, since Marlin 2).
+static bool calibration_applies(CalibMode mode)
+{
+    if (wxGetApp().preset_bundle == nullptr)
+        return true;
+    const PresetCollection&   printers = wxGetApp().preset_bundle->printers;
+    const DynamicPrintConfig& printer  = printers.get_edited_preset().config;
+    // The vendor of the system profile the printer is or comes from (none for a printer of a project or without one).
+    const Preset*      system = printers.get_selected_preset_parent();
+    const std::string  vendor = system != nullptr && system->vendor != nullptr ? system->vendor->id : std::string();
+    const std::string  notes  = printer.opt_string("printer_notes");
+    const std::string  model  = printer.opt_string("printer_model");
+    const bool bambu = vendor == "Orca_BBL" || notes.find("PRINTER_VENDOR_ORCA_BBL") != std::string::npos ||
+                       boost::starts_with(model, "Bambu Lab");
+    const bool prusa = vendor == "PrusaResearch" || notes.find("PRINTER_VENDOR_PRUSA3D") != std::string::npos;
+    const bool loadcell = prusa && (boost::starts_with(model, "COREONE") || boost::starts_with(model, "MK4") ||
+                                    boost::starts_with(model, "MK3.9") || boost::starts_with(model, "XL"));
+    const auto* flavor_opt = printer.option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor");
+    const GCodeFlavor flavor = flavor_opt ? flavor_opt->value : gcfMarlinFirmware;
+    const bool klipper_rrf = flavor == gcfKlipper || flavor == gcfRepRapFirmware;
+    const bool marlin      = flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy;
+    switch (mode) {
+    case CalibMode::PressureAdvance:  return ! bambu && (klipper_rrf || marlin);
+    case CalibMode::Cornering:        return ! bambu && (klipper_rrf || marlin);
+    case CalibMode::InputShaping:     return ! bambu && (klipper_rrf || flavor == gcfMarlinFirmware);
+    case CalibMode::FirstLayerOffset: return ! bambu && ! loadcell;
+    default:                          return true;
+    }
+}
+
 wxMenu* create_calibration_menu(wxWindow* parent, bool resin, bool models_only)
 {
     if (resin)
@@ -1012,9 +1054,17 @@ wxMenu* create_calibration_menu(wxWindow* parent, bool resin, bool models_only)
     auto menu = new wxMenu();
     const std::vector<Test>& all = tests();
     for (size_t i = 0; i < all.size(); ++i) {
+        const CalibMode mode = all[i].mode;
+        // The menu of the plate is made again at each right click: only the tests of the printer in use.
+        if (models_only && ! calibration_applies(mode))
+            continue;
         const int id = wxWindow::NewControlId();
         menu->Append(id, all[i].title + dots, all[i].description);
         menu->Bind(wxEVT_MENU, [parent, i](wxCommandEvent&) { run_test(parent, tests()[i]); }, id);
+        // The Calibration menu is made once: a test the printer in use does not need is disabled, also in the More page
+        // (wxMenu::UpdateUI() sends the event to the window, not to the menu).
+        if (! models_only)
+            parent->Bind(wxEVT_UPDATE_UI, [mode](wxUpdateUIEvent& evt) { evt.Enable(calibration_applies(mode)); }, id);
     }
     menu->AppendSeparator();
     const int coupons_id = wxWindow::NewControlId();
@@ -1032,8 +1082,8 @@ std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
 {
     std::vector<CalibrationAction> out;
     auto add = [&out](const wxString& label, const wxString& title, const wxString& description, const std::string& icon,
-                      std::function<void()> run) {
-        out.push_back({ label, title + "\n" + description, icon, std::move(run) });
+                      std::function<void()> run, std::function<bool()> available = nullptr) {
+        out.push_back({ label, title + "\n" + description, icon, std::move(run), std::move(available) });
     };
     if (resin) {
         for (size_t i = 0; i < resin_tests().size(); ++ i)
@@ -1066,8 +1116,9 @@ std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
         };
         for (size_t i = 0; i < tests().size(); ++ i) {
             const auto [label, icon] = short_name(tests()[i].mode);
+            const CalibMode mode = tests()[i].mode;
             add(label.empty() ? tests()[i].title : label, tests()[i].title, tests()[i].description, icon,
-                [parent, i]() { run_test(parent, tests()[i]); });
+                [parent, i]() { run_test(parent, tests()[i]); }, [mode]() { return calibration_applies(mode); });
         }
         add(_L("Strength"), _L("Staggered perimeters: strength coupons"),
             _L("Two tubes to break, with and without staggered perimeters, to measure the strength they add between layers."),

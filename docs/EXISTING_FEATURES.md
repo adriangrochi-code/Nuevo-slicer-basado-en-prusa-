@@ -55,8 +55,22 @@ Todas comparten un mecanismo: opciones de proyecto `calib_*` y un valor que camb
 
 "G-code" = verificado leyendo el G-code generado por línea de comandos. Ninguna prueba se ha impreso todavía.
 
-Los modelos se agregan desde el menú Calibración o con clic derecho en la cama, "Agregar modelo de calibración" (solo
-los modelos; aplicar un resultado queda en el menú).
+Las pruebas están en el grupo **Calibrar** de las herramientas de la placa (barra superior), una herramienta cada una,
+más "Aplicar resultado"; también en Más > Calibración, y los modelos solos con clic derecho en la cama.
+
+**Solo las que sirven a la impresora en uso** (`calibration_applies` en `CalibrationDialog.cpp`):
+
+| Prueba | Se oculta con | Por qué (fuente) |
+|---|---|---|
+| Pressure advance | Bambu Lab; firmware que no es Klipper, RepRapFirmware ni Marlin | Bambu Lab la hace sola: todos los modelos de `resources/printers` de Bambu Studio (commit `47a13ee`) declaran `auto_pa_cali_thumbnail_image` (calibración automática de dinámica de flujo). Los comandos de la prueba son de esos tres firmwares. |
+| Input shaping (vibraciones) | Bambu Lab; firmware que no es Klipper, RepRapFirmware ni Marlin 2 | Bambu Lab: "Auto-Calibration ... automatically adjusts key printer settings, such as bed leveling, nozzle height, vibration compensation and motor noise" ([Printer Calibration Guide](https://wiki.bambulab.com/en/general/printer-calibration)). `SET_INPUT_SHAPER` es de Klipper, `M593` de RepRapFirmware y de Marlin 2. |
+| Esquinas | Bambu Lab; firmware que no es Klipper, RepRapFirmware ni Marlin | Bambu Lab no documenta un comando para el jerk o la desviación de unión (`M205`) y Bambu Studio no tiene esta prueba (`src/libslic3r/Calib.hpp`, `CalibMode`, commit `47a13ee`: PA, flujo, temperatura, velocidad volumétrica, VFA y retracción). Los comandos de la prueba son de esos tres firmwares (`SQUARE_CORNER_VELOCITY`, `M566`, `M205`). |
+| Offset Z de la primera capa | Bambu Lab; Prusa CORE One, MK4/S, MK3.9/S, XL | Bambu Lab: la altura de la boquilla (misma guía). Prusa: "The Prusa CORE One, and the Original Prusa MK4/S, MK3.9/S, and XL are equipped with a LoadCell, which will calibrate the first layer automatically" ([Live adjust Z](https://help.prusa3d.com/article/live-adjust-z_112427)). |
+
+La marca sale del perfil de sistema del que viene la impresora (`Orca_BBL`, `PrusaResearch`) o, para una impresora de
+un proyecto, de `printer_notes` (`PRINTER_VENDOR_ORCA_BBL`, `PRINTER_VENDOR_PRUSA3D`) o de un `printer_model` que empieza
+con "Bambu Lab"; los modelos de Prusa con LoadCell son `COREONE*`, `MK4*`, `MK3.9*` y `XL*`. El flujo, la velocidad volumétrica
+máxima y la retracción se mantienen en las Bambu Lab: Bambu Studio también las ofrece a mano.
 
 **Faltan** respecto a OrcaSlicer: flujo (pasadas 1 y 2; necesita factor de flujo por objeto), patrón y línea de
 PA, tolerancias, y la numeración en relieve de los bloques.

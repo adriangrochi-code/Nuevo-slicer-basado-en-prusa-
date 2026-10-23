@@ -33,6 +33,8 @@ struct CalibrationAction
     wxString              tooltip;
     std::string           icon;
     std::function<void()> run;
+    // False when the printer in use does not need the test or cannot run it (asked each time: the printer changes).
+    std::function<bool()> available;
 };
 // All the calibrations of filament printers (or of resin printers with resin = true), as in the menu.
 std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin);

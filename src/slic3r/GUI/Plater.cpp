@@ -1483,9 +1483,14 @@ PlateTools* Plater::priv::create_plate_tools()
     calibrate.icon      = "tisma_calibrate";
     calibrate.on_select = to_plate;
     for (const bool resin : { false, true })
-        for (CalibrationAction &action : calibration_actions(q, resin))
+        for (CalibrationAction &action : calibration_actions(q, resin)) {
+            // Only the tests of the technology of the printer, and those it needs and can run.
+            std::function<bool()> technology = resin ? std::function<bool()>(is_sla) : std::function<bool()>(is_fff);
+            std::function<bool()> visible    = action.available ?
+                std::function<bool()>([technology, available = action.available]() { return technology() && available(); }) : technology;
             calibrate.tools.push_back(tool(action.label, action.tooltip, action.icon, std::move(action.run), nullptr, nullptr,
-                                           resin ? std::function<bool()>(is_sla) : std::function<bool()>(is_fff)));
+                                           std::move(visible)));
+        }
     tools->add_group(std::move(calibrate));
 
     // Slice: the preview by layers, the G-code and where it goes.
