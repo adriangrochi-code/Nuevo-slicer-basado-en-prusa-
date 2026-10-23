@@ -2,6 +2,7 @@
 #include "ComboBox.hpp"
 #include "../GUI_App.hpp"
 #include "../OptionsGroup.hpp"
+#include "../TismaTheme.hpp"
 
 #include <wx/dcgraph.h>
 #include <wx/dcbuffer.h>
@@ -312,7 +313,8 @@ void DropDown::render(wxDC &dc)
     if (has_bar)
         rcContent.width -= slider_width;
 
-    if (hover_item >= 0 && (states & StateColor::Hovered)) {
+    // Tisma: no hover on the title of a section.
+    if (hover_item >= 0 && hover_item < text_size && (states & StateColor::Hovered) && ! is_section_title(texts[hover_item])) {
         rcContent.y += rowSize.y * hover_item;
         if (rcContent.GetBottom() > 0 && rcContent.y < size.y) {
             if (selection == hover_item)
@@ -404,7 +406,17 @@ void DropDown::render(wxDC &dc)
             pt.y = rcContent.y;
         }
         auto text = texts[i];
-        if (!text_off && !text.IsEmpty()) {
+        if (!text_off && is_section_title(text)) {
+            // Tisma: the title of a section, small, semibold and muted, at the left of the row.
+            text = text.Mid(1);
+            wxFont font = GetFont().Smaller();
+            font.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+            dc.SetFont(font);
+            dc.SetTextForeground(Slic3r::GUI::TismaTheme::text_muted(Slic3r::GUI::wxGetApp().dark_mode()));
+            const wxSize tSize = dc.GetTextExtent(text);
+            dc.DrawText(text, wxPoint(rcContent.x, rcContent.y + (rcContent.height - tSize.y) / 2));
+            dc.SetTextForeground(text_color.colorForStates(states));
+        } else if (!text_off && !text.IsEmpty()) {
             wxSize tSize = dc.GetMultiLineTextExtent(text);
             if (pt.x + tSize.x > rcContent.GetRight()) {
                 text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END,

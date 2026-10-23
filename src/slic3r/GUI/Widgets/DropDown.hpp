@@ -18,6 +18,9 @@ wxDECLARE_EVENT(EVT_DISMISS, wxCommandEvent);
 
 class DropDown : public wxPopupTransientWindow
 {
+    // The invisible separator (U+2063) before the text of a section title.
+    static constexpr unsigned SECTION_MARK = 0x2063;
+
     std::vector<wxString> &       texts;
     std::vector<wxBitmapBundle> & icons;
     bool                          need_sync  = false;
@@ -78,6 +81,10 @@ public:
     void SetSelectorBackgroundColor(StateColor const &color);
 
     void SetUseContentWidth(bool use);
+
+    // Tisma: the title of a section of the list ("System presets"): a row drawn small and muted, not as an item.
+    static wxString section_title(const wxString &title) { return wxString(wxUniChar(SECTION_MARK)) + title; }
+    static bool     is_section_title(const wxString &text) { return ! text.IsEmpty() && text[0] == wxUniChar(SECTION_MARK); }
 
     void SetAlignIcon(bool align);
     

@@ -552,7 +552,8 @@ void PresetComboBox::fill_width_height()
 
 wxString PresetComboBox::separator(const std::string& label)
 {
-    return wxString::FromUTF8(separator_head()) + _(label) + wxString::FromUTF8(separator_tail());
+    // Tisma: the title of a section of the list, drawn by the drop-down list instead of "------- label -------".
+    return DropDown::section_title(_(label));
 }
 
 
@@ -1344,11 +1345,11 @@ void PlaterPresetComboBox::update()
         assert(bmp);
 
         if (m_type == Preset::TYPE_FILAMENT)
-            set_label_marker(Append(separator(L("Add/Remove filaments")), *bmp), LABEL_ITEM_WIZARD_FILAMENTS);
+            set_label_marker(Append(_L("Add/Remove filaments"), *bmp), LABEL_ITEM_WIZARD_FILAMENTS);
         else if (m_type == Preset::TYPE_SLA_MATERIAL)
-            set_label_marker(Append(separator(L("Add/Remove materials")), *bmp), LABEL_ITEM_WIZARD_MATERIALS);
+            set_label_marker(Append(_L("Add/Remove materials"), *bmp), LABEL_ITEM_WIZARD_MATERIALS);
         else
-            set_label_marker(Append(separator(L("Add/Remove printers")), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
+            set_label_marker(Append(_L("Add/Remove printers"), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
     }
 
     update_selection();
@@ -1628,7 +1629,7 @@ void TabPresetComboBox::update()
         auto bmp = get_bmp("edit_preset_list, tab,", icon_name, "");
         assert(bmp);
 
-        set_label_marker(Append(separator(L("Add/Remove printers")), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
+        set_label_marker(Append(_L("Add/Remove printers"), *bmp), LABEL_ITEM_WIZARD_PRINTERS);
     }
 
     update_selection();
