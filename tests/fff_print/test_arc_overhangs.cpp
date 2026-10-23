@@ -141,3 +141,40 @@ TEST_CASE("Arc overhangs stop at the maximum distance", "[ArcOverhangs]")
     CHECK(limited_extent < 6.);
     CHECK(limited_length < 0.7 * full_length);
 }
+
+TEST_CASE("Arc overhangs overlap", "[ArcOverhangs]")
+{
+    // Length of the arcs (printed at 4 mm/s = 240 mm/min) over the cantilever.
+    auto arc_length = [](const std::string &overlap) {
+        DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
+            { "overhang_arcs",                 true },
+            { "overhang_arcs_speed",           4. },
+            { "overhang_arcs_overlap",         overlap },
+            { "extra_perimeters_on_overhangs", false },
+            { "overhangs",                     true },
+            { "support_material",              false },
+            { "skirts",                        0 },
+            { "layer_height",                  0.2 },
+            { "first_layer_height",            0.2 },
+            { "perimeters",                    2 },
+        });
+        double length = 0.;
+        GCodeReader parser;
+        std::string type;
+        parser.parse_buffer(Test::slice({ cantilever() }, config), [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+            if (line.raw().rfind(";TYPE:", 0) == 0)
+                type = line.raw().substr(6);
+            else if (line.extruding(self) && line.dist_XY(self) > 0 && type == "Overhang perimeter" &&
+                     std::abs(line.new_F(self) - 240.f) < 1.f)
+                length += line.dist_XY(self);
+        });
+        return length;
+    };
+    // Side by side the arcs are one extrusion width apart, with 40 % overlap 0.6 of it: about 1 / 0.6 = 1.67 times as
+    // many arcs over the same overhang.
+    const double side_by_side = arc_length("0%");
+    const double overlapped   = arc_length("40%");
+    REQUIRE(side_by_side > 0.);
+    CHECK(overlapped > 1.4 * side_by_side);
+    CHECK(overlapped < 2.0 * side_by_side);
+}

@@ -304,6 +304,7 @@ static t_config_enum_values s_keys_map_CalibMode {
     { "coasting",         int(CalibMode::Coasting) },
     { "arc_overhang_speed", int(CalibMode::ArcOverhangSpeed) },
     { "arc_overhang_distance", int(CalibMode::ArcOverhangDistance) },
+    { "arc_overhang_overlap", int(CalibMode::ArcOverhangOverlap) },
     { "resin_exposure",   int(CalibMode::ResinExposure) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(CalibMode)
@@ -1276,6 +1277,19 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.));
+
+    def = this->add("overhang_arcs_overlap", coPercent);
+    def->label = L("Arc overhangs overlap");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("How much each arc overlaps the previous one, as a percentage of the extrusion width: more overlap "
+                    "gives each arc more to rest on, with more material and time (Calibration > Arc overhang overlap). "
+                    "Zero lays the arcs side by side, one extrusion width apart.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 50;
+    def->mode = comExpert;
+    // About the overlap of the perimeters (spacing = width - layer height * (1 - pi/4): 9.5 % for 0.45 x 0.2 mm).
+    def->set_default_value(new ConfigOptionPercent(10));
 
     def = this->add("stagger_perimeters", coBool);
     def->label = L("Staggered perimeters (Experimental)");
@@ -4345,6 +4359,7 @@ void PrintConfigDef::init_fff_params()
         { "coasting",         L("Coasting distance") },
         { "arc_overhang_speed", L("Arc overhang speed") },
         { "arc_overhang_distance", L("Arc overhang maximum distance") },
+        { "arc_overhang_overlap", L("Arc overhang overlap") },
         { "resin_exposure",   L("Resin exposure time") }
     });
     def->set_default_value(new ConfigOptionEnum<CalibMode>(CalibMode::Disabled));

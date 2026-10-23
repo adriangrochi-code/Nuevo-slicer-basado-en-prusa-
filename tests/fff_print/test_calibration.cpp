@@ -350,7 +350,9 @@ TEST_CASE("Calibration: coasting distance by towers", "[Calibration][Coasting]")
 }
 
 // Arc overhangs (Tisma): columns 25 mm apart along X, each carrying a slab sticking out 15 mm to the back.
-static std::string slice_arc_cantilevers(const std::vector<std::pair<std::string, ConfigOption*>> &extra, int patches)
+// overlaps: the arcs overhang overlap of the volumes of each column (as the calibration of the overlap sets it).
+static std::string slice_arc_cantilevers(const std::vector<std::pair<std::string, ConfigOption*>> &extra, int patches,
+                                         const std::vector<double> &overlaps = {})
 {
     DynamicPrintConfig config = DynamicPrintConfig::full_print_config_with({
         { "overhang_arcs",      true },
@@ -374,6 +376,9 @@ static std::string slice_arc_cantilevers(const std::vector<std::pair<std::string
         its_translate(slab, Vec3f(float(25. * i), 0.f, 10.f));
         object->add_volume(TriangleMesh(std::move(column)));
         object->add_volume(TriangleMesh(std::move(slab)));
+        if (size_t(i) < overlaps.size())
+            for (size_t v = object->volumes.size() - 2; v < object->volumes.size(); ++ v)
+                object->volumes[v]->config.set_key_value("overhang_arcs_overlap", new ConfigOptionPercent(overlaps[i]));
     }
     object->add_instance();
     object->ensure_on_bed();
@@ -408,4 +413,23 @@ TEST_CASE("Calibration: arc overhang speed by columns", "[Calibration][ArcOverha
         INFO("column " << patch);
         CHECK(length[patch][feed] > 0.5 * total);
     }
+}
+
+TEST_CASE("Calibration: arc overhang overlap by columns", "[Calibration][ArcOverhangs]")
+{
+    // 0 %, 20 % and 40 % from left to right, set on the volumes of each column.
+    const std::string gcode = slice_arc_cantilevers({
+        { "calib_mode",          new ConfigOptionEnum<CalibMode>(CalibMode::ArcOverhangOverlap) },
+        { "overhang_arcs_speed", new ConfigOptionFloat(4.) },
+    }, 3, { 0., 20., 40. });
+    // Length of the arcs (at 4 mm/s = 240 mm/min) by column.
+    std::map<int, double> length;
+    for_each_patch_extrusion(gcode, [&](int patch, GCodeReader &self, const GCodeReader::GCodeLine &line) {
+        if (std::abs(line.new_F(self) - 240.f) < 1.f)
+            length[patch] += line.dist_XY(self);
+    }, "Overhang perimeter");
+    REQUIRE(length.size() == 3);
+    // The arcs get closer from column to column (1, 1 / 0.8 and 1 / 0.6 times as many).
+    CHECK(length[1] > 1.1 * length[0]);
+    CHECK(length[2] > 1.1 * length[1]);
 }

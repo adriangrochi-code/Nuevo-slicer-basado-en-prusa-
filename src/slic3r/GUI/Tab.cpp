@@ -1462,6 +1462,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
         optgroup->append_single_option_line("overhang_arcs");
         optgroup->append_single_option_line("overhang_arcs_max_distance");
+        optgroup->append_single_option_line("overhang_arcs_overlap");
         optgroup->append_single_option_line("stagger_perimeters");
         optgroup->append_single_option_line("zaa_enabled");
         optgroup->append_single_option_line("zaa_min_thickness");

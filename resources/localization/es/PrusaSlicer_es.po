@@ -34353,3 +34353,21 @@ msgstr "Gracias: el informe se envió al equipo de Tisma."
 
 msgid "The same problem was reported %1% times before: it is among the ones to fix."
 msgstr "El mismo problema se informó %1% veces antes: está entre los que hay que arreglar."
+
+msgid "Arc overhangs overlap"
+msgstr "Solape de los arc overhangs"
+
+msgid "How much each arc overlaps the previous one, as a percentage of the extrusion width: more overlap gives each arc more to rest on, with more material and time (Calibration > Arc overhang overlap). Zero lays the arcs side by side, one extrusion width apart."
+msgstr "Cuánto se superpone cada arco al anterior, en porcentaje del ancho de extrusión: más solape le da a cada arco más donde apoyarse, con más material y tiempo (Calibración > Arc overhang overlap). Con cero los arcos quedan uno al lado del otro, a un ancho de extrusión de distancia."
+
+msgid "Arc overhang overlap"
+msgstr "Solape de arc overhang"
+
+msgid "Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. The first layer of each slab is printed with arc overhangs, each arc overlapping the previous one by a different percentage of the extrusion width for each column (from left to right)."
+msgstr "Imprime de una vez una fila de columnas, cada una con una losa que sobresale 15 mm hacia atrás sin nada debajo. La primera capa de cada losa se imprime con arc overhangs, cada arco superpuesto al anterior en un porcentaje del ancho de extrusión distinto en cada columna (de izquierda a derecha)."
+
+msgid "Look at the slabs from below and from above: choose the column with the least overlap whose arcs are joined to each other without gaps, before they start to pile up or bulge. Its overlap is start + step × column number (from the left, starting at 0): it is the arc overhangs overlap (Calibration > Apply a calibration result). Calibrate the arc speed first."
+msgstr "Mirá las losas desde abajo y desde arriba: elegí la columna con menos solape cuyos arcos queden unidos entre sí sin huecos, antes de que empiecen a amontonarse o abultarse. Su solape es inicio + paso × número de columna (desde la izquierda, empezando en 0): es el solape de los arc overhangs (Calibración > Aplicar un resultado de calibración). Calibrá primero la velocidad de los arcos."
+
+msgid "Arc overlap"
+msgstr "Solape arcos"

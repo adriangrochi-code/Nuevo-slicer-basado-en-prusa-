@@ -794,6 +794,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "extra_perimeters_on_overhangs"
             || opt_key == "overhang_arcs"
             || opt_key == "overhang_arcs_max_distance"
+            || opt_key == "overhang_arcs_overlap"
             || opt_key == "first_layer_extrusion_width"
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"

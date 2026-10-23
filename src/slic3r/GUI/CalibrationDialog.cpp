@@ -5,6 +5,7 @@
 ///|/
 #include "CalibrationDialog.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
@@ -430,6 +431,27 @@ std::vector<Test> make_tests()
         }, _L("Width of each step") });
     tests.back().key = "arc_overhang_distance";
 
+    tests.push_back({ _L("Arc overhang overlap"),
+        _L("Prints a row of columns in one go, each carrying a slab that sticks out 15 mm to the back with nothing below. "
+           "The first layer of each slab is printed with arc overhangs, each arc overlapping the previous one by a "
+           "different percentage of the extrusion width for each column (from left to right)."),
+        _L("Look at the slabs from below and from above: choose the column with the least overlap whose arcs are joined "
+           "to each other without gaps, before they start to pile up or bulge. Its overlap is start + step × column "
+           "number (from the left, starting at 0): it is the arc overhangs overlap (Calibration > Apply a calibration "
+           "result). Calibrate the arc speed first."),
+        "%", CalibMode::ArcOverhangOverlap, { 0., 40., 10., 16. }, 0, 1., 50.,
+        [arc_cantilever, arc_settings](ModelObject& obj, const Params& p, const Machine& m) {
+            for (int i = 0; i < p.steps(); ++i) {
+                arc_cantilever(obj, i * p.band, std::max(4., p.band - 6.), 15.);
+                // The overlap of the arcs of this column only: a setting of its two volumes.
+                const double overlap = std::clamp(p.start + i * p.signed_step(), 0., 50.);
+                for (size_t v = obj.volumes.size() - 2; v < obj.volumes.size(); ++v)
+                    obj.volumes[v]->config.set_key_value("overhang_arcs_overlap", new ConfigOptionPercent(overlap));
+            }
+            arc_settings(obj, m);
+        }, _L("Width of each step") });
+    tests.back().key = "arc_overhang_overlap";
+
     return tests;
 }
 
@@ -809,6 +831,12 @@ static std::vector<ResultTarget> result_targets()
             c.set_key_value("overhang_arcs", new ConfigOptionBool(true));
         },
         [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_max_distance"); } });
+    out.push_back({ CalibMode::ArcOverhangOverlap, _L("Arc overhang overlap"), "%", Preset::TYPE_PRINT,
+        [](DynamicPrintConfig& c, double v) {
+            c.set_key_value("overhang_arcs_overlap", new ConfigOptionPercent(v));
+            c.set_key_value("overhang_arcs", new ConfigOptionBool(true));
+        },
+        [](const DynamicPrintConfig& c) { return c.opt_float("overhang_arcs_overlap"); } });
     out.push_back({ CalibMode::FirstLayerOffset, _L("First layer Z offset (added)"), _L("mm"), Preset::TYPE_PRINTER,
         [](DynamicPrintConfig& c, double v) { c.set_key_value("z_offset", new ConfigOptionFloat(c.opt_float("z_offset") + v)); },
         [](const DynamicPrintConfig& c) { return c.opt_float("z_offset"); } });
@@ -1111,6 +1139,7 @@ std::vector<CalibrationAction> calibration_actions(wxWindow* parent, bool resin)
             case CalibMode::Coasting:            return { _L("Coasting"), "legend_deretract" };
             case CalibMode::ArcOverhangSpeed:    return { _L("Arc speed"), "time" };
             case CalibMode::ArcOverhangDistance: return { _L("Arc length"), "measure" };
+            case CalibMode::ArcOverhangOverlap:  return { _L("Arc overlap"), "legend_shells" };
             default:                             return { wxString(), "tisma_calibrate" };
             }
         };

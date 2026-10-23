@@ -660,6 +660,11 @@ inline bool has_compatible_layer_regions(const PrintRegionConfig &config, const 
            config.thin_walls                                            == other_config.thin_walls &&
            config.external_perimeters_first                             == other_config.external_perimeters_first &&
            config.infill_overlap                                        == other_config.infill_overlap &&
+           // Tisma: the arc overhangs are made with the perimeters (a modifier or a volume may change them).
+           config.overhang_arcs                                         == other_config.overhang_arcs &&
+           config.overhang_arcs_speed                                   == other_config.overhang_arcs_speed &&
+           config.overhang_arcs_max_distance                            == other_config.overhang_arcs_max_distance &&
+           config.overhang_arcs_overlap                                 == other_config.overhang_arcs_overlap &&
            has_compatible_dynamic_overhang_speed(config, other_config);
 }
 

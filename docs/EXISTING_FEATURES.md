@@ -34,7 +34,7 @@ Fecha: 2026-10-05. "Heredada" = viene de PrusaSlicer 2.9.6 sin cambios. "Fork" =
 | Modificadores por volumen y por rango de capas | Heredada | Cualquier ajuste de región por zona: base para refuerzos locales. |
 | Pintado sobre facetas | Heredada | `TriangleSelector` (soportes, costura, colores, piel difusa); persistente en 3MF. |
 | **Capas no planares** (ondas, cónicas, rampa, caudal uniforme, límites de Z) | **Fork** | `NonPlanar.*`; deforma la malla, lamina y transforma el G-code. Ver `doc/NonPlanarSlicer.md`. |
-| **Arc overhangs** | **Fork** | Arcos concéntricos en voladizos no puenteables (`PerimeterGenerator.cpp`, opción `overhang_arcs`), con velocidad (`overhang_arcs_speed`) y distancia máxima (`overhang_arcs_max_distance`) propias y sus calibraciones. |
+| **Arc overhangs** | **Fork** | Arcos concéntricos en voladizos no puenteables (`PerimeterGenerator.cpp`, opción `overhang_arcs`), con velocidad (`overhang_arcs_speed`), distancia máxima (`overhang_arcs_max_distance`) y solape entre arcos (`overhang_arcs_overlap`, en % del ancho de extrusión; 10 % por defecto, 0 % = arcos lado a lado como el Arc Overhang original) propios, cada uno con su calibración (columnas con una losa en voladizo, un valor por columna; el solape se pone en los volúmenes de cada columna). |
 | **Relleno denso bajo superficies superiores** | **Fork** | `infill_dense`, `infill_dense_density` (`Fill.cpp`). |
 | Vaciado y soportes SLA | Heredada | No aplica a FDM. |
 
