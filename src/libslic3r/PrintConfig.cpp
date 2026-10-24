@@ -3965,6 +3965,43 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloatOrPercent(100, true));
 
+    // Tisma: ironing of the top support interface (SupportCommon.cpp, generate_support_toolpaths).
+    def = this->add("support_material_ironing", coBool);
+    def->label = L("Iron the top interface");
+    def->category = L("Support material");
+    def->tooltip = L("Print the top interface layer solid and iron it before printing the object over it, so that the "
+                     "faces of the object resting on the supports come out smoother. Needs top interface layers.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("support_material_ironing_flowrate", coPercent);
+    def->label = L("Interface ironing flow rate");
+    def->category = L("Support material");
+    def->tooltip = L("Flow of the ironing of the top support interface, in percent of the flow of a layer as high as "
+                     "the interface layer.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercent(15));
+
+    def = this->add("support_material_ironing_spacing", coFloat);
+    def->label = L("Interface ironing spacing");
+    def->category = L("Support material");
+    def->tooltip = L("Distance between the ironing lines of the top support interface.");
+    def->sidetext = L("mm");
+    def->min = 0.01;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.1));
+
+    def = this->add("support_material_ironing_speed", coFloat);
+    def->label = L("Support interface ironing");
+    def->category = L("Speed");
+    def->tooltip = L("Speed of the ironing of the top support interface.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(15));
+
     def = this->add("support_material_pattern", coEnum);
     def->label = L("Pattern");
     def->category = L("Support material");

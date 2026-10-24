@@ -15,6 +15,7 @@ Fecha: 2026-10-05. "Heredada" = viene de PrusaSlicer 2.9.6 sin cambios. "Fork" =
 | Perímetros clásicos y Arachne | Heredada | `PerimeterGenerator.cpp`, `Arachne/` |
 | Más de 15 patrones de relleno (rectilíneo, grid, gyroid, cúbico, **cúbico adaptativo**, rayo, panal 3D…) | Heredada | `Fill/` |
 | Soportes normales y en árbol; pintado de soportes | Heredada | `Support/`, `GLGizmoFdmSupports` |
+| **Planchado de la interfaz superior del soporte** (`support_material_ironing`, con caudal, separación y velocidad propios): la interfaz superior se imprime sólida y se plancha antes de imprimir la pieza encima, para que la cara que apoya en el soporte salga más lisa | **Fork** | `Support/SupportCommon.cpp` (`iron_support_interface`), `GCode/ExtrusionOrder.cpp` (se imprime después de la interfaz) |
 | Brim, skirt, balsa | Heredada | `Brim.cpp` |
 | Velocidades, aceleraciones, enfriamiento, temperaturas | Heredada | `GCode.cpp`, `CoolingBuffer` |
 | Vista previa por capas y trayectorias (libvgcode) | Heredada | `libvgcode/`, `GCodeViewer` |

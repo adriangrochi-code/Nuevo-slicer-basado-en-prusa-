@@ -374,31 +374,43 @@ std::vector<SupportPath> get_support_extrusions(
                                               ExtrusionRole::SupportMaterialInterface;
                 entities_cache.reserve(support_layer.support_fills.entities.size());
                 for (ExtrusionEntity *ee : support_layer.support_fills.entities)
-                    if (ee->role() == role)
+                    // Tisma: the ironing of the top interface goes with the interface.
+                    if (ee->role() == role || (! extrude_support && ee->role() == ExtrusionRole::Ironing))
                         entities_cache.emplace_back(ee);
             }
+            // Tisma: the ironing of the top interface is printed after everything else of the support layer, so that it
+            // irons the finished interface; the rest is chained as before.
+            ExtrusionEntitiesPtr not_ironing;
+            ExtrusionEntitiesPtr ironing;
+            for (ExtrusionEntity *ee : entities)
+                (ee->role() == ExtrusionRole::Ironing ? ironing : not_ironing).emplace_back(ee);
             std::vector<SupportPath> paths;
-            for (const ExtrusionEntityReference &entity_reference : chain_extrusion_references(entities)) {
-                auto collection{dynamic_cast<const ExtrusionEntityCollection *>(&entity_reference.extrusion_entity())};
-                const bool is_interface{entity_reference.extrusion_entity().role() != ExtrusionRole::SupportMaterial};
-                if (collection != nullptr) {
-                    for (const ExtrusionEntity * sub_entity : *collection) {
+            auto append_paths = [&](const ExtrusionEntitiesPtr &to_chain) {
+                for (const ExtrusionEntityReference &entity_reference : chain_extrusion_references(to_chain)) {
+                    auto collection{dynamic_cast<const ExtrusionEntityCollection *>(&entity_reference.extrusion_entity())};
+                    const bool is_interface{entity_reference.extrusion_entity().role() != ExtrusionRole::SupportMaterial};
+                    const bool is_ironing{entity_reference.extrusion_entity().role() == ExtrusionRole::Ironing};
+                    if (collection != nullptr) {
+                        for (const ExtrusionEntity * sub_entity : *collection) {
+                            std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
+                            auto [path, _]{smooth_path(nullptr, nullptr, {*sub_entity, entity_reference.flipped()}, extruder_id, last_position)};
+                            if (!path.empty()) {
+                                paths.push_back({std::move(path), is_interface, is_ironing});
+                            }
+                            previous_position = get_gcode_point(last_position, {0, 0});
+                        }
+                    } else {
                         std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
-                        auto [path, _]{smooth_path(nullptr, nullptr, {*sub_entity, entity_reference.flipped()}, extruder_id, last_position)};
+                        auto [path, _]{smooth_path(nullptr, nullptr, entity_reference, extruder_id, last_position)};
                         if (!path.empty()) {
-                            paths.push_back({std::move(path), is_interface});
+                            paths.push_back({std::move(path), is_interface, is_ironing});
                         }
                         previous_position = get_gcode_point(last_position, {0, 0});
                     }
-                } else {
-                    std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
-                    auto [path, _]{smooth_path(nullptr, nullptr, entity_reference, extruder_id, last_position)};
-                    if (!path.empty()) {
-                        paths.push_back({std::move(path), is_interface});
-                    }
-                    previous_position = get_gcode_point(last_position, {0, 0});
                 }
-            }
+            };
+            append_paths(not_ironing);
+            append_paths(ironing);
             return paths;
         }
     }

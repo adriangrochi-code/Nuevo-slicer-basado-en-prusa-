@@ -721,6 +721,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     // Spacing between interface lines (the hatching distance). Set zero to get a solid interface.
     ((ConfigOptionFloat,               support_material_interface_spacing))
     ((ConfigOptionFloatOrPercent,      support_material_interface_speed))
+    // Tisma: ironing of the top support interface, under the object.
+    ((ConfigOptionBool,                support_material_ironing))
+    ((ConfigOptionPercent,             support_material_ironing_flowrate))
+    ((ConfigOptionFloat,               support_material_ironing_spacing))
+    ((ConfigOptionFloat,               support_material_ironing_speed))
     ((ConfigOptionEnum<SupportMaterialPattern>, support_material_pattern))
     ((ConfigOptionEnum<SupportMaterialInterfacePattern>, support_material_interface_pattern))
     // Morphological closing of support areas. Only used for "sung" supports.

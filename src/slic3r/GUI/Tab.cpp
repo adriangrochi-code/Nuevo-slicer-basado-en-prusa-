@@ -1582,6 +1582,10 @@ void TabPrint::build()
         optgroup->append_single_option_line("support_material_interface_pattern", category_path + "interface-pattern");
         optgroup->append_single_option_line("support_material_interface_spacing", category_path + "interface-pattern-spacing");
         optgroup->append_single_option_line("support_material_interface_contact_loops", category_path + "interface-loops");
+        // Tisma: ironing of the top interface.
+        optgroup->append_single_option_line("support_material_ironing");
+        optgroup->append_single_option_line("support_material_ironing_flowrate");
+        optgroup->append_single_option_line("support_material_ironing_spacing");
         optgroup->append_single_option_line("support_material_buildplate_only", category_path + "support-on-build-plate-only");
         optgroup->append_single_option_line("support_material_xy_spacing", category_path + "xy-separation-between-an-object-and-its-support");
         optgroup->append_single_option_line("dont_support_bridges", category_path + "dont-support-bridges");
@@ -1608,6 +1612,7 @@ void TabPrint::build()
         optgroup->append_single_option_line("top_solid_infill_speed");
         optgroup->append_single_option_line("support_material_speed");
         optgroup->append_single_option_line("support_material_interface_speed");
+        optgroup->append_single_option_line("support_material_ironing_speed");
         optgroup->append_single_option_line("bridge_speed");
         optgroup->append_single_option_line("overhang_arcs_speed");
         optgroup->append_single_option_line("over_bridge_speed");

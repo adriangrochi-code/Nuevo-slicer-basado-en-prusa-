@@ -493,6 +493,7 @@ static std::vector<std::string> s_Preset_print_options {
     "support_material_pattern", "support_material_with_sheath", "support_material_spacing", "support_material_closing_radius", "support_material_style",
     "support_material_synchronize_layers", "support_material_angle", "support_material_interface_layers", "support_material_bottom_interface_layers",
     "support_material_interface_pattern", "support_material_interface_spacing", "support_material_interface_contact_loops", 
+    "support_material_ironing", "support_material_ironing_flowrate", "support_material_ironing_spacing", "support_material_ironing_speed",
     "support_material_contact_distance", "support_material_bottom_contact_distance",
     "support_material_buildplate_only", 
     "support_tree_angle", "support_tree_angle_slow", "support_tree_branch_diameter", "support_tree_branch_diameter_angle", "support_tree_branch_diameter_double_wall", 

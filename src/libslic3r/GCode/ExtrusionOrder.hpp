@@ -101,6 +101,8 @@ struct SliceExtrusions {
 struct SupportPath {
     SmoothPath path;
     bool is_interface;
+    // Tisma: ironing of the top support interface (printed after the interface, at the ironing speed).
+    bool is_ironing{false};
 };
 
 struct NormalExtrusions {

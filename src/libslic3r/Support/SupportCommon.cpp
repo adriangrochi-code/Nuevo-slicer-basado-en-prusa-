@@ -549,6 +549,48 @@ static inline void fill_expolygons_generate_paths(
     fill_expolygons_generate_paths(dst, std::move(expolygons), filler, fill_params, density, role, flow);
 }
 
+// Tisma: ironing of the top support interface. The ironing lines go over the interface, inset by half the nozzle, in a
+// collection of their own which keeps their monotonic order and is printed after the interface (ExtrusionOrder.cpp).
+static void iron_support_interface(
+    ExtrusionEntitiesPtr    &dst,
+    const Polygons          &interface_polygons,
+    Fill                    *filler,
+    float                    interface_angle,
+    double                   layer_height,
+    double                   nozzle_diameter,
+    const PrintObjectConfig &config)
+{
+    const double spacing = config.support_material_ironing_spacing.value;
+    if (spacing <= 0.)
+        return;
+    filler->spacing         = spacing;
+    filler->angle           = float(interface_angle + 0.25 * M_PI);
+    filler->link_max_length = coord_t(scale_(3. * spacing));
+    FillParams fill_params;
+    fill_params.density   = 1.f;
+    fill_params.monotonic = true;
+    // As the ironing of the object (Layer::make_ironing()): the flow of a layer of the given height, spread over lines
+    // spaced by the ironing spacing.
+    const double height           = layer_height * 0.01 * config.support_material_ironing_flowrate.value;
+    const double extrusion_height = height * spacing / nozzle_diameter;
+    const float  extrusion_width  = Flow::rounded_rectangle_extrusion_width_from_spacing(float(nozzle_diameter), float(extrusion_height));
+    const double mm3_per_mm       = nozzle_diameter * extrusion_height;
+    auto         ironing          = std::make_unique<ExtrusionEntityCollection>();
+    ironing->no_sort = true;
+    for (ExPolygon &expoly : offset_ex(union_safety_offset_ex(interface_polygons), - float(scale_(0.5 * nozzle_diameter)))) {
+        Surface   surface(stTop, std::move(expoly));
+        Polylines polylines;
+        try {
+            polylines = filler->fill_surface(&surface, fill_params);
+        } catch (InfillFailedException &) {
+        }
+        extrusion_entities_append_paths(ironing->entities, std::move(polylines),
+            ExtrusionAttributes{ ExtrusionRole::Ironing, ExtrusionFlow{ mm3_per_mm, extrusion_width, float(extrusion_height) } });
+    }
+    if (! ironing->empty())
+        dst.emplace_back(ironing.release());
+}
+
 static Polylines draw_perimeters(const ExPolygon &expoly, double clip_length, const bool prefer_clockwise_movements) {
     // Draw the perimeters.
     Polylines polylines;
@@ -1651,6 +1693,10 @@ void generate_support_toolpaths(
         auto filler_base_interface  = std::unique_ptr<Fill>(base_interface_layers.empty() ? nullptr : 
             Fill::new_from_type(support_params.interface_density > 0.95 || support_params.with_sheath ? ipRectilinear : ipSupportBase));
         auto filler_support         = std::unique_ptr<Fill>(Fill::new_from_type(support_params.base_fill_pattern));
+        // Tisma: filler of the ironing of the top interface.
+        auto filler_ironing         = std::unique_ptr<Fill>(config.support_material_ironing ? Fill::new_from_type(ipRectilinear) : nullptr);
+        if (filler_ironing)
+            filler_ironing->set_bounding_box(bbox_object);
         filler_interface->set_bounding_box(bbox_object);
         if (filler_first_layer_ptr)
             filler_first_layer_ptr->set_bounding_box(bbox_object);
@@ -1756,12 +1802,17 @@ void generate_support_toolpaths(
                                 support_params.raft_interface_angle(support_layer.interface_id()) :
                                 support_interface_angle;
                     double density = raft_contact ? support_params.raft_interface_density : interface_as_base ? support_params.support_density : support_params.interface_density;
+                    // Tisma: an ironed top interface is printed solid, so that the ironing smooths a closed surface.
+                    const bool ironed = filler_ironing &&
+                        (interface_layer_type == InterfaceLayerType::TopContact || interface_layer_type == InterfaceLayerType::RaftContact);
+                    if (ironed)
+                        density = 1.;
                     filler->spacing = raft_contact ? support_params.raft_interface_flow.spacing() :
                         interface_as_base ? support_params.support_material_flow.spacing() : support_params.support_material_interface_flow.spacing();
                     filler->link_max_length = coord_t(scale_(filler->spacing * link_max_length_factor / density));
                     fill_expolygons_generate_paths(
                         // Destination
-                        layer_ex.extrusions, 
+                        layer_ex.extrusions,
                         // Regions to fill
                         union_safety_offset_ex(layer_ex.polygons_to_extrude()),
                         // Filler and its parameters
@@ -1769,6 +1820,9 @@ void generate_support_toolpaths(
                         // Extrusion parameters
                         interface_as_base ? ExtrusionRole::SupportMaterial : ExtrusionRole::SupportMaterialInterface,
                         interface_flow);
+                    if (ironed)
+                        iron_support_interface(layer_ex.extrusions, layer_ex.polygons_to_extrude(), filler_ironing.get(), filler->angle,
+                            layer_ex.layer->height, interface_flow.nozzle_diameter(), config);
                 }
             };
             const bool top_interfaces = config.support_material_interface_layers.value != 0;
