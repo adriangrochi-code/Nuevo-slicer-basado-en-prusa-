@@ -43,6 +43,7 @@ class StaticBox;
 
 namespace Slic3r {
 
+struct PrintReviewItem;
 struct PrintStatistics;
 
 namespace GUI {
@@ -53,6 +54,7 @@ class FreqChangedParams;
 class QuickSettings;
 class ObjectInfo;
 class SlicedInfo;
+class ReviewInfo;
 class ObjectManipulation;
 class ObjectSettings;
 class ObjectLayers;
@@ -136,6 +138,7 @@ class Sidebar : public wxPanel
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
     SlicedInfo*     m_sliced_info               { nullptr };
+    ReviewInfo*     m_review_info               { nullptr };
     // The slicing information is up to date (shown with the legend of the preview).
     bool            m_sliced_info_shown         { false };
     std::vector<std::pair<std::string, std::string>> m_sliced_info_rows;
@@ -246,6 +249,8 @@ public:
     void show_bulk_btns_sizer(const bool show);
 
     void update_sliced_info_sizer();
+    // Tisma: the review before printing of the G-code just made (PrintReview.hpp); hidden when show is false.
+    void show_print_review(const std::vector<PrintReviewItem> &items, bool show);
     // Tisma: the slicing information (name, value), shown with the legend of the preview instead of in the panel: of a
     // filament print without the estimated time (GCodeViewer::render_legend() has it), of a resin print with it
     // (GLCanvas3D, render_sla_legend()). Empty while the plate is not sliced.

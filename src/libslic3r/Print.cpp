@@ -103,6 +103,8 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "before_layer_gcode",
         "between_objects_gcode",
         "binary_gcode",
+        // Tisma: only read by the review before printing, made with the G-code.
+        "max_bridge_length",
         // Belt printers: the slicing changes through the transformation of the model in Print::apply().
         "belt_printer",
         "belt_angle",
