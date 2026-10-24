@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The web interfaces of Klipper (Moonraker) and OctoPrint on the local network are plain HTTP at an address of the
+     user (an IP address, which a domain list cannot name): plain HTTP is allowed. Tisma Cloud uses HTTPS, and the
+     Bambu Lab printers TLS with the certificate of Bambu Lab. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
