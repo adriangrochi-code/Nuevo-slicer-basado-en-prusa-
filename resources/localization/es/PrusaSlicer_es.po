@@ -34522,11 +34522,7 @@ msgstr "Activá los soportes, bajá la velocidad de los voladizos u orientá la 
 msgid "Long bridges"
 msgstr "Puentes largos"
 
-msgid "Long bridges %1% may sag."
-msgstr "Los puentes largos %1% pueden combarse."
 
-msgid "Turn on supports, or calibrate the bridges (flow and speed) for this filament."
-msgstr "Activá los soportes o calibrá los puentes (flujo y velocidad) para este filamento."
 
 msgid "Bridge anchored in the air"
 msgstr "Puente anclado en el aire"
@@ -34552,8 +34548,6 @@ msgstr "Activá los soportes, bajá la velocidad o imprimí la pieza en otra ori
 msgid "Details that will not print"
 msgstr "Detalles que no se imprimen"
 
-msgid "%1% parts of the slices %2%, up to %3% mm wide, are too thin for the nozzle: nothing is printed there."
-msgstr "%1% partes de las capas %2%, de hasta %3% mm de ancho, son demasiado finas para la boquilla: ahí no se imprime nada."
 
 msgid "Use a thinner nozzle or a thinner extrusion width, scale the detail up, or turn on \"Detect thin walls\" (Print Settings > Layers and perimeters)."
 msgstr "Usá una boquilla más fina o un ancho de extrusión menor, agrandá el detalle o activá «Detecta paredes delgadas» (Configuración de Impresión > Capas y perímetros)."
@@ -34576,14 +34570,8 @@ msgstr "%1% viajes %2% salen de la pieza sin retraer el filamento: van a dejar h
 msgid "Lower \"Minimum travel after retraction\" (Printer Settings > Extruder) so that these travels retract, or turn on \"Avoid crossing perimeters\"."
 msgstr "Bajá «Distancia mínima después de la retracción» (Configuración de la Impresora > Extrusor) para que estos viajes retraigan, o activá «Evita cruzar perímetros»."
 
-msgid "Travels over the air"
-msgstr "Viajes por el aire"
 
-msgid "%1% travels in %2% layers %3% go over the air between parts: strings show there if the retraction or the temperature are not right for this filament."
-msgstr "%1% viajes en %2% capas %3% pasan por el aire entre partes: ahí aparecen hilos si la retracción o la temperatura no son las adecuadas para este filamento."
 
-msgid "Calibrate the retraction and the temperature of the filament (Calibrate button), or place the parts closer."
-msgstr "Calibrá la retracción y la temperatura del filamento (botón Calibrar) o acercá las partes."
 
 msgid "Speeds the printer will limit"
 msgstr "Velocidades que la impresora va a limitar"
@@ -34611,3 +34599,21 @@ msgstr "Qué hacer está en «Revisión antes de imprimir», en el panel lateral
 
 msgid "Continue anyway"
 msgstr "Continuar igual"
+
+msgid "%1% details of the model %2%, up to %3% mm wide, get no extrusion in 3 or more layers in a row: they will be missing from the print."
+msgstr "%1% detalles del modelo %2%, de hasta %3% mm de ancho, no reciben ninguna extrusión en 3 o más capas seguidas: van a faltar en la pieza."
+
+msgid "%1% bridges %2% span up to %3% mm with nothing under them, more than the %4% mm this printer bridges (Printer Settings > General > Bridges): they may sag."
+msgstr "%1% puentes %2% cruzan hasta %3% mm sin nada debajo, más que los %4% mm que puentea esta impresora (Configuración de la Impresora > General > Puentes): pueden combarse."
+
+msgid "Turn on supports, orient the part so that the bridges are shorter, or calibrate the bridges of this filament and set the longest bridge the printer makes well."
+msgstr "Activá los soportes, orientá la pieza para que los puentes sean más cortos, o calibrá los puentes de este filamento y poné el puente más largo que la impresora hace bien."
+
+msgid "Longest bridge"
+msgstr "Puente más largo"
+
+msgid "Longest bridge without supports"
+msgstr "Puente más largo sin soportes"
+
+msgid "Longest span this printer bridges well, with nothing under it: the bridges over the infill or over the layer below do not count. The review before printing warns about longer bridges. 16 mm is the span PrusaSlicer assumes for its stability check. 0 = no check."
+msgstr "El tramo más largo que esta impresora puentea bien, sin nada debajo: los puentes sobre el relleno o sobre la capa de abajo no cuentan. La revisión antes de imprimir avisa de los puentes más largos. 16 mm es el tramo que PrusaSlicer supone en su chequeo de estabilidad. 0 = sin chequeo."

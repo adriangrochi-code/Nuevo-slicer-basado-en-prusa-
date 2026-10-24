@@ -17,6 +17,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <optional>
 #include <set>
 #include <unordered_map>
 
@@ -89,6 +90,11 @@ void review_stability(const Print &print, double z_offset, std::vector<Item> &ou
         const auto &generated = *object->shared_regions()->generated_support_points;
         SupportSpotsGenerator::PartialObjects partial = generated.partial_objects;
         for (const auto &[cause, critical] : SupportSpotsGenerator::gather_issues(generated.support_points, partial)) {
+            // Its long bridges measure the distance to the edges of the layer below, not whether there is something
+            // under the bridge: the bridges over the infill and over the solid layers count too. review_bridges()
+            // measures them against what is below.
+            if (cause == Cause::LongBridge)
+                continue;
             Places &places = found[{ cause, critical }];
             places.objects.insert(object->model_object()->name);
             if (cause == Cause::UnstableFloatingPart) {
@@ -133,9 +139,6 @@ void review_stability(const Print &print, double z_offset, std::vector<Item> &ou
                          "overhangs.")));
             break;
         case Cause::LongBridge:
-            out.push_back(make_item(Kind::LongBridge, Severity::Warning, places, z_offset, _u8L("Long bridges"),
-                format(_u8L("Long bridges %1% may sag."), where),
-                _u8L("Turn on supports, or calibrate the bridges (flow and speed) for this filament.")));
             break;
         case Cause::FloatingBridgeAnchor:
             out.push_back(make_item(Kind::FloatingBridgeAnchor, Severity::Critical, places, z_offset,
@@ -157,17 +160,26 @@ void review_stability(const Print &print, double z_offset, std::vector<Item> &ou
     }
 }
 
-// Parts of the model too thin for any extrusion: they are in the slices but nothing is printed there.
+// Parts of the model too thin for any extrusion: they are in the slices but nothing is printed there. Only a detail
+// lost in at least 3 layers in a row is reported (a thin wall, a pin): the last layer of a rounded top is a sliver that
+// is lost too, and it is not a detail of the model.
 void review_lost_details(const Print &print, double z_offset, std::vector<Item> &out)
 {
+    constexpr size_t min_layers = 3;
     Places places;
     double widest = 0.;
     std::set<const ModelObject*> seen;
     for (const PrintObject *object : print.objects()) {
         if (! seen.insert(object->model_object()).second)
             continue;
-        bool lost_here = false;
-        for (const Layer *layer : object->layers())
+        // The islands without extrusions, chained with those of the layer below that they overlap.
+        struct Lost { BoundingBox box; double width; double z; size_t group; };
+        std::vector<Lost>   lost;
+        std::vector<size_t> parent;
+        auto root = [&parent](size_t g) { while (parent[g] != g) g = parent[g] = parent[parent[g]]; return g; };
+        size_t below_begin = 0, below_end = 0;
+        for (const Layer *layer : object->layers()) {
+            const size_t layer_begin = lost.size();
             for (size_t i = 0; i < layer->lslices_ex.size() && i < layer->lslices.size(); ++ i) {
                 const LayerSlice &slice = layer->lslices_ex[i];
                 if (slice.has_extrusions() ||
@@ -178,20 +190,96 @@ void review_lost_details(const Print &print, double z_offset, std::vector<Item> 
                 if (area < 0.05)
                     continue;
                 const double length = unscaled<double>(layer->lslices[i].contour.length());
-                widest = std::max(widest, length > 0. ? 2. * area / length : 0.);
-                places.add(layer->print_z);
-                lost_here = true;
+                BoundingBox box = get_extents(layer->lslices[i]);
+                box.offset(scaled<double>(0.1));
+                const size_t group = parent.size();
+                parent.push_back(group);
+                for (size_t j = below_begin; j < below_end; ++ j)
+                    if (lost[j].box.overlap(box))
+                        parent[root(lost[j].group)] = group;
+                lost.push_back({ box, length > 0. ? 2. * area / length : 0., layer->print_z, group });
             }
+            // The next layer chains to these only: a layer without lost islands breaks the chain.
+            below_begin = layer_begin;
+            below_end   = lost.size();
+        }
+        std::map<size_t, std::vector<const Lost*>> groups;
+        for (const Lost &l : lost)
+            groups[root(l.group)].push_back(&l);
+        bool lost_here = false;
+        for (const auto &[group, members] : groups) {
+            std::set<double> zs;
+            for (const Lost *l : members)
+                zs.insert(l->z);
+            if (zs.size() < min_layers)
+                continue;
+            places.add(*zs.begin());
+            places.z_max = std::max(places.z_max, *zs.rbegin());
+            for (const Lost *l : members)
+                widest = std::max(widest, l->width);
+            lost_here = true;
+        }
         if (lost_here)
             places.objects.insert(object->model_object()->name);
     }
     if (places.empty())
         return;
     out.push_back(make_item(Kind::LostDetails, Severity::Warning, places, z_offset, _u8L("Details that will not print"),
-        format(_u8L("%1% parts of the slices %2%, up to %3% mm wide, are too thin for the nozzle: nothing is printed there."),
+        format(_u8L("%1% details of the model %2%, up to %3% mm wide, get no extrusion in 3 or more layers in a row: they "
+                    "will be missing from the print."),
                places.count, heights(places, z_offset), mm(widest, 2)),
         _u8L("Use a thinner nozzle or a thinner extrusion width, scale the detail up, or turn on \"Detect thin walls\" "
              "(Print Settings > Layers and perimeters).")));
+}
+
+// Bridges longer than the printer bridges: the longest run of each bridge extrusion with nothing under it (the layer
+// below, widened by half an extrusion where the bridge is anchored). The bridges over the infill and over the solid
+// layers have the layer below under them and are not counted.
+void review_bridges(const Print &print, double z_offset, std::vector<Item> &out)
+{
+    const double longest_allowed = print.config().max_bridge_length.value;
+    if (longest_allowed <= 0.)
+        return;
+    // Where the bridge rests on the layer below: half an extrusion beyond its edge.
+    const double anchor = 0.5 * scaled<double>(print.config().nozzle_diameter.get_at(0));
+    Places places;
+    double longest = 0.;
+    std::set<const ModelObject*> seen;
+    for (const PrintObject *object : print.objects()) {
+        if (! seen.insert(object->model_object()).second)
+            continue;
+        bool found_here = false;
+        for (const Layer *layer : object->layers()) {
+            if (layer->lower_layer == nullptr)
+                continue;
+            std::optional<ExPolygons> below;
+            for (const LayerRegion *region : layer->regions())
+                for (const ExtrusionEntity *e : region->fills().flatten().entities) {
+                    if (! e->role().is_bridge() || e->role().is_perimeter())
+                        continue;
+                    if (! below)
+                        below = offset_ex(layer->lower_layer->lslices, float(anchor));
+                    double span = 0.;
+                    for (const Polyline &piece : diff_pl(e->as_polylines(), *below))
+                        span = std::max(span, unscaled<double>(piece.length()));
+                    if (span > longest_allowed) {
+                        places.add(layer->print_z);
+                        longest    = std::max(longest, span);
+                        found_here = true;
+                    }
+                }
+        }
+        if (found_here)
+            places.objects.insert(object->model_object()->name);
+    }
+    if (places.empty())
+        return;
+    out.push_back(make_item(Kind::LongBridge, Severity::Warning, places, z_offset, _u8L("Long bridges"),
+        format(_u8L("%1% bridges %2% span up to %3% mm with nothing under them, more than the %4% mm this printer bridges "
+                    "(Printer Settings > General > Bridges): they may sag."),
+               places.count, heights(places, z_offset), mm(longest, 1), mm(longest_allowed, 1)),
+        _u8L("Turn on supports, orient the part so that the bridges are shorter, or calibrate the bridges of this filament "
+             "and set the longest bridge the printer makes well.")));
 }
 
 // The layers of the G-code: time, height and the extruder printing most of it.
@@ -332,8 +420,7 @@ void review_travels(const Print &print, const GCodeProcessorResult &result, cons
     for (size_t i = result.moves.size(); i -- > 1;)
         next_role[i - 1] = result.moves[i].type == EMoveType::Extrude ? result.moves[i].extrusion_role : next_role[i];
 
-    Places over_air, without_retraction;
-    std::set<size_t> layers_over_air;
+    Places without_retraction;
     size_t           cached_layer = size_t(-1);
     std::vector<Under> unders;
     bool retracted = false;
@@ -369,26 +456,18 @@ void review_travels(const Print &print, const GCodeProcessorResult &result, cons
             air = ! inside(unders, a + (b - a) * (s / length));
         if (! air)
             continue;
-        over_air.add(layers[m.layer_id].z - z_offset);
-        layers_over_air.insert(m.layer_id);
         if (! retracted)
             without_retraction.add(layers[m.layer_id].z - z_offset);
     }
-    if (over_air.empty())
+    // With a retraction the travels over the air are how every print is made: only those without one are a problem.
+    if (without_retraction.empty())
         return;
-    if (! without_retraction.empty())
-        out.push_back(make_item(Kind::TravelsOverAir, Severity::Warning, without_retraction, z_offset,
-            _u8L("Travels over the air without retraction"),
-            format(_u8L("%1% travels %2% leave the part without retracting the filament: they will leave strings."),
-                   without_retraction.count, heights(without_retraction, z_offset)),
-            _u8L("Lower \"Minimum travel after retraction\" (Printer Settings > Extruder) so that these travels retract, "
-                 "or turn on \"Avoid crossing perimeters\".")));
-    else
-        out.push_back(make_item(Kind::TravelsOverAir, Severity::Info, over_air, z_offset, _u8L("Travels over the air"),
-            format(_u8L("%1% travels in %2% layers %3% go over the air between parts: strings show there if the "
-                        "retraction or the temperature are not right for this filament."),
-                   over_air.count, layers_over_air.size(), heights(over_air, z_offset)),
-            _u8L("Calibrate the retraction and the temperature of the filament (Calibrate button), or place the parts closer.")));
+    out.push_back(make_item(Kind::TravelsOverAir, Severity::Warning, without_retraction, z_offset,
+        _u8L("Travels over the air without retraction"),
+        format(_u8L("%1% travels %2% leave the part without retracting the filament: they will leave strings."),
+               without_retraction.count, heights(without_retraction, z_offset)),
+        _u8L("Lower \"Minimum travel after retraction\" (Printer Settings > Extruder) so that these travels retract, "
+             "or turn on \"Avoid crossing perimeters\".")));
 }
 
 // Moves faster than the machine limits: the printer slows them down (longer print, a different estimate).
@@ -436,6 +515,7 @@ std::vector<PrintReviewItem> review_print(const Print &print, const GCodeProcess
     const double z_offset = print.config().z_offset.value;
     review_stability(print, z_offset, items);
     review_lost_details(print, z_offset, items);
+    review_bridges(print, z_offset, items);
     const std::vector<GCodeLayer> layers = gcode_layers(result);
     review_overheating(print, layers, items);
     review_travels(print, result, layers, items);
