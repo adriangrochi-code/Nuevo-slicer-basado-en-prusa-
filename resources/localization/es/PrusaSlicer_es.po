@@ -34495,6 +34495,21 @@ msgstr "Escalón 1 en la primera capa (X)"
 msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
 msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."
 
+msgid "Nozzle of each extruder"
+msgstr "Boquilla de cada extrusor"
+
+msgid "Fine walls, coarse infill"
+msgstr "Paredes finas, relleno grueso"
+
+msgid "Prints the perimeters, the solid infill, the supports and the wipe tower with the finest nozzle and the sparse infill with the coarsest one, which takes the height of several layers (automatic infill combination), with the extrusion widths calculated from the nozzle of each extruder. Printing with nozzles of different diameters is experimental: calibrate the tool offsets first."
+msgstr "Imprime los perímetros, el relleno sólido, los soportes y la torre de purga con la boquilla más fina y el relleno poco denso con la más gruesa, que ocupa la altura de varias capas (combinación automática del relleno), con los anchos de extrusión calculados con la boquilla de cada extrusor. Imprimir con boquillas de distinto diámetro es experimental: calibrá primero los desfases de los cabezales."
+
+msgid "The nozzle of extruder %zu."
+msgstr "La boquilla del extrusor %zu."
+
+msgid "Different nozzles"
+msgstr "Distintas"
+
 msgid "Color mixing (Full Spectrum)"
 msgstr "Mezcla de colores (Full Spectrum)"
 
