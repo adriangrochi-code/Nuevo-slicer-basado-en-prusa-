@@ -93,8 +93,13 @@ def _run(cmd: list[str], cfg: NodeConfig, progress_re: re.Pattern, progress: Pro
     else:
         kwargs["start_new_session"] = True
     env = program_env()
-    if not cfg.gpu:
+    if cfg.gpu:
+        # The slicer casts the visibility rays of the seam on the graphics card (OpenCL: the NVIDIA cards and the Intel
+        # HD Graphics 4000; on the CPU when there is none). TISMA_GPU_DEVICE, when set, picks the card by its name.
+        env.setdefault("TISMA_GPU_SLICING", "1")
+    else:
         env["TISMA_FEA_GPU"] = "0"
+        env["TISMA_GPU_SLICING"] = "0"
     proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
                             env=env, text=True, errors="replace", **kwargs)
     err_tail: list[str] = []

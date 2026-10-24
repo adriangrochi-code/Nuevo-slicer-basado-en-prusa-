@@ -188,6 +188,21 @@ def test_node_config(tmp_path, monkeypatch):
         NodeConfig.load(p)
 
 
+def test_programs_are_told_about_the_graphics_card(tmp_path, node_cfg):
+    """With gpu on, the slicer may use the graphics card (TISMA_GPU_SLICING); off, neither the slicer nor the analysis."""
+    import re as regex
+
+    from tisma_cloud.node.runners import _run
+
+    show = [sys.executable, "-c", "import os, sys; sys.stderr.write(os.environ.get('TISMA_GPU_SLICING', '-') + "
+            "os.environ.get('TISMA_FEA_GPU', '-'))"]
+    args = (regex.compile("^$"), lambda _p: None, lambda: False, tmp_path)
+    node_cfg.gpu = True
+    assert _run(show, node_cfg, *args) == (0, "1-")
+    node_cfg.gpu = False
+    assert _run(show, node_cfg, *args) == (0, "00")
+
+
 def test_auto_slots():
     # One job per two cores, and 2 GB of memory for each.
     assert auto_slots(4, 15.5) == 2

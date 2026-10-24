@@ -46,7 +46,7 @@ class NodeConfig:
     fea_slots: int = 1
     # Longest run of a job [s]; it is stopped and failed after that.
     timeout_s: int = 3600
-    # The structural analysis may use the graphics card (Vulkan).
+    # The graphics card may be used: the structural analysis (Vulkan) and the visibility of the seam when slicing (OpenCL).
     gpu: bool = True
     # Verify the HTTPS certificate of the master (disable only on a local network with a self-signed certificate).
     verify_tls: bool = True

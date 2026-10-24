@@ -61,7 +61,7 @@ NODE_FIELDS = [
     ("slots", "Trabajos a la vez (0 = automático)", int, False),
     ("fea_slots", "Análisis estructurales a la vez", int, False),
     ("timeout_s", "Duración máxima de un trabajo [s]", int, False),
-    ("gpu", "Usar la placa de video", bool, False),
+    ("gpu", "Usar la placa de video (análisis estructural y laminado)", bool, False),
     ("verify_tls", "Verificar el certificado HTTPS", bool, False),
     ("name", "Nombre con el que pide unirse (vacío: el de la máquina)", str, False),
 ]
