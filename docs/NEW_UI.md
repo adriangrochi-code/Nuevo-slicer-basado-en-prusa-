@@ -63,7 +63,7 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
   propios de Tisma.
 - **Se escribe**: la ventana y su barra, las herramientas de la placa (hecho), el panel de la placa, las páginas de
   ajustes, la página Más y un juego de componentes propios (tarjeta, chip, botón de herramienta, opciones en chips,
-  interruptor, campo numérico, título de grupo).
+  interruptor, campo numérico, deslizador, título de grupo).
 
 ## Etapas
 
@@ -78,10 +78,12 @@ que la interfaz nueva reemplaza se borra cuando deja de usarse.
    morado).
 5. Panel de la placa nuevo (en curso): tarjetas con títulos grandes; la impresora por su modelo, con la boquilla y la
    cama al lado como en OrcaSlicer y Bambu Studio (la boquilla elige el perfil del modelo para ella o pone su diámetro
-   en la impresora; la cama se elige para toda impresora de filamento); soportes, relleno y borde en chips; la lista de
-   objetos en todos los modos; la rueda del mouse sobre un campo desplaza el panel en lugar de cambiar el valor; la información del laminado se muestra con la
-   leyenda de la vista previa, a la izquierda, y no en el panel (la de resina, propia de Tisma, con el objeto, los
-   soportes y la base en sus colores).
+   en la impresora; la cama se elige para toda impresora de filamento); los soportes en una fila con lo elegido, que
+   despliega sus chips y se pliega al elegir; el relleno con un deslizador (muestra el valor mientras se arrastra y lo
+   carga al soltarlo) y el campo al lado; el borde con su interruptor; los soportes y la base de resina en chips; la
+   lista de objetos en todos los modos; la rueda del mouse sobre un campo desplaza el panel en lugar de cambiar el valor;
+   la información del laminado se muestra con la leyenda de la vista previa, a la izquierda, y no en el panel (la de
+   resina, propia de Tisma, con el objeto, los soportes y la base en sus colores).
    Falta: chips de ajustes sobre la vista.
 6. Páginas de ajustes nuevas (Impresión, Filamento, Impresora; también resina).
 7. Barra superior propia y menú reorganizado (en macOS el menú del sistema sigue).
