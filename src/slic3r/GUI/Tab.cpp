@@ -2838,6 +2838,10 @@ void TabPrinter::build_fff()
         optgroup->append_single_option_line("belt_angle");
         optgroup->append_single_option_line("belt_axis_z");
 
+        // Tisma: the bridging capability, for the review before printing.
+        optgroup = page->new_optgroup(L("Bridges"));
+        optgroup->append_single_option_line("max_bridge_length");
+
         // Tisma: print head geometry for the collision check of non-planar layers.
         optgroup = page->new_optgroup(L("Print head (non-planar layers)"));
         // The two variables of the non-planar layers; the radius and the measured profile are set by the non-planar

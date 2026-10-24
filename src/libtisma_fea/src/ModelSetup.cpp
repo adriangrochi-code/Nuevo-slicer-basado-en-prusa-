@@ -279,8 +279,12 @@ bool build_analysis_input(const ModelObject &object, size_t instance_idx, const 
                 indexed_triangle_set part_mesh = out.mesh;
                 for (stl_vertex &v : part_mesh.vertices)
                     v.z() -= float(z0);
+                // The same choice of the layer shape as the slicing (by the supports it leaves).
+                PrintObjectConfig object_cfg;
+                object_cfg.apply(cfg, true);
                 auto deformation = std::make_shared<NonPlanar::Deformation>(
-                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh, &object.engineering.layer_field));
+                    NonPlanar::make_deformation(print_cfg, part_bbox, &part_mesh, &object.engineering.layer_field,
+                                                NonPlanar::support_threshold_deg(object_cfg, print_cfg)));
                 setup.layer_normal = [deformation, z0](const Vec3d &p) {
                     return deformation->layer_normal(p.x(), p.y(), p.z() - z0);
                 };

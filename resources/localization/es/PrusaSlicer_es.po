@@ -34501,3 +34501,156 @@ msgstr "Escalón 1 en la primera capa (X)"
 
 msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
 msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."
+
+msgid "at %1% mm"
+msgstr "a %1% mm"
+
+msgid "between %1% and %2% mm"
+msgstr "entre %1% y %2% mm"
+
+msgid "Turn on supports (Print Settings > Support material), or orient the part so that it needs less of them."
+msgstr "Activá los soportes (Configuración de Impresión > Material de soporte) u orientá la pieza para que necesite menos."
+
+msgid "Part in the air"
+msgstr "Parte en el aire"
+
+msgid "A part of the object starts in the air %1%: without supports it will not print."
+msgstr "Una parte del objeto empieza en el aire %1%: sin soportes no se imprime."
+
+msgid "A large overhang %1% (%2% places) will print badly or not at all."
+msgstr "Un voladizo grande %1% (%2% lugares) se va a imprimir mal o no se va a imprimir."
+
+msgid "Overhanging extrusions %1% (%2% places) may curl up or come loose."
+msgstr "Extrusiones en voladizo %1% (%2% lugares) pueden levantarse o quedar sueltas."
+
+msgid "Turn on supports, lower the speed of the overhangs or orient the part so that it has less overhangs."
+msgstr "Activá los soportes, bajá la velocidad de los voladizos u orientá la pieza para que tenga menos voladizos."
+
+msgid "Long bridges"
+msgstr "Puentes largos"
+
+
+
+msgid "Bridge anchored in the air"
+msgstr "Puente anclado en el aire"
+
+msgid "Bridges %1% start or turn in the air: they will print badly."
+msgstr "Hay puentes %1% que empiezan o giran en el aire: se van a imprimir mal."
+
+msgid "The object may come off the bed while printing %1%."
+msgstr "El objeto puede despegarse de la cama al imprimir %1%."
+
+msgid "Add a brim (Print Settings > Skirt and brim), clean the bed and check the temperature of the first layer."
+msgstr "Agregá un borde (Configuración de Impresión > Falda y borde), limpiá la cama y revisá la temperatura de la primera capa."
+
+msgid "Fragile part"
+msgstr "Parte frágil"
+
+msgid "A thin part %1% may break while the rest is printed."
+msgstr "Una parte delgada %1% puede romperse mientras se imprime el resto."
+
+msgid "Turn on supports, lower the speed or print the part in another orientation."
+msgstr "Activá los soportes, bajá la velocidad o imprimí la pieza en otra orientación."
+
+msgid "Details that will not print"
+msgstr "Detalles que no se imprimen"
+
+
+msgid "Use a thinner nozzle or a thinner extrusion width, scale the detail up, or turn on \"Detect thin walls\" (Print Settings > Layers and perimeters)."
+msgstr "Usá una boquilla más fina o un ancho de extrusión menor, agrandá el detalle o activá «Detecta paredes delgadas» (Configuración de Impresión > Capas y perímetros)."
+
+msgid "Layers without time to cool down"
+msgstr "Capas sin tiempo para enfriarse"
+
+msgid "%1% layers %2% take only %3% s (the filament asks for at least %4% s) even at the minimum print speed: they may sag or lose their shape."
+msgstr "%1% capas %2% tardan solo %3% s (el filamento pide al menos %4% s) aun a la velocidad mínima: pueden deformarse o perder la forma."
+
+msgid "Print several copies at once (the layers take longer), or lower the minimum print speed (Filament Settings > Cooling)."
+msgstr "Imprimí varias copias a la vez (las capas tardan más) o bajá la velocidad de impresión mínima (Configuración del filamento > Enfriamiento)."
+
+msgid "Travels over the air without retraction"
+msgstr "Viajes por el aire sin retracción"
+
+msgid "%1% travels %2% leave the part without retracting the filament: they will leave strings."
+msgstr "%1% viajes %2% salen de la pieza sin retraer el filamento: van a dejar hilos."
+
+msgid "Lower \"Minimum travel after retraction\" (Printer Settings > Extruder) so that these travels retract, or turn on \"Avoid crossing perimeters\"."
+msgstr "Bajá «Distancia mínima después de la retracción» (Configuración de la Impresora > Extrusor) para que estos viajes retraigan, o activá «Evita cruzar perímetros»."
+
+
+
+
+msgid "Speeds the printer will limit"
+msgstr "Velocidades que la impresora va a limitar"
+
+msgid "%1% extrusions ask for up to %2% mm/s, more than the printer allows (%3% mm/s along X, %4% mm/s along Y): it will print them slower."
+msgstr "%1% extrusiones piden hasta %2% mm/s, más de lo que permite la impresora (%3% mm/s en X, %4% mm/s en Y): las va a imprimir más lento."
+
+msgid "Lower the speeds of the print settings, or check the machine limits of the printer (Printer Settings > Machine limits)."
+msgstr "Bajá las velocidades de la configuración de impresión o revisá los límites de la impresora (Configuración de la Impresora > Límites de la máquina)."
+
+msgid "Review before printing"
+msgstr "Revisión antes de imprimir"
+
+msgid "No problems found."
+msgstr "No se encontraron problemas."
+
+msgid "Show in the preview"
+msgstr "Ver en la vista previa"
+
+msgid "The review before printing found:"
+msgstr "La revisión antes de imprimir encontró:"
+
+msgid "What to do is in the Review before printing, in the side panel."
+msgstr "Qué hacer está en «Revisión antes de imprimir», en el panel lateral."
+
+msgid "Continue anyway"
+msgstr "Continuar igual"
+
+msgid "%1% details of the model %2%, up to %3% mm wide, get no extrusion in 3 or more layers in a row: they will be missing from the print."
+msgstr "%1% detalles del modelo %2%, de hasta %3% mm de ancho, no reciben ninguna extrusión en 3 o más capas seguidas: van a faltar en la pieza."
+
+msgid "%1% bridges %2% span up to %3% mm with nothing under them, more than the %4% mm this printer bridges (Printer Settings > General > Bridges): they may sag."
+msgstr "%1% puentes %2% cruzan hasta %3% mm sin nada debajo, más que los %4% mm que puentea esta impresora (Configuración de la Impresora > General > Puentes): pueden combarse."
+
+msgid "Turn on supports, orient the part so that the bridges are shorter, or calibrate the bridges of this filament and set the longest bridge the printer makes well."
+msgstr "Activá los soportes, orientá la pieza para que los puentes sean más cortos, o calibrá los puentes de este filamento y poné el puente más largo que la impresora hace bien."
+
+msgid "Longest bridge"
+msgstr "Puente más largo"
+
+msgid "Longest bridge without supports"
+msgstr "Puente más largo sin soportes"
+
+msgid "Longest span this printer bridges well, with nothing under it: the bridges over the infill or over the layer below do not count. The review before printing warns about longer bridges. 16 mm is the span PrusaSlicer assumes for its stability check. 0 = no check."
+msgstr "El tramo más largo que esta impresora puentea bien, sin nada debajo: los puentes sobre el relleno o sobre la capa de abajo no cuentan. La revisión antes de imprimir avisa de los puentes más largos. 16 mm es el tramo que PrusaSlicer supone en su chequeo de estabilidad. 0 = sin chequeo."
+
+msgid "Nozzle of each extruder"
+msgstr "Boquilla de cada extrusor"
+
+msgid "Fine walls, coarse infill"
+msgstr "Paredes finas, relleno grueso"
+
+msgid "Prints the perimeters, the solid infill, the supports and the wipe tower with the finest nozzle and the sparse infill with the coarsest one, which takes the height of several layers (automatic infill combination), with the extrusion widths calculated from the nozzle of each extruder. Printing with nozzles of different diameters is experimental: calibrate the tool offsets first."
+msgstr "Imprime los perímetros, el relleno sólido, los soportes y la torre de purga con la boquilla más fina y el relleno poco denso con la más gruesa, que ocupa la altura de varias capas (combinación automática del relleno), con los anchos de extrusión calculados con la boquilla de cada extrusor. Imprimir con boquillas de distinto diámetro es experimental: calibrá primero los desfases de los cabezales."
+
+msgid "The nozzle of extruder %zu."
+msgstr "La boquilla del extrusor %zu."
+
+msgid "Different nozzles"
+msgstr "Distintas"
+
+msgid "Color mixing (Full Spectrum)"
+msgstr "Mezcla de colores (Full Spectrum)"
+
+msgid "Colors mixed by alternating the filaments layer by layer. On a printer that changes filaments in a single nozzle (AMS, MMU), each layer with a mix needs a filament change and its purge."
+msgstr "Colores mezclados alternando los filamentos capa por capa. En una impresora que cambia de filamento en una sola boquilla (AMS, MMU), cada capa con mezcla necesita un cambio de filamento y su purga."
+
+msgid "This printer changes filaments in a single nozzle (AMS, MMU). A color mix alternates the filaments layer by layer: each layer with a mix is a filament change, and each change purges filament. The print uses noticeably more filament and takes longer. After slicing, a warning tells how much filament goes to purging."
+msgstr "Esta impresora cambia de filamento en una sola boquilla (AMS, MMU). Una mezcla de colores alterna los filamentos capa por capa: cada capa con mezcla es un cambio de filamento, y cada cambio purga filamento. La impresión gasta bastante más filamento y tarda más. Después de laminar, un aviso dice cuánto filamento se va en purga."
+
+msgid "Turn on"
+msgstr "Activar"
+
+msgid "Color mixing with a single nozzle: %1% %% of the filament (%2%) goes to purging."
+msgstr "Mezcla de colores con una sola boquilla: el %1% %% del filamento (%2%) se va en purga."

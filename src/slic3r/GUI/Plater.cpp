@@ -27,6 +27,7 @@
 
 #include <cstddef>
 #include <algorithm>
+#include <chrono>
 #include <nanosvgrast.h>
 #include <numeric>
 #include <vector>
@@ -84,6 +85,7 @@
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/PrintReview.hpp"
 #include "libslic3r/miniz_extension.hpp"
 #include "libslic3r/ModelProcessing.hpp"
 #include "libslic3r/FileReader.hpp"
@@ -588,6 +590,13 @@ struct Plater::priv
     void on_slicing_update(SlicingStatusEvent&);
     void on_slicing_completed(wxCommandEvent&);
     void on_process_completed(SlicingProcessCompletedEvent&);
+    // Tisma: the review before printing of the G-code just made, shown in the sidebar; before exporting or sending a
+    // G-code with problems, the person is asked once (warns, never blocks).
+    std::vector<PrintReviewItem> review;
+    unsigned int                 review_result_id { 0 };
+    bool                         review_confirmed { false };
+    void                         update_print_review(bool sliced);
+    bool                         confirm_print_review();
 	void on_export_began(wxCommandEvent&);
     void on_layer_editing_toggled(bool enable);
 	void on_slicing_began();
@@ -3886,6 +3895,7 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
     if (evt.success()) {
         s_print_statuses[s_multiple_beds.get_active_bed()] = PrintStatus::finished;
     }
+    this->update_print_review(evt.success());
 
     // This updates the "Slice now", "Export G-code", "Arrange" buttons status.
     // Namely, it refreshes the "Out of print bed" property of all the ModelObjects, and it enables
@@ -3925,6 +3935,59 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
             notification_manager->push_exporting_finished_notification(last_output_path, last_output_dir_path, false);
     }
     exporting_status = ExportingStatus::NOT_EXPORTING;
+}
+
+void Plater::priv::update_print_review(bool sliced)
+{
+    review.clear();
+    review_confirmed = false;
+    const GCodeProcessorResult &result = gcode_results[s_multiple_beds.get_active_bed()];
+    const bool show = sliced && printer_technology == ptFFF && ! result.moves.empty() && background_process.fff_print() != nullptr;
+    if (show) {
+        try {
+            const auto start = std::chrono::steady_clock::now();
+            review = review_print(*background_process.fff_print(), result);
+            BOOST_LOG_TRIVIAL(info) << "Review before printing: " << review.size() << " items in "
+                << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() << " ms";
+        } catch (const std::exception &ex) {
+            BOOST_LOG_TRIVIAL(error) << "Review before printing failed: " << ex.what();
+        }
+        review_result_id = result.id;
+    }
+    sidebar->show_print_review(review, show);
+}
+
+bool Plater::priv::confirm_print_review()
+{
+    if (printer_technology != ptFFF || review_confirmed ||
+        gcode_results[s_multiple_beds.get_active_bed()].id != review_result_id)
+        return true;
+    std::vector<const PrintReviewItem*> problems;
+    for (const PrintReviewItem &item : review)
+        if (item.severity != PrintReviewItem::Severity::Info)
+            problems.push_back(&item);
+    if (problems.empty())
+        return true;
+    wxString message = _L("The review before printing found:") + "\n";
+    for (const PrintReviewItem *item : problems)
+        message += "\n\u2022 " + from_u8(item->title) + ": " + from_u8(item->detail);
+    message += "\n\n" + _L("What to do is in the Review before printing, in the side panel.");
+    RichMessageDialog dialog(q, message, _L("Review before printing"), wxYES_NO | wxCANCEL);
+    dialog.SetYesNoLabels(_L("Continue anyway"), _L("Show in the preview"));
+    const int answer = dialog.ShowModal();
+    if (answer == wxID_YES) {
+        review_confirmed = true;
+        return true;
+    }
+    if (answer == wxID_NO)
+        q->show_layers_up_to(problems.front()->z);
+    return false;
+}
+
+void Plater::show_layers_up_to(double z)
+{
+    select_view_3D("Preview");
+    p->preview->show_layers_up_to(z);
 }
 
 void Plater::priv::on_layer_editing_toggled(bool enable)
@@ -6592,7 +6655,7 @@ std::optional<fs::path> Plater::get_multiple_output_dir(const std::string &start
 
 void Plater::export_gcode(bool prefer_removable)
 {
-    if (p->model.objects.empty())
+    if (p->model.objects.empty() || ! p->confirm_print_review())
         return;
 
     if (canvas3D()->get_gizmos_manager().is_in_editing_mode(true))
@@ -7450,6 +7513,8 @@ std::optional<PrintHostJob> Plater::get_connect_print_host_job(bool multiple_bed
 
 void Plater::connect_gcode()
 {
+    if (! p->confirm_print_review())
+        return;
     if (auto upload_job{get_connect_print_host_job(false)}) {
         p->export_gcode(fs::path(), false, std::move(*upload_job));
     }
@@ -7543,6 +7608,8 @@ void Plater::connect_gcode_all() {
 
 void Plater::send_gcode()
 {
+    if (! p->confirm_print_review())
+        return;
     // if physical_printer is selected, send gcode for this printer
     DynamicPrintConfig* physical_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     if (! physical_printer_config) {
@@ -7591,7 +7658,7 @@ std::string Plater::sliced_gcode_path() const
 
 void Plater::usb_print()
 {
-    if (p->printer_technology != ptFFF)
+    if (p->printer_technology != ptFFF || ! p->confirm_print_review())
         return;
     const std::string path = p->background_process.sliced_gcode_path();
     if (path.empty()) {

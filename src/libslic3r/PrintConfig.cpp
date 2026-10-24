@@ -2455,6 +2455,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.));
 
+    // Tisma: the bridging capability of the printer, for the review before printing (PrintReview.cpp).
+    def = this->add("max_bridge_length", coFloat);
+    def->label = L("Longest bridge");
+    def->full_label = L("Longest bridge without supports");
+    def->tooltip = L("Longest span this printer bridges well, with nothing under it: the bridges over the infill or "
+                     "over the layer below do not count. The review before printing warns about longer bridges. 16 mm is "
+                     "the span PrusaSlicer assumes for its stability check. 0 = no check.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(16.));
+
     def = this->add("nonplanar_head_clearance_radius", coFloat);
     def->label = L("Head clearance radius");
     def->full_label = L("Print head clearance radius (non-planar)");

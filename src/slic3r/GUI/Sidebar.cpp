@@ -39,6 +39,7 @@
 #include <wx/statbox.h>
 #include <wx/statbmp.h>
 #include <wx/wupdlock.h> // IWYU pragma: keep
+#include <wx/wrapsizer.h>
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/BedType.hpp"
 #include "wx/generic/stattextg.h"
@@ -52,6 +53,7 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/PrintReview.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -81,6 +83,7 @@
 #include "ImGuiPureWrap.hpp"
 
 #include <imgui/imgui.h>
+#include <wx/hyperlink.h>
 
 using Slic3r::Preset;
 using Slic3r::GUI::format_wxstr;
@@ -322,6 +325,8 @@ class SlicedInfo : public InfoCard
 public:
     SlicedInfo(wxWindow *parent);
     void SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label="");
+    // The names and values shown, with the estimated time or without it.
+    std::vector<std::pair<std::string, std::string>> rows(bool with_time) const;
 
 private:
     std::vector<std::pair<wxStaticText*, wxStaticText*>> info_vec;
@@ -359,6 +364,20 @@ SlicedInfo::SlicedInfo(wxWindow *parent) : InfoCard(parent, _L("Sliced Info"))
     this->Show(false);
 }
 
+std::vector<std::pair<std::string, std::string>> SlicedInfo::rows(bool with_time) const
+{
+    std::vector<std::pair<std::string, std::string>> out;
+    for (size_t i = 0; i < info_vec.size(); ++ i)
+        if ((with_time || i != siEstimatedTime) && info_vec[i].first->IsShown()) {
+            // The names end with a colon only when values of parts follow.
+            std::string name = into_u8(info_vec[i].first->GetLabelText());
+            if (name.find('\n') == std::string::npos && (name.empty() || name.back() != ':'))
+                name += ":";
+            out.emplace_back(std::move(name), into_u8(info_vec[i].second->GetLabelText()));
+        }
+    return out;
+}
+
 void SlicedInfo::SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label/*=""*/)
 {
     const bool show = text != "N/A";
@@ -371,6 +390,58 @@ void SlicedInfo::SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const w
 }
 
 
+// Tisma: the review before printing (PrintReview.hpp), under the summary of the slicing: one row per problem, the most
+// severe first, with what was found, what to do and the link that shows its layers in the preview.
+class ReviewInfo : public InfoCard
+{
+public:
+    ReviewInfo(wxWindow *parent) : InfoCard(parent, _L("Review before printing")) { this->Show(false); }
+    void set_items(const std::vector<PrintReviewItem> &items, std::function<void(double)> show_layers);
+};
+
+void ReviewInfo::set_items(const std::vector<PrintReviewItem> &items, std::function<void(double)> show_layers)
+{
+    content->Clear(true);
+    captions.clear();
+    const int  em   = wxGetApp().em_unit();
+    const int  wrap = 27 * em;
+    if (items.empty()) {
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        row->Add(new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle("checked")), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, int(0.4 * em));
+        row->Add(new wxStaticText(card, wxID_ANY, _L("No problems found.")), 0, wxALIGN_CENTER_VERTICAL);
+        content->Add(row, 0, wxEXPAND);
+        sys_color_changed();
+        return;
+    }
+    bool first = true;
+    for (const PrintReviewItem &item : items) {
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        row->Add(new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle(item.severity == PrintReviewItem::Severity::Info ? "info" : "exclamation")),
+                 0, wxTOP | wxRIGHT, int(0.2 * em));
+        auto *texts = new wxBoxSizer(wxVERTICAL);
+        auto *title = new wxStaticText(card, wxID_ANY, from_u8(item.title));
+        title->SetFont(wxGetApp().bold_font());
+        if (item.severity == PrintReviewItem::Severity::Critical)
+            title->SetForegroundColour(wxColour(0xD3, 0x2F, 0x2F));
+        auto *detail = new wxStaticText(card, wxID_ANY, from_u8(item.detail));
+        detail->Wrap(wrap);
+        auto *hint = caption(from_u8(item.hint));
+        hint->Wrap(wrap);
+        auto *link = new wxHyperlinkCtrl(card, wxID_ANY, _L("Show in the preview"), wxEmptyString);
+        const double z = item.z;
+        link->Bind(wxEVT_HYPERLINK, [show_layers, z](wxHyperlinkEvent&) { show_layers(z); });
+        texts->Add(title, 0);
+        texts->Add(detail, 0, wxTOP, int(0.2 * em));
+        texts->Add(hint, 0, wxTOP, int(0.2 * em));
+        texts->Add(link, 0, wxTOP, int(0.2 * em));
+        row->Add(texts, 1, wxEXPAND);
+        content->Add(row, 0, wxEXPAND | (first ? 0 : wxTOP), int(0.8 * em));
+        first = false;
+    }
+    sys_color_changed();
+}
+
+
 // Sidebar / private
 
 void Sidebar::show_preset_comboboxes()
@@ -380,10 +451,7 @@ void Sidebar::show_preset_comboboxes()
     for (wxSizerItem *row : m_fff_rows)
         row->Show(!showSLA);
 
-    if (m_full_spectrum_row) {
-        const bool show_btn = !showSLA && int(m_combos_filament.size()) >= 2;
-        m_full_spectrum_row->Show(show_btn);
-    }
+    update_full_spectrum_rows();
 
     for (wxSizerItem *row : m_sla_rows)
         row->Show(showSLA);
@@ -636,6 +704,7 @@ Sidebar::Sidebar(Plater *parent)
             m_object_list->update_info_items(obj_idx);
 
         m_plater->schedule_background_process();
+        update_full_spectrum_rows();
         update_objects_list_extruder_column(m_combos_filament.size());
         m_object_list->Refresh();
         if (GLCanvas3D *canvas = m_plater->canvas3D(); canvas != nullptr) {
@@ -646,6 +715,22 @@ Sidebar::Sidebar(Plater *parent)
 #ifdef _WIN32
     wxGetApp().UpdateDarkUI(m_btn_full_spectrum, true);
 #endif
+    {
+        // Tisma: on a printer that changes filaments in a single nozzle the color mixing is an option, which shows the
+        // button above once it is on (update_full_spectrum_rows()).
+        auto *option_row = new wxBoxSizer(wxHORIZONTAL);
+        auto *option_title = new TismaTitle(m_card_filament, _L("Color mixing (Full Spectrum)"), TismaTitle::Style::Caption);
+        m_titles.push_back(option_title);
+        option_row->Add(option_title, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
+        m_full_spectrum_option = new ::SwitchButton(m_card_filament);
+        m_full_spectrum_option->SetToolTip(_L("Colors mixed by alternating the filaments layer by layer. On a printer that "
+                                              "changes filaments in a single nozzle (AMS, MMU), each layer with a mix "
+                                              "needs a filament change and its purge."));
+        m_full_spectrum_option->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &e) { on_full_spectrum_option(e.IsChecked()); });
+        option_row->Add(m_full_spectrum_option, 0, wxALIGN_CENTER_VERTICAL);
+        m_full_spectrum_option_row = m_card_filament_sizer->Add(option_row, 0, wxEXPAND | wxTOP, int(0.6 * em));
+        m_full_spectrum_option_row->Show(false);
+    }
     {
         auto *btn_row_sizer = new wxBoxSizer(wxHORIZONTAL);
         btn_row_sizer->Add(m_btn_full_spectrum, 1, wxEXPAND);
@@ -675,8 +760,7 @@ Sidebar::Sidebar(Plater *parent)
         | wxRIGHT
 #endif // __WXGTK3__
         , wxOSX ? 1 : margin_5);
-    if (m_full_spectrum_row)
-        m_full_spectrum_row->Show(int(m_combos_filament.size()) >= 2);
+    update_full_spectrum_rows();
 
     // Object List, under its title
     auto *objects_title = new TismaTitle(m_scrolled_panel, _L("Objects"));
@@ -703,8 +787,10 @@ Sidebar::Sidebar(Plater *parent)
     // Info boxes
     m_object_info = new ObjectInfo(m_scrolled_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
+    m_review_info = new ReviewInfo(m_scrolled_panel);
     m_titles.push_back(m_object_info->title);
     m_titles.push_back(m_sliced_info->title);
+    m_titles.push_back(m_review_info->title);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
 
@@ -714,6 +800,7 @@ Sidebar::Sidebar(Plater *parent)
     // Órbita Pro: the summary of the slicing right under the profiles, where it is seen. The objects at the bottom of
     // the sidebar, as in PrusaSlicer.
     scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
+    scrolled_sizer->Add(m_review_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
     scrolled_sizer->Add(params_sizer, 1, wxEXPAND | size_margin, margin_5);
     scrolled_sizer->Add(m_object_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
 
@@ -1215,10 +1302,52 @@ void Sidebar::init_printer_parts()
     if (m_combo_printer->edit_btn)
         row->AddSpacer(m_combo_printer->edit_btn->GetBestSize().GetWidth() + 2 * int(0.3 * em));
     m_printer_parts_row = m_card_printer_sizer->Add(row, 0, wxEXPAND | wxTOP, int(0.6 * em));
+
+    // A printer with several extruders: the nozzle of each one, its number before it (the combos are made by
+    // update_extruder_nozzles()).
+    auto *nozzles = new wxBoxSizer(wxVERTICAL);
+    auto *nozzles_title = new TismaTitle(m_card_printer, _L("Nozzle of each extruder"), TismaTitle::Style::Caption);
+    m_titles.push_back(nozzles_title);
+    nozzles->Add(nozzles_title, 0, wxBOTTOM, int(0.3 * em));
+    m_extruder_nozzles_sizer = new wxWrapSizer(wxHORIZONTAL);
+    nozzles->Add(m_extruder_nozzles_sizer, 0, wxEXPAND);
+    m_extruder_nozzles_row = m_card_printer_sizer->Add(nozzles, 0, wxEXPAND | wxTOP, int(0.6 * em));
+
+    // Nozzles of different diameters: the walls with the finest one, the infill with the coarsest one.
+    auto *fine_coarse = new wxBoxSizer(wxHORIZONTAL);
+    auto *fine_coarse_title = new TismaTitle(m_card_printer, _L("Fine walls, coarse infill"),
+                                             TismaTitle::Style::Caption);
+    m_titles.push_back(fine_coarse_title);
+    fine_coarse->Add(fine_coarse_title, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
+    m_fine_coarse = new ::SwitchButton(m_card_printer);
+    m_fine_coarse->SetToolTip(_L("Prints the perimeters, the solid infill, the supports and the wipe tower with the finest "
+                                 "nozzle and the sparse infill with the coarsest one, which takes the height of several "
+                                 "layers (automatic infill combination), with the extrusion widths calculated from the "
+                                 "nozzle of each extruder. Printing with nozzles of different diameters is experimental: "
+                                 "calibrate the tool offsets first."));
+    m_fine_coarse->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &e) { on_fine_coarse(e.IsChecked()); });
+    fine_coarse->Add(m_fine_coarse, 0, wxALIGN_CENTER_VERTICAL);
+    m_fine_coarse_row = m_card_printer_sizer->Add(fine_coarse, 0, wxEXPAND | wxTOP, int(0.6 * em));
+    m_extruder_nozzles_row->Show(false);
+    m_fine_coarse_row->Show(false);
 }
 
 // The usual nozzle diameters, offered for every printer.
 static const std::vector<double> USUAL_NOZZLES = { 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0 };
+
+// The number at the start of a typed nozzle, with a comma or a point ("0,35", "0.6 mm"); NaN when it is not a nozzle.
+static double typed_nozzle(wxString text)
+{
+    text.Replace(",", ".");
+    text.Trim(false);
+    size_t end = 0;
+    while (end < text.length() && wxString("0123456789.").Find(text[end]) != wxNOT_FOUND)
+        ++ end;
+    double diameter = 0.;
+    if (end == 0 || ! text.Left(end).ToCDouble(&diameter) || diameter < 0.05 || diameter > 3.)
+        return std::numeric_limits<double>::quiet_NaN();
+    return diameter;
+}
 
 void Sidebar::update_printer_parts()
 {
@@ -1234,6 +1363,9 @@ void Sidebar::update_printer_parts()
     m_nozzles.clear();
     const auto *diameters = printer.config.option<ConfigOptionFloats>("nozzle_diameter");
     const double current  = diameters && ! diameters->values.empty() ? diameters->values.front() : 0.;
+    // Extruders with nozzles of different diameters: no nozzle chosen, each one is in its extruder's combo.
+    const bool   mixed    = diameters && std::any_of(diameters->values.begin(), diameters->values.end(),
+                                                     [current](double d) { return std::abs(d - current) > 1e-6; });
     const Preset *sys = printer.is_system ? &bundle.printers.get_selected_preset() : bundle.printers.get_preset_parent(printer);
     const std::string model = sys ? sys->config.opt_string("printer_model") : std::string();
     if (fff && printer.is_system && sys != nullptr && sys->vendor != nullptr && ! model.empty())
@@ -1263,7 +1395,9 @@ void Sidebar::update_printer_parts()
         else if (selection < 0 && std::abs(n.diameter - current) < 1e-6)
             selection = int(i);
     }
-    if (selection >= 0)
+    if (mixed)
+        m_combo_nozzle->SetValue(_L("Different nozzles"));
+    else if (selection >= 0)
         m_combo_nozzle->SetSelection(selection);
     m_combo_nozzle->Enable(! m_nozzles.empty());
 
@@ -1287,6 +1421,203 @@ void Sidebar::update_printer_parts()
         m_combo_bed->SetSelection(bed_selection);
     }
     m_printer_parts_row->Show(fff);
+    update_extruder_nozzles();
+    update_full_spectrum_rows();
+}
+
+void Sidebar::update_extruder_nozzles()
+{
+    if (m_extruder_nozzles_sizer == nullptr)
+        return;
+    const PresetBundle &bundle   = *wxGetApp().preset_bundle;
+    const Preset       &printer  = bundle.printers.get_edited_preset();
+    const auto         *diameters = printer.config.option<ConfigOptionFloats>("nozzle_diameter");
+    const size_t        count    = printer.printer_technology() == ptFFF && diameters ? diameters->values.size() : 0;
+    const bool          several  = count > 1;
+
+    // A combo for each extruder, made when a printer has more extruders than any before.
+    const int em = wxGetApp().em_unit();
+    while (m_combos_extruder_nozzle.size() < count) {
+        const size_t extruder = m_combos_extruder_nozzle.size();
+        auto *label = new wxStaticText(m_card_printer, wxID_ANY, wxString::Format("%zu", extruder + 1));
+        label->SetFont(wxGetApp().bold_font());
+        auto *combo = new BitmapComboBox(m_card_printer, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(8 * em, -1), 0, nullptr, 0);
+        combo->SetToolTip(wxString::Format(_L("The nozzle of extruder %zu."), extruder + 1));
+        combo->Bind(wxEVT_COMBOBOX, [this, extruder](wxCommandEvent &) { on_extruder_nozzle(extruder); });
+        combo->Bind(wxEVT_TEXT_ENTER, [this, extruder](wxCommandEvent &) { on_extruder_nozzle(extruder); });
+        combo->Bind(wxEVT_KILL_FOCUS, [this, extruder](wxFocusEvent &e) { on_extruder_nozzle(extruder); e.Skip(); });
+        m_extruder_nozzles_sizer->Add(label, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, int(0.4 * em));
+        m_extruder_nozzles_sizer->Add(combo, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxBOTTOM, int(0.6 * em));
+        m_labels_extruder_nozzle.push_back(label);
+        m_combos_extruder_nozzle.push_back(combo);
+    }
+    for (size_t i = 0; i < m_combos_extruder_nozzle.size(); ++ i) {
+        BitmapComboBox *combo = m_combos_extruder_nozzle[i];
+        const bool shown = several && i < count;
+        m_labels_extruder_nozzle[i]->Show(shown);
+        combo->Show(shown);
+        if (! shown)
+            continue;
+        // The usual diameters and the one of the extruder.
+        const double current = diameters->values[i];
+        std::vector<double> list = USUAL_NOZZLES;
+        if (std::none_of(list.begin(), list.end(), [current](double d) { return std::abs(d - current) < 1e-6; })) {
+            list.push_back(current);
+            std::sort(list.begin(), list.end());
+        }
+        combo->Clear();
+        for (double d : list) {
+            combo->Append(format_wxstr("%1% %2%", double_to_string(d), _L("mm")));
+            if (std::abs(d - current) < 1e-6)
+                combo->SetSelection(int(combo->GetCount()) - 1);
+        }
+    }
+    m_extruder_nozzles_row->Show(several);
+
+    // The switch of the fine and coarse nozzles, when the nozzles differ: on when the print profile prints the walls
+    // with the finest one and the infill with the coarsest one.
+    bool differ = false, on = false;
+    if (several) {
+        const auto [finest, coarsest] = std::minmax_element(diameters->values.begin(), diameters->values.end());
+        differ = *coarsest - *finest > 1e-6;
+        const DynamicPrintConfig &print = bundle.prints.get_edited_preset().config;
+        on = differ && print.opt_int("perimeter_extruder") == int(finest - diameters->values.begin()) + 1 &&
+                       print.opt_int("infill_extruder") == int(coarsest - diameters->values.begin()) + 1;
+    }
+    m_fine_coarse_row->Show(differ);
+    m_fine_coarse->SetValue(on);
+    m_card_printer->Layout();
+}
+
+void Sidebar::on_extruder_nozzle(size_t extruder)
+{
+    if (extruder >= m_combos_extruder_nozzle.size())
+        return;
+    const PresetBundle &bundle   = *wxGetApp().preset_bundle;
+    DynamicPrintConfig new_conf  = bundle.printers.get_edited_preset().config;
+    auto              *diameters = new_conf.option<ConfigOptionFloats>("nozzle_diameter");
+    const double       diameter  = typed_nozzle(m_combos_extruder_nozzle[extruder]->GetValue());
+    // Not a nozzle, or the one of the extruder: the combo shows the nozzle of the extruder again.
+    if (diameters == nullptr || extruder >= diameters->values.size() || std::isnan(diameter) ||
+        std::abs(diameters->values[extruder] - diameter) < 1e-6) {
+        update_extruder_nozzles();
+        return;
+    }
+    // The diameter on this extruder only, its highest layer at 75 % of it as for the nozzle of all of them.
+    diameters->values[extruder] = diameter;
+    if (auto *h = new_conf.option<ConfigOptionFloats>("max_layer_height"); h != nullptr && extruder < h->values.size())
+        h->values[extruder] = 0.75 * diameter;
+    load_printer_nozzles(new_conf);
+}
+
+void Sidebar::on_fine_coarse(bool on)
+{
+    PresetBundle &bundle    = *wxGetApp().preset_bundle;
+    const auto   *diameters = bundle.printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    Tab          *tab       = wxGetApp().get_tab(Preset::TYPE_PRINT);
+    if (tab == nullptr || diameters == nullptr || diameters->values.size() < 2)
+        return;
+    static const char *extruder_keys[] = { "perimeter_extruder", "solid_infill_extruder", "support_material_extruder",
+                                           "support_material_interface_extruder", "wipe_tower_extruder", "infill_extruder" };
+    static const char *width_keys[]    = { "extrusion_width", "external_perimeter_extrusion_width", "first_layer_extrusion_width",
+                                           "infill_extrusion_width", "perimeter_extrusion_width", "solid_infill_extrusion_width",
+                                           "support_material_extrusion_width", "top_infill_extrusion_width" };
+    DynamicPrintConfig new_conf = bundle.prints.get_edited_preset().config;
+    if (on) {
+        // As Prusa Research recommends: the fine nozzle for what shows and holds the part (and for the supports and the
+        // wipe tower), the coarse one for the sparse infill, combined over the layers of the fine one, and the
+        // extrusion widths of each nozzle, which need every width at zero (else ConfigManipulation asks for it).
+        const auto [finest, coarsest] = std::minmax_element(diameters->values.begin(), diameters->values.end());
+        const int fine = int(finest - diameters->values.begin()) + 1;
+        for (const char *key : extruder_keys)
+            new_conf.set_key_value(key, new ConfigOptionInt(fine));
+        new_conf.set_key_value("infill_extruder", new ConfigOptionInt(int(coarsest - diameters->values.begin()) + 1));
+        new_conf.set_key_value("automatic_infill_combination", new ConfigOptionBool(true));
+        new_conf.set_key_value("automatic_extrusion_widths", new ConfigOptionBool(true));
+        for (const char *key : width_keys)
+            new_conf.set_key_value(key, new ConfigOptionFloatOrPercent(0., false));
+    } else {
+        // Off: these settings as saved in the print profile.
+        const DynamicPrintConfig &saved = bundle.prints.get_selected_preset().config;
+        for (const char *key : extruder_keys)
+            new_conf.set_key_value(key, saved.option(key)->clone());
+        for (const char *key : width_keys)
+            new_conf.set_key_value(key, saved.option(key)->clone());
+        for (const char *key : { "automatic_infill_combination", "automatic_extrusion_widths" })
+            new_conf.set_key_value(key, saved.option(key)->clone());
+    }
+    tab->load_config(new_conf);
+    update_extruder_nozzles();
+}
+
+bool Sidebar::single_nozzle_multi_material() const
+{
+    const DynamicPrintConfig &printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+    return printer.option("single_extruder_multi_material") != nullptr && printer.opt_bool("single_extruder_multi_material") &&
+           m_combos_filament.size() >= 2;
+}
+
+void Sidebar::update_full_spectrum_rows()
+{
+    if (m_full_spectrum_row == nullptr || m_full_spectrum_option_row == nullptr)
+        return;
+    const bool fff           = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF;
+    const bool several       = fff && m_combos_filament.size() >= 2;
+    const bool single_nozzle = several && single_nozzle_multi_material();
+    const bool on            = wxGetApp().app_config->get_bool("tisma_full_spectrum_single_nozzle");
+    // A project with color mixes keeps the button, to change or remove them (no project yet while the plater is made).
+    const Plater *plater     = wxGetApp().plater();
+    const bool has_mixes     = plater != nullptr && ! plater->model().virtual_extruders.empty();
+    m_full_spectrum_option->SetValue(on);
+    m_full_spectrum_option_row->Show(single_nozzle);
+    m_full_spectrum_row->Show(several && (! single_nozzle || on || has_mixes));
+    m_card_filament->Layout();
+}
+
+void Sidebar::on_full_spectrum_option(bool on)
+{
+    if (on) {
+        RichMessageDialog dialog(this,
+            _L("This printer changes filaments in a single nozzle (AMS, MMU). A color mix alternates the filaments layer "
+               "by layer: each layer with a mix is a filament change, and each change purges filament. The print uses "
+               "noticeably more filament and takes longer. After slicing, a warning tells how much filament goes to "
+               "purging."),
+            _L("Color mixing (Full Spectrum)"), wxYES_NO | wxNO_DEFAULT | wxICON_WARNING);
+        dialog.SetYesNoLabels(_L("Turn on"), _L("Cancel"));
+        if (dialog.ShowModal() != wxID_YES) {
+            m_full_spectrum_option->SetValue(false);
+            return;
+        }
+    }
+    wxGetApp().app_config->set("tisma_full_spectrum_single_nozzle", on ? "1" : "0");
+    update_full_spectrum_rows();
+    m_scrolled_panel->Layout();
+}
+
+void Sidebar::update_full_spectrum_warning(const PrintStatistics *ps)
+{
+    std::string text;
+    if (ps != nullptr && ps->total_toolchanges > 0 && single_nozzle_multi_material() && ! m_plater->model().virtual_extruders.empty()) {
+        // The total filament includes the purge (the wipe tower and the flush).
+        const bool   by_weight = ps->total_weight > 0.;
+        const double purged    = by_weight ? ps->total_wipe_tower_filament_weight + ps->total_flush_filament_weight :
+                                             ps->total_wipe_tower_filament + ps->total_flush_filament;
+        const double total     = by_weight ? ps->total_weight : ps->total_used_filament;
+        if (purged > 0. && total > 0.)
+            text = format(_u8L("Color mixing with a single nozzle: %1% %% of the filament (%2%) goes to purging."),
+                          int(std::lround(100. * purged / total)),
+                          // In the decimal separator of the language, as the slicing information.
+                          into_u8(by_weight ? wxString::Format("%.1f g", purged) : wxString::Format("%.2f m", 0.001 * purged)));
+    }
+    if (text == m_full_spectrum_warning)
+        return;
+    // A custom warning: the warnings of the plater are hidden in the preview, where it matters.
+    NotificationManager *notifications = m_plater->get_notification_manager();
+    if (! m_full_spectrum_warning.empty())
+        notifications->close_custom_notification(m_full_spectrum_warning);
+    if (! text.empty())
+        notifications->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::WarningNotificationLevel, text);
+    m_full_spectrum_warning = text;
 }
 
 void Sidebar::on_select_nozzle()
@@ -1298,18 +1629,12 @@ void Sidebar::on_select_nozzle()
 
 void Sidebar::on_type_nozzle()
 {
-    // The number at the start of the text, with a comma or a point ("0,35", "0.6 mm").
-    wxString text = m_combo_nozzle->GetTextCtrl()->GetValue();
-    text.Replace(",", ".");
-    text.Trim(false);
-    size_t end = 0;
-    while (end < text.length() && wxString("0123456789.").Find(text[end]) != wxNOT_FOUND)
-        ++ end;
-    double diameter = 0.;
-    const auto *current = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
-    // Not a nozzle (or the one on the printer): the field shows the nozzle of the printer again.
-    if (end == 0 || ! text.Left(end).ToCDouble(&diameter) || diameter < 0.05 || diameter > 3. ||
-        (current != nullptr && ! current->values.empty() && std::abs(current->values.front() - diameter) < 1e-6)) {
+    const double diameter = typed_nozzle(m_combo_nozzle->GetTextCtrl()->GetValue());
+    const auto  *current  = wxGetApp().preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    // Not a nozzle (or the one on the printer, on every extruder): the field shows the nozzle of the printer again.
+    if (std::isnan(diameter) ||
+        (current != nullptr && ! current->values.empty() &&
+         std::all_of(current->values.begin(), current->values.end(), [diameter](double d) { return std::abs(d - diameter) < 1e-6; }))) {
         update_printer_parts();
         return;
     }
@@ -1351,20 +1676,32 @@ void Sidebar::apply_nozzle(const NozzleChoice &nozzle)
         if (auto *h = new_conf.option<ConfigOptionFloats>("max_layer_height"); h != nullptr)
             for (double &v : h->values)
                 v = 0.75 * nozzle.diameter;
-        {
-            wxWindowUpdateLocker noUpdates(m_presets_panel);
-            wxGetApp().get_tab(Preset::TYPE_PRINTER)->load_config(new_conf);
-            // Profiles with changes not saved stay selected, even when they are not for this nozzle.
-            auto select = [](const PresetCollection &presets) {
-                return presets.current_is_dirty() ? PresetSelectCompatibleType::Never : PresetSelectCompatibleType::OnlyIfWasCompatible;
-            };
-            bundle.update_compatible(select(bundle.prints), select(bundle.filaments));
-            for (Preset::Type type : { Preset::TYPE_PRINT, Preset::TYPE_FILAMENT })
-                if (Tab *tab = wxGetApp().get_tab(type)) {
-                    tab->load_current_preset();
-                    update_presets(type);
-                }
-        }
+        load_printer_nozzles(new_conf);
+        return;
+    }
+    m_plater->on_config_change(bundle.full_config());
+    m_object_list->update_object_list_by_printer_technology();
+    wxQueueEvent(m_plater, new SimpleEvent(EVT_REGENERATE_BED_THUMBNAILS));
+    m_plater->update();
+    update_printer_parts();
+}
+
+void Sidebar::load_printer_nozzles(const DynamicPrintConfig &printer_config)
+{
+    PresetBundle &bundle = *wxGetApp().preset_bundle;
+    {
+        wxWindowUpdateLocker noUpdates(m_presets_panel);
+        wxGetApp().get_tab(Preset::TYPE_PRINTER)->load_config(printer_config);
+        // Profiles with changes not saved stay selected, even when they are not for these nozzles.
+        auto select = [](const PresetCollection &presets) {
+            return presets.current_is_dirty() ? PresetSelectCompatibleType::Never : PresetSelectCompatibleType::OnlyIfWasCompatible;
+        };
+        bundle.update_compatible(select(bundle.prints), select(bundle.filaments));
+        for (Preset::Type type : { Preset::TYPE_PRINT, Preset::TYPE_FILAMENT })
+            if (Tab *tab = wxGetApp().get_tab(type)) {
+                tab->load_current_preset();
+                update_presets(type);
+            }
     }
     m_plater->on_config_change(bundle.full_config());
     m_object_list->update_object_list_by_printer_technology();
@@ -1421,6 +1758,9 @@ void Sidebar::msw_rescale()
     m_btn_more_actions->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     m_btn_compact     ->SetMinSize(wxSize(3 * wxGetApp().em_unit(), scaled_height));
     m_auto_slice->Rescale();
+    m_fine_coarse->Rescale();
+    for (BitmapComboBox *combo : m_combos_extruder_nozzle)
+        combo->SetMinSize(wxSize(8 * wxGetApp().em_unit(), -1));
 
     m_scrolled_panel->Layout();
 }
@@ -1435,7 +1775,7 @@ void Sidebar::apply_tisma_theme()
         title->sys_color_changed();
     if (m_frequently_changed_parameters)
         m_frequently_changed_parameters->sys_color_changed();
-    for (InfoCard *info : std::initializer_list<InfoCard*>{ m_object_info, m_sliced_info })
+    for (InfoCard *info : std::initializer_list<InfoCard*>{ m_object_info, m_sliced_info, m_review_info })
         if (info)
             info->sys_color_changed();
     for (::StaticBox *card : m_cards) {
@@ -1542,6 +1882,7 @@ ObjectLayers* Sidebar::obj_layers()
 void Sidebar::update_frequently_changed_parameters()
 {
     m_frequently_changed_parameters->update_from_config();
+    update_extruder_nozzles();
 }
 
 QuickSettings* Sidebar::quick_settings()
@@ -1633,7 +1974,7 @@ void Sidebar::show_info_sizer()
 
 void Sidebar::update_sliced_info_sizer()
 {
-    if (m_sliced_info->IsShown(size_t(0)))
+    if (m_sliced_info_shown)
     {
         if (m_plater->printer_technology() == ptSLA)
         {
@@ -1858,6 +2199,7 @@ void Sidebar::update_sliced_info_sizer()
             }
 
             m_sliced_info->SetTextAndShow(siWTNumberOfToolchanges, ps.total_toolchanges > 0 ? wxString::Format("%.d", ps.total_toolchanges) : "N/A");
+            update_full_spectrum_warning(&ps);
 
             // Hide non-FFF sliced info parameters
             m_sliced_info->SetTextAndShow(siMaterial_unit, "N/A");
@@ -1870,8 +2212,12 @@ void Sidebar::update_sliced_info_sizer()
                 m_sliced_info->SetTextAndShow(siPerimeters, wxString::Format("%d", cfg.opt_int("perimeters")));
             if (const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density")) {
                 wxString infill = wxString::Format("%.0f %%", density->value);
-                if (const ConfigOption *pattern = cfg.option("fill_pattern"))
-                    infill += " " + from_u8(pattern->serialize());
+                if (const ConfigOption *pattern = cfg.option("fill_pattern")) {
+                    // The name of the pattern as in the settings ("Stars", translated), else its key.
+                    const ConfigOptionDef *def = print_config_def.get("fill_pattern");
+                    const std::optional<int> idx = def && def->enum_def ? def->enum_def->value_to_index(pattern->serialize()) : std::nullopt;
+                    infill += " " + (idx ? _(def->enum_def->label(*idx)) : from_u8(pattern->serialize()));
+                }
                 m_sliced_info->SetTextAndShow(siInfill, infill);
             }
             if (cfg.has("support_material"))
@@ -1880,6 +2226,13 @@ void Sidebar::update_sliced_info_sizer()
             if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
                 coast = c->get_at(0);
             m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
+        }
+
+        // Shown with the legend of the preview, the estimated time too for a resin print (its legend has no times).
+        m_sliced_info_rows = m_sliced_info->rows(m_plater->printer_technology() == ptSLA);
+        if (GLCanvas3D *canvas = m_plater->get_current_canvas3D()) {
+            canvas->set_as_dirty();
+            canvas->request_extra_frame();
         }
     }
 
@@ -1894,10 +2247,28 @@ void Sidebar::show_sliced_info_sizer(const bool show)
 
     wxWindowUpdateLocker freeze_guard(this);
 
-    m_sliced_info->Show(show);
+    // Tisma: the information is shown with the legend of the preview, on the left, not in the panel, so that it is not
+    // shown twice (the legend of a filament print has the times and the filament of each feature).
+    m_sliced_info_shown = show;
+    m_sliced_info->Show(false);
+    m_sliced_info_rows.clear();
     if (show)
         update_sliced_info_sizer();
+    else {
+        m_review_info->Show(false);
+        update_full_spectrum_warning(nullptr);
+    }
 
+    Layout();
+    m_scrolled_panel->Refresh();
+}
+
+void Sidebar::show_print_review(const std::vector<PrintReviewItem> &items, bool show)
+{
+    wxWindowUpdateLocker freeze_guard(this);
+    if (show)
+        m_review_info->set_items(items, [this](double z) { m_plater->show_layers_up_to(z); });
+    m_review_info->Show(show);
     Layout();
     m_scrolled_panel->Refresh();
 }

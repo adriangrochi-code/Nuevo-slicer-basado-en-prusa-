@@ -147,6 +147,129 @@ void TismaChip::msw_rescale()
     Refresh();
 }
 
+TismaSlider::TismaSlider(wxWindow* parent, double min, double max, double step, std::function<void(double, bool)> on_change)
+    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxTAB_TRAVERSAL)
+    , m_min(min), m_max(max), m_step(step), m_value(min), m_on_change(std::move(on_change))
+{
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
+    msw_rescale();
+    Bind(wxEVT_PAINT, &TismaSlider::on_paint, this);
+    Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent&) { m_hovered = true; Refresh(); });
+    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent&) { m_hovered = false; Refresh(); });
+    Bind(wxEVT_SET_FOCUS, [this](wxFocusEvent& e) { Refresh(); e.Skip(); });
+    Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent& e) { Refresh(); e.Skip(); });
+    Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& e) {
+        m_dragging = true;
+        CaptureMouse();
+        SetFocus();
+        set_from_user(value_at(e.GetX()), false);
+    });
+    Bind(wxEVT_MOTION, [this](wxMouseEvent& e) {
+        if (m_dragging)
+            set_from_user(value_at(e.GetX()), false);
+    });
+    Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
+        if (! m_dragging)
+            return;
+        m_dragging = false;
+        if (HasCapture())
+            ReleaseMouse();
+        set_from_user(value_at(e.GetX()), true);
+    });
+    Bind(wxEVT_MOUSE_CAPTURE_LOST, [this](wxMouseCaptureLostEvent&) {
+        if (m_dragging) {
+            m_dragging = false;
+            set_from_user(m_value, true);
+        }
+    });
+    Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& e) {
+        switch (e.GetKeyCode()) {
+        case WXK_LEFT:  case WXK_DOWN: set_from_user(m_value - m_step, true); break;
+        case WXK_RIGHT: case WXK_UP:   set_from_user(m_value + m_step, true); break;
+        case WXK_PAGEDOWN:             set_from_user(m_value - 10. * m_step, true); break;
+        case WXK_PAGEUP:               set_from_user(m_value + 10. * m_step, true); break;
+        case WXK_HOME:                 set_from_user(m_min, true); break;
+        case WXK_END:                  set_from_user(m_max, true); break;
+        default:                       e.Skip();
+        }
+    });
+    SetCursor(wxCursor(wxCURSOR_HAND));
+}
+
+void TismaSlider::set_value(double value)
+{
+    value = std::clamp(value, m_min, m_max);
+    if (std::abs(value - m_value) > 1e-9) {
+        m_value = value;
+        Refresh();
+    }
+}
+
+void TismaSlider::msw_rescale()
+{
+    const int em = wxGetApp().em_unit();
+    SetMinSize(wxSize(6 * em, int(2.2 * em)));
+    Refresh();
+}
+
+int TismaSlider::thumb_radius() const
+{
+    return int(0.6 * wxGetApp().em_unit());
+}
+
+int TismaSlider::x_of(double value) const
+{
+    const int r = thumb_radius();
+    const int w = std::max(1, GetClientSize().x - 2 * r);
+    return r + int(std::lround((value - m_min) / (m_max - m_min) * w));
+}
+
+double TismaSlider::value_at(int x) const
+{
+    const int r = thumb_radius();
+    const int w = std::max(1, GetClientSize().x - 2 * r);
+    return m_min + (m_max - m_min) * double(x - r) / double(w);
+}
+
+void TismaSlider::set_from_user(double value, bool final)
+{
+    value = std::clamp(m_min + std::round((value - m_min) / m_step) * m_step, m_min, m_max);
+    const bool changed = std::abs(value - m_value) > 1e-9;
+    m_value = value;
+    if (changed)
+        Refresh();
+    if (m_on_change && (changed || final))
+        m_on_change(m_value, final);
+}
+
+void TismaSlider::on_paint(wxPaintEvent&)
+{
+    wxAutoBufferedPaintDC dc(this);
+    const bool   dark  = wxGetApp().dark_mode();
+    const int    em    = wxGetApp().em_unit();
+    const wxSize sz    = GetClientSize();
+    const int    r     = thumb_radius();
+    const int    track = std::max(2, int(0.25 * em));
+    const int    cy    = sz.y / 2;
+    const int    x     = x_of(m_value);
+
+    dc.SetBackground(wxBrush(GetParent()->GetBackgroundColour()));
+    dc.Clear();
+    // The track, the part up to the value in the accent color.
+    dc.SetPen(*wxTRANSPARENT_PEN);
+    dc.SetBrush(wxBrush(TismaTheme::separator(dark)));
+    dc.DrawRoundedRectangle(wxRect(r, cy - track / 2, std::max(1, sz.x - 2 * r), track), track / 2.);
+    if (x > r) {
+        dc.SetBrush(wxBrush(TismaTheme::accent()));
+        dc.DrawRoundedRectangle(wxRect(r, cy - track / 2, x - r, track), track / 2.);
+    }
+    // The thumb: the color of the card with an accent ring, bigger while it is hovered, dragged or has the focus.
+    const int tr = (m_hovered || m_dragging || HasFocus()) ? r : int(0.85 * r);
+    dc.SetPen(wxPen(TismaTheme::accent(), std::max(2, em / 6)));
+    dc.SetBrush(wxBrush(TismaTheme::card_bg(dark)));
+    dc.DrawCircle(x, cy, tr);
+}
+
 void style_tisma_button(::Button *button, bool primary)
 {
     const bool dark = wxGetApp().dark_mode();

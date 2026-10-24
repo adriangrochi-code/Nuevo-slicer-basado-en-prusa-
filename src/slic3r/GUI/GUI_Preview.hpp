@@ -100,6 +100,8 @@ class Preview : public wxPanel
 
     std::unique_ptr<DoubleSlider::DSForLayers>  m_layers_slider{ nullptr };
     std::unique_ptr<DoubleSlider::DSForGcode>   m_moves_slider { nullptr };
+    // Tisma: the heights of the layers of the slider (show_layers_up_to()).
+    std::vector<double>                         m_layers_z;
 
 public:
     enum class OptionType : unsigned int
@@ -149,6 +151,8 @@ public:
     void set_keep_current_preview_type(bool value) { m_keep_current_preview_type = value; }
 
     void set_layers_slider_values_range(int bottom, int top);
+    // Tisma: shows the toolpaths up to the layer nearest to the height z (G-code Z), from the first layer.
+    void show_layers_up_to(double z);
 
 private:
     bool init(wxWindow* parent, Bed3D& bed, Model* model);
