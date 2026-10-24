@@ -32,12 +32,15 @@ namespace Slic3r {
 
 namespace GUI {
 
+class TismaChip;
 class TismaChoiceChips;
+class TismaSlider;
 class TismaTitle;
 
-// Tisma: the settings changed most often, as chips in the cards of the print settings of the plate panel: the supports,
-// the infill and the brim of a filament print, the supports and the pad of a resin print; the density of the infill and
-// the width of the brim can also be typed. A choice is loaded in the
+// Tisma: the settings changed most often, in the cards of the print settings of the plate panel: the supports (a row with
+// the choice, which unfolds its chips), the infill (a slider) and the brim of a filament print, the supports and the
+// pad of a resin print (chips); the density of the infill and the width of the brim can also be typed. A choice is
+// loaded in the
 // settings tab of the print (Tab::load_config()), which then shows the new values here (update_from_config()).
 class FreqChangedParams
 {
@@ -48,7 +51,9 @@ class FreqChangedParams
     wxSizer*                        m_sla_sizer { nullptr };
 
     TismaChoiceChips*               m_support     { nullptr };
-    TismaChoiceChips*               m_infill      { nullptr };
+    // The choice of the supports, which shows or hides their chips.
+    TismaChip*                      m_support_choice { nullptr };
+    TismaSlider*                    m_infill      { nullptr };
     // Tisma: the density and the width of the brim typed with the keyboard, beside their captions.
     ::TextInput*                    m_infill_value { nullptr };
     ::SwitchButton*                 m_brim        { nullptr };
@@ -59,7 +64,7 @@ class FreqChangedParams
     std::vector<TismaTitle*>        m_captions;
 
     void on_support(bool is_fff, int idx);
-    void on_infill(int idx);
+    void unfold_supports(bool unfold);
     void set_infill(double density);
     void on_brim(bool on);
     void set_brim_width(double width);

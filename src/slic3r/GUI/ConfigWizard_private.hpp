@@ -545,6 +545,7 @@ private:
     wxBoxSizer         *m_nozzles_sizer;
     wxStaticText       *m_nozzles_hint;
     std::vector<wxCheckBox*> m_nozzle_boxes; // the nozzles of the model shown in the preview
+    const Entry        *m_nozzles_entry { nullptr }; // the model of m_nozzle_boxes
     wxStaticText       *m_summary;
     wxCheckBox         *m_custom { nullptr };
     std::vector<Entry>  m_entries;
@@ -557,6 +558,7 @@ private:
     size_t  selected_count(const Entry &entry) const;
     bool    pick(const Entry &entry, const std::string &variant, bool enable);
     void    update_nozzles(const Entry *entry);
+    void    on_nozzle(const Entry *entry, const std::string &variant, bool checked);
     void    update_counts();
     size_t  selected_count(const Brand &brand) const;
     bool    matches(const Entry &entry) const;

@@ -1,6 +1,6 @@
 name: Release
 
-# Builds Windows, Linux and macOS for a version tag (vX.Y.Z) and publishes them in its GitHub release, with
+# Builds Windows, Linux, macOS and Android for a version tag (vX.Y.Z) and publishes them in its GitHub release, with
 # SHA256SUMS.txt. Started by release-please.yml when its release pull request is merged (the tag it creates does not
 # start workflows), or by pushing a tag by hand.
 
@@ -48,8 +48,13 @@ jobs:
       ref: ${{ inputs.tag || github.ref }}
       release: true
 
+  android:
+    uses: ./.github/workflows/build_android.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
+
   publish:
-    needs: [windows, linux, macos]
+    needs: [windows, linux, macos, android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -73,6 +78,7 @@ jobs:
           cp artifacts/TismaSlicer-windows-installer/*.exe "assets/TismaSlicer-$version-windows-x64-setup.exe"
           cp artifacts/TismaSlicer-linux/*.AppImage assets/
           cp artifacts/TismaSlicer-macos-arm64/*.dmg artifacts/TismaSlicer-macos-x86_64/*.dmg assets/
+          cp artifacts/Tisma-android/*.apk "assets/Tisma-$version-android-arm64.apk"
           (cd assets && sha256sum -- * > SHA256SUMS.txt)
           ls -la assets
 
@@ -94,6 +100,8 @@ jobs:
           - Linux: \`TismaSlicer-$version-linux-x86_64.AppImage\` (needs GTK 3, WebKitGTK 4.1 and hidapi, e.g. Ubuntu 22.04+).
           - macOS: \`TismaSlicer-$version-macos-arm64.dmg\` (Apple silicon) or \`-x86_64.dmg\` (Intel). Not notarized:
             right click > Open the first time.
+          - Android: \`Tisma-$version-android-arm64.apk\` (Android 8.0+, 64-bit ARM). Test build signed with a debug key:
+            install it by hand ("unknown sources"); it is not the Google Play version.
 
           \`SHA256SUMS.txt\` has the checksums. Code signing policy: docs/CODE_SIGNING_POLICY.md.
           EOF

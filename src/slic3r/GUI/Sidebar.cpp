@@ -323,6 +323,8 @@ class SlicedInfo : public InfoCard
 public:
     SlicedInfo(wxWindow *parent);
     void SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label="");
+    // The names and values shown, with the estimated time or without it.
+    std::vector<std::pair<std::string, std::string>> rows(bool with_time) const;
 
 private:
     std::vector<std::pair<wxStaticText*, wxStaticText*>> info_vec;
@@ -360,6 +362,20 @@ SlicedInfo::SlicedInfo(wxWindow *parent) : InfoCard(parent, _L("Sliced Info"))
     this->Show(false);
 }
 
+std::vector<std::pair<std::string, std::string>> SlicedInfo::rows(bool with_time) const
+{
+    std::vector<std::pair<std::string, std::string>> out;
+    for (size_t i = 0; i < info_vec.size(); ++ i)
+        if ((with_time || i != siEstimatedTime) && info_vec[i].first->IsShown()) {
+            // The names end with a colon only when values of parts follow.
+            std::string name = into_u8(info_vec[i].first->GetLabelText());
+            if (name.find('\n') == std::string::npos && (name.empty() || name.back() != ':'))
+                name += ":";
+            out.emplace_back(std::move(name), into_u8(info_vec[i].second->GetLabelText()));
+        }
+    return out;
+}
+
 void SlicedInfo::SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label/*=""*/)
 {
     const bool show = text != "N/A";
@@ -381,10 +397,7 @@ void Sidebar::show_preset_comboboxes()
     for (wxSizerItem *row : m_fff_rows)
         row->Show(!showSLA);
 
-    if (m_full_spectrum_row) {
-        const bool show_btn = !showSLA && int(m_combos_filament.size()) >= 2;
-        m_full_spectrum_row->Show(show_btn);
-    }
+    update_full_spectrum_rows();
 
     for (wxSizerItem *row : m_sla_rows)
         row->Show(showSLA);
@@ -637,6 +650,7 @@ Sidebar::Sidebar(Plater *parent)
             m_object_list->update_info_items(obj_idx);
 
         m_plater->schedule_background_process();
+        update_full_spectrum_rows();
         update_objects_list_extruder_column(m_combos_filament.size());
         m_object_list->Refresh();
         if (GLCanvas3D *canvas = m_plater->canvas3D(); canvas != nullptr) {
@@ -647,6 +661,22 @@ Sidebar::Sidebar(Plater *parent)
 #ifdef _WIN32
     wxGetApp().UpdateDarkUI(m_btn_full_spectrum, true);
 #endif
+    {
+        // Tisma: on a printer that changes filaments in a single nozzle the color mixing is an option, which shows the
+        // button above once it is on (update_full_spectrum_rows()).
+        auto *option_row = new wxBoxSizer(wxHORIZONTAL);
+        auto *option_title = new TismaTitle(m_card_filament, _L("Color mixing (Full Spectrum)"), TismaTitle::Style::Caption);
+        m_titles.push_back(option_title);
+        option_row->Add(option_title, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, em);
+        m_full_spectrum_option = new ::SwitchButton(m_card_filament);
+        m_full_spectrum_option->SetToolTip(_L("Colors mixed by alternating the filaments layer by layer. On a printer that "
+                                              "changes filaments in a single nozzle (AMS, MMU), each layer with a mix "
+                                              "needs a filament change and its purge."));
+        m_full_spectrum_option->Bind(wxEVT_TOGGLEBUTTON, [this](wxCommandEvent &e) { on_full_spectrum_option(e.IsChecked()); });
+        option_row->Add(m_full_spectrum_option, 0, wxALIGN_CENTER_VERTICAL);
+        m_full_spectrum_option_row = m_card_filament_sizer->Add(option_row, 0, wxEXPAND | wxTOP, int(0.6 * em));
+        m_full_spectrum_option_row->Show(false);
+    }
     {
         auto *btn_row_sizer = new wxBoxSizer(wxHORIZONTAL);
         btn_row_sizer->Add(m_btn_full_spectrum, 1, wxEXPAND);
@@ -676,8 +706,7 @@ Sidebar::Sidebar(Plater *parent)
         | wxRIGHT
 #endif // __WXGTK3__
         , wxOSX ? 1 : margin_5);
-    if (m_full_spectrum_row)
-        m_full_spectrum_row->Show(int(m_combos_filament.size()) >= 2);
+    update_full_spectrum_rows();
 
     // Object List, under its title
     auto *objects_title = new TismaTitle(m_scrolled_panel, _L("Objects"));
@@ -1336,6 +1365,7 @@ void Sidebar::update_printer_parts()
     }
     m_printer_parts_row->Show(fff);
     update_extruder_nozzles();
+    update_full_spectrum_rows();
 }
 
 void Sidebar::update_extruder_nozzles()
@@ -1461,6 +1491,76 @@ void Sidebar::on_fine_coarse(bool on)
     }
     tab->load_config(new_conf);
     update_extruder_nozzles();
+}
+
+bool Sidebar::single_nozzle_multi_material() const
+{
+    const DynamicPrintConfig &printer = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+    return printer.option("single_extruder_multi_material") != nullptr && printer.opt_bool("single_extruder_multi_material") &&
+           m_combos_filament.size() >= 2;
+}
+
+void Sidebar::update_full_spectrum_rows()
+{
+    if (m_full_spectrum_row == nullptr || m_full_spectrum_option_row == nullptr)
+        return;
+    const bool fff           = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF;
+    const bool several       = fff && m_combos_filament.size() >= 2;
+    const bool single_nozzle = several && single_nozzle_multi_material();
+    const bool on            = wxGetApp().app_config->get_bool("tisma_full_spectrum_single_nozzle");
+    // A project with color mixes keeps the button, to change or remove them (no project yet while the plater is made).
+    const Plater *plater     = wxGetApp().plater();
+    const bool has_mixes     = plater != nullptr && ! plater->model().virtual_extruders.empty();
+    m_full_spectrum_option->SetValue(on);
+    m_full_spectrum_option_row->Show(single_nozzle);
+    m_full_spectrum_row->Show(several && (! single_nozzle || on || has_mixes));
+    m_card_filament->Layout();
+}
+
+void Sidebar::on_full_spectrum_option(bool on)
+{
+    if (on) {
+        RichMessageDialog dialog(this,
+            _L("This printer changes filaments in a single nozzle (AMS, MMU). A color mix alternates the filaments layer "
+               "by layer: each layer with a mix is a filament change, and each change purges filament. The print uses "
+               "noticeably more filament and takes longer. After slicing, a warning tells how much filament goes to "
+               "purging."),
+            _L("Color mixing (Full Spectrum)"), wxYES_NO | wxNO_DEFAULT | wxICON_WARNING);
+        dialog.SetYesNoLabels(_L("Turn on"), _L("Cancel"));
+        if (dialog.ShowModal() != wxID_YES) {
+            m_full_spectrum_option->SetValue(false);
+            return;
+        }
+    }
+    wxGetApp().app_config->set("tisma_full_spectrum_single_nozzle", on ? "1" : "0");
+    update_full_spectrum_rows();
+    m_scrolled_panel->Layout();
+}
+
+void Sidebar::update_full_spectrum_warning(const PrintStatistics *ps)
+{
+    std::string text;
+    if (ps != nullptr && ps->total_toolchanges > 0 && single_nozzle_multi_material() && ! m_plater->model().virtual_extruders.empty()) {
+        // The total filament includes the purge (the wipe tower and the flush).
+        const bool   by_weight = ps->total_weight > 0.;
+        const double purged    = by_weight ? ps->total_wipe_tower_filament_weight + ps->total_flush_filament_weight :
+                                             ps->total_wipe_tower_filament + ps->total_flush_filament;
+        const double total     = by_weight ? ps->total_weight : ps->total_used_filament;
+        if (purged > 0. && total > 0.)
+            text = format(_u8L("Color mixing with a single nozzle: %1% %% of the filament (%2%) goes to purging."),
+                          int(std::lround(100. * purged / total)),
+                          // In the decimal separator of the language, as the slicing information.
+                          into_u8(by_weight ? wxString::Format("%.1f g", purged) : wxString::Format("%.2f m", 0.001 * purged)));
+    }
+    if (text == m_full_spectrum_warning)
+        return;
+    // A custom warning: the warnings of the plater are hidden in the preview, where it matters.
+    NotificationManager *notifications = m_plater->get_notification_manager();
+    if (! m_full_spectrum_warning.empty())
+        notifications->close_custom_notification(m_full_spectrum_warning);
+    if (! text.empty())
+        notifications->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::WarningNotificationLevel, text);
+    m_full_spectrum_warning = text;
 }
 
 void Sidebar::on_select_nozzle()
@@ -1817,7 +1917,7 @@ void Sidebar::show_info_sizer()
 
 void Sidebar::update_sliced_info_sizer()
 {
-    if (m_sliced_info->IsShown(size_t(0)))
+    if (m_sliced_info_shown)
     {
         if (m_plater->printer_technology() == ptSLA)
         {
@@ -2042,6 +2142,7 @@ void Sidebar::update_sliced_info_sizer()
             }
 
             m_sliced_info->SetTextAndShow(siWTNumberOfToolchanges, ps.total_toolchanges > 0 ? wxString::Format("%.d", ps.total_toolchanges) : "N/A");
+            update_full_spectrum_warning(&ps);
 
             // Hide non-FFF sliced info parameters
             m_sliced_info->SetTextAndShow(siMaterial_unit, "N/A");
@@ -2054,8 +2155,12 @@ void Sidebar::update_sliced_info_sizer()
                 m_sliced_info->SetTextAndShow(siPerimeters, wxString::Format("%d", cfg.opt_int("perimeters")));
             if (const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density")) {
                 wxString infill = wxString::Format("%.0f %%", density->value);
-                if (const ConfigOption *pattern = cfg.option("fill_pattern"))
-                    infill += " " + from_u8(pattern->serialize());
+                if (const ConfigOption *pattern = cfg.option("fill_pattern")) {
+                    // The name of the pattern as in the settings ("Stars", translated), else its key.
+                    const ConfigOptionDef *def = print_config_def.get("fill_pattern");
+                    const std::optional<int> idx = def && def->enum_def ? def->enum_def->value_to_index(pattern->serialize()) : std::nullopt;
+                    infill += " " + (idx ? _(def->enum_def->label(*idx)) : from_u8(pattern->serialize()));
+                }
                 m_sliced_info->SetTextAndShow(siInfill, infill);
             }
             if (cfg.has("support_material"))
@@ -2064,6 +2169,13 @@ void Sidebar::update_sliced_info_sizer()
             if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
                 coast = c->get_at(0);
             m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
+        }
+
+        // Shown with the legend of the preview, the estimated time too for a resin print (its legend has no times).
+        m_sliced_info_rows = m_sliced_info->rows(m_plater->printer_technology() == ptSLA);
+        if (GLCanvas3D *canvas = m_plater->get_current_canvas3D()) {
+            canvas->set_as_dirty();
+            canvas->request_extra_frame();
         }
     }
 
@@ -2078,9 +2190,15 @@ void Sidebar::show_sliced_info_sizer(const bool show)
 
     wxWindowUpdateLocker freeze_guard(this);
 
-    m_sliced_info->Show(show);
+    // Tisma: the information is shown with the legend of the preview, on the left, not in the panel, so that it is not
+    // shown twice (the legend of a filament print has the times and the filament of each feature).
+    m_sliced_info_shown = show;
+    m_sliced_info->Show(false);
+    m_sliced_info_rows.clear();
     if (show)
         update_sliced_info_sizer();
+    else
+        update_full_spectrum_warning(nullptr);
 
     Layout();
     m_scrolled_panel->Refresh();

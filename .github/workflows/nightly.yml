@@ -1,6 +1,6 @@
 name: Nightly
 
-# Every night, when main has new commits: Windows, Linux and macOS builds published in the "nightly" pre-release
+# Every night, when main has new commits: Windows, Linux, macOS and Android builds published in the "nightly" pre-release
 # (replaced each time, with the commit list since the previous one). Can also be started by hand.
 
 on:
@@ -60,8 +60,13 @@ jobs:
     if: needs.check.outputs.build == 'true'
     uses: ./.github/workflows/build_macos.yml
 
+  android:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    uses: ./.github/workflows/build_android.yml
+
   publish:
-    needs: [check, windows, linux, macos]
+    needs: [check, windows, linux, macos, android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -88,6 +93,7 @@ jobs:
             arch=$(basename "$f" ".$ext" | sed 's/.*-\(linux-[a-z0-9_]*\|macos-[a-z0-9_]*\)$/\1/')
             cp "$f" "assets/TismaSlicer-nightly-$stamp-$arch.$ext"
           done
+          cp artifacts/Tisma-android/*.apk "assets/Tisma-nightly-$stamp-android-arm64.apk"
           (cd assets && sha256sum -- * > SHA256SUMS.txt)
           ls -la assets
 

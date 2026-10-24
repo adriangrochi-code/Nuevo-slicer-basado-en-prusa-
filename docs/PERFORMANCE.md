@@ -129,6 +129,44 @@ si llega, se hace el cálculo exacto de siempre.
 
 (mediana de 3; el total varía ±0,3 s entre corridas en este contenedor y no se usa para comparar).
 
+## Visibilidad de la costura en la placa de video (OpenCL)
+
+Con `TISMA_GPU_SLICING=1` (los nodos del servidor lo ponen cuando su ajuste «gpu» está activo) los 750 000 rayos de
+la visibilidad de la costura se lanzan en la placa de video con OpenCL 1.2, la API común a la Intel HD Graphics 4000
+(que en Windows no tiene Vulkan) y a las NVIDIA Quadro de los servidores. OpenCL se carga al ejecutar (`OpenCL.dll`,
+`libOpenCL.so.1`, del driver); sin OpenCL, sin placa o ante cualquier error se calcula en la CPU como antes
+(`src/libslic3r/OpenCL.cpp`, `GCode/ModelVisibility.cpp`).
+
+- Placa: la dedicada con más unidades de cómputo, después la integrada. `TISMA_GPU_DEVICE` elige por una parte del
+  nombre (`P2000`, `HD Graphics`); `cpu` permite pocl (OpenCL sobre la CPU) para los tests.
+- Precisión: si la placa tiene doble precisión (`cl_khr_fp64`: las NVIDIA y pocl), el kernel hace las mismas
+  operaciones que la CPU y en el mismo orden (el de Eigen: `Vec3d::dot` suma primero los dos primeros productos y
+  `Vec3f::dot` los dos últimos; sin FMA) y compara los impactos por el `t` en float que guarda `igl::Hit`, así que
+  cada rayo termina igual que en la CPU. Si no la tiene (la HD 4000 probablemente no; sin verificar), o con
+  `TISMA_GPU_PRECISION=single`, calcula en simple precisión.
+
+G-code comparado con el de la CPU capa por capa (largo extruido, filamento, segmentos extruidos y punto de inicio de
+cada perímetro), con pocl en este contenedor:
+
+| Caso | Doble precisión | Simple precisión |
+|---|---|---|
+| benchy | idéntico | misma geometría; la costura cambia en 6 de 160 capas (7,55–9,05 mm) |
+| benchy_x2_gyroid | idéntico | idéntico |
+| benchy_supports | idéntico | igual que benchy |
+| benchy_organic | idéntico | igual que benchy |
+| bunny_x1.5 | idéntico | idéntico |
+| screw_x4 | idéntico | idéntico |
+
+«Misma geometría»: el largo extruido y el filamento de cada capa coinciden (diferencia máxima de 0,0006 mm y
+0,00004 mm); solo cambia dónde empieza cada vuelta. En esas 6 capas el inicio del perímetro externo se corre 1,5 mm
+(mediana; máximo 1,9 mm) y el de los internos hasta 3,3 mm. Por muestra (test `[TismaGpu]`): en doble precisión
+ninguna diferencia; en simple, 2 de las 30 000 muestras del Benchy difieren en un rayo de 25 (0,04).
+
+Tiempo de los rayos del Benchy: 0,57 s en la CPU (los 4 hilos), 0,59 s (doble) y 0,46 s (simple) en pocl sobre la
+misma CPU. pocl sirve para comprobar el resultado, no la velocidad: **no está medido en una placa real** (HD 4000,
+P2000). En el servidor la ganancia es que ese cuarto del laminado (tabla del perfil inicial) deja la CPU libre para
+otro trabajo.
+
 ## Correcciones de upstream: revisión del 13-10-2026
 
 `master` de PrusaSlicer sigue en el commit del 21-09-2026 («Bumped up version to 3.0.0-alpha12»), anterior al
