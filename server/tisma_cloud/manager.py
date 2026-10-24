@@ -54,7 +54,7 @@ MASTER_FIELDS = [
 # Settings of a node: key, label, type, secret.
 NODE_FIELDS = [
     ("master_url", "Dirección del maestro (http://IP:8000)", str, False),
-    ("token", "Token del nodo (tn_...)", str, True),
+    ("token", "Token del nodo (vacío: pide unirse al maestro)", str, True),
     ("tisma_slicer", "Programa tisma-slicer (consola)", str, False),
     ("tisma_fea", "Programa tisma-fea", str, False),
     ("work_dir", "Carpeta de trabajo", str, False),
@@ -63,6 +63,7 @@ NODE_FIELDS = [
     ("timeout_s", "Duración máxima de un trabajo [s]", int, False),
     ("gpu", "Usar la placa de video", bool, False),
     ("verify_tls", "Verificar el certificado HTTPS", bool, False),
+    ("name", "Nombre con el que pide unirse (vacío: el de la máquina)", str, False),
 ]
 # What a node can do (the job classes of jobs.py), as the window and the console name them.
 JOB_CLASS_NAMES = {
@@ -396,6 +397,58 @@ class Manager:
             if enabled is not None:
                 node.enabled = enabled
 
+    # ---- the machines that ask to be nodes, and the removal of a node (pairing.py)
+    def join_requests(self) -> list[dict]:
+        from . import pairing
+
+        db, _settings = self._database()
+        with db.session() as s:
+            return pairing.pending(s)
+
+    def accept_join(self, request_id: str, name: str = "", priorities: list[str] | None = None) -> str:
+        """Makes the node a machine asked for; returns its name. The machine takes its token by itself."""
+        from . import pairing
+
+        db, _settings = self._database()
+        with db.session() as s:
+            return pairing.accept(s, request_id, name, priorities).name
+
+    def add_node(self, name: str, priorities: list[str] | None = None) -> str:
+        """A node made by hand (all the job classes unless priorities); returns its token, shown only now."""
+        from sqlalchemy import select
+
+        from .jobs import JOB_CLASSES
+        from .models import Node
+        from .pairing import clean_name
+        from .security import hash_token, new_token
+
+        name = clean_name(name)
+        db, _settings = self._database()
+        with db.session() as s:
+            if s.execute(select(Node).where(Node.name == name)).scalar_one_or_none():
+                raise ValueError(f"Ya hay un nodo {name}")
+            token = new_token("tn")
+            s.add(Node(name=name, token_hash=hash_token(token), priorities=",".join(priorities or JOB_CLASSES)))
+        return token
+
+    def reject_join(self, request_id: str) -> None:
+        from . import pairing
+
+        db, _settings = self._database()
+        with db.session() as s:
+            pairing.reject(s, request_id)
+
+    def delete_node(self, name: str) -> int:
+        """Removes a node; returns how many of its running jobs went back to the queue. The node of the master is not
+        removed while the master computes (the service would make it again): turn that off instead."""
+        from . import pairing
+
+        if name == MASTER_NODE and self.role() == "master" and self.master_computes():
+            raise ValueError("Es el nodo del propio maestro: apagá «El maestro también calcula» en Configuración")
+        db, _settings = self._database()
+        with db.session() as s:
+            return pairing.delete_node(s, name)
+
     # ---- what the master is doing: the window shows it, read from the database (also while the service is stopped)
     def dashboard(self, last_jobs: int = 12) -> dict:
         """The state of the master: its nodes (with the jobs each one runs and its machine), the jobs (waiting,
@@ -405,6 +458,7 @@ class Manager:
 
         from sqlalchemy import func, select
 
+        from . import pairing
         from .models import Alert, Job, Node, Payment, Usage, User, month_of, utcnow
         from .scheduler import ACTIVE
 
@@ -440,6 +494,7 @@ class Manager:
                             select(Payment.currency, func.count(), func.sum(Payment.amount_cents))
                             .where(Payment.status == "approved", Payment.paid_at >= today.replace(day=1))
                             .group_by(Payment.currency)).all()]
+            requests = pairing.pending(s)
             alerts = [{"message": a.message, "started_at": a.started_at.isoformat(timespec="seconds")}
                       for a in s.execute(select(Alert).where(Alert.resolved_at.is_(None))
                                          .order_by(Alert.started_at.desc())).scalars()]
@@ -451,7 +506,7 @@ class Manager:
                 day = days.get(finished.date().isoformat())
                 if day is not None:
                     day[status] += 1
-        return {"nodes": nodes, "queued": active.get("queued", 0), "running": active.get("running", 0),
+        return {"nodes": nodes, "requests": requests, "queued": active.get("queued", 0), "running": active.get("running", 0),
                 "done_today": ended.get("done", 0), "failed_today": ended.get("failed", 0), "jobs": jobs,
                 "users": users, "new_users": new_users, "paying_users": paying, "hours_month": round(seconds / 3600, 2),
                 "payments_month": payments, "alerts": alerts,
@@ -776,8 +831,11 @@ class Manager:
                 out.append(Check(label, ok, path if ok else (f"No existe: {path}" if path else
                                                              "No configurado: instalá Tisma Slicer en esta máquina"),
                                  None if ok else "programs"))
-            out.append(Check("Token del nodo", bool(node.get("token")), "Configurado" if node.get("token") else
-                             "Falta: en el maestro, Administración > node-add NOMBRE"))
+            asked = self.node_path.with_name(self.node_path.name + ".join").is_file()
+            out.append(Check("Token del nodo", True if node.get("token") else None, "Configurado" if node.get("token")
+                             else "Pidió unirse al maestro: aceptalo en la ventana del maestro (Nodos)" if asked
+                             else "Sin token: al iniciar, el nodo pide unirse al maestro; aceptalo en la ventana del "
+                                  "maestro (Nodos)"))
             master = str(node.get("master_url") or "").rstrip("/")
             try:
                 import ssl
@@ -843,7 +901,7 @@ class Manager:
         from .node.__main__ import main as node_main
 
         if role == "master" and local_node:
-            return node_main(["--config", str(self.master_node_path)])
+            return node_main(["--config", str(self.master_node_path), "--no-join"])
         if role == "master":
             from .cli import load_env, serve_master
 

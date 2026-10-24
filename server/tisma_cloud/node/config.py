@@ -32,9 +32,12 @@ def auto_slots(cpus: int, memory: float | None) -> int:
 @dataclass
 class NodeConfig:
     master_url: str
+    # Empty: the node asks the master to join (join.py) and writes the token it gets here.
     token: str
     tisma_slicer: str
     tisma_fea: str
+    # The name it asks to join with (the name of the machine when empty).
+    name: str = ""
     work_dir: Path = Path("./node-work")
     # Jobs run at the same time; 0: automatic (auto_slots()). A slicing job keeps only about 3 of 4 cores busy, so
     # two at a time finish a mixed queue sooner (README, Capacity).
@@ -58,7 +61,7 @@ class NodeConfig:
         unknown = set(data) - known
         if unknown:
             raise ValueError(f"Unknown settings in {path}: {', '.join(sorted(unknown))}")
-        for key in ("master_url", "token", "tisma_slicer", "tisma_fea"):
+        for key in ("master_url", "tisma_slicer", "tisma_fea"):
             if not data.get(key):
                 raise ValueError(f"'{key}' is missing in {path}")
         cfg = NodeConfig(**data)

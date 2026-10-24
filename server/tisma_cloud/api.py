@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import bindparam, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
-from . import __version__, alerts, billing, codes, crypto, google_play, remote, reports, scheduler, triage
+from . import __version__, alerts, billing, codes, crypto, google_play, pairing, remote, reports, scheduler, triage
 from .google_auth import GoogleError, GoogleVerifier
 from .mail import code_message, exists_message, mailer_for, reward_message
 from .db import Database
@@ -50,6 +50,10 @@ log = logging.getLogger("tisma_cloud")
 
 # Keys of the long polls (wakeup.py): the nodes wait for any job, a bridge for its own commands.
 JOBS = "jobs"
+# Machines asking to be nodes (pairing.py): how often they ask for the answer [s], and requests per minute of an
+# address (the request and its polls).
+JOIN_POLL_S = 5
+JOIN_PER_MINUTE = 30
 
 
 def bridge_key(bridge_id: str) -> str:
@@ -160,6 +164,7 @@ class Services:
         self.presence.drop_old_looks()
         with self.db.session() as s:
             requeued = scheduler.requeue_stale(s, self.settings.node_timeout_s, self.settings.max_attempts)
+            pairing.drop_old(s)
             # Jobs ended by the sweep itself (nodes lost): the recent ones are enough, the others were cleaned before.
             ended = s.execute(select(Job.id).where(Job.status.in_(scheduler.FINAL), Job.files_removed.is_(False),
                                                    Job.finished_at > utcnow() - timedelta(hours=1))).scalars()
@@ -507,6 +512,16 @@ class FailBody(BaseModel):
     cancelled: bool = False
 
 
+class JoinBody(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    info: dict[str, Any] = Field(default_factory=dict)
+
+
+class AcceptBody(BaseModel):
+    name: str = Field(default="", max_length=100)
+    priorities: list[str] | None = None
+
+
 class NodeCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     priorities: list[str]
@@ -773,8 +788,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         token = bearer(authorization)
         with db.session() as s:
             node = s.execute(select(Node).where(Node.token_hash == hash_token(token))).scalar_one_or_none()
-            if node is None or not node.enabled:
+            if node is None:
                 raise HTTPException(401, "Invalid node token", headers={"WWW-Authenticate": "Bearer"})
+            # A disabled node waits (an unknown token makes the machine ask to join again).
+            if not node.enabled:
+                raise HTTPException(403, "This node is disabled")
             node.last_seen = utcnow()
         if not limiter.allow(f"node:{node.id}", cfg.node_requests_per_minute):
             raise HTTPException(429, "Too many requests", headers={"Retry-After": "10"})
@@ -1446,6 +1464,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 services.storage.remove_input(job.id)
             return job_view(job)
 
+    # ---- machines of the local network that ask to be computing nodes (pairing.py)
+    def join_allowed(request: Request) -> None:
+        if not limiter.allow(f"join-ip:{client_key(request)}", JOIN_PER_MINUTE):
+            raise HTTPException(429, "Too many requests", headers={"Retry-After": "10"})
+
+    @app.post("/v1/node/join", status_code=201, dependencies=[Depends(local_only), Depends(join_allowed)])
+    def node_join(request: Request, body: JoinBody) -> dict:
+        with db.session() as s:
+            try:
+                request_id, secret = pairing.request_join(s, body.name, client_key(request), body.info)
+            except pairing.PairingError as e:
+                raise HTTPException(429, str(e), headers={"Retry-After": "600"}) from e
+        log.info("The machine %s (%s) asks to be a computing node", pairing.clean_name(body.name), client_key(request))
+        return {"id": request_id, "secret": secret, "poll_s": JOIN_POLL_S}
+
+    @app.get("/v1/node/join/{request_id}", dependencies=[Depends(local_only), Depends(join_allowed)])
+    def node_join_state(request_id: str, x_join_secret: Annotated[str, Header()] = "") -> dict:
+        with db.session() as s:
+            answer = pairing.join_state(s, request_id, x_join_secret)
+        if answer is None:
+            raise HTTPException(404, "No such request")
+        return answer
+
     # ---- computing nodes
     def try_claim(node_id: int, exclude: list[str]) -> dict | None:
         with db.session() as s:
@@ -1853,6 +1894,40 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             s.add(node)
             s.flush()
             return {"node": node_view(node, 0, cfg.node_timeout_s), "token": token}
+
+    @app.delete("/v1/admin/nodes/{name}")
+    def admin_delete_node(_admin: AdminDep, name: str) -> dict:
+        with db.session() as s:
+            try:
+                requeued = pairing.delete_node(s, name)
+            except pairing.PairingError as e:
+                raise HTTPException(404, str(e)) from e
+        if requeued:
+            services.wakeup.notify(JOBS)
+        return {"deleted": name, "requeued": requeued}
+
+    @app.get("/v1/admin/node-requests")
+    def admin_node_requests(_admin: AdminDep) -> dict:
+        with db.session() as s:
+            return {"requests": pairing.pending(s)}
+
+    @app.post("/v1/admin/node-requests/{request_id}/accept")
+    def admin_accept_node(_admin: AdminDep, request_id: str, body: AcceptBody) -> dict:
+        with db.session() as s:
+            try:
+                node = pairing.accept(s, request_id, body.name, body.priorities)
+            except pairing.PairingError as e:
+                raise HTTPException(404 if "No such" in str(e) else 422, str(e)) from e
+            return {"node": node_view(node, 0, cfg.node_timeout_s)}
+
+    @app.post("/v1/admin/node-requests/{request_id}/reject")
+    def admin_reject_node(_admin: AdminDep, request_id: str) -> dict:
+        with db.session() as s:
+            try:
+                pairing.reject(s, request_id)
+            except pairing.PairingError as e:
+                raise HTTPException(404, str(e)) from e
+        return {"rejected": request_id}
 
     @app.patch("/v1/admin/nodes/{name}")
     def admin_update_node(_admin: AdminDep, name: str, body: NodeUpdate) -> dict:

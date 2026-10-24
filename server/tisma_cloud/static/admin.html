@@ -98,6 +98,7 @@
     </div>
 
     <h2>Servidores</h2>
+    <div id="requests"></div>
     <p class="muted">Cada servidor toma los tipos de trabajo marcados, en ese orden: primero el 1, si no hay, el 2… Un tipo sin marcar no lo hace nunca.</p>
     <div class="nodes" id="nodes"></div>
 
@@ -296,7 +297,12 @@ function renderNode(node, jobs) {
         if (node.enabled && !confirm(`¿Deshabilitar ${node.name}? No va a tomar trabajos nuevos.`)) return;
         try { await api(`/v1/admin/nodes/${encodeURIComponent(node.name)}`, { method: "PATCH", body: JSON.stringify({ enabled: !node.enabled }) }); refresh(); }
         catch (e) { if (e.message !== "auth") $("app-error").textContent = `No se pudo ${verb}: ${e.message}`; }
-      } }, node.enabled ? "Deshabilitar" : "Habilitar")),
+      } }, node.enabled ? "Deshabilitar" : "Habilitar"),
+      el("button", { type: "button", onclick: async () => {
+        if (!confirm(`¿Eliminar ${node.name}? Sus trabajos en curso vuelven a la cola. Si la máquina sigue encendida pide unirse otra vez.`)) return;
+        try { await api(`/v1/admin/nodes/${encodeURIComponent(node.name)}`, { method: "DELETE" }); refresh(); }
+        catch (e) { if (e.message !== "auth") $("app-error").textContent = `No se pudo eliminar: ${e.message}`; }
+      } }, "Eliminar")),
     list.length === 0 ? el("div", { class: "error" }, "Marcá al menos un tipo de trabajo.") : null);
 }
 
@@ -304,7 +310,23 @@ let last = { nodes: [], jobs: { active: [], ended: [] } };
 function refreshNodes() {
   const box = $("nodes");
   box.replaceChildren(...(last.nodes.length ? last.nodes.map((n) => renderNode(n, last.jobs.active))
-    : [el("p", { class: "muted" }, "No hay servidores registrados. En el central: python -m tisma_cloud.admin node-add NOMBRE --priorities …")]));
+    : [el("p", { class: "muted" }, "No hay servidores registrados. Instalá Tisma Cloud como nodo en una máquina de esta red, con la dirección de este central y sin token: pide unirse y aparece acá arriba.")]));
+}
+
+// The machines of the local network that ask to be servers (accepted here, they take their token by themselves).
+function renderRequests(requests) {
+  const answer = async (r, verb) => {
+    if (verb === "reject" && !confirm(`¿Rechazar a ${r.name} (${r.address})? Su servicio de nodo se detiene.`)) return;
+    try { await api(`/v1/admin/node-requests/${encodeURIComponent(r.id)}/${verb}`, { method: "POST", body: "{}" }); refresh(); }
+    catch (e) { if (e.message !== "auth") $("app-error").textContent = e.message; }
+  };
+  $("requests").replaceChildren(...requests.map((r) => {
+    const i = r.info || {};
+    const facts = [i.host, i.cpus && `${i.cpus} hilos`, i.memory_gb && `${i.memory_gb} GB`, i.os].filter(Boolean).join(" · ");
+    return el("p", { class: "alert" }, `${r.name} (${r.address}) pide ser un servidor${facts ? ": " + facts : ""} `,
+      el("button", { type: "button", class: "primary", onclick: () => answer(r, "accept") }, "Aceptar"), " ",
+      el("button", { type: "button", onclick: () => answer(r, "reject") }, "Rechazar"));
+  }));
 }
 
 function jobTable(table, jobs, ended) {
@@ -514,8 +536,10 @@ $("catalog-jsonl").onclick = () => downloadCatalog("jsonl");
 
 async function refresh() {
   try {
-    const [nodes, queue, jobs, users, pays, alerts] = await Promise.all([api("/v1/admin/nodes"), api("/v1/admin/queue"),
-      api("/v1/admin/jobs?limit=20"), api("/v1/admin/users"), api("/v1/admin/payments?limit=20"), api("/v1/admin/alerts")]);
+    const [nodes, queue, jobs, users, pays, alerts, requests] = await Promise.all([api("/v1/admin/nodes"), api("/v1/admin/queue"),
+      api("/v1/admin/jobs?limit=20"), api("/v1/admin/users"), api("/v1/admin/payments?limit=20"), api("/v1/admin/alerts"),
+      api("/v1/admin/node-requests")]);
+    renderRequests(requests.requests);
     // Open problems on top (also sent by e-mail); the solved ones of the week, smaller.
     const open = alerts.alerts.filter((a) => !a.resolved_at);
     $("alerts").replaceChildren(...open.map((a) => el("p", { class: "alert" }, `⚠ ${a.message} (empezó ${ago(a.started_at)})`)),

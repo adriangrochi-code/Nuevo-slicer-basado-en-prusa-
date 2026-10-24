@@ -10,6 +10,10 @@
     python -m tisma_cloud.admin node-set NAME [--priorities ...] [--enable | --disable]
     python -m tisma_cloud.admin node-token NAME
     python -m tisma_cloud.admin node-list
+    python -m tisma_cloud.admin node-del NAME
+    python -m tisma_cloud.admin node-requests
+    python -m tisma_cloud.admin node-accept ID [--name NAME] [--priorities ...]
+    python -m tisma_cloud.admin node-reject ID
     python -m tisma_cloud.admin queue
     python -m tisma_cloud.admin reports [--status new,confirmed] [--app pc] [--format md | jsonl] [--out FILE]
 
@@ -26,7 +30,7 @@ from datetime import datetime
 
 from sqlalchemy import func, select
 
-from . import crypto, reports
+from . import crypto, pairing, reports
 from .db import Database
 from .jobs import JOB_CLASS_DESCRIPTIONS, JOB_CLASSES
 from .models import ApiToken, BugReport, Job, Node, Plan, User
@@ -106,6 +110,15 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("node-token", help="replace the token of a node")
     p.add_argument("name")
     sub.add_parser("node-list")
+    p = sub.add_parser("node-del", help="remove a node (its running jobs go back to the queue)")
+    p.add_argument("name")
+    sub.add_parser("node-requests", help="the machines of the local network that ask to be nodes")
+    p = sub.add_parser("node-accept", help="make the node a machine asked for (it takes its token by itself)")
+    p.add_argument("id")
+    p.add_argument("--name", default="", help="name of the node (the name of the machine without it)")
+    p.add_argument("--priorities", help=f"job classes in order, comma separated (all without it; {classes})")
+    p = sub.add_parser("node-reject", help="refuse a machine that asks to be a node")
+    p.add_argument("id")
     sub.add_parser("queue", help="jobs waiting and running by class")
     p = sub.add_parser("reports", help="the catalog of the problems reported, for the programmers (and their AI)")
     p.add_argument("--status", default="new,confirmed", help="comma separated: " + ", ".join(reports.STATUSES))
@@ -215,6 +228,30 @@ def main(argv: list[str] | None = None) -> int:
                 seen = n.last_seen.isoformat(timespec="seconds") if n.last_seen else "never"
                 print(f"{n.name:20} {n.priorities:40} running {running.get(n.id, 0)}  last seen {seen}"
                       f"{'' if n.enabled else '  disabled'}")
+        elif args.command == "node-del":
+            try:
+                requeued = pairing.delete_node(s, args.name)
+            except pairing.PairingError as e:
+                print(e, file=sys.stderr)
+                return 1
+            print(f"Node {args.name} removed; {requeued} running job(s) back to the queue")
+        elif args.command == "node-requests":
+            for r in pairing.pending(s):
+                info = r["info"]
+                print(f"{r['id']}  {r['name']:20} {r['address']:16} {info.get('cpus', '?')} CPU  "
+                      f"{info.get('os', '')}  since {r['created_at']}")
+        elif args.command in ("node-accept", "node-reject"):
+            try:
+                if args.command == "node-reject":
+                    pairing.reject(s, args.id)
+                    print("Rejected")
+                else:
+                    priorities = parse_priorities(args.priorities).split(",") if args.priorities else None
+                    node = pairing.accept(s, args.id, args.name, priorities)
+                    print(f"Node {node.name} made: the machine takes its token by itself in a few seconds")
+            except pairing.PairingError as e:
+                print(e, file=sys.stderr)
+                return 1
         elif args.command == "queue":
             rows = s.execute(
                 select(Job.job_class, Job.status, func.count()).where(Job.status.in_(("queued", "running")))

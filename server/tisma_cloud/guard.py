@@ -37,7 +37,7 @@ UPLOADS = (
 # Pages that need no account (limited per address).
 ANONYMOUS = re.compile(r"^/(v1/(health|plans|auth/.*|billing/webhook/.*|billing/play/notify|billing/test/.*|reports)|cuenta.*|admin)?$")
 # Small bodies that need no account: (path, largest body [KB]).
-SMALL = ((re.compile(r"^/v1/reports$"), 512),)
+SMALL = ((re.compile(r"^/v1/reports$"), 512), (re.compile(r"^/v1/node/join$"), 16))
 # Answers that count against the address that caused them.
 REFUSED = {400, 401, 403, 404, 405, 411, 413, 422, 429}
 

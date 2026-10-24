@@ -314,9 +314,12 @@ un **nodo de cómputo** (esclavo). Se maneja de dos formas, con lo mismo:
   Detener / Reiniciar, «Iniciar con la máquina», en Windows «Abrir el puerto en el firewall», el **Diagnóstico** (lo que
   la máquina necesita para dar servicio, con «Arreglar» para lo que se puede arreglar solo), el registro y, en el
   maestro, la administración:
-  - **Nodos: qué hace cada uno.** La lista de los nodos con su estado; «Qué hace…» marca los tipos de trabajo de cada
-    nodo (laminar, laminar placas grandes, análisis estructural, relleno mínimo / resina) y su orden: toma primero los
-    de arriba. Se usa desde su próximo trabajo. También habilitar / deshabilitar y agregar un nodo (muestra su token).
+  - **Nodos: los que piden unirse y qué hace cada uno.** Arriba, las máquinas de la red que piden ser nodos
+    (nombre, dirección, procesador y memoria) con «Aceptar» y «Rechazar» (ver «Instalar un nodo»). Abajo, la lista de
+    los nodos con su estado; «Qué hace…» marca los tipos de trabajo de cada nodo (laminar, laminar placas grandes,
+    análisis estructural, relleno mínimo / resina) y su orden: toma primero los de arriba. Se usa desde su próximo
+    trabajo. También habilitar / deshabilitar, «Eliminar» (sus trabajos en curso vuelven a la cola) y «Agregar nodo a
+    mano…» para una máquina que no puede pedir unirse (muestra su token para copiarlo).
   - **Panel de control:** el panel del maestro (servidores en línea, qué hace cada uno, cola por tipo, trabajos,
     usuarios y pagos) en su propia ventana, ya con la sesión iniciada. Ahí cada usuario tiene «Hacer interna»: cuenta
     sin cobro y sin límite (ver «Cuentas internas»). La primera vez pide crear el administrador (correo y contraseña).
@@ -335,7 +338,9 @@ tisma-cloud logs 100
 tisma-cloud autostart on                  # que arranque con la máquina
 tisma-cloud firewall on                   # Windows: abrir el puerto del maestro en el firewall
 tisma-cloud check                         # diagnóstico; check --fix arregla lo que se puede
-tisma-cloud admin node-add i7-1 --priorities slice,slice_large,fea
+tisma-cloud admin node-requests          # las máquinas que piden ser nodos
+tisma-cloud admin node-accept ID         # aceptar una (node-reject ID para rechazarla)
+tisma-cloud admin node-del i7-1          # eliminar un nodo
 tisma-cloud admin user-add tu@correo.com --plan basico --admin --password
 tisma-cloud admin node-set i7-1 --priorities fea,slice   # qué hace un nodo, en orden
 tisma-cloud admin user-set equipo@tisma.com.uy --unlimited   # cuenta interna: sin cobro, sin límite
@@ -387,8 +392,9 @@ firewall, supervisor que revive el maestro, arrancar y detener. Pasos en el serv
    panel se abre desde el navegador de otra PC de la red: `http://IP-del-servidor:8000/admin`, con el correo y la
    contraseña del administrador (el Internet Explorer de Windows Server no sirve para el panel).
 6. En cada **nodo** con Windows: instalar Tisma Slicer, abrir `tisma-cloud.exe` como administrador, elegir **Nodo**,
-   poner la dirección del maestro y el token (de *Agregar nodo…* en el maestro); los programas `tisma-slicer-console.exe`
-   y `tisma-fea.exe` se encuentran solos en la carpeta de instalación de Tisma Slicer («Buscar Tisma Slicer»).
+   poner la dirección del maestro, dejar el token vacío e **Iniciar**: el nodo pide unirse y en el maestro aparece en
+   **Nodos** para aceptarlo (ver «Instalar un nodo»); los programas `tisma-slicer-console.exe` y `tisma-fea.exe` se
+   encuentran solos en la carpeta de instalación de Tisma Slicer («Buscar Tisma Slicer»).
    **Iniciar con la máquina** y **Diagnóstico** igual que en el maestro (un nodo no necesita abrir puertos: él llama
    al maestro).
 
@@ -479,8 +485,25 @@ sirve) y Caddy delante del maestro (ver «Instalar el maestro»).
 
 ## Instalar un nodo
 
-En el maestro: `python -m tisma_cloud.admin node-add i7-1 --priorities slice,slice_large,fea` (muestra el token una
-sola vez).
+Los nodos están en la misma red que el maestro. Un nodo **sin token** pide unirse solo:
+
+1. En la máquina del nodo: rol **Nodo**, la dirección del maestro (`http://IP-del-maestro:8000`), el token vacío e
+   **Iniciar**. El nodo le pide al maestro ser un nodo con el nombre de la máquina (o el de «Nombre con el que pide
+   unirse») y espera la respuesta; el Diagnóstico del nodo dice «Pidió unirse al maestro».
+2. En el maestro, **Nodos** muestra la máquina en «Piden unirse» (también el panel web y `admin node-requests`).
+   «Aceptar» crea el nodo, con todos los tipos de trabajo (después se eligen con «Qué hace…»); el nodo toma su token
+   en unos segundos, lo guarda en su `node.toml` y empieza a trabajar. «Rechazar» detiene el servicio del nodo.
+3. **Eliminar** un nodo devuelve a la cola los trabajos que estaba haciendo. Si la máquina sigue encendida, el maestro
+   ya no la reconoce y vuelve a pedir unirse (rechazarla la detiene); deshabilitar un nodo, en cambio, lo deja
+   esperando sin pedir nada.
+
+Pedir unirse solo se acepta desde la red local (`TISMA_ADMIN_NETWORKS`): desde internet esa dirección no existe, como
+la administración. Cada pedido tiene un secreto que solo conoce la máquina que lo hizo (el token se entrega una sola
+vez, a ella), hay como mucho 50 pedidos esperando y los que nadie responde se olvidan al día.
+
+Un nodo fuera de la red, o hecho a mano: en el maestro «Agregar nodo a mano…» o
+`python -m tisma_cloud.admin node-add i7-1 --priorities slice,slice_large,fea` (muestra el token una sola vez), y ese
+token en el `node.toml` del nodo.
 
 En la máquina del nodo:
 
@@ -569,6 +592,9 @@ Por comandos:
 python -m tisma_cloud.admin node-list                     # nodos, prioridades, trabajos corriendo, última señal
 python -m tisma_cloud.admin node-set i7-1 --priorities fea,slice
 python -m tisma_cloud.admin node-set i7-2 --disable
+python -m tisma_cloud.admin node-del i7-2                 # eliminar (sus trabajos en curso vuelven a la cola)
+python -m tisma_cloud.admin node-requests                 # máquinas que piden ser nodos
+python -m tisma_cloud.admin node-accept ID --name i7-3    # aceptar una (node-reject ID: rechazarla)
 python -m tisma_cloud.admin queue                         # trabajos esperando y corriendo por clase
 python -m tisma_cloud.admin user-list                     # plan, si está al día, horas usadas
 python -m tisma_cloud.admin user-set ana@correo.com --paid-until 2026-12-31
@@ -649,7 +675,8 @@ python -m tisma_cloud.admin reports --format jsonl --app android
 | usuario | `GET /v1/jobs`, `GET /v1/jobs/{id}`, `GET /v1/jobs/{id}/result`, `POST /v1/jobs/{id}/cancel` | seguir, descargar, cancelar |
 | página web | `PUT /v1/site/plans/{nombre}`, `PUT /v1/site/users/{id_web}`, `GET /v1/site/users/{id_web}` | planes, usuarios, pagos |
 | nodo | `POST /v1/node/claim`, `/heartbeat`, `GET /v1/node/jobs/{id}/input`, `POST .../progress`, `.../result`, `.../fail` | trabajar |
-| administrador | `/v1/admin/nodes`, `/v1/admin/users`, `/v1/admin/plans/{nombre}`, `/v1/admin/queue` | administrar |
+| máquina de la red | `POST /v1/node/join` `{name, info}`, `GET /v1/node/join/{id}` (cabecera `X-Join-Secret`) | pedir ser un nodo y recibir su token una vez aceptada (solo red local) |
+| administrador | `/v1/admin/nodes`, `DELETE /v1/admin/nodes/{nombre}`, `/v1/admin/node-requests` (`POST .../{id}/accept`, `.../reject`), `/v1/admin/users`, `/v1/admin/plans/{nombre}`, `/v1/admin/queue` | administrar |
 | puente (PC) | `PUT /v1/bridges/{id}` `{name, printers}`, `GET /v1/bridges/{id}/commands?wait=20` | impresoras y su estado; esperar órdenes (las dos respuestas traen `state_s`: cada cuánto mandar el estado) |
 | puente (PC) | `GET /v1/bridges/{id}/commands/{orden}/file`, `POST /v1/bridges/{id}/commands/{orden}` `{ok, error}`, `POST /v1/bridges/{id}/printers/{imp}/camera` (JPEG) | archivo a imprimir, resultado, imagen de la cámara |
 | usuario | `GET /v1/remote/printers`, `DELETE /v1/remote/bridges/{id}` | impresoras remotas, quitar un puente |

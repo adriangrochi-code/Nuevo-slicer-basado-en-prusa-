@@ -503,7 +503,9 @@ class App:
         online = sum(1 for n in nodes if n["online"] and n["enabled"])
         working = sum(1 for n in nodes if n["running"])
         silent = [n["name"] for n in nodes if n["enabled"] and not n["online"]]
-        t["nodes"].set(f"{online} de {len(nodes)}", "Agregá un nodo en Nodos" if not nodes else
+        asking = len(b.get("requests", []))
+        t["nodes"].set(f"{online} de {len(nodes)}", f"{asking} piden unirse: aceptalos en Nodos" if asking else
+                       "Agregá un nodo en Nodos" if not nodes else
                        f"{working} trabajando" + (f" · sin señal: {', '.join(silent)}" if silent else ""))
         t["running"].set(number(b.get("running", 0)), f"{number(b.get('queued', 0))} en cola")
         t["today"].set(number(b.get("done_today", 0)), f"{number(b.get('failed_today', 0))} fallaron")
@@ -565,8 +567,20 @@ class App:
         self.role.set(role)
         self.on_role()
 
-    # ---- nodes: what each one does
+    # ---- nodes: the machines that ask to join and what each node does
     def build_nodes(self) -> None:
+        asking = self.section(self.pages["nodes"], "Piden unirse",
+                              "Las máquinas de esta red con Tisma Cloud como nodo y sin token")
+        asking.pack(fill="x", pady=(0, 12))
+        self.requests_view = self.table(asking.inner, (("address", "Dirección", 130), ("machine", "Equipo", 300),
+                                                       ("since", "Desde", 140)), height=3, first=("Máquina", 160))
+        bar = tk.Frame(asking.inner, bg=CARD)
+        bar.pack(fill="x", pady=(10, 0))
+        self.requests_note = tk.Label(bar, text="", bg=CARD, fg=MUTED, font=self.f_small, anchor="w")
+        self.requests_note.pack(side="left")
+        ttk.Button(bar, text="Aceptar", style="Accent.TButton", command=self.accept_request).pack(side="right")
+        ttk.Button(bar, text="Rechazar", command=self.reject_request).pack(side="right", padx=6)
+        self.request_list: list[dict] = []
         box = self.section(self.pages["nodes"], "Qué hace cada nodo",
                            "Doble clic en un nodo para elegir qué hace y en qué orden")
         box.pack(fill="both", expand=True)
@@ -577,32 +591,118 @@ class App:
         bar.pack(fill="x", pady=(10, 0))
         ttk.Button(bar, text="Qué hace…", command=self.edit_node).pack(side="left")
         ttk.Button(bar, text="Habilitar / deshabilitar", command=self.toggle_node).pack(side="left", padx=6)
-        ttk.Button(bar, text="Agregar nodo…", style="Accent.TButton", command=self.add_node).pack(side="right")
+        ttk.Button(bar, text="Eliminar", command=self.delete_node).pack(side="left")
+        ttk.Button(bar, text="Agregar nodo a mano…", command=self.add_node).pack(side="right")
         self.node_list: list[dict] = []
 
+    @staticmethod
+    def machine_text(info: dict) -> str:
+        return " · ".join(x for x in (info.get("host", ""), f"{info['cpus']} CPU" if info.get("cpus") else "",
+                                      f"{number(info['memory_gb'], 1)} GB" if info.get("memory_gb") else "") if x)
+
     def show_nodes(self) -> None:
-        self.node_list = (self.data.get("board") or {}).get("nodes", [])
+        board = self.data.get("board") or {}
+        self.node_list = board.get("nodes", [])
         rows = []
         for n in self.node_list:
             state, _color = self.node_state(n)
-            info = n.get("info") or {}
-            machine = " · ".join(x for x in (info.get("host", ""), f"{info['cpus']} CPU" if info.get("cpus") else "",
-                                             f"{number(info['memory_gb'], 1)} GB" if info.get("memory_gb") else "") if x)
             rows.append((n["name"], (state, " → ".join(JOB_CLASS_NAMES.get(p, p) for p in n["priorities"]),
-                                     machine or "–"),
+                                     self.machine_text(n.get("info") or {}) or "–"),
                          "muted" if state == "deshabilitado" else ""))
         self.fill(self.nodes_view, rows, tree=True)
+        self.request_list = board.get("requests", [])
+        self.fill(self.requests_view, [
+            (r["id"], (r["address"], self.machine_text(r.get("info") or {}) or "–", r["created_at"][:16].replace("T", " ")),
+             "") for r in self.request_list], tree=True, texts={r["id"]: r["name"] for r in self.request_list})
+        self.requests_note.config(text="Ninguna máquina pide unirse. En el nodo: rol «nodo», la dirección de este "
+                                       "maestro y token vacío." if not self.request_list else
+                                  "Aceptá las máquinas que reconozcas: van a recibir los trabajos de los usuarios.")
+
+    def selected_request(self) -> dict | None:
+        sel = self.requests_view.selection()
+        req = next((r for r in self.request_list if sel and r["id"] == sel[0]), None)
+        if req is None and len(self.request_list) == 1:
+            req = self.request_list[0]
+        if req is None:
+            messagebox.showinfo("Tisma Cloud", "Elegí una máquina de la lista.", parent=self.root)
+        return req
+
+    def accept_request(self) -> None:
+        req = self.selected_request()
+        if req is None:
+            return
+        name = simpledialog.askstring("Aceptar nodo", f"Nombre del nodo para {req['name']} ({req['address']}):",
+                                      initialvalue=req["name"], parent=self.root)
+        if not name:
+            return
+        try:
+            made = self.m.accept_join(req["id"], name)
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Tisma Cloud", str(e), parent=self.root)
+            return
+        messagebox.showinfo("Tisma Cloud", f"{made} es un nodo: en unos segundos toma su token y empieza a trabajar. "
+                            "Con «Qué hace…» elegís qué trabajos toma.", parent=self.root)
+        self.refresh(reschedule=False)
+
+    def reject_request(self) -> None:
+        req = self.selected_request()
+        if req is None or not messagebox.askyesno(
+                "Tisma Cloud", f"¿Rechazar a {req['name']} ({req['address']})? Su servicio de nodo se detiene.",
+                parent=self.root):
+            return
+        try:
+            self.m.reject_join(req["id"])
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Tisma Cloud", str(e), parent=self.root)
+        self.refresh(reschedule=False)
+
+    def delete_node(self) -> None:
+        node = self.selected_node()
+        if node is None or not messagebox.askyesno(
+                "Tisma Cloud", f"¿Eliminar el nodo {node['name']}? Sus trabajos en curso vuelven a la cola. Si la "
+                "máquina sigue encendida pide unirse otra vez (rechazala para que no vuelva).", parent=self.root):
+            return
+        try:
+            requeued = self.m.delete_node(node["name"])
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Tisma Cloud", str(e), parent=self.root)
+            return
+        if requeued:
+            messagebox.showinfo("Tisma Cloud", f"{requeued} trabajo(s) volvieron a la cola.", parent=self.root)
+        self.refresh(reschedule=False)
 
     def add_node(self) -> None:
+        """A node made by hand (a machine outside this network, or without asking): its token is shown once, to copy
+        into its node.toml."""
         name = simpledialog.askstring("Agregar nodo", "Nombre del nodo (por ejemplo i7-1):", parent=self.root)
         if not name:
             return
-        priorities = simpledialog.askstring("Agregar nodo", "Qué hace, en orden (slice, slice_large, fea, "
-                                            "fea_optimize):", initialvalue="slice,slice_large,fea", parent=self.root)
-        if priorities:
-            self.admin(["node-add", name, "--priorities", priorities])
-            self.show("log")
-            self.refresh(reschedule=False)
+        try:
+            token = self.m.add_node(name)
+        except Exception as e:  # noqa: BLE001
+            messagebox.showerror("Tisma Cloud", str(e), parent=self.root)
+            return
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Token de {name}")
+        dialog.transient(self.root)
+        dialog.configure(bg=SURFACE)
+        ttk.Label(dialog, text="Copiá el token en la configuración del nodo (Token del nodo). Se muestra solo ahora.",
+                  padding=(12, 10)).pack(anchor="w")
+        # The text is put in the field itself (a StringVar of this function would be deleted when it returns).
+        entry = ttk.Entry(dialog, width=60)
+        entry.insert(0, token)
+        entry.configure(state="readonly")
+        entry.pack(fill="x", padx=12)
+
+        def copy() -> None:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(token)
+
+        buttons = ttk.Frame(dialog, padding=12)
+        buttons.pack(fill="x")
+        ttk.Button(buttons, text="Cerrar", command=dialog.destroy).pack(side="right")
+        ttk.Button(buttons, text="Copiar", style="Accent.TButton", command=copy).pack(side="right", padx=6)
+        self.refresh(reschedule=False)
 
     def selected_node(self) -> dict | None:
         sel = self.nodes_view.selection()

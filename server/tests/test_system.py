@@ -160,7 +160,8 @@ def test_diagnosis_of_a_node(tmp_path, monkeypatch, capsys):
     checks = {c.name: c for c in m.checks()}
     assert checks["Programa tisma-slicer"].ok is False and checks["Programa tisma-slicer"].fix == "programs"
     assert checks["Maestro"].ok is False
-    assert checks["Token del nodo"].ok is False
+    # Without a token the node asks the master to join: a warning, not a fault.
+    assert checks["Token del nodo"].ok is None and "pide unirse" in checks["Token del nodo"].detail
     assert checks["Carpeta de trabajo"].ok is True
     with pytest.raises(RuntimeError):
         m.fix("programs")

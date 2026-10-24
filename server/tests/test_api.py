@@ -300,7 +300,8 @@ def test_disabled_node_gets_nothing(client, f):
     admin = f.user("root@x.com", admin=True)
     f.submit(user)
     client.patch("/v1/admin/nodes/n", headers=admin, json={"enabled": False})
-    assert client.post("/v1/node/claim", headers=node, json={}).status_code == 401
+    # 403, not 401: a disabled node waits, an unknown one asks to join again (pairing.py).
+    assert client.post("/v1/node/claim", headers=node, json={}).status_code == 403
 
 
 def test_full_job_flow(client, f):

@@ -1,6 +1,6 @@
 """Tables: plans, users (accounts of the web site, with their payment state), access tokens, monthly usage, nodes
-(computing servers), jobs, the bridges that relay the printers of a home to the account with their commands, and the
-problems reported from Tisma and the app."""
+(computing servers) and the machines that ask to be one, jobs, the bridges that relay the printers of a home to the
+account with their commands, and the problems reported from Tisma and the app."""
 
 from __future__ import annotations
 
@@ -225,6 +225,36 @@ class Node(Base):
             return json.loads(self.info or "{}")
         except ValueError:
             return {}
+
+
+class NodeRequest(Base):
+    """A machine of the local network that asks to be a computing node (pairing.py). The administrator accepts it (it
+    becomes a node, and takes its token the next time it asks) or rejects it."""
+
+    __tablename__ = "node_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    # The name it asks for (the name of the machine) and the address it asked from.
+    name: Mapped[str] = mapped_column(String(100))
+    address: Mapped[str] = mapped_column(String(64), default="")
+    # What the machine reports about itself (as Node.info), JSON.
+    info: Mapped[str] = mapped_column(Text, default="{}")
+    # Only the machine that asked knows the secret of its request.
+    secret_hash: Mapped[str] = mapped_column(String(64))
+    # pending, accepted, rejected
+    status: Mapped[str] = mapped_column(String(10), default="pending", index=True)
+    # Accepted: the node made and its token, kept until the machine takes it (the request is deleted then).
+    node_name: Mapped[str] = mapped_column(String(100), default="")
+    token: Mapped[str] = mapped_column(Encrypted, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+    @property
+    def info_dict(self) -> dict:
+        try:
+            value = json.loads(self.info or "{}")
+        except ValueError:
+            return {}
+        return value if isinstance(value, dict) else {}
 
 
 class Job(Base):

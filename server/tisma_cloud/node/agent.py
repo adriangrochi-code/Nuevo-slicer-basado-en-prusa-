@@ -49,6 +49,8 @@ class Agent:
         # Taken by a slot while it may claim, or runs, a structural analysis.
         self._fea = threading.BoundedSemaphore(max(1, cfg.fea_slots))
         self._stop = threading.Event()
+        # The master does not know the token (the node was removed): the agent stops and the node asks to join again.
+        self.unknown_token = False
         cfg.work_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- master
@@ -172,15 +174,34 @@ class Agent:
                 finally:
                     if holds:
                         self.release_fea()
+            except httpx.HTTPStatusError as ex:
+                if ex.response.status_code == 401:
+                    self._token_refused()
+                    return
+                log.warning("Slot %d: the master answered %s, retrying in %.0f s", index, ex.response.status_code,
+                            backoff)
+                self._stop.wait(backoff)
+                backoff = min(backoff * 2, 60.)
             except httpx.HTTPError as ex:
                 log.warning("Slot %d: master not reachable (%s), retrying in %.0f s", index, ex, backoff)
                 self._stop.wait(backoff)
                 backoff = min(backoff * 2, 60.)
 
+    def _token_refused(self) -> None:
+        if not self.unknown_token:
+            log.warning("The master does not know the token of this node (was it removed?)")
+        self.unknown_token = True
+        self._stop.set()
+
     def _heartbeats(self) -> None:
         while not self._stop.wait(HEARTBEAT_S):
             try:
                 self.heartbeat()
+            except httpx.HTTPStatusError as ex:
+                if ex.response.status_code == 401:
+                    self._token_refused()
+                    return
+                log.warning("Heartbeat failed: %s", ex)
             except httpx.HTTPError as ex:
                 log.warning("Heartbeat failed: %s", ex)
 
