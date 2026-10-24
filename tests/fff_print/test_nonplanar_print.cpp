@@ -208,11 +208,12 @@ TEST_CASE("Non-planar calibration: Z speed grows by steps", "[NonPlanar][Calibra
     CHECK(max_speed[0] > 0.8);
 }
 
-// Stem of radius 5 up to z = 10, flaring out at `angle` degrees from the vertical up to z = 15, then a cap 3 mm thick.
-static TriangleMesh mushroom(double angle)
+// Stem of radius `stem` up to z = 10, flaring out at `angle` degrees from the vertical over `flare` mm of height, then a
+// cap 3 mm thick.
+static TriangleMesh mushroom(double angle, double stem = 5., double flare = 5.)
 {
-    const double r_cap = 5. + 5. * std::tan(angle * M_PI / 180.);
-    const std::vector<Vec2d> profile { { 5., 0. }, { 5., 10. }, { r_cap, 15. }, { r_cap, 18. } };
+    const double r_cap = stem + flare * std::tan(angle * M_PI / 180.);
+    const std::vector<Vec2d> profile { { stem, 0. }, { stem, 10. }, { r_cap, 10. + flare }, { r_cap, 13. + flare } };
     constexpr int segments = 72;
     indexed_triangle_set its;
     const int n = int(profile.size());
@@ -282,6 +283,35 @@ TEST_CASE("Non-planar layers tilted under the overhangs need fewer supports", "[
             curved = true;
     }
     REQUIRE(curved);
+}
+
+TEST_CASE("Non-planar layers tilted under a wide overhang over a short stem", "[NonPlanar]")
+{
+    // A cap 12 mm wide over a stem 10 mm high: the layers have to sink 5 mm at its rim. Only the stem is printed below
+    // the cap, and there the layers sink little: the transition fits above the flat first layers.
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 45 },
+                                    { "nonplanar_overhang_threshold", 45 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 },
+                                    { "nonplanar_head_clearance_height", 7 }, { "nonplanar_head_clearance_radius", 15 } });
+    const TriangleMesh wide = mushroom(55., 8., 12. / std::tan(55. * M_PI / 180.));
+    const double planar = support_filament(Test::slice({ wide }, config));
+    REQUIRE(planar > 0.);
+
+    config.set_deserialize_strict({ { "nonplanar_mode", "overhangs" } });
+    Print print;
+    Model model;
+    Test::init_print({ wide }, print, model, config);
+    REQUIRE(print.validate().empty());
+    const std::string gcode = Test::gcode(print);
+    const double tilted = support_filament(gcode);
+    WARN("Support filament of the wide mushroom: flat " << planar << " mm, overhangs " << tilted << " mm");
+    CHECK(tilted < 0.05 * planar);
+    // The first layers and the lower half of the stem stay flat.
+    const Extrusions e = analyse(gcode);
+    for (const auto &[layer, zs] : e.z_by_layer)
+        if (layer < 5.)
+            CHECK(*zs.rbegin() - *zs.begin() < 0.01);
 }
 
 TEST_CASE("Non-planar layers tilted under the overhangs stay within the print head clearance", "[NonPlanar]")

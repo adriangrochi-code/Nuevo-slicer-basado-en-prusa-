@@ -434,6 +434,41 @@ double Deformation::head_slope_ratio(const BoundingBoxf3 &bbox, double tan_x, do
     return out;
 }
 
+Deformation::Check Deformation::check(const BoundingBoxf3 &bbox, const std::vector<Vec3d> &part) const
+{
+    Check out = this->check(bbox);
+    if (! this->enabled() || ! bbox.defined)
+        return out;
+    out.j_min_air = out.j_min;
+    out.j_max_air = out.j_max;
+    out.j_min = std::numeric_limits<double>::max();
+    out.j_max = 0.;
+    double max_slope = 0.;
+    for (const Vec3d &p : part) {
+        const double d   = this->dzs_dz(p.x(), p.y(), p.z());
+        const double jac = d > 0. ? 1. / d : std::numeric_limits<double>::infinity();
+        out.j_min = std::min(out.j_min, jac);
+        out.j_max = std::max(out.j_max, jac);
+        max_slope = std::max(max_slope, this->layer_slope(p.x(), p.y(), p.z()));
+    }
+    if (part.empty())
+        out.j_min = out.j_max = 1.;
+    out.max_slope_deg = std::atan(max_slope) * 180. / M_PI;
+    return out;
+}
+
+double Deformation::head_slope_ratio(const std::vector<Vec3d> &part, double tan_x, double tan_y) const
+{
+    if (! this->enabled() || tan_x <= 0. || tan_y <= 0.)
+        return 0.;
+    double out = 0.;
+    for (const Vec3d &p : part) {
+        const Vec2d g = m_field.grad(p.x(), p.y(), p.z()) * m_ramp.value(p.z());
+        out = std::max(out, std::hypot(g.x() / tan_x, g.y() / tan_y));
+    }
+    return out;
+}
+
 double Deformation::max_offset(const BoundingBoxf3 &bbox) const
 {
     if (! this->enabled() || ! bbox.defined)
@@ -872,6 +907,33 @@ struct OverhangFacet
 
 } // namespace
 
+std::vector<Vec3d> part_samples(const indexed_triangle_set &mesh, int n)
+{
+    std::vector<Vec3d> out;
+    if (mesh.indices.empty() || n < 1)
+        return out;
+    BoundingBoxf3 bbox;
+    for (const stl_vertex &v : mesh.vertices)
+        bbox.merge(v.cast<double>());
+    const Vec3d  size = bbox.size();
+    const double cell = std::max(1e-3, std::max(size.x(), size.y()) / n);
+    const int    nx   = int(size.x() / cell) + 1, ny = int(size.y() / cell) + 1;
+    // Origin half a cell in, so that thin walls along the edges of the box are sampled too.
+    const Vec2d origin = bbox.min.head<2>() + 0.5 * Vec2d(size.x() - (nx - 1) * cell, size.y() - (ny - 1) * cell);
+    std::vector<float> zs;
+    for (int k = 0; k < n; ++ k)
+        zs.emplace_back(float(bbox.min.z() + size.z() * (k + 0.5) / n));
+    const std::vector<ExPolygons> sections = slice_mesh_ex(mesh, zs, MeshSlicingParamsEx{});
+    for (size_t k = 0; k < sections.size(); ++ k) {
+        const std::vector<char> inside = rasterize(sections[k], origin, cell, nx, ny);
+        for (int j = 0; j < ny; ++ j)
+            for (int i = 0; i < nx; ++ i)
+                if (inside[size_t(j) * nx + i])
+                    out.emplace_back(origin.x() + i * cell, origin.y() + j * cell, double(zs[k]));
+    }
+    return out;
+}
+
 std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle_set &mesh, const OverhangParams &params)
 {
     if (mesh.indices.empty() || params.tan_x <= 0. || params.tan_y <= 0.)
@@ -947,8 +1009,9 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
     // Group the facets by height: overhangs closer than this share one zone.
     constexpr double MERGE_GAP = 2.;
     // Layer thickness while the zone comes in (thinner) and goes out (thicker), within J_MIN..J_MAX with a margin:
-    // the steepest smoothstep is 1.5 / its length.
-    constexpr double DZ_IN = 0.55, DZ_OUT = 0.25;
+    // the steepest smoothstep is 1.5 / its length. In the air around the part printed below the overhangs (Tisma),
+    // within J_MIN_AIR with a margin.
+    constexpr double DZ_IN = 0.55, DZ_OUT = 0.25, DZ_IN_AIR = 2.;
     for (size_t begin = 0; begin < facets.size();) {
         size_t end = begin + 1;
         double z_max = facets[begin].z_max;
@@ -997,9 +1060,32 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
         smooth(zone.sink, nx, ny);
         smooth(zone.sink, nx, ny);
         // Brought in below the overhangs and taken out above them; less deep if there is no room above the flat
-        // first layers.
+        // first layers. The layer thickness matters where the part is printed: below the overhangs that is the part
+        // already printed under them, where the layers sink little, and the air around it, where at most travels and
+        // supports go (DZ_IN_AIR). The transition is as short as both allow (the part over the longest transition
+        // bounds the part over any shorter one).
+        const double length_air = 1.5 * deepest / DZ_IN_AIR;
         double length_in  = 1.5 * deepest / DZ_IN;
         double length_out = 1.5 * deepest / DZ_OUT;
+        {
+            std::vector<float> zs;
+            for (double z = std::max(zone.z_min - length_in, bbox.min.z() + 0.05); z < zone.z_min - 0.05; z += 0.5)
+                zs.emplace_back(float(z));
+            zs.emplace_back(float(zone.z_min - 0.05));
+            double under = 0.;
+            for (const ExPolygons &section : slice_mesh_ex(mesh, zs, MeshSlicingParamsEx{})) {
+                const std::vector<char> in = rasterize(section, field->origin, field->cell, nx, ny);
+                // Also one node around, for the interpolation between the nodes.
+                for (int j = 0; j < ny; ++ j)
+                    for (int i = 0; i < nx; ++ i)
+                        if (in[size_t(j) * nx + i])
+                            for (int dj = -1; dj <= 1; ++ dj)
+                                for (int di = -1; di <= 1; ++ di)
+                                    under = std::max(under, double(zone.sink[size_t(std::clamp(j + dj, 0, ny - 1)) * nx +
+                                                                             std::clamp(i + di, 0, nx - 1)]));
+            }
+            length_in = std::max(length_air, 1.5 * under / DZ_IN);
+        }
         const double room = zone.z_min - (bbox.min.z() + params.z_flat);
         if (deepest <= 1e-3 || room <= 0.) {
             begin = end;
@@ -1636,12 +1722,15 @@ static FieldParams overhang_field(FieldParams field, const PrintConfig &config, 
     Ramp ramp;
     ramp.z_flat = -1e6;
     ramp.z_ramp = 1.;
+    // The layer thickness and the slope where the part is printed; around it only travels and supports.
+    const std::vector<Vec3d> part = part_samples(*mesh);
     auto acceptable = [&](double s) {
         FieldParams f = field;
         f.overhang_scale = s;
         const Deformation d(f, ramp);
-        const Deformation::Check c = d.check(object_bbox);
-        return c.j_min >= J_MIN && c.j_max <= J_MAX && d.head_slope_ratio(object_bbox, limits.tan_x, limits.tan_y) <= 1.;
+        const Deformation::Check c = d.check(object_bbox, part);
+        return c.j_min >= J_MIN && c.j_max <= J_MAX && c.j_min_air >= J_MIN_AIR && c.j_max_air <= J_MAX &&
+               d.head_slope_ratio(part, limits.tan_x, limits.tan_y) <= 1.;
     };
     if (! acceptable(1.)) {
         double lo = 0., hi = 1.;

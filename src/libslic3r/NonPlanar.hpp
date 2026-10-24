@@ -155,13 +155,21 @@ public:
         double j_min { 1. };
         double j_max { 1. };
         double max_slope_deg { 0. };
+        // Tisma: over the whole bounding box, where only travels and supports may go (check() with the part).
+        double j_min_air { 1. };
+        double j_max_air { 1. };
     };
     // Samples the deformation over a bounding box (object coordinates).
     Check check(const BoundingBoxf3 &bbox) const;
+    // Tisma: the layer thickness where the part is printed (part_samples()) and, in j_min_air / j_max_air, over the whole
+    // bounding box.
+    Check check(const BoundingBoxf3 &bbox, const std::vector<Vec3d> &part) const;
     // Steepest layer slope relative to the free angles of the print head along X and Y (given as tangents), over a
     // bounding box: <= 1 if the head allows it. The head is modeled as an elliptic cone of these slopes around the
     // nozzle, so a layer of gradient (gx, gy) fits if (gx / tan_x)^2 + (gy / tan_y)^2 <= 1.
     double head_slope_ratio(const BoundingBoxf3 &bbox, double tan_x, double tan_y) const;
+    // Tisma: the same at the points where the part is printed.
+    double head_slope_ratio(const std::vector<Vec3d> &part, double tan_x, double tan_y) const;
     // Maximum |offset| over the XY footprint of the bounding box.
     double max_offset(const BoundingBoxf3 &bbox) const;
 
@@ -176,6 +184,13 @@ private:
 // Limits of the layer thickness ratio accepted by validation.
 constexpr double J_MIN = 0.6;
 constexpr double J_MAX = 1.4;
+// Tisma: thinnest layers accepted where the part is not printed (under an overhang, around the part already printed
+// below it): only travels and the supports that may be left go there.
+constexpr double J_MIN_AIR = 0.3;
+
+// Tisma: points inside the mesh (object coordinates) on a regular grid of about n per axis, where the layer thickness
+// and the slope matter.
+std::vector<Vec3d> part_samples(const indexed_triangle_set &mesh, int n = 32);
 
 // Print head around the nozzle (Tisma): its lowest parts (heater block, cooling duct) are `height` above the nozzle
 // tip and reach `radius` around the nozzle. The nozzle cone itself is covered by the maximum layer slope.
