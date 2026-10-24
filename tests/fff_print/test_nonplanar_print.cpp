@@ -332,8 +332,69 @@ TEST_CASE("Non-planar layers tilted under the overhangs stay within the print he
     const double planar48 = supports(48., "disabled");
     REQUIRE(planar48 > 0.);
     REQUIRE(supports(48., "overhangs") < 0.05 * planar48);
-    // Not enough for a 55° flare: left flat, the supports are not made taller.
-    REQUIRE(supports(55., "overhangs") == Approx(supports(55., "disabled")).epsilon(0.01));
+    // Not enough for the whole of a 55° flare at one slope; by distance, as steep as the free angle near the stem up to
+    // the clearance height, its inner part prints without supports.
+    const double planar55 = supports(55., "disabled");
+    const double tilted55 = supports(55., "overhangs");
+    WARN("Support filament of the 55° flare: flat " << planar55 << " mm, overhangs " << tilted55 << " mm");
+    CHECK(tilted55 < 0.9 * planar55);
+}
+
+TEST_CASE("Non-planar layers never leave more support than flat layers", "[NonPlanar]")
+{
+    // A bowl turned over: a cone that suits its lip makes the supports of the rest taller. The conical mode keeps flat
+    // layers then; the overhangs mode sinks the layers inwards from the wall and leaves fewer supports (none with the
+    // part as measured from the command line, with 128 segments and 2 perimeters).
+    const indexed_triangle_set bowl = [] {
+        // Profile (radius, height) turned around Z: an inner ceiling at z = 12, a lip hanging inwards at 52° from the
+        // vertical down to the wall of radius 20 to 24.
+        const double z_lip = 12. - 12. / std::tan(52. * M_PI / 180.);
+        const std::vector<Vec2d> profile { { 0., 12. }, { 8., 12. }, { 20., z_lip }, { 20., 0. }, { 24., 0. }, { 24., 14. }, { 0., 14. } };
+        constexpr int segments = 72;
+        indexed_triangle_set its;
+        const int n = int(profile.size());
+        for (int s = 0; s < segments; ++ s) {
+            const double a = 2. * M_PI * s / segments;
+            for (const Vec2d &p : profile)
+                its.vertices.emplace_back(float(p.x() * std::cos(a)), float(p.x() * std::sin(a)), float(p.y()));
+        }
+        for (int s = 0; s < segments; ++ s) {
+            const int a = s * n, b = ((s + 1) % segments) * n;
+            for (int i = 0; i + 1 < n; ++ i) {
+                its.indices.emplace_back(a + i, b + i, b + i + 1);
+                its.indices.emplace_back(a + i, b + i + 1, a + i + 1);
+            }
+        }
+        // The closed profile starts and ends on the axis: drop the degenerate faces there and face outwards.
+        its.indices.erase(std::remove_if(its.indices.begin(), its.indices.end(), [&its](const stl_triangle_vertex_indices &f) {
+            return (its.vertices[f[0]] - its.vertices[f[1]]).cross(its.vertices[f[0]] - its.vertices[f[2]]).squaredNorm() < 1e-12f;
+        }), its.indices.end());
+        if (its_volume(its) < 0.)
+            its_flip_triangles(its);
+        return its;
+    }();
+    // The automatic threshold of the supports (about 48° from the vertical with layers of 0.2 mm).
+    DynamicPrintConfig config = nonplanar_config("disabled");
+    config.set_deserialize_strict({ { "support_material", 1 }, { "support_material_threshold", 0 },
+                                    { "nonplanar_overhang_threshold", 45 }, { "nonplanar_fit_head", 1 },
+                                    { "nonplanar_head_free_angle_x", 25 }, { "nonplanar_head_free_angle_y", 25 },
+                                    { "nonplanar_head_clearance_height", 7 }, { "nonplanar_head_clearance_radius", 15 } });
+    auto supports = [&config, &bowl](const char *mode) {
+        config.set_deserialize_strict({ { "nonplanar_mode", mode } });
+        Print print;
+        Model model;
+        Test::init_print({ TriangleMesh(bowl) }, print, model, config);
+        REQUIRE(print.validate().empty());
+        return support_filament(Test::gcode(print));
+    };
+    const double flat = supports("disabled");
+    REQUIRE(flat > 0.);
+    const double conical = supports("conical"), overhangs = supports("overhangs"), automatic = supports("automatic");
+    WARN("Support filament of the bowl: flat " << flat << " mm, conical " << conical << " mm, overhangs " << overhangs <<
+         " mm, automatic " << automatic << " mm");
+    CHECK(conical <= 1.01 * flat);
+    CHECK(overhangs < 0.95 * flat);
+    CHECK(automatic <= 1.01 * flat);
 }
 
 // Layers rising 0.3 mm per mm along X over a part of 20 x 20 x 20 mm, as the structural analysis would store them.

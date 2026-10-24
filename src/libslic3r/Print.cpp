@@ -549,13 +549,17 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return object.model_object()->engineering.layer_field.empty() ?
                 _u8L("Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength).") :
                 _u8L("Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again.");
-        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field);
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field,
+                                                                               NonPlanar::support_threshold_deg(object.config(), m_config));
         // Tisma: the layer thickness and the slope where the part is printed; around it (travels, supports) the layers
         // may be thinner, down to J_MIN_AIR.
         const std::vector<Vec3d> part = NonPlanar::part_samples(mesh);
         const NonPlanar::Deformation::Check check = deformation.check(bbox, part);
-        const bool thin_air = check.j_min_air < NonPlanar::J_MIN_AIR || check.j_max_air > NonPlanar::J_MAX;
-        if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX || thin_air)
+        // The layer shapes are fitted on a coarser sampling of the box: 1 % of margin between its points.
+        constexpr double J_TOLERANCE = 0.01;
+        const bool thin_air = check.j_min_air < NonPlanar::J_MIN_AIR * (1. - J_TOLERANCE) ||
+                              check.j_max_air > NonPlanar::J_MAX * (1. + J_TOLERANCE);
+        if (check.j_min < NonPlanar::J_MIN * (1. - J_TOLERANCE) || check.j_max > NonPlanar::J_MAX * (1. + J_TOLERANCE) || thin_air)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
                                "nominal one (allowed %3% %% to %4% %%). Check the free angle and the clearance height of "
                                "the print head (Printer Settings > General > Print head)."),

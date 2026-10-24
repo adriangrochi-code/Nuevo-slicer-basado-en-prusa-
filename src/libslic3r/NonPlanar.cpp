@@ -11,6 +11,7 @@
 
 #include <admesh/stl.h>
 
+#include "libslic3r/AABBTreeIndirect.hpp"
 #include "libslic3r/Engineering.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
@@ -949,8 +950,10 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
         }
     // Margin for the interpolation between the nodes of the grid.
     constexpr double SAFETY = 0.9;
-    const double tan_x = SAFETY * std::min(params.tan_x, tan_head);
-    const double tan_y = SAFETY * std::min(params.tan_y, tan_head);
+    // Tisma: by distance, the free angles limit the slope and the head limits the rise between points (below).
+    const bool   head_limited = tan_head < std::numeric_limits<double>::max();
+    const double tan_x = SAFETY * (params.by_distance ? params.tan_x : std::min(params.tan_x, tan_head));
+    const double tan_y = SAFETY * (params.by_distance ? params.tan_y : std::min(params.tan_y, tan_head));
     if (tan_x <= 1e-3 || tan_y <= 1e-3)
         return nullptr;
 
@@ -1048,6 +1051,34 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
         std::vector<double> dist = distance_transform(inside, nx, ny, tx * field->cell, ty * field->cell);
         for (double &d : dist)
             d = std::sqrt(d);
+        if (params.by_distance && head_limited) {
+            // Tisma: the deepest sink s(e) over the distance e from the part printed below (in units of rise at the slope
+            // of the zone) such that s(e + d) - s(e) never exceeds the rise the head allows at the distance d within its
+            // radius (the nozzle up to the heater block, then the head): steep near the part, gentler farther. Any two
+            // nodes are no farther apart in e than in rise at the steepest slope, so the head clears them too.
+            const double t_eff = std::max(tx, ty);
+            const double step  = 0.5 * field->cell * std::min(tx, ty);
+            double e_max = 0.;
+            for (const double d : dist)
+                e_max = std::max(e_max, d);
+            const int n    = int(e_max / step) + 2;
+            const int jmax = std::max(1, int(params.head.radius * t_eff / step));
+            std::vector<double> rise(size_t(jmax) + 1, 0.);
+            for (int j = 1; j <= jmax; ++ j)
+                rise[j] = std::min(j * step, SAFETY * params.head.allowed_rise(j * step / t_eff));
+            std::vector<double> s(size_t(n), 0.);
+            for (int i = 1; i < n; ++ i) {
+                double best = std::numeric_limits<double>::max();
+                for (int j = 1; j <= std::min(i, jmax); ++ j)
+                    best = std::min(best, s[i - j] + rise[j]);
+                s[i] = best;
+            }
+            for (double &d : dist) {
+                const double f = d / step;
+                const int    i = std::min(int(f), n - 2);
+                d = s[i] + (f - i) * (s[i + 1] - s[i]);
+            }
+        }
         zone.sink.assign(dist.begin(), dist.end());
         // Down to the farthest point of the overhangs of the zone (and the smoothing beyond it), flat further out.
         double deepest = 0.;
@@ -1093,8 +1124,9 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
         }
         if (length_in > room) {
             const double s = room / length_in;
-            // Not enough room to bring in a tilt that fixes the overhangs: leave them flat (with their supports).
-            if (s * std::min(tx, ty) < cot_accept - cot(zone.steepest_deg)) {
+            // Not enough room to bring in a tilt that fixes the overhangs: leave them flat (with their supports). By
+            // distance only a part of the overhangs may be fixed anyway: the estimate of the supports decides.
+            if (! params.by_distance && s * std::min(tx, ty) < cot_accept - cot(zone.steepest_deg)) {
                 begin = end;
                 continue;
             }
@@ -1111,6 +1143,57 @@ std::shared_ptr<const OverhangField> build_overhang_field(const indexed_triangle
         begin = end;
     }
     return field->empty() ? nullptr : field;
+}
+
+double support_volume(const indexed_triangle_set &mesh, const Deformation &deformation, double threshold_deg)
+{
+    if (mesh.indices.empty())
+        return 0.;
+    indexed_triangle_set its = mesh;
+    BoundingBoxf3 bbox;
+    for (const stl_vertex &v : its.vertices)
+        bbox.merge(v.cast<double>());
+    // Fine enough to follow the layer shapes, coarser on large parts; subdivided also for flat layers, so that the
+    // estimates of the layer shapes of a part compare.
+    subdivide_mesh(its, std::max(1., std::max(bbox.size().x(), bbox.size().y()) / 64.));
+    if (deformation.enabled())
+        for (stl_vertex &v : its.vertices)
+            v.z() = float(deformation.to_slice_z(v.x(), v.y(), v.z()));
+    float z_bed = std::numeric_limits<float>::max();
+    for (const stl_vertex &v : its.vertices)
+        z_bed = std::min(z_bed, v.z());
+    const auto tree = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(its.vertices, its.indices);
+    // A face counts from the threshold on, fully half a degree above it (the generator adds supports from its threshold:
+    // a face left just above it needs them as much as a steeper one).
+    constexpr double RANGE_DEG = 0.5;
+    const double sin_lo = std::sin(std::clamp(threshold_deg, 0., 89.) * M_PI / 180.);
+    double out = 0.;
+    for (const stl_triangle_vertex_indices &f : its.indices) {
+        const Vec3d a = its.vertices[f[0]].cast<double>(), b = its.vertices[f[1]].cast<double>(), c = its.vertices[f[2]].cast<double>();
+        const Vec3d n = (b - a).cross(c - a);
+        const double len = n.norm();
+        // Looking down more than the threshold from the vertical: - n.z / |n| is the sine of that angle.
+        if (len < 1e-12 || - n.z() <= sin_lo * len)
+            continue;
+        const double angle  = std::asin(std::clamp(- n.z() / len, 0., 1.)) * 180. / M_PI;
+        const double weight = smoothstep((angle - threshold_deg) / RANGE_DEG);
+        const Vec3d  centroid = (a + b + c) / 3.;
+        double bottom = z_bed;
+        igl::Hit hit;
+        if (AABBTreeIndirect::intersect_ray_first_hit(its.vertices, its.indices, tree, Vec3d(centroid - 1e-3 * Vec3d::UnitZ()),
+                                                      Vec3d(- Vec3d::UnitZ()), hit))
+            bottom = std::max(double(z_bed), centroid.z() - 1e-3 - double(hit.t));
+        // The column is printed in the real space: thicker or thinner where the layers are.
+        double height = centroid.z() - bottom;
+        if (deformation.enabled())
+            height = deformation.to_real_z(centroid.x(), centroid.y(), centroid.z()) -
+                     deformation.to_real_z(centroid.x(), centroid.y(), bottom);
+        // Projected area times the height of the column; a gap of a layer or so (the bottom of the part a little
+        // off the bed in the slice space) is not a support.
+        if (height > 0.3)
+            out += weight * 0.5 * (- n.z()) * height;
+    }
+    return out;
 }
 
 indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo)
@@ -1698,9 +1781,128 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
     return field;
 }
 
+// Tisma: a key of a mesh and of some settings, for the results computed from the part (the same part and settings come
+// back several times: validation, slicing, G-code, analysis).
+static size_t mesh_key(const indexed_triangle_set &mesh, std::initializer_list<double> values)
+{
+    size_t key = 0;
+    auto mix = [&key](size_t h) { key ^= h + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2); };
+    for (const double v : values)
+        mix(std::hash<double>()(v));
+    mix(mesh.vertices.size());
+    mix(mesh.indices.size());
+    for (const stl_vertex &v : mesh.vertices)
+        for (int i = 0; i < 3; ++ i)
+            mix(std::hash<float>()(v[i]));
+    return key;
+}
+
+// Tisma: of the candidate layer shapes (with their ramps), the index of the one that leaves the least support, or -1
+// for flat layers when none leaves less than `margin` times their support. The estimate is rough (the supports also
+// depend on how the generator expands and joins them): by default only a clear gain of 10 % counts.
+static int least_support(const std::vector<std::pair<FieldParams, Ramp>> &candidates, const indexed_triangle_set &mesh,
+                         double threshold_deg, double margin = 0.9)
+{
+    const double flat = support_volume(mesh, Deformation(FieldParams(), Ramp()), threshold_deg);
+    double best_volume = margin * flat;
+    int    best        = -1;
+    for (size_t i = 0; i < candidates.size(); ++ i) {
+        if (candidates[i].first.mode == Mode::Disabled)
+            continue;
+        const double v = support_volume(mesh, Deformation(candidates[i].first, candidates[i].second), threshold_deg);
+        if (v < best_volume) {
+            best_volume = v;
+            best        = int(i);
+        }
+    }
+    return best;
+}
+
+// Tisma: the decisions of least_support() by key of the part and the settings (computing them again for every use of
+// the deformation would take seconds).
+struct ChoiceCache
+{
+    std::mutex                      mutex;
+    std::unordered_map<size_t, int> choices;
+};
+
+static ChoiceCache& choice_cache()
+{
+    static ChoiceCache cache;
+    return cache;
+}
+
+static std::optional<int> cached_choice(size_t key)
+{
+    ChoiceCache &cache = choice_cache();
+    std::lock_guard<std::mutex> lock(cache.mutex);
+    auto it = cache.choices.find(key);
+    return it == cache.choices.end() ? std::nullopt : std::optional<int>(it->second);
+}
+
+static void store_choice(size_t key, int choice)
+{
+    ChoiceCache &cache = choice_cache();
+    std::lock_guard<std::mutex> lock(cache.mutex);
+    if (cache.choices.size() > 64)
+        cache.choices.clear();
+    cache.choices[key] = choice;
+}
+
+// Tisma: the key of the part and of the settings the choice of the layer shape depends on.
+static size_t deformation_key(const PrintConfig &config, const indexed_triangle_set &mesh, double support_threshold)
+{
+    const HeadLimits    limits = head_limits(config);
+    const HeadClearance head   = head_clearance(config);
+    size_t key = mesh_key(mesh, { double(int(config.nonplanar_mode.value)), config.nonplanar_overhang_threshold.value,
+                                  limits.tan_x, limits.tan_y, head.height, head.radius, config.nonplanar_flat_below.value,
+                                  config.nonplanar_ramp_height.value, double(config.nonplanar_flat_top.value),
+                                  double(config.nonplanar_fit_head.value), config.nonplanar_max_slope.value,
+                                  support_threshold });
+    key ^= std::hash<std::string>()(config.nonplanar_head_profile.value) + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2);
+    return key;
+}
+
+// The ramp of the waves and cones: flat first layers, a transition, flat again at the top if asked.
+static Ramp default_ramp(const PrintConfig &config, const BoundingBoxf3 &object_bbox)
+{
+    Ramp ramp;
+    ramp.z_flat     = config.nonplanar_flat_below.value;
+    ramp.z_ramp     = std::max(0.1, config.nonplanar_ramp_height.value);
+    ramp.z_ramp_top = ramp.z_ramp;
+    if (config.nonplanar_flat_top.value && object_bbox.defined)
+        ramp.z_top = object_bbox.max.z();
+    return ramp;
+}
+
+static FieldParams clear_print_head(FieldParams field, const Ramp &ramp, const PrintConfig &config, const indexed_triangle_set &mesh);
+
+// Tisma: the cone from the part, its slope at each radius the one its overhangs need, fitted to the print head; the mode
+// disabled if no overhang needs it. The layers reach it gradually from the flat first layers up to the lowest of those
+// overhangs (the ramp is lengthened for that).
+static FieldParams conical_from_part(FieldParams field, Ramp &ramp, const PrintConfig &config, const BoundingBoxf3 &object_bbox,
+                                     const indexed_triangle_set &mesh)
+{
+    const HeadLimits limits = head_limits(config);
+    OverhangParams params;
+    params.threshold_deg = config.nonplanar_overhang_threshold.value;
+    params.tan_x         = limits.tan_x;
+    params.tan_y         = limits.tan_y;
+    params.z_flat        = config.nonplanar_flat_below.value;
+    field.mode   = Mode::Conical;
+    field.radial = build_radial_profile(mesh, field.center, params);
+    if (! field.radial) {
+        field.mode = Mode::Disabled;
+        return field;
+    }
+    ramp.z_ramp = std::max(ramp.z_ramp, field.radial->z_first - ramp.z_flat);
+    field = fit_to_head(field, ramp, object_bbox, limits);
+    return clear_print_head(field, ramp, config, mesh);
+}
+
 // Overhangs mode: the field from the mesh, reduced until the layer thickness and the slope are acceptable.
 static FieldParams overhang_field(FieldParams field, const PrintConfig &config, const BoundingBoxf3 &object_bbox,
-                                  const indexed_triangle_set *mesh)
+                                  const indexed_triangle_set *mesh, double support_threshold)
 {
     if (mesh == nullptr || ! object_bbox.defined) {
         field.mode = Mode::Disabled;
@@ -1713,34 +1915,90 @@ static FieldParams overhang_field(FieldParams field, const PrintConfig &config, 
     params.tan_y         = limits.tan_y;
     params.head          = head_clearance(config);
     params.z_flat        = config.nonplanar_flat_below.value;
-    field.overhangs = build_overhang_field(*mesh, params);
-    if (! field.overhangs) {
-        field.mode = Mode::Disabled;
-        return field;
+
+    // The same mesh and settings come back several times (validation, slicing, G-code, analysis): the last result is
+    // kept.
+    size_t key = mesh_key(*mesh, { params.threshold_deg, params.tan_x, params.tan_y, params.head.height, params.head.radius,
+                                   params.z_flat, double(params.head.profile.size()), support_threshold });
+    for (const auto &[h, a] : params.head.profile)
+        key ^= std::hash<double>()(h * 1000. + a) + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2);
+    static std::mutex  cache_mutex;
+    static size_t      cache_key = 0;
+    static FieldParams cache;
+    {
+        std::lock_guard<std::mutex> lock(cache_mutex);
+        if (cache_key == key && cache_key != 0) {
+            FieldParams out = field;
+            out.mode           = cache.mode;
+            out.overhangs      = cache.overhangs;
+            out.overhang_scale = cache.overhang_scale;
+            return out;
+        }
     }
+
     // Ramp of value 1: the zones bring the deformation in and out themselves.
     Ramp ramp;
     ramp.z_flat = -1e6;
     ramp.z_ramp = 1.;
     // The layer thickness and the slope where the part is printed; around it only travels and supports.
     const std::vector<Vec3d> part = part_samples(*mesh);
-    auto acceptable = [&](double s) {
+    const HeadClearance head = params.head;
+    // The field reduced until the layer thickness, the slope and the print head are acceptable.
+    auto fitted = [&](std::shared_ptr<const OverhangField> overhangs) {
         FieldParams f = field;
-        f.overhang_scale = s;
-        const Deformation d(f, ramp);
-        const Deformation::Check c = d.check(object_bbox, part);
-        return c.j_min >= J_MIN && c.j_max <= J_MAX && c.j_min_air >= J_MIN_AIR && c.j_max_air <= J_MAX &&
-               d.head_slope_ratio(part, limits.tan_x, limits.tan_y) <= 1.;
-    };
-    if (! acceptable(1.)) {
-        double lo = 0., hi = 1.;
-        for (int i = 0; i < 20; ++ i) {
-            const double mid = 0.5 * (lo + hi);
-            (acceptable(mid) ? lo : hi) = mid;
+        f.overhangs = overhangs;
+        if (! overhangs) {
+            f.mode = Mode::Disabled;
+            return f;
         }
-        field.overhang_scale = lo;
-    }
-    return field;
+        auto acceptable = [&](double s) {
+            FieldParams g = f;
+            g.overhang_scale = s;
+            const Deformation d(g, ramp);
+            const Deformation::Check c = d.check(object_bbox, part);
+            return c.j_min >= J_MIN && c.j_max <= J_MAX && c.j_min_air >= J_MIN_AIR && c.j_max_air <= J_MAX &&
+                   d.head_slope_ratio(part, limits.tan_x, limits.tan_y) <= 1.;
+        };
+        if (! acceptable(1.)) {
+            double lo = 0., hi = 1.;
+            for (int i = 0; i < 20; ++ i) {
+                const double mid = 0.5 * (lo + hi);
+                (acceptable(mid) ? lo : hi) = mid;
+            }
+            f.overhang_scale = lo;
+        }
+        if ((head.height > 0. || ! head.profile.empty()) && head.radius > 0.) {
+            auto clear = [&](double s) {
+                FieldParams g = f;
+                g.overhang_scale = s;
+                return ! check_head_collision(Deformation(g, ramp), *mesh, head).collides;
+            };
+            if (! clear(f.overhang_scale)) {
+                double lo = 0., hi = f.overhang_scale;
+                for (int i = 0; i < 12; ++ i) {
+                    const double mid = 0.5 * (lo + hi);
+                    (clear(mid) ? lo : hi) = mid;
+                }
+                f.overhang_scale = lo;
+            }
+        }
+        return f;
+    };
+    // Tisma: one slope for the whole sink, and the sink by distance (steeper near the part printed below, as the nozzle
+    // allows up to the heater block): the one that leaves the least support, flat layers if neither helps.
+    std::vector<std::pair<FieldParams, Ramp>> candidates;
+    candidates.emplace_back(fitted(build_overhang_field(*mesh, params)), ramp);
+    params.by_distance = true;
+    candidates.emplace_back(fitted(build_overhang_field(*mesh, params)), ramp);
+    const int   choice = least_support(candidates, *mesh, support_threshold);
+    FieldParams best   = choice < 0 ? field : candidates[choice].first;
+    if (choice < 0)
+        best.mode = Mode::Disabled;
+
+    std::lock_guard<std::mutex> lock(cache_mutex);
+    cache_key = key;
+    cache     = best;
+    return best;
 }
 
 // Waves and cones fitted to the print head: their amplitude / cone tangent reduced until the print head clears the part
@@ -1871,9 +2129,20 @@ static std::shared_ptr<const EngineeringLayerField> surface_layer_field(const Pr
     return field;
 }
 
-Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh,
-                             const EngineeringLayerField *stress)
+double support_threshold_deg(const PrintObjectConfig &object_config, const PrintConfig &print_config)
 {
+    if (object_config.support_material_threshold.value > 0)
+        // From the horizontal, made inclusive by the generator with one degree more.
+        return 89. - object_config.support_material_threshold.value;
+    const double nozzle = print_config.nozzle_diameter.values.empty() ? 0.4 : print_config.nozzle_diameter.values.front();
+    return std::atan2(0.5 * 1.125 * nozzle, std::max(0.01, object_config.layer_height.value)) * 180. / M_PI;
+}
+
+Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox, const indexed_triangle_set *mesh,
+                             const EngineeringLayerField *stress, double support_threshold)
+{
+    // The angle from which the supports start, to compare the layer shapes.
+    const double threshold = support_threshold > 0. ? support_threshold : config.nonplanar_overhang_threshold.value;
     FieldParams field = field_params(config);
     if (object_bbox.defined) {
         field.center   = 0.5 * (object_bbox.min.head<2>() + object_bbox.max.head<2>());
@@ -1883,7 +2152,7 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         Ramp ramp;
         ramp.z_flat = -1e6;
         ramp.z_ramp = 1.;
-        return Deformation(overhang_field(field, config, object_bbox, mesh), ramp);
+        return Deformation(overhang_field(field, config, object_bbox, mesh, threshold), ramp);
     }
     // Tisma: automatic, the layers tilted under the overhangs (as in the overhangs mode) plus the layers following the
     // top surfaces, the latter reduced where the sum would make the layers too thick or thin, too steep or would let the
@@ -1894,7 +2163,7 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         none.z_ramp = 1.;
         FieldParams overhangs = field;
         overhangs.mode = Mode::Overhangs;
-        overhangs = overhang_field(overhangs, config, object_bbox, mesh);
+        overhangs = overhang_field(overhangs, config, object_bbox, mesh, threshold);
         if (overhangs.mode == Mode::Overhangs) {
             field.overhangs      = overhangs.overhangs;
             field.overhang_scale = overhangs.overhang_scale;
@@ -1904,6 +2173,26 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
             const FieldParams both = grid_field(field, none, config, object_bbox, surface.get(), mesh);
             if (both.mode == Mode::Automatic)
                 field = both;
+            // Tisma: the cone from the part instead, when it leaves less support; flat layers when the tilt under the
+            // overhangs plus the tops would leave more support than them.
+            Ramp        cone_ramp = default_ramp(config, object_bbox);
+            FieldParams cone      = field_params(config);
+            cone.center = field.center;
+            cone = conical_from_part(cone, cone_ramp, config, object_bbox, *mesh);
+            const size_t key = deformation_key(config, *mesh, threshold);
+            std::optional<int> choice = cached_choice(key);
+            if (! choice) {
+                choice = least_support({ { field, none }, { cone, cone_ramp } }, *mesh, threshold);
+                if (*choice < 0)
+                    // Neither leaves clearly less support: the finish of the tops, if no more support than flat layers.
+                    choice = support_volume(*mesh, Deformation(field, none), threshold) <=
+                             1.02 * support_volume(*mesh, Deformation(FieldParams(), Ramp()), threshold) + 1e-6 ? 0 : -1;
+                store_choice(key, *choice);
+            }
+            if (*choice == 1)
+                return Deformation(cone, cone_ramp);
+            if (*choice < 0)
+                return Deformation(FieldParams(), none);
         }
         return Deformation(field, none);
     }
@@ -1934,20 +2223,20 @@ Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &obj
         // Tisma: as large as the print head allows instead of the amplitude / cone angle set by the user, and smaller
         // still where the print head would hit the part already printed.
         if (config.nonplanar_fit_head.value) {
-            // Tisma: the cone from the part, its slope at each radius the one its overhangs need. The layers reach it
-            // gradually from the flat first layers up to the lowest of those overhangs.
             if (field.mode == Mode::Conical && mesh != nullptr && object_bbox.defined) {
-                const HeadLimits limits = head_limits(config);
-                OverhangParams params;
-                params.threshold_deg = config.nonplanar_overhang_threshold.value;
-                params.tan_x         = limits.tan_x;
-                params.tan_y         = limits.tan_y;
-                params.z_flat        = config.nonplanar_flat_below.value;
-                field.radial = build_radial_profile(*mesh, field.center, params);
-                if (! field.radial)
+                field = conical_from_part(field, ramp, config, object_bbox, *mesh);
+                if (field.mode == Mode::Disabled)
                     // No overhang a cone can help: flat layers.
                     return Deformation(FieldParams(), ramp);
-                ramp.z_ramp = std::max(ramp.z_ramp, field.radial->z_first - ramp.z_flat);
+                // Tisma: only if it leaves less support than flat layers: a cone that suits some overhangs may make the
+                // supports of the others taller (a bowl turned over).
+                const size_t key = deformation_key(config, *mesh, threshold);
+                std::optional<int> choice = cached_choice(key);
+                if (! choice) {
+                    choice = least_support({ { field, ramp } }, *mesh, threshold);
+                    store_choice(key, *choice);
+                }
+                return *choice < 0 ? Deformation(FieldParams(), ramp) : Deformation(field, ramp);
             }
             field = fit_to_head(field, ramp, object_bbox, head_limits(config));
             if (mesh != nullptr)

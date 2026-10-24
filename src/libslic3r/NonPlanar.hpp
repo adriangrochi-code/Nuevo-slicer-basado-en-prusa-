@@ -29,6 +29,7 @@ namespace Slic3r {
 
 class ModelVolume;
 class PrintConfig;
+class PrintObjectConfig;
 struct EngineeringLayerField;
 
 namespace NonPlanar {
@@ -329,6 +330,10 @@ struct OverhangParams
     HeadClearance head;
     // Layers below this height stay flat (first layers on the bed).
     double z_flat        { 0.6 };
+    // Tisma: false = one slope for the whole sink, within what the head clearance allows at its radius; true = as steep
+    // as the free angles near the part already printed (the nozzle under the heater block), and between any two points
+    // no more rise than the head allows at their distance (deeper sinks under short overhangs).
+    bool   by_distance   { false };
 };
 
 // Overhang field of a mesh (object coordinates, real space), empty if no overhang needs it.
@@ -344,6 +349,11 @@ std::shared_ptr<const RadialProfile> build_radial_profile(const indexed_triangle
                                                           const OverhangParams &params);
 // The model parts of an object transformed to object coordinates (the mesh the non-planar layers are built from).
 indexed_triangle_set object_mesh(const std::vector<ModelVolume*> &volumes, const Transform3d &trafo);
+
+// Tisma: estimated volume of the supports [mm^3] of a mesh (object coordinates, real space) sliced with the
+// deformation: every face of the deformed mesh looking down more than threshold_deg from the vertical holds a column
+// down to the part below it or to the bed. To compare the layer shapes of a part, not an exact volume.
+double support_volume(const indexed_triangle_set &mesh, const Deformation &deformation, double threshold_deg);
 
 struct HeadCollision
 {
@@ -459,8 +469,15 @@ FieldParams fit_to_head(FieldParams field, const Ramp &ramp, const BoundingBoxf3
 // needed by the overhangs mode (without it the layers stay flat). stress: the layers computed by the structural
 // analysis for the object, needed by the stresses mode (without it, or if the part changed since, the layers stay
 // flat).
+// Tisma: support_threshold_deg is the overhang angle from which the supports start (support_threshold_deg()), to choose
+// the layer shape that leaves the least support; 0 = the overhang threshold of the non-planar settings.
 Deformation make_deformation(const PrintConfig &config, const BoundingBoxf3 &object_bbox,
-                             const indexed_triangle_set *mesh = nullptr, const EngineeringLayerField *stress = nullptr);
+                             const indexed_triangle_set *mesh = nullptr, const EngineeringLayerField *stress = nullptr,
+                             double support_threshold_deg = 0.);
+// Tisma: the overhang angle (degrees from the vertical) from which the support generator adds supports to an object:
+// its overhang threshold, or with 0 (automatic) half an extrusion width beyond the layer below (the width taken as the
+// automatic one, 1.125 times the nozzle).
+double support_threshold_deg(const PrintObjectConfig &object_config, const PrintConfig &print_config);
 // Whether the layers computed by the structural analysis still fit the part (same size of its bounding box).
 bool layer_field_matches(const EngineeringLayerField &field, const BoundingBoxf3 &object_bbox);
 // Mesh subdivision length suited to the configured field.
