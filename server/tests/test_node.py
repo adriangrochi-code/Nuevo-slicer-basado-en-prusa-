@@ -178,6 +178,11 @@ def test_node_config(tmp_path, monkeypatch):
     p.write_text('master_url = "x"\ntisma_slicer = "s"\ntisma_fea = "f"\nslots = 3\nfea_slots = 0\n')
     cfg = NodeConfig.load(p)
     assert cfg.slots == 3 and cfg.fea_slots == 1
+    # The work folder (relative: next to node.toml) is absolute, whatever the current folder: the programs run in it.
+    assert cfg.work_dir == (tmp_path / "node-work").resolve()
+    p.write_text('master_url = "x"\ntisma_slicer = "s"\ntisma_fea = "f"\nwork_dir = "trabajos"\n')
+    monkeypatch.chdir(tmp_path.parent)
+    assert NodeConfig.load(p).work_dir == (tmp_path / "trabajos").resolve()
     p.write_text('master_url = "x"\ntisma_slicer = "s"\ntisma_fea = "f"\ncolour = 1\n')
     with pytest.raises(ValueError, match="colour"):
         NodeConfig.load(p)

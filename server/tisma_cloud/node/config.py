@@ -65,7 +65,9 @@ class NodeConfig:
             if not data.get(key):
                 raise ValueError(f"'{key}' is missing in {path}")
         cfg = NodeConfig(**data)
-        cfg.work_dir = Path(cfg.work_dir)
+        # A relative folder is the one next to node.toml: the programs run inside the folder of each job, so the paths
+        # given to them must not depend on the current folder.
+        cfg.work_dir = (Path(path).parent / cfg.work_dir).resolve()
         cfg.slots = int(cfg.slots) if int(cfg.slots) > 0 else auto_slots(os.cpu_count() or 1, memory_gb())
         cfg.fea_slots = max(1, int(cfg.fea_slots))
         cfg.master_url = cfg.master_url.rstrip("/")
