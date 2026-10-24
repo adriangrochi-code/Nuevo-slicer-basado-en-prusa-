@@ -2694,7 +2694,10 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("min_print_speed", coFloats);
     def->label = L("Min print speed");
-    def->tooltip = L("Slic3r will not scale speed down below this speed.");
+    // Tisma: the cooling goes below this speed when a layer is still too short at it (CoolingBuffer.cpp).
+    def->tooltip = L("The cooling slows the extrusions down to this speed first. If a layer still takes less than "
+                     "\"Slow down if layer print time is below\", its extrusions are slowed down further, to a common "
+                     "speed, until it takes that time.");
     def->sidetext = L("mm/s");
     def->min = 0;
     def->mode = comExpert;
