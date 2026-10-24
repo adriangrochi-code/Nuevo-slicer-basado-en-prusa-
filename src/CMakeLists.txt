@@ -21,7 +21,10 @@ endif ()
 
 add_subdirectory(slic3r-arrange)
 add_subdirectory(slic3r-arrange-wrapper)
-add_subdirectory(libseqarrange)
+# Sequential arrangement needs Z3, not built for the Android app (android/).
+if (NOT ANDROID)
+    add_subdirectory(libseqarrange)
+endif ()
 add_subdirectory(libtisma_fea)
 
 

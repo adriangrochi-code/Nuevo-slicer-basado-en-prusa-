@@ -34617,3 +34617,33 @@ msgstr "Puente más largo sin soportes"
 
 msgid "Longest span this printer bridges well, with nothing under it: the bridges over the infill or over the layer below do not count. The review before printing warns about longer bridges. 16 mm is the span PrusaSlicer assumes for its stability check. 0 = no check."
 msgstr "El tramo más largo que esta impresora puentea bien, sin nada debajo: los puentes sobre el relleno o sobre la capa de abajo no cuentan. La revisión antes de imprimir avisa de los puentes más largos. 16 mm es el tramo que PrusaSlicer supone en su chequeo de estabilidad. 0 = sin chequeo."
+
+msgid "Nozzle of each extruder"
+msgstr "Boquilla de cada extrusor"
+
+msgid "Fine walls, coarse infill"
+msgstr "Paredes finas, relleno grueso"
+
+msgid "Prints the perimeters, the solid infill, the supports and the wipe tower with the finest nozzle and the sparse infill with the coarsest one, which takes the height of several layers (automatic infill combination), with the extrusion widths calculated from the nozzle of each extruder. Printing with nozzles of different diameters is experimental: calibrate the tool offsets first."
+msgstr "Imprime los perímetros, el relleno sólido, los soportes y la torre de purga con la boquilla más fina y el relleno poco denso con la más gruesa, que ocupa la altura de varias capas (combinación automática del relleno), con los anchos de extrusión calculados con la boquilla de cada extrusor. Imprimir con boquillas de distinto diámetro es experimental: calibrá primero los desfases de los cabezales."
+
+msgid "The nozzle of extruder %zu."
+msgstr "La boquilla del extrusor %zu."
+
+msgid "Different nozzles"
+msgstr "Distintas"
+
+msgid "Color mixing (Full Spectrum)"
+msgstr "Mezcla de colores (Full Spectrum)"
+
+msgid "Colors mixed by alternating the filaments layer by layer. On a printer that changes filaments in a single nozzle (AMS, MMU), each layer with a mix needs a filament change and its purge."
+msgstr "Colores mezclados alternando los filamentos capa por capa. En una impresora que cambia de filamento en una sola boquilla (AMS, MMU), cada capa con mezcla necesita un cambio de filamento y su purga."
+
+msgid "This printer changes filaments in a single nozzle (AMS, MMU). A color mix alternates the filaments layer by layer: each layer with a mix is a filament change, and each change purges filament. The print uses noticeably more filament and takes longer. After slicing, a warning tells how much filament goes to purging."
+msgstr "Esta impresora cambia de filamento en una sola boquilla (AMS, MMU). Una mezcla de colores alterna los filamentos capa por capa: cada capa con mezcla es un cambio de filamento, y cada cambio purga filamento. La impresión gasta bastante más filamento y tarda más. Después de laminar, un aviso dice cuánto filamento se va en purga."
+
+msgid "Turn on"
+msgstr "Activar"
+
+msgid "Color mixing with a single nozzle: %1% %% of the filament (%2%) goes to purging."
+msgstr "Mezcla de colores con una sola boquilla: el %1% %% del filamento (%2%) se va en purga."

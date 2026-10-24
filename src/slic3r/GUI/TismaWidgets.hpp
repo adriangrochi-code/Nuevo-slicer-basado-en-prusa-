@@ -84,6 +84,33 @@ private:
     Style m_style;
 };
 
+// A slider (the Slider of the phone): a thin track, the part up to the value in the accent color and a round thumb.
+// While the thumb is dragged on_change(value, false) shows the value; when it is released, and with the keys (arrows
+// one step, Page Up and Down ten), on_change(value, true) gives it.
+class TismaSlider : public wxPanel
+{
+public:
+    TismaSlider(wxWindow* parent, double min, double max, double step, std::function<void(double, bool)> on_change);
+
+    // Without calling on_change.
+    void   set_value(double value);
+    double get_value() const { return m_value; }
+    void   sys_color_changed() { Refresh(); }
+    void   msw_rescale();
+
+private:
+    void   on_paint(wxPaintEvent&);
+    int    thumb_radius() const;
+    int    x_of(double value) const;
+    double value_at(int x) const;
+    void   set_from_user(double value, bool final);
+
+    double                            m_min, m_max, m_step, m_value;
+    bool                              m_dragging { false };
+    bool                              m_hovered  { false };
+    std::function<void(double, bool)> m_on_change;
+};
+
 // Options shown as chips, one of them chosen (the Choices of the phone). The chips wrap to more lines when the panel is
 // narrow. on_select is called with the index of the chip clicked by the user.
 class TismaChoiceChips : public wxPanel
