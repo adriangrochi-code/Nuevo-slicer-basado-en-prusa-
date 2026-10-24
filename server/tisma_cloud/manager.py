@@ -3,13 +3,16 @@ window on the screen of the server (gui.py) and by the commands and the console 
 
 Everything is kept in one folder, the home (TISMA_HOME, else the folder of the executable, else the current folder):
 
-    tisma-cloud.toml   role ("master" or "node"), port of the master
+    tisma-cloud.toml   role ("master" or "node"), port of the master, the master computes too (master_computes)
     .env               settings of the master (TISMA_* variables, see .env.example)
     node.toml          settings of a node (see deploy/node.example.toml)
+    master-node.toml   settings of the node of the master (made by the service when the master computes)
     logs/tisma-cloud.log, tisma-cloud.pid
 
 The service runs as a small supervisor ("run") which starts the master or the node ("run --child") and starts it again
-if it stops with an error, so that a crash does not leave the machine without service.
+if it stops with an error, so that a crash does not leave the machine without service. When the master computes too,
+the supervisor also runs a node of its own ("run --child --local-node", node MASTER_NODE of the master) connected to
+the master of the same machine.
 """
 
 from __future__ import annotations
@@ -34,7 +37,10 @@ SERVICE_NAME = "tisma-cloud"
 
 # Settings of the master shown by the window and the console: variable, label, secret.
 MASTER_FIELDS = [
-    ("TISMA_PUBLIC_URL", "Dirección pública (https://...)", False),
+    ("TISMA_PUBLIC_URL", "Dirección pública (vacía: la IP pública, detectada)", False),
+    ("TISMA_DDNS_HOST", "DNS dinámico: nombre (No-IP, ej. tisma.ddns.net)", False),
+    ("TISMA_DDNS_USER", "DNS dinámico: usuario (correo de No-IP)", False),
+    ("TISMA_DDNS_PASSWORD", "DNS dinámico: contraseña", True),
     ("TISMA_DATABASE_URL", "Base de datos", False),
     ("TISMA_STORAGE_DIR", "Carpeta de los archivos", False),
     ("TISMA_INTERNAL_EMAILS", "Cuentas internas sin cobro (correos o @dominio)", False),
@@ -68,6 +74,8 @@ JOB_CLASS_NAMES = {
 NODE_DEFAULTS = {"master_url": "http://192.168.1.10:8000", "token": "", "tisma_slicer": "", "tisma_fea": "",
                  "work_dir": "node-work", "slots": 0, "fea_slots": 1, "timeout_s": 3600, "gpu": True,
                  "verify_tls": True}
+# The node of the master when it computes too (registered in its database by the service).
+MASTER_NODE = "maestro"
 
 
 def default_home() -> Path:
@@ -155,6 +163,10 @@ class Manager:
         return self.home / "node.toml"
 
     @property
+    def master_node_path(self) -> Path:
+        return self.home / "master-node.toml"
+
+    @property
     def pid_path(self) -> Path:
         return self.home / "tisma-cloud.pid"
 
@@ -195,6 +207,66 @@ class Manager:
 
     def port(self) -> int:
         return int(self._settings().get("port", 8000))
+
+    def master_computes(self) -> bool:
+        """The master also runs jobs, as a node of its own (on unless it was turned off)."""
+        return bool(self._settings().get("master_computes", True))
+
+    def set_master_computes(self, on: bool) -> None:
+        data = self._settings()
+        data["master_computes"] = bool(on)
+        self._save_settings(data)
+
+    def prepare_master_node(self) -> Path | None:
+        """The node of the master: registered in its database (a new token when it has none that works) and its
+        master-node.toml, connected to the master of this machine. None when Tisma Slicer is not on this machine."""
+        from sqlalchemy import select
+
+        from .jobs import JOB_CLASSES
+        from .models import Node
+        from .security import hash_token, new_token
+
+        slicer, fea = system.find_tisma_programs()
+        if not slicer or not fea:
+            return None
+        current = {}
+        if self.master_node_path.is_file():
+            with open(self.master_node_path, "rb") as f:
+                current = tomllib.load(f)
+        token = str(current.get("token") or "")
+        db, _settings = self._database()
+        with db.session() as s:
+            node = s.execute(select(Node).where(Node.name == MASTER_NODE)).scalar_one_or_none()
+            if node is None:
+                token = new_token("tn")
+                s.add(Node(name=MASTER_NODE, token_hash=hash_token(token), priorities=",".join(JOB_CLASSES)))
+            elif not token or hash_token(token) != node.token_hash:
+                token = new_token("tn")
+                node.token_hash = hash_token(token)
+        data = dict(NODE_DEFAULTS, master_url=f"http://127.0.0.1:{self.port()}", token=token, tisma_slicer=slicer,
+                    tisma_fea=fea, work_dir="master-work")
+        # The settings changed by hand (jobs at a time...) are kept.
+        data.update({k: v for k, v in current.items() if k in ("slots", "fea_slots", "timeout_s", "gpu")})
+        lines = ["# The node of the master (made by Tisma Cloud when the master computes too; master_computes in",
+                 "# tisma-cloud.toml). Jobs at a time, structural analyses at a time, longest job and GPU can be changed."]
+        lines += [f"{k} = {_toml_value(v)}" for k, v in data.items()]
+        self.master_node_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return self.master_node_path
+
+    def public_address(self) -> dict:
+        """What the master found of its public address and dynamic DNS (publicip.py), from its storage folder."""
+        import json
+
+        from .cli import load_env
+        from .settings import Settings
+
+        load_env(self.env_path)
+        folder = Path(Settings().storage_dir)
+        folder = folder if folder.is_absolute() else self.home / folder
+        try:
+            return json.loads((folder / "public-address.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
 
     def set_port(self, port: int) -> None:
         if not 1 <= int(port) <= 65535:
@@ -261,6 +333,8 @@ class Manager:
         """One setting of the role of this machine, by name (port, a TISMA_* variable or a key of node.toml)."""
         if key == "port":
             self.set_port(int(value))
+        elif key == "master_computes":
+            self.set_master_computes(value.strip().lower() in ("1", "true", "yes", "si", "sí", "on"))
         elif key.startswith("TISMA_"):
             self.write_env({key: value})
         else:
@@ -667,11 +741,31 @@ class Manager:
                                  "Este Windows no tiene WebView2 (Windows Server 2019 y 2022 no lo traen): instalá "
                                  "«Microsoft Edge WebView2 Runtime» o abrí el panel desde otra PC en "
                                  f"http://<IP de este servidor>:{self.port()}/admin"))
-            url = self.read_env().get("TISMA_PUBLIC_URL", "")
-            out.append(Check("Dirección pública", True if url.startswith("https://") else None,
-                             url if url.startswith("https://") else
-                             (f"{url}: sin HTTPS, las contraseñas viajan sin cifrar" if url else
-                              "Sin dirección pública: los clientes de internet no llegan (ver README, HTTPS con Caddy)")))
+            env = self.read_env()
+            url = env.get("TISMA_PUBLIC_URL", "")
+            if url:
+                out.append(Check("Dirección pública", True if url.startswith("https://") else None,
+                                 url if url.startswith("https://") else
+                                 f"{url}: sin HTTPS, las contraseñas viajan sin cifrar"))
+            else:
+                # Made by the master: the dynamic DNS name or its public IPv4.
+                found = self.public_address()
+                host = env.get("TISMA_DDNS_HOST", "") or found.get("ip", "")
+                out.append(Check("Dirección pública", None if host else False,
+                                 f"http://{host}:{self.port()} (automática, sin HTTPS: ver README)" if host else
+                                 "Automática: el maestro todavía no averiguó su IP pública (¿en marcha, con internet?)"))
+            if env.get("TISMA_DDNS_HOST"):
+                found = self.public_address()
+                error = str(found.get("ddns_error") or "")
+                out.append(Check("DNS dinámico", False if error else True if found.get("ddns_ip") else None,
+                                 f"{env['TISMA_DDNS_HOST']}: {error.removeprefix('stop: ')}" if error else
+                                 f"{env['TISMA_DDNS_HOST']} → {found['ddns_ip']}" if found.get("ddns_ip") else
+                                 f"{env['TISMA_DDNS_HOST']}: todavía sin actualizar"))
+            if self.master_computes():
+                slicer, fea = system.find_tisma_programs()
+                out.append(Check("El maestro calcula", bool(slicer and fea),
+                                 f"Nodo «{MASTER_NODE}» con {slicer}" if slicer and fea else
+                                 "Falta Tisma Slicer en esta máquina: instalalo para que el maestro calcule"))
         else:
             node = self.read_node()
             for key, label in (("tisma_slicer", "Programa tisma-slicer"), ("tisma_fea", "Programa tisma-fea")):
@@ -723,7 +817,7 @@ class Manager:
         raise ValueError(f"Nothing to fix for {key}")
 
     # ---- running in the foreground (the process started by start())
-    def run(self, child: bool = False) -> int:
+    def run(self, child: bool = False, local_node: bool = False) -> int:
         """Runs the role of this machine until it is stopped, writing the log when not in a terminal. Without child: the
         supervisor, which writes the pid file and runs the role in a child process, started again when it fails."""
         role = self.role()
@@ -744,38 +838,75 @@ class Manager:
             finally:
                 if self._read_pid() == os.getpid():
                     self.pid_path.unlink(missing_ok=True)
+        from .node.__main__ import main as node_main
+
+        if role == "master" and local_node:
+            return node_main(["--config", str(self.master_node_path)])
         if role == "master":
             from .cli import load_env, serve_master
 
             load_env(self.env_path)
             return serve_master("0.0.0.0", self.port())
-        from .node.__main__ import main as node_main
-
         return node_main(["--config", str(self.node_path)])
 
+    def children(self) -> dict[str, list[str]]:
+        """The processes of the service: the master or the node, and the node of the master when it computes too."""
+        out = {"main": run_command(self.home, "--child")}
+        if self.role() == "master" and self.master_computes():
+            try:
+                ready = self.prepare_master_node() is not None
+            except Exception as e:  # noqa: BLE001 (the master serves without it)
+                print(f"[tisma-cloud] el nodo del maestro no se pudo preparar: {e}", flush=True)
+                ready = False
+            if ready:
+                out["node"] = run_command(self.home, "--child", "--local-node")
+            else:
+                print("[tisma-cloud] el maestro no calcula: falta Tisma Slicer en esta máquina", flush=True)
+        return out
+
     def _supervise(self) -> int:
-        """Runs the role in a child process and starts it again when it stops with an error (after 5 s, doubling up to
-        a minute while it keeps failing). A clean exit ends the service."""
-        child: subprocess.Popen | None = None
+        """Runs the role in a child process (and the node of the master in another one when it computes too) and starts
+        each one again when it stops with an error (after 5 s, doubling up to a minute while it keeps failing). A clean
+        exit of the master or the node ends the service."""
+        commands = self.children()
+        running: dict[str, subprocess.Popen] = {}
+        started: dict[str, float] = {}
+        delay = {name: 5. for name in commands}
+        restart_at = {name: 0. for name in commands}
+
+        def stop_all() -> None:
+            for proc in running.values():
+                if proc.poll() is None:
+                    proc.terminate()
 
         def stop(_signum, _frame):  # noqa: ANN001
-            if child is not None and child.poll() is None:
-                child.terminate()
+            stop_all()
             raise SystemExit(0)
 
         if os.name != "nt":
             signal.signal(signal.SIGTERM, stop)
-        delay = 5.
         while True:
-            started = time.monotonic()
-            child = subprocess.Popen(run_command(self.home, "--child"), cwd=str(self.home), stdin=subprocess.DEVNULL,
-                                     creationflags=0x08000000 if os.name == "nt" else 0)  # no console window
-            code = child.wait()
-            if code == 0:
-                return 0
-            if time.monotonic() - started > 300:
-                delay = 5.
-            print(f"[tisma-cloud] {time.strftime('%Y-%m-%d %H:%M:%S')}: el servicio terminó con el código {code}; "
-                  f"arranca de nuevo en {delay:.0f} s", flush=True)
-            time.sleep(delay)
-            delay = min(delay * 2, 60.)
+            now = time.monotonic()
+            for name, cmd in commands.items():
+                proc = running.get(name)
+                if proc is None:
+                    if now >= restart_at[name]:
+                        running[name] = subprocess.Popen(cmd, cwd=str(self.home), stdin=subprocess.DEVNULL,
+                                                         creationflags=0x08000000 if os.name == "nt" else 0)  # no window
+                        started[name] = now
+                    continue
+                code = proc.poll()
+                if code is None:
+                    continue
+                del running[name]
+                if code == 0 and name == "main":
+                    stop_all()
+                    return 0
+                if now - started[name] > 300:
+                    delay[name] = 5.
+                what = "el servicio" if name == "main" else "el nodo del maestro"
+                print(f"[tisma-cloud] {time.strftime('%Y-%m-%d %H:%M:%S')}: {what} terminó con el código {code}; "
+                      f"arranca de nuevo en {delay[name]:.0f} s", flush=True)
+                restart_at[name] = now + delay[name]
+                delay[name] = min(delay[name] * 2, 60.)
+            time.sleep(0.5)

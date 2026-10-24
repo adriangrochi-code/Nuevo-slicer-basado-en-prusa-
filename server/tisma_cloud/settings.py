@@ -58,7 +58,21 @@ class Settings:
     # Page where users create their account and pay the plan (shown by Tisma); empty: public_url + "/cuenta".
     billing_url: str = field(default_factory=lambda: os.environ.get("TISMA_BILLING_URL", ""))
     # Address of the master on internet (e.g. https://tismaservidores.net), for the pages and the payment provider.
+    # Empty: http:// the dynamic DNS name (ddns_host) or the public IPv4 of the machine, and the port (publicip.py).
     public_url: str = field(default_factory=lambda: os.environ.get("TISMA_PUBLIC_URL", "").rstrip("/"))
+    # Port where the master listens, set by the program that starts it (for the address made when public_url is empty).
+    port: int = field(default_factory=lambda: _int("TISMA_PORT", 8000))
+    # Where the master asks its public IPv4 (an answer of plain text).
+    public_ip_url: str = field(default_factory=lambda: os.environ.get("TISMA_PUBLIC_IP_URL", "https://api.ipify.org"))
+    # Dynamic DNS (the dyndns2 protocol of No-IP and others): a name kept pointing at the public IPv4 of the master, for
+    # the internet connections whose address changes. Empty host, user or password: no updates.
+    ddns_host: str = field(default_factory=lambda: os.environ.get("TISMA_DDNS_HOST", "").strip())
+    ddns_user: str = field(default_factory=lambda: os.environ.get("TISMA_DDNS_USER", "").strip())
+    ddns_password: str = field(default_factory=lambda: os.environ.get("TISMA_DDNS_PASSWORD", ""))
+    ddns_url: str = field(default_factory=lambda: os.environ.get("TISMA_DDNS_URL",
+                                                                  "https://dynupdate.no-ip.com/nic/update"))
+    # E-mail of the one who runs this master, in the User-Agent the service asks for; empty: the user (No-IP: an e-mail).
+    ddns_contact: str = field(default_factory=lambda: os.environ.get("TISMA_DDNS_CONTACT", "").strip())
     # Payment provider of the account page: "" (none: payments recorded by the administrator) or "test" (a fake
     # provider to try the whole flow; never in production).
     billing_provider: str = field(default_factory=lambda: os.environ.get("TISMA_BILLING_PROVIDER", ""))

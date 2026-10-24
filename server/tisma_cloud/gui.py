@@ -764,6 +764,7 @@ class App:
         if role == "master":
             env = self.m.read_env()
             rows.append(("port", "Puerto", self.m.port(), False))
+            rows.append(("master_computes", "El maestro también calcula", self.m.master_computes(), False))
             rows += [(key, label, env.get(key, ""), secret) for key, label, secret in MASTER_FIELDS]
         else:
             node = self.m.read_node()
@@ -807,7 +808,8 @@ class App:
         try:
             if self.m.role() == "master":
                 self.m.set_port(int(self.fields["port"].get()))
-                self.m.write_env({k: str(v.get()) for k, v in self.fields.items() if k != "port"})
+                self.m.set_master_computes(bool(self.fields["master_computes"].get()))
+                self.m.write_env({k: str(v.get()) for k, v in self.fields.items() if k not in ("port", "master_computes")})
             else:
                 self.m.write_node({k: v.get() for k, v in self.fields.items()})
         except Exception as e:  # noqa: BLE001

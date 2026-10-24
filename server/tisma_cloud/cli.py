@@ -99,6 +99,8 @@ def serve_master(host: str, port: int) -> int:
 
     logging.getLogger("uvicorn.access").addFilter(_NoHealthChecks())
 
+    # The port, for the public address made when TISMA_PUBLIC_URL is empty (publicip.py).
+    os.environ["TISMA_PORT"] = str(port)
     settings = Settings()
     # Room for the connections plus the database, the files being sent and the log.
     files = raise_open_files(settings.max_connections + 1000)
@@ -419,7 +421,7 @@ def main(argv: list[str] | None = None) -> int:
         if command == "panel":
             return open_panel(manager)
         if command == "run":
-            return manager.run(child="--child" in rest)
+            return manager.run(child="--child" in rest, local_node="--local-node" in rest)
         if command == "master":
             return run_master(rest)
         if command == "node":

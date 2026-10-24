@@ -443,6 +443,40 @@ docker compose --env-file .env -f deploy/compose.master.yaml start api
   `docker compose --env-file .env -f deploy/compose.master.yaml exec api cat /data/data.key`.
   Para restaurar en otra máquina, ponerla de nuevo en el volumen `storage` o en `TISMA_DATA_KEY` antes de arrancar.
 
+### El maestro también calcula
+
+Con una sola máquina (o para aprovechar la del maestro) el maestro también corre trabajos: es la opción **«El maestro
+también calcula»** de la ventana (`tisma-cloud config master_computes true|false`), activada salvo que se apague. El
+servicio registra en la base del maestro un nodo **«maestro»** con su token, escribe `master-node.toml` (conectado a
+`http://127.0.0.1:PUERTO`, con los programas de Tisma Slicer de la máquina) y lo corre junto al maestro, cada uno
+reiniciado aparte si falla. Qué hace se cambia como en cualquier nodo («Qué hace…»); los trabajos a la vez, en
+`master-node.toml`. Hace falta Tisma Slicer instalado en la máquina del maestro: si no está, el maestro atiende sin
+calcular y el Diagnóstico lo dice.
+
+### IP pública que cambia: dirección automática y DNS dinámico
+
+En Uruguay las conexiones de casa y de oficina tienen la IP pública dinámica. Con **`TISMA_PUBLIC_URL` vacía** el
+maestro usa como dirección pública `http://<IP pública>:<puerto>`: cada 5 minutos pregunta su IPv4 a
+`TISMA_PUBLIC_IP_URL` ([ipify](https://www.ipify.org/), `https://api.ipify.org`, que responde la IP en texto). Para
+que los clientes y los nodos de afuera tengan un nombre fijo, un **DNS dinámico** como [No-IP](https://www.noip.com/):
+
+1. Crear la cuenta y un nombre (por ejemplo `tisma.ddns.net`) en No-IP.
+2. En el maestro: `TISMA_DDNS_HOST=tisma.ddns.net`, `TISMA_DDNS_USER=` (el correo de la cuenta) y
+   `TISMA_DDNS_PASSWORD=` (en la ventana: «DNS dinámico»). La dirección pública pasa a ser
+   `http://tisma.ddns.net:<puerto>`.
+3. En el router: abrir el puerto del maestro hacia esta máquina; los nodos de otras redes usan
+   `master_url = "http://tisma.ddns.net:8000"`.
+
+El maestro actualiza el nombre con el protocolo de No-IP ([pedido](https://www.noip.com/integrate/request),
+[respuestas](https://www.noip.com/integrate/response)) **solo cuando cambia la IP** (No-IP bloquea a los clientes que
+actualizan sin cambio) y recuerda la última IP enviada en `public-address.json` de la carpeta de archivos. `good` y
+`nochg` son éxito; `nohost`, `badauth`, `badagent`, `!donator` y `abuse` detienen las actualizaciones hasta que se
+corrija la configuración; `911` se reintenta a los 30 minutos. El Diagnóstico muestra la dirección y el estado del DNS
+dinámico. Otro servicio del mismo protocolo (dyndns2) se usa con `TISMA_DDNS_URL`.
+
+Sin dominio propio la dirección automática es HTTP, sin cifrar: para HTTPS hace falta un nombre (el del DNS dinámico
+sirve) y Caddy delante del maestro (ver «Instalar el maestro»).
+
 ## Instalar un nodo
 
 En el maestro: `python -m tisma_cloud.admin node-add i7-1 --priorities slice,slice_large,fea` (muestra el token una

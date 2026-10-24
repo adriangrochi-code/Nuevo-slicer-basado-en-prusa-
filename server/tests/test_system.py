@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -61,7 +63,7 @@ def test_relative_home(tmp_path, monkeypatch):
     assert (tmp_path / "service-home" / "tisma-cloud.toml").is_file()
 
 
-def test_supervisor_starts_the_service_again(tmp_path, monkeypatch):
+def test_supervisor_starts_the_service_again(tmp_path, monkeypatch, capsys):
     """The role crashes twice, then ends cleanly: the supervisor starts it three times and ends."""
     m = Manager(tmp_path)
     m.set_role("node")
@@ -73,11 +75,27 @@ def test_supervisor_starts_the_service_again(tmp_path, monkeypatch):
                       "p.write_text(str(n))\n"
                       "sys.exit(0 if n >= 3 else 7)\n", encoding="utf-8")
     monkeypatch.setattr(manager_module, "run_command", lambda home=None, *a: [sys.executable, str(script)])
-    sleeps = []
-    monkeypatch.setattr(manager_module.time, "sleep", sleeps.append)
+    # The clock of the supervisor goes forward by what it sleeps (and the role runs for real meanwhile).
+    clock, starts = [0.], []
+    real_sleep, real_popen = time.sleep, subprocess.Popen
+
+    def sleep(s: float) -> None:
+        clock[0] += s
+        real_sleep(0.005)
+
+    def popen(*args, **kwargs):  # noqa: ANN002, ANN003
+        starts.append(clock[0])
+        return real_popen(*args, **kwargs)
+
+    monkeypatch.setattr(manager_module.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(manager_module.time, "sleep", sleep)
+    monkeypatch.setattr(manager_module.subprocess, "Popen", popen)
     assert m._supervise() == 0
     assert counter.read_text() == "3"
-    assert sleeps == [5., 10.]
+    # Started again 5 s after the first error and 10 s after the second one.
+    assert len(starts) == 3 and 5. <= starts[1] - starts[0] < 60. and 10. <= starts[2] - starts[1] < 60.
+    out = capsys.readouterr().out
+    assert "arranca de nuevo en 5 s" in out and "arranca de nuevo en 10 s" in out
 
 
 def test_node_programs_are_found(tmp_path, monkeypatch):

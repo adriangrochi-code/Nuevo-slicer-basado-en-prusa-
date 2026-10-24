@@ -37,6 +37,7 @@ from .models import (Alert, ApiToken, Bridge, BugReport, EmailCode, Job, Node, P
                      RemoteCommand, Usage, User, utcnow)
 from .guard import Guard
 from .presence import Presence
+from .publicip import CHECK_S as PUBLIC_ADDRESS_CHECK_S, PublicAddress
 from .ratelimit import RateLimiter
 from .security import DUMMY_HASH, Busy, hash_password, hash_token, needs_rehash, new_token, verify_password
 from .settings import Settings
@@ -106,6 +107,8 @@ class Services:
         crypto.migrate(self.db)
         self.sync_internal_accounts()
         self.storage = Storage(settings.storage_dir)
+        # The address of the master on internet when TISMA_PUBLIC_URL is empty, and the dynamic DNS name.
+        self.public_address = PublicAddress(settings, Path(settings.storage_dir) / "public-address.json")
         self.remote_files = remote.RemoteFiles(settings.storage_dir)
         # The bridges, their state and the camera images in memory (presence.py, remote.Images).
         self.presence = Presence()
@@ -644,9 +647,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 # Right away while there are reports waiting, else every half a minute.
                 await pause(0.1 if done else 30)
 
+        async def addresser() -> None:
+            while not stopping.is_set():
+                try:
+                    await run_in_threadpool(services.public_address.refresh)
+                except Exception:  # noqa: BLE001 (keep checking)
+                    log.exception("Checking the public address failed")
+                await pause(PUBLIC_ADDRESS_CHECK_S)
+
         tasks = [asyncio.create_task(sweeper()), asyncio.create_task(flusher())]
         if services.translator is not None:
             tasks.append(asyncio.create_task(translator()))
+        if services.public_address.needed:
+            tasks.append(asyncio.create_task(addresser()))
         try:
             yield
         finally:
@@ -836,7 +849,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # ---- users
     @app.get("/v1/health")
     def health() -> dict:
-        billing_url = cfg.billing_url or (cfg.public_url + "/cuenta" if cfg.public_url else "")
+        public_url = services.public_address.url()
+        billing_url = cfg.billing_url or (public_url + "/cuenta" if public_url else "")
         return {"ok": True, "service": "tisma-cloud", "version": __version__, "billing_url": billing_url,
                 "payments": bool(provider),
                 # The web client ID of "Sign in with Google" (the first one), for the account page.
@@ -1209,7 +1223,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 payment = billing.start_payment(s, u, plan, provider.name, body.months, body.extra_printers)
             except billing.BillingError as ex:
                 raise HTTPException(422, str(ex)) from None
-            return_url = (cfg.public_url or "") + "/cuenta"
+            return_url = services.public_address.url() + "/cuenta"
             return {"payment": payment_view(payment), "url": provider.checkout(payment, plan, u, return_url)}
 
     @app.get("/v1/billing/payments")

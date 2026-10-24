@@ -231,3 +231,46 @@ def test_dashboard_of_the_master(tmp_path, monkeypatch):
     assert users[0]["paid"] and users[0]["hours_month"] == 1.5 and not users[1]["paid"]
     r = m.resources()
     assert r["cpus"] >= 1 and r["disk_free_gb"] <= r["disk_gb"]
+
+
+def test_the_master_computes_too(tmp_path, monkeypatch):
+    """The node of the master: registered in its database, connected to the master of the machine, run by the service."""
+    from sqlalchemy import select
+
+    from tisma_cloud import system
+    from tisma_cloud.manager import MASTER_NODE
+    from tisma_cloud.models import Node
+    from tisma_cloud.security import hash_token
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("TISMA_DATABASE_URL", raising=False)
+    monkeypatch.delenv("TISMA_STORAGE_DIR", raising=False)
+    m = Manager(tmp_path)
+    m.set_role("master")
+    m.set_port(8123)
+    m.write_env({"TISMA_DATABASE_URL": f"sqlite:///{tmp_path / 'db.sqlite'}"})
+    assert m.master_computes()
+    # Without Tisma Slicer on the machine the master serves without computing.
+    monkeypatch.setattr(system, "find_tisma_programs", lambda: (None, None))
+    assert m.prepare_master_node() is None and list(m.children()) == ["main"]
+    slicer, fea = tmp_path / "tisma-slicer", tmp_path / "tisma-fea"
+    slicer.write_text("x")
+    fea.write_text("x")
+    monkeypatch.setattr(system, "find_tisma_programs", lambda: (str(slicer), str(fea)))
+    path = m.prepare_master_node()
+    cfg = NodeConfig.load(path)
+    assert cfg.master_url == "http://127.0.0.1:8123" and cfg.tisma_slicer == str(slicer)
+    db, _settings = m._database()
+    with db.session() as s:
+        node = s.execute(select(Node).where(Node.name == MASTER_NODE)).scalar_one()
+        assert node.token_hash == hash_token(cfg.token) and node.enabled
+    # Again: the same token; a changed setting is kept.
+    path.write_text(path.read_text(encoding="utf-8").replace("slots = 0", "slots = 2"), encoding="utf-8")
+    assert NodeConfig.load(m.prepare_master_node()).token == cfg.token
+    assert NodeConfig.load(path).slots == 2
+    children = m.children()
+    assert list(children) == ["main", "node"] and children["node"][-2:] == ["--child", "--local-node"]
+    assert any(c.name == "El maestro calcula" and c.ok for c in m.checks())
+    # Turned off: only the master.
+    m.set_setting("master_computes", "false")
+    assert not m.master_computes() and list(m.children()) == ["main"]
