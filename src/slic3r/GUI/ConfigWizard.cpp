@@ -2412,6 +2412,7 @@ void PageBrands::update_nozzles(const Entry *entry)
     m_nozzle_boxes.clear();
     // Resin printers and the printers with only one nozzle have nothing to choose.
     const bool show = entry != nullptr && entry->model->technology == ptFFF;
+    m_nozzles_entry = show ? entry : nullptr;
     m_nozzles_label->Show(show);
     m_nozzles_hint->Show(show);
     if (! show)
@@ -2421,27 +2422,34 @@ void PageBrands::update_nozzles(const Entry *entry)
         wxGetApp().UpdateDarkUI(box);
         box->SetValue(is_selected(*entry, variant.name));
         const std::string name = variant.name;
-        box->Bind(wxEVT_CHECKBOX, [this, entry, name, box](wxCommandEvent &) {
-            if (! pick(*entry, name, box->GetValue()))
-                box->SetValue(! box->GetValue());
-            else if (box->GetValue()) {
-                // One nozzle per printer: the one checked replaces the others.
-                for (const VendorProfile::PrinterVariant &other : entry->model->variants)
-                    if (other.name != name && is_selected(*entry, other.name))
-                        pick(*entry, other.name, false);
-                for (wxCheckBox *other_box : m_nozzle_boxes)
-                    if (other_box != box)
-                        other_box->SetValue(false);
-            }
-            // The row of the model is checked while one of its nozzles is.
-            const int row = m_printers_list->GetSelection();
-            if (row != wxNOT_FOUND && row < int(m_shown_entries.size()) && &m_entries[m_shown_entries[row]] == entry)
-                m_printers_list->Check(row, is_selected(*entry));
-            update_counts();
+        // Picking the nozzle may reload the pages of the wizard (the vendor is installed or removed), which rebuilds
+        // these boxes: the box and this handler would be deleted while it runs, so the work is done after the event.
+        box->Bind(wxEVT_CHECKBOX, [this, entry, name](wxCommandEvent &evt) {
+            const bool checked = evt.IsChecked();
+            CallAfter([this, entry, name, checked]() { on_nozzle(entry, name, checked); });
         });
         m_nozzles_sizer->Add(box, 0, wxBOTTOM, 3);
         m_nozzle_boxes.push_back(box);
     }
+}
+
+void PageBrands::on_nozzle(const Entry *entry, const std::string &variant, bool checked)
+{
+    if (pick(*entry, variant, checked) && checked)
+        // One nozzle per printer: the one checked replaces the others.
+        for (const VendorProfile::PrinterVariant &other : entry->model->variants)
+            if (other.name != variant && is_selected(*entry, other.name))
+                pick(*entry, other.name, false);
+    // The boxes show the selection, also when pick() refused the nozzle. They are the ones of the model in the
+    // preview, one per variant in its order, which a reload of the pages may have changed.
+    if (m_nozzles_entry == entry)
+        for (size_t i = 0; i < m_nozzle_boxes.size() && i < entry->model->variants.size(); ++ i)
+            m_nozzle_boxes[i]->SetValue(is_selected(*entry, entry->model->variants[i].name));
+    // The row of the model is checked while one of its nozzles is.
+    const int row = m_printers_list->GetSelection();
+    if (row != wxNOT_FOUND && row < int(m_shown_entries.size()) && &m_entries[m_shown_entries[row]] == entry)
+        m_printers_list->Check(row, is_selected(*entry));
+    update_counts();
 }
 
 void PageBrands::update_summary()

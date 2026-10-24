@@ -36,8 +36,8 @@ std::string PresetHints::cooling_description(const Preset &preset)
 
         out += GUI::format(_L("If estimated layer time is below ~%1%s, "
                               "fan will run at %2%%% and print speed will be reduced "
-                              "so that no less than %3%s are spent on that layer "
-                              "(however, speed will never be reduced below %4%mm/s)."),
+                              "so that no less than %3%s are spent on that layer: "
+                              "first down to %4%mm/s and, if that is not enough, further."),
                               slowdown_below_layer_time, max_fan_speed, slowdown_below_layer_time, min_print_speed);
         if (fan_below_layer_time > slowdown_below_layer_time) {
             out += "\n";

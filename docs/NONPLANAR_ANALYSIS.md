@@ -94,6 +94,9 @@ pieza (`build_radial_profile`):
 4. Las capas llegan a esa pendiente gradualmente desde las primeras capas planas hasta el voladizo más bajo que la pide;
    luego se reduce lo necesario para el espesor de capa (60–140 %) y para que el cabezal no choque.
 5. Una pieza sin voladizos que el cono pueda ayudar se lamina plana.
+6. El cono se usa solo si deja menos soporte que las capas planas (ver «Elección por menos soporte»): un cono que
+   conviene a un voladizo puede hacer más altos los soportes de otro. En el cuenco dado vuelta (borde a 52° hacia
+   adentro) el cono subía el soporte de 718 a 1052 mm de filamento; ahora queda plano (718).
 
 Medido en los tests (hongo con ala a 52°, cabezal de 25°): soportes de 705 mm de filamento con capas planas a 0 con el
 cono según la pieza; el ala pide cot 40° − cot 52° = 0,41 de pendiente, el centro queda plano. Sin «Ajustar al cabezal»
@@ -117,13 +120,31 @@ desde la vertical, 45° por defecto). Objetivo: menos soporte y menos material.
 - **Cabezal**: además de los ángulos libres, la pendiente queda limitada por la holgura del cabezal (lo ya impreso no
   puede subir más de lo que permite el bloque calefactor a esa distancia: altura libre / radio, o el perfil medido con
   la galga de ranuras en V). Con el cabezal por defecto (3 mm a 15 mm) eso es ~10°.
+- **Pendiente según la distancia**: además de esa pendiente única, se arma otra forma en la que la pendiente cambia
+  dentro de la capa según la geometría. Cerca de lo ya impreso, las capas bajan tan empinadas como deja el ángulo libre
+  (la boquilla, hasta el bloque calefactor); más lejos, más suave. La regla: entre dos puntos cualesquiera, lo ya impreso
+  no sube más de lo que el cabezal permite a esa distancia (el mínimo entre ángulo libre × distancia y la altura libre,
+  dentro de su radio, o el perfil medido). Se calcula la bajada más profunda que la cumple a lo largo de la distancia a
+  lo ya impreso (programación dinámica, mínimo de sumas). Así una cuña o un voladizo corto se inclinan con el ángulo
+  máximo y una parte recta queda plana. Con el cabezal por defecto, un ala a 55° pasa de 1237 a 863 mm de filamento de
+  soporte (antes no se tocaba).
 - **Transición**: cada zona entra de a poco debajo del voladizo y sale arriba, con el espesor de capa dentro de
-  60–140 %; las primeras capas quedan planas (`nonplanar_flat_below`). Si no hay lugar, la zona se inclina menos.
+  60–140 % donde se imprime la pieza; las primeras capas quedan planas (`nonplanar_flat_below`). Debajo de un voladizo
+  solo se imprime la parte que lo sostiene (un tallo), donde las capas bajan poco, y el aire alrededor, donde solo van
+  viajes y soportes (espesor de capa de al menos 30 %): la transición es tan corta como esas dos cosas permiten. Antes
+  se calculaba con la bajada más profunda en todo el espacio, y un ala ancha sobre un tallo corto quedaba plana. Si no
+  hay lugar, la zona se inclina menos.
 - **Resultado medido** (test `Non-planar layers tilted under the overhangs need fewer supports`): un hongo con ala a 55°
   y cabezal de 25° pasa de 1341 mm de filamento de soporte a 0. Con el cabezal por defecto (holgura 3 mm a 15 mm, ~10°)
-  un ala a 48° queda sin soporte y una a 55° no se toca (queda igual que en planar).
-- **Solo si alcanza**: un voladizo se inclina solo si la inclinación posible lo deja imprimible; inclinarlo a medias
-  dejaría el soporte y además lo haría más alto (más material).
+  un ala a 48° queda sin soporte y una a 55° baja de 1237 a 863 mm (pendiente según la distancia).
+- **Medido por línea de comandos** (capas de 0,2 mm, soporte automático, cabezal de 25° con holgura de 7 mm a 15 mm;
+  filamento de soporte plano → voladizos):
+  - ala a 55° de un tallo de radio 8 a radio 20, a 10 mm de la cama: 2339 → 0 mm (antes de la transición corta: 2339);
+  - ala a 52°: 1714 → 0; hongo de cúpula a 52°: 3065 → 0; hongo alto a 55°: 3690 → 0;
+  - cuenco dado vuelta (borde a 52° hacia adentro): 718 → 0, con el techo como puente;
+  - ala a 60°: sin cambio (2153): necesita 31,6° de inclinación y el cabezal deja 25°.
+- **Elección por menos soporte**: de las dos formas (pendiente única y según la distancia) queda la que deja menos
+  soporte, y ninguna si no deja al menos 10 % menos que las capas planas (ver abajo).
 - **Límites**: techos casi horizontales (> 80°) quedan para puentes y soportes; las superficies superiores dentro de
   la transición salen curvas.
 
@@ -143,6 +164,28 @@ ya funcionan por separado, sin ajustes propios (solo las dos medidas del cabezal
   ajuste daba el 74 % de la pendiente pedida y aun pidiendo la del cabezal los soportes bajaban solo 18–25 %: la
   inclinación fuerte bajo el voladizo choca con el límite de espesor de capa y la reducción uniforme achicaba todo.
 - **Límites**: los de cada modo; donde un voladizo y una cara superior están muy cerca, manda el voladizo.
+- **Cono**: también se compara con el cono según la pieza. Queda el que deje menos soporte; si ninguno deja claramente
+  menos que las capas planas, queda la suma (por el acabado de las caras de arriba) solo si no deja más soporte que
+  plano.
+
+## Elección por menos soporte (Tisma)
+
+Los modos «Voladizos», «Cónico» (con «Ajustar al cabezal») y «Automático» comparan sus formas de capa con las capas
+planas antes de laminar (`support_volume`):
+
+1. La pieza se deforma al espacio de laminado con cada forma.
+2. Cada cara que mira hacia abajo más que el umbral de soporte del objeto (`support_material_threshold`, o con 0 el
+   automático: media línea de 1,125 × boquilla por capa, unos 48° desde la vertical con capas de 0,2 mm) aporta una
+   columna desde la cara hasta la pieza de abajo o la cama (rayo hacia abajo), medida en el espacio real.
+3. Queda la forma con menos volumen, si deja al menos 10 % menos que las capas planas; si no, capas planas. El margen
+   cubre lo que la estimación no ve (cómo el generador expande y une los soportes): en el cuenco dado vuelta con umbral
+   de 45° la estimación daba 22 % menos con la pendiente según la distancia y el soporte real era 11 % más, hasta usar
+   el umbral real del generador.
+4. La decisión se guarda por pieza y ajustes: la deformación se arma varias veces por laminado (validación, corte,
+   G-code, análisis).
+
+La validación revisa el espesor de capa dentro de la pieza (60–140 %, con 1 % de margen por el muestreo) y en el aire
+alrededor (al menos 30 %).
 
 ## Piel: capas que siguen las caras superiores (Tisma)
 
@@ -267,4 +310,7 @@ el promedio con capas en onda y el promedio plano es la ganancia de resistencia 
 - Slicer4RTN: https://xyzdims.com/3d-printing/slicer4rtn/
 - Z anti-aliasing: https://cnckitchen.com/blog/anti-aliasing-for-fdm-3d-printing-is-finally-here-micro-non-planar-printing
 - Laminador radial (solo la idea del ángulo según el radio): https://github.com/jyjblrd/radial_non_planar_slicer
+- S4 Slicer (4 ejes, deformación por rotaciones de tetraedros; solo para comparar): https://joshuabird.com/blog/post/the-s4-slicer
+- Automated topography slicing for support-free 3-axis FDM (Int. J. Adv. Manuf. Technol., 2026; campo de alturas bajo
+  los voladizos en 3 ejes, la idea más cercana al modo «Voladizos»): https://link.springer.com/article/10.1007/s00170-026-18768-1
 - Interfaces onduladas: https://researchers.westernsydney.edu.au/en/publications/interlayer-shear-strength-and-bonding-strength-of-sinuous-3d-prin/

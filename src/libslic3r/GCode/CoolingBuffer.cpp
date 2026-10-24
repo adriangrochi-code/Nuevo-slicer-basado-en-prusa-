@@ -139,7 +139,12 @@ struct CoolingLine
         non_adjustable_time(0.f), slowdown(false) {}
 
     bool adjustable(AdjustableFeatureType additional_slowdown_features) const {
-        if (!(this->type & TYPE_ADJUSTABLE) || this->adjustable_length <= 0.f || this->adjustable_time >= this->adjustable_time_max) {
+        return this->adjustable_time < this->adjustable_time_max && this->stretchable(additional_slowdown_features);
+    }
+
+    // Tisma: adjustable() without the limit of min_print_speed.
+    bool stretchable(AdjustableFeatureType additional_slowdown_features) const {
+        if (!(this->type & TYPE_ADJUSTABLE) || this->adjustable_length <= 0.f) {
             return false;
         }
 
@@ -386,6 +391,42 @@ struct PerExtruderAdjustments
         }
 
         return time_total;
+    }
+
+    // Tisma: the fastest feedrate of the lines which can be slowed down below min_print_speed.
+    float max_stretchable_feedrate(const AdjustableFeatureType additional_slowdown_features) const {
+        float feedrate = 0.f;
+        for (const CoolingLine &line : lines) {
+            if (line.stretchable(additional_slowdown_features))
+                feedrate = std::max(feedrate, line.feedrate);
+        }
+
+        return feedrate;
+    }
+
+    // Tisma: the time added by slowing down the lines faster than feedrate to feedrate, below min_print_speed.
+    float time_stretch_below_minimum(const float feedrate, const AdjustableFeatureType additional_slowdown_features) const {
+        assert(feedrate > 0.f);
+        float time_stretch = 0.f;
+        for (const CoolingLine &line : lines) {
+            if (line.stretchable(additional_slowdown_features) && line.feedrate > feedrate)
+                time_stretch += line.adjustable_time * (line.feedrate / feedrate - 1.f);
+        }
+
+        return time_stretch;
+    }
+
+    // Tisma: slow down the lines faster than feedrate to feedrate, below min_print_speed.
+    // Used when the layer is still shorter than slowdown_below_layer_time with all of them at min_print_speed.
+    void slow_down_below_minimum(const float feedrate, const AdjustableFeatureType additional_slowdown_features) {
+        assert(feedrate > 0.f);
+        for (CoolingLine &line : lines) {
+            if (line.stretchable(additional_slowdown_features) && line.feedrate > feedrate) {
+                line.slowdown         = true;
+                line.adjustable_time *= line.feedrate / feedrate;
+                line.feedrate         = feedrate;
+            }
+        }
     }
 
     // Sort the lines, adjustable first, higher feedrate first.
@@ -1045,6 +1086,7 @@ static inline float extruder_range_slow_down_non_proportional(
 // Calculate slow down for all the extruders.
 float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments> &per_extruder_adjustments)
 {
+    m_slowed_below_min_print_speed = false;
     // Sort the extruders by an increasing slowdown_below_layer_time.
     // The layers with a lower slowdown_below_layer_time are slowed down
     // together with all the other layers with slowdown_below_layer_time above.
@@ -1106,6 +1148,42 @@ float CoolingBuffer::calculate_layer_slowdown(std::vector<PerExtruderAdjustments
                 // Slow down to maximum possible.
                 for (auto it = cur_begin; it != by_slowdown_time.end(); ++ it)
                     (*it)->slowdown_to_minimum_feedrate(AdjustableFeatureType::ExternalPerimeters | AdjustableFeatureType::FirstInternalPerimeters);
+                // Tisma: still too short with every extrusion at min_print_speed. The layer must get its time to cool
+                // down, so the extrusions are slowed down further to a common feedrate (the slower ones keep theirs):
+                // the highest one at which the layer takes slowdown_below_layer_time.
+                const AdjustableFeatureType all_features = AdjustableFeatureType::ExternalPerimeters | AdjustableFeatureType::FirstInternalPerimeters;
+                float time_now     = elapsed_time_total0;
+                float feedrate_max = 0.f;
+                for (auto it = cur_begin; it != by_slowdown_time.end(); ++ it) {
+                    time_now    += (*it)->elapsed_time_total();
+                    feedrate_max = std::max(feedrate_max, (*it)->max_stretchable_feedrate(all_features));
+                }
+                if (feedrate_max > 0.f && time_now < slowdown_below_layer_time) {
+                    auto time_at = [&](float feedrate) {
+                        float time = time_now;
+                        for (auto it = cur_begin; it != by_slowdown_time.end(); ++ it)
+                            time += (*it)->time_stretch_below_minimum(feedrate, all_features);
+                        return time;
+                    };
+                    // The layer time grows as the feedrate goes down: bisection between a feedrate long enough (lo)
+                    // and one too short (hi).
+                    float lo = 0.f;
+                    float hi = feedrate_max;
+                    for (int iter = 0; iter < 40; ++ iter) {
+                        const float mid = 0.5f * (lo + hi);
+                        if (time_at(mid) < slowdown_below_layer_time)
+                            hi = mid;
+                        else
+                            lo = mid;
+                    }
+                    // No lower than 1 mm/min, so that the G-code never gets F0 (the tip of a cone may ask for less).
+                    const float feedrate = std::min(feedrate_max, std::max(lo, 1.f / 60.f));
+                    if (feedrate < feedrate_max) {
+                        for (auto it = cur_begin; it != by_slowdown_time.end(); ++ it)
+                            (*it)->slow_down_below_minimum(feedrate, all_features);
+                        m_slowed_below_min_print_speed = true;
+                    }
+                }
             }
         }
         elapsed_time_total0 += adj.elapsed_time_total();
@@ -1169,7 +1247,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
             float slowdown_below_layer_time = float(EXTRUDER_CONFIG(slowdown_below_layer_time));
             float fan_below_layer_time      = float(EXTRUDER_CONFIG(fan_below_layer_time));
             if (EXTRUDER_CONFIG(cooling)) {
-                if (layer_time < slowdown_below_layer_time) {
+                if (layer_time < slowdown_below_layer_time || m_slowed_below_min_print_speed) {
                     // Layer time very short. Enable the fan to a full throttle.
                     fan_speed_new                        = max_fan_speed;
                     requested_fan_speed_limits.min_speed = max_fan_speed;

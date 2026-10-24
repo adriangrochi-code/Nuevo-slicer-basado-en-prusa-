@@ -898,6 +898,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionString,              nonplanar_head_profile))
     ((ConfigOptionFloat,               nonplanar_head_free_angle_x))
     ((ConfigOptionFloat,               nonplanar_head_free_angle_y))
+    ((ConfigOptionFloat,               max_bridge_length))
     ((ConfigOptionFloats,              deretract_speed))
     ((ConfigOptionString,              end_gcode))
     ((ConfigOptionStrings,             end_filament_gcode))

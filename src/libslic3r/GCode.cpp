@@ -1086,7 +1086,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
             if (model_volume->is_model_part())
                 bbox.merge(model_volume->mesh().transformed_bounding_box(object.trafo_centered() * model_volume->get_matrix()));
         const indexed_triangle_set mesh = NonPlanar::object_mesh(object.model_object()->volumes, object.trafo_centered());
-        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox, &mesh, &object.model_object()->engineering.layer_field));
+        m_nonplanar_deformation = make_unique<NonPlanar::Deformation>(NonPlanar::make_deformation(print.config(), bbox, &mesh,
+            &object.model_object()->engineering.layer_field, NonPlanar::support_threshold_deg(object.config(), print.config())));
         NonPlanar::GCodeFilterParams params = NonPlanar::make_filter_params(print.config());
         // G-code coordinates of the object origin and of the object bottom.
         params.origin = unscaled<double>(object.instances().front().shift);

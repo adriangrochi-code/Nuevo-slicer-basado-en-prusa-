@@ -201,6 +201,19 @@ void Preview::set_layers_slider_values_range(int bottom, int top)
                                       std::max(bottom, m_layers_slider->GetMinPos()));
 }
 
+void Preview::show_layers_up_to(double z)
+{
+    if (! m_layers_slider || m_layers_z.empty())
+        return;
+    const auto it = std::min_element(m_layers_z.begin(), m_layers_z.end(),
+                                     [z](double a, double b) { return std::abs(a - z) < std::abs(b - z); });
+    m_layers_slider->SetSelectionSpan(m_layers_slider->GetMinPos(), int(it - m_layers_z.begin()));
+    on_layers_slider_scroll_changed();
+    update_moves_slider();
+    m_canvas->set_as_dirty();
+    m_canvas->request_extra_frame();
+}
+
 GCodeProcessorResult* Preview::active_gcode_result()
 {
     return &(*m_gcode_results)[s_multiple_beds.get_active_bed()];
@@ -624,6 +637,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     //first of all update extruder colors to avoid crash, when we are switching printer preset from MM to SM
     m_layers_slider->SetExtruderColors(plater->get_extruder_color_strings_from_plater_config(wxGetApp().is_editor() ? nullptr : active_gcode_result()));
     m_layers_slider->SetSliderValues(layers_z);
+    m_layers_z = layers_z;
     m_layers_slider->force_ruler_update();
     assert(m_layers_slider->GetMinPos() == 0);
 
