@@ -43,6 +43,8 @@ class StaticBox;
 
 namespace Slic3r {
 
+struct PrintStatistics;
+
 namespace GUI {
 
 class ConfigOptionsGroup;
@@ -115,6 +117,12 @@ class Sidebar : public wxPanel
     // Rows of the preset chooser shown for the filament (FFF) and the resin (SLA) printers, and for the Prusa SLX.
     std::vector<wxSizerItem*>           m_fff_rows, m_sla_rows, m_slx_rows;
     wxSizerItem*                        m_full_spectrum_row { nullptr };
+    // Tisma: Full Spectrum (colors mixed by alternating the filaments layer by layer) on a printer that changes filaments
+    // in a single nozzle (AMS, MMU): each layer with a mix is a filament change and its purge, so it is an option, off
+    // until it is turned on past a warning, and a warning after slicing tells how much filament went to purging.
+    wxSizerItem*                        m_full_spectrum_option_row { nullptr };
+    ::SwitchButton*                     m_full_spectrum_option     { nullptr };
+    std::string                         m_full_spectrum_warning;
 
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
@@ -184,6 +192,12 @@ class Sidebar : public wxPanel
     // Tisma: a diameter typed in the nozzle field.
     void on_type_nozzle();
     void apply_nozzle(const NozzleChoice &nozzle);
+    // A filament printer that changes filaments in a single nozzle (single_extruder_multi_material, several filaments).
+    bool single_nozzle_multi_material() const;
+    void update_full_spectrum_rows();
+    void on_full_spectrum_option(bool on);
+    // The warning of the purge of a print with color mixes on a single nozzle (none: no statistics, not sliced).
+    void update_full_spectrum_warning(const PrintStatistics *ps);
     void on_select_bed();
 
     void show_preset_comboboxes();
