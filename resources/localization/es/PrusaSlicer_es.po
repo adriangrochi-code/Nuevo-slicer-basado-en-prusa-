@@ -34502,6 +34502,38 @@ msgstr "Escalón 1 en la primera capa (X)"
 msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
 msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."
 
+#: src/libslic3r/PrintConfig.cpp
+msgid "Iron the top interface"
+msgstr "Planchar la interfaz superior"
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Print the top interface layer solid and iron it before printing the object over it, so that the faces of the object resting on the supports come out smoother. Needs top interface layers."
+msgstr "Imprime sólida la capa de interfaz superior y la plancha antes de imprimir la pieza encima, para que las caras de la pieza que apoyan en los soportes salgan más lisas. Necesita capas de interfaz superiores."
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Interface ironing flow rate"
+msgstr "Caudal del planchado de la interfaz"
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Flow of the ironing of the top support interface, in percent of the flow of a layer as high as the interface layer."
+msgstr "Caudal del planchado de la interfaz superior del soporte, en porcentaje del caudal de una capa de la altura de la interfaz."
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Interface ironing spacing"
+msgstr "Separación del planchado de la interfaz"
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Distance between the ironing lines of the top support interface."
+msgstr "Distancia entre las líneas de planchado de la interfaz superior del soporte."
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Support interface ironing"
+msgstr "Planchado de la interfaz del soporte"
+
+#: src/libslic3r/PrintConfig.cpp
+msgid "Speed of the ironing of the top support interface."
+msgstr "Velocidad del planchado de la interfaz superior del soporte."
+
 msgid "at %1% mm"
 msgstr "a %1% mm"
 

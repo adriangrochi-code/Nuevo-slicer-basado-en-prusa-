@@ -3514,8 +3514,10 @@ std::string GCodeGenerator::extrude_support(const std::vector<GCode::ExtrusionOr
         const double  support_speed            = m_config.support_material_speed.value;
         const double  support_interface_speed  = m_config.support_material_interface_speed.get_abs_value(support_speed);
         for (const GCode::ExtrusionOrder::SupportPath &path : support_extrusions) {
-            const auto   label = path.is_interface ?  support_interface_label : support_label;
-            const double speed = path.is_interface ? support_interface_speed : support_speed;
+            // Tisma: the ironing of the top interface at its own speed.
+            const auto   label = path.is_ironing ? "support interface ironing"sv : path.is_interface ?  support_interface_label : support_label;
+            const double speed = path.is_ironing ? m_config.support_material_ironing_speed.value :
+                                 path.is_interface ? support_interface_speed : support_speed;
             gcode += this->extrude_smooth_path(path.path, false, label, speed);
         }
     }

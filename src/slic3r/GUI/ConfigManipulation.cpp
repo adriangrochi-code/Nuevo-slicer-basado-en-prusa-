@@ -385,6 +385,11 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
                     "support_material_interface_speed", "support_material_interface_contact_loops" })
         toggle_field(el, have_support_material && have_support_interface);
     toggle_field("support_material_synchronize_layers", have_support_soluble);
+    // Tisma: the ironing of the top interface needs top interface layers (or a raft contact layer).
+    const bool have_support_ironing_interface = (have_support_material && have_support_interface) || have_raft;
+    toggle_field("support_material_ironing", have_support_ironing_interface);
+    for (auto el : { "support_material_ironing_flowrate", "support_material_ironing_spacing", "support_material_ironing_speed" })
+        toggle_field(el, have_support_ironing_interface && config->opt_bool("support_material_ironing"));
 
     toggle_field("perimeter_extrusion_width", have_perimeters || have_skirt || have_brim);
     toggle_field("support_material_extruder", have_support_material || have_skirt);
