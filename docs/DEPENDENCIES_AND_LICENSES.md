@@ -132,6 +132,12 @@ curados (marcados así en la nota de cada material).
 | volk (`vulkan-sdk-1.3.275.0`, commit `f2a16e3`) | MIT (`bundled_deps/volk/LICENSE.md`). Carga Vulkan al ejecutar: no hace falta el SDK ni el driver para compilar o usar Tisma. |
 | opencl (Khronos OpenCL-Headers `v2023.12.14`, commit `2368105`: solo las cabeceras C `cl.h`, `cl_platform.h`, `cl_version.h` y `cl_function_types.h`) | Apache-2.0, Copyright (c) 2008-2023 The Khronos Group Inc. (`bundled_deps/opencl/LICENSE`); compatible con AGPL-3.0. OpenCL se carga al ejecutar (`OpenCL.dll`, `libOpenCL.so.1`, instalados por el driver de la placa): no hace falta ningún SDK para compilar ni para usar Tisma. Para laminar con la placa de video (`docs/PERFORMANCE.md`). |
 
+**Servidor de Tisma Cloud (`server/`).** No forma parte de Tisma: es software propietario aparte (`server/LICENSE`),
+escrito en Python, que no incluye código de PrusaSlicer ni de Tisma y ejecuta `tisma-slicer` y `tisma-fea` como
+programas separados. Sus dependencias (FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx…) y sus licencias están en
+`server/THIRD_PARTY_LICENSES.md`. Tisma no agrega dependencias para el cliente de la nube: usa `Http` (libcurl),
+`nlohmann/json` y `wxSecretStore`, que ya estaban.
+
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 
 Ninguna se ha añadido. Antes de usar cualquiera hay que verificar la licencia de la versión concreta.
