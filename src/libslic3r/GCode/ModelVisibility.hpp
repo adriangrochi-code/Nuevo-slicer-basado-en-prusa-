@@ -22,6 +22,15 @@ struct CoordinateFunctor
 
     const float &operator()(size_t idx, size_t dim) const;
 };
+
+// Tisma: where the visibility rays are cast. Gpu: on the graphics card when there is one (OpenCL.hpp), in double
+// precision when it has it (the result of the CPU), on the CPU otherwise. GpuSinglePrecision: also in single precision
+// on a card with double precision (for the tests).
+enum class RaycastOn { Cpu, Gpu, GpuSinglePrecision };
+
+// Tisma: the visibility of the samples (the share of the rays cast from each one that reach the outside). For the tests.
+std::vector<float> sample_visibility(const indexed_triangle_set &triangles, const TriangleSetSamples &samples,
+                                     size_t negative_volumes_start_index, size_t sqr_rays_per_sample_point, RaycastOn on);
 } // namespace Impl
 
 struct Visibility

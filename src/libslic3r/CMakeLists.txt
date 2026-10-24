@@ -308,6 +308,8 @@ set(SLIC3R_SOURCES
     DimensionalCorrection.hpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
+    OpenCL.cpp
+    OpenCL.hpp
     InterlockInfill.cpp
     InterlockInfill.hpp
     GCodeMoveLine.hpp
@@ -653,6 +655,7 @@ find_package(JPEG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 target_link_libraries(libslic3r PRIVATE
+    opencl_headers
     sla_time_estimate
     libnest2d
     libcereal
