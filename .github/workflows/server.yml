@@ -101,9 +101,43 @@ jobs:
           "$exe" start
           "$exe" status
           curl -sf http://127.0.0.1:18991/v1/health
+          # The process of "start" has ended and its unpacked files are deleted: the supervisor must still be able to
+          # start the master again (it unpacks its own files, PYINSTALLER_RESET_ENVIRONMENT).
+          if [ "${{ matrix.name }}" = linux ]; then
+            sup=$(cat service-home/tisma-cloud.pid)
+            kill -9 "$(ps -o pid=,args= --ppid "$sup" | grep -v -- --local-node | head -n 1 | awk '{print $1}')"
+            for _ in $(seq 1 40); do sleep 1; curl -sf http://127.0.0.1:18991/v1/health > /dev/null 2>&1 && break; done
+            curl -sf http://127.0.0.1:18991/v1/health || { "$exe" logs 20; exit 1; }
+          fi
           "$exe" logs 20
           "$exe" stop
           if "$exe" status; then echo "still running"; exit 1; fi
+      # Started from the window (not by the scheduled task), the process that starts the service ends and its unpacked
+      # files are deleted: the supervisor must still be able to start the master again.
+      - name: Windows (service started by a process that has ended)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = (Resolve-Path dist/tisma-cloud.exe).Path
+          $svc = Join-Path $PWD "restart-home"
+          function tc { & $exe --home $svc @args; if ($LASTEXITCODE -ne 0) { throw "tisma-cloud $args failed ($LASTEXITCODE)" } }
+          function healthy { try { (Invoke-WebRequest http://127.0.0.1:18993/v1/health -UseBasicParsing -TimeoutSec 2).StatusCode -eq 200 } catch { $false } }
+          tc role master
+          tc config port 18993
+          tc config master_computes off
+          tc start
+          Start-Sleep 3
+          $sup = [int](Get-Content "$svc/tisma-cloud.pid")
+          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Select-Object -First 1
+          if (-not $child) { throw "no child of the supervisor $sup" }
+          taskkill /PID $child.ProcessId /T /F | Out-Null
+          Start-Sleep 2
+          $back = $false
+          for ($i = 0; $i -lt 40; $i++) { if (healthy) { $back = $true; break }; Start-Sleep 1 }
+          tc logs 15
+          if (-not $back) { throw "the master was not started again" }
+          tc stop
       # The runners of GitHub are Windows Server 2022 with an administrator: what a server does at boot.
       - name: Windows Server (start with the machine as SYSTEM, firewall, supervisor)
         if: matrix.name == 'windows'

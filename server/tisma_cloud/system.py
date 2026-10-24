@@ -10,6 +10,8 @@ Sources:
 - GetConsoleMode fails for a handle that is not a console: https://learn.microsoft.com/windows/console/getconsolemode
 - Memory of Windows: GlobalMemoryStatusEx, https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-globalmemorystatusex
 - Memory of Linux: MemTotal and MemAvailable of /proc/meminfo, https://man7.org/linux/man-pages/man5/proc_meminfo.5.html
+- The executable of PyInstaller and the processes it starts (PYINSTALLER_RESET_ENVIRONMENT, LD_LIBRARY_PATH_ORIG):
+  https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html
 """
 
 from __future__ import annotations
@@ -34,7 +36,46 @@ FEA_NAMES = ("tisma-fea.exe",) if os.name == "nt" else ("tisma-fea",)
 _NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 
 
+def _inside(path: str, folder: str) -> bool:
+    try:
+        return os.path.commonpath([os.path.abspath(path), os.path.abspath(folder)]) == os.path.abspath(folder)
+    except ValueError:  # another drive
+        return False
+
+
+def program_env(**extra: str) -> dict[str, str]:
+    """The environment of another program started by this one. The executable of PyInstaller adds the folder of its
+    unpacked files to the search of libraries of its process (LD_LIBRARY_PATH on Linux, the original value kept in
+    LD_LIBRARY_PATH_ORIG; PATH by some of its hooks), which the programs it starts would inherit and then load its
+    libraries instead of their own: those changes are undone ("Launching External Programs from the Frozen
+    Application")."""
+    env = dict(os.environ)
+    if getattr(sys, "frozen", False):
+        if "LD_LIBRARY_PATH_ORIG" in env:
+            env["LD_LIBRARY_PATH"] = env.pop("LD_LIBRARY_PATH_ORIG")
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
+        unpacked = getattr(sys, "_MEIPASS", None)
+        if unpacked and "PATH" in env:
+            env["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep) if p and not _inside(p, unpacked))
+    env.update(extra)
+    return env
+
+
+def own_env(**extra: str) -> dict[str, str]:
+    """The environment of a new instance of this program that lives on after the one that starts it (the service
+    started from the window, the window of the panel). The executable of PyInstaller unpacks its files in a temporary
+    folder that is deleted when it ends, and since PyInstaller 6.9 a process of the same executable uses the folder of
+    the one that started it unless PYINSTALLER_RESET_ENVIRONMENT is 1: without it the service fails as soon as the
+    window is closed ("Failed to start embedded python interpreter")."""
+    env = program_env(**extra)
+    if getattr(sys, "frozen", False):
+        env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    return env
+
+
 def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    kwargs.setdefault("env", program_env())
     return subprocess.run(cmd, capture_output=True, text=True, creationflags=_NO_WINDOW, **kwargs)
 
 

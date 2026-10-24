@@ -954,6 +954,7 @@ class App:
         import subprocess
 
         from .manager import run_command
+        from .system import own_env
 
         if self.m.role() != "master" or not self.m.health():
             messagebox.showinfo("Tisma Cloud", "Iniciá el maestro para abrir el panel.", parent=self.root)
@@ -977,7 +978,7 @@ class App:
                     return
                 self.m.create_admin(email, password)
             # The window of the panel runs in its own process (the engine of the window needs its main thread).
-            subprocess.Popen(run_command()[:-1] + ["panel"], cwd=str(self.m.home))
+            subprocess.Popen(run_command()[:-1] + ["panel"], cwd=str(self.m.home), env=own_env())
         except Exception as e:  # noqa: BLE001
             messagebox.showerror("Tisma Cloud", f"No se pudo abrir el panel: {e}", parent=self.root)
 

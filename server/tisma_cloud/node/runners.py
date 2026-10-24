@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from ..system import program_env
 from .config import NodeConfig
 
 # Largest total uncompressed size of a project accepted by a node.
@@ -91,7 +92,7 @@ def _run(cmd: list[str], cfg: NodeConfig, progress_re: re.Pattern, progress: Pro
         kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
         kwargs["start_new_session"] = True
-    env = dict(os.environ)
+    env = program_env()
     if not cfg.gpu:
         env["TISMA_FEA_GPU"] = "0"
     proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,

@@ -27,7 +27,7 @@ node = []
 test = ["pytest>=8", "aiosmtpd>=1.4"]
 # The executable of the CI (tisma-cloud.spec): PyInstaller, GPLv2 with an exception for the programs it bundles.
 # The window of the control panel (tisma-cloud panel) on Windows: the Edge (WebView2) engine of the system.
-exe = ["pyinstaller>=6.6", "pywebview>=6.2; sys_platform == 'win32'"]
+exe = ["pyinstaller>=6.9", "pywebview>=6.2; sys_platform == 'win32'"]
 
 [project.scripts]
 tisma-cloud = "tisma_cloud.cli:main"

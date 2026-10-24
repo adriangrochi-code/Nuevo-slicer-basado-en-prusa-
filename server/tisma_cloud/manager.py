@@ -578,7 +578,7 @@ class Manager:
         else:
             kwargs: dict = {"cwd": str(self.home), "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL,
                             "stderr": subprocess.DEVNULL, "close_fds": True}
-            env = dict(os.environ, TISMA_HOME=str(self.home))
+            env = system.own_env(TISMA_HOME=str(self.home))
             if os.name == "nt":
                 flags = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED, NEW_PROCESS_GROUP, NO_WINDOW
                 try:
@@ -602,7 +602,8 @@ class Manager:
             return self.status()
         if os.name == "nt":
             # The supervisor and the master or node it runs.
-            r = subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, text=True)
+            r = subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, text=True,
+                               env=system.program_env())
             if r.returncode != 0 and _pid_alive(pid):
                 raise RuntimeError("No se pudo detener el servicio (si arranca con la máquina corre como SYSTEM: "
                                    "ejecutá como administrador). " + (r.stderr or r.stdout).strip())
@@ -672,12 +673,13 @@ class Manager:
                 f"ExecStart={subprocess.list2cmdline(cmd)}", "Restart=on-failure", "",
                 "[Install]", "WantedBy=" + ("multi-user.target" if not scope else "default.target"), ""]),
                 encoding="utf-8")
-            subprocess.run(["systemctl", *scope, "daemon-reload"], capture_output=True)
-            subprocess.run(["systemctl", *scope, "enable", SERVICE_NAME], capture_output=True)
+            subprocess.run(["systemctl", *scope, "daemon-reload"], capture_output=True, env=system.program_env())
+            subprocess.run(["systemctl", *scope, "enable", SERVICE_NAME], capture_output=True, env=system.program_env())
         else:
-            subprocess.run(["systemctl", *scope, "disable", SERVICE_NAME], capture_output=True)
+            subprocess.run(["systemctl", *scope, "disable", SERVICE_NAME], capture_output=True,
+                           env=system.program_env())
             unit.unlink(missing_ok=True)
-            subprocess.run(["systemctl", *scope, "daemon-reload"], capture_output=True)
+            subprocess.run(["systemctl", *scope, "daemon-reload"], capture_output=True, env=system.program_env())
 
     # ---- the Windows firewall (the port of the master)
     def firewall_open(self) -> bool | None:
@@ -869,6 +871,9 @@ class Manager:
         each one again when it stops with an error (after 5 s, doubling up to a minute while it keeps failing). A clean
         exit of the master or the node ends the service."""
         commands = self.children()
+        # The children use the unpacked files of the executable of the supervisor (they end with it), not a copy each.
+        env = dict(os.environ)
+        env.pop("PYINSTALLER_RESET_ENVIRONMENT", None)
         running: dict[str, subprocess.Popen] = {}
         started: dict[str, float] = {}
         delay = {name: 5. for name in commands}
@@ -891,7 +896,7 @@ class Manager:
                 proc = running.get(name)
                 if proc is None:
                     if now >= restart_at[name]:
-                        running[name] = subprocess.Popen(cmd, cwd=str(self.home), stdin=subprocess.DEVNULL,
+                        running[name] = subprocess.Popen(cmd, cwd=str(self.home), stdin=subprocess.DEVNULL, env=env,
                                                          creationflags=0x08000000 if os.name == "nt" else 0)  # no window
                         started[name] = now
                     continue

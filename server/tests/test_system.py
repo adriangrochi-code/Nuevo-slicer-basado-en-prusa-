@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
@@ -96,6 +97,37 @@ def test_supervisor_starts_the_service_again(tmp_path, monkeypatch, capsys):
     assert len(starts) == 3 and 5. <= starts[1] - starts[0] < 60. and 10. <= starts[2] - starts[1] < 60.
     out = capsys.readouterr().out
     assert "arranca de nuevo en 5 s" in out and "arranca de nuevo en 10 s" in out
+
+
+def test_processes_of_the_executable(tmp_path, monkeypatch):
+    """The executable of PyInstaller: the programs it starts do not get the libraries of its unpacked files, and a new
+    instance of itself (the service, the panel) unpacks its own files instead of using those of the window."""
+    unpacked = str(tmp_path / "_MEI123")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", unpacked, raising=False)
+    monkeypatch.setenv("LD_LIBRARY_PATH", unpacked + os.pathsep + "/opt/lib")
+    monkeypatch.setenv("LD_LIBRARY_PATH_ORIG", "/opt/lib")
+    monkeypatch.setenv("PATH", os.pathsep.join([os.path.join(unpacked, "bin"), "/usr/bin"]))
+    env = system.program_env(TISMA_FEA_GPU="0")
+    assert env["LD_LIBRARY_PATH"] == "/opt/lib" and "LD_LIBRARY_PATH_ORIG" not in env
+    assert env["PATH"] == "/usr/bin" and env["TISMA_FEA_GPU"] == "0"
+    assert "PYINSTALLER_RESET_ENVIRONMENT" not in env
+    assert system.own_env()["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
+    monkeypatch.delenv("LD_LIBRARY_PATH_ORIG")
+    assert "LD_LIBRARY_PATH" not in system.program_env()
+    # Started from the window, the service does not depend on the files of the window (deleted when it is closed).
+    m = Manager(tmp_path / "home")
+    m.set_role("node")
+    seen = {}
+    monkeypatch.setattr(m, "autostart_enabled", lambda: False)
+    monkeypatch.setattr(manager_module.subprocess, "Popen", lambda cmd, env=None, **kwargs: seen.update(env=env))
+    m.start(wait_s=0)
+    assert seen["env"]["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
+    assert seen["env"]["TISMA_HOME"] == str(tmp_path / "home")
+    # Run from Python, nothing changes.
+    monkeypatch.setattr(sys, "frozen", False)
+    monkeypatch.setenv("LD_LIBRARY_PATH", "/opt/lib")
+    assert system.own_env()["LD_LIBRARY_PATH"] == "/opt/lib" and "PYINSTALLER_RESET_ENVIRONMENT" not in system.own_env()
 
 
 def test_node_programs_are_found(tmp_path, monkeypatch):
