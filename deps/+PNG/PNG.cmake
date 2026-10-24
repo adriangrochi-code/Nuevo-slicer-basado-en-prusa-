@@ -1,4 +1,5 @@
-if (MSVC OR APPLE)
+# Linux uses the system libpng; Android has none (android/).
+if (MSVC OR APPLE OR ANDROID)
     if (APPLE)
         # Only disable NEON extension for Apple ARM builds, leave it enabled for Raspberry PI.
         set(_disable_neon_extension "-DPNG_ARM_NEON:STRING=off")

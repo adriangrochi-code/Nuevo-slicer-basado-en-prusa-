@@ -58,6 +58,12 @@ target_include_directories(volk PUBLIC volk vulkan/include)
 target_compile_definitions(volk PUBLIC VK_NO_PROTOTYPES)
 target_link_libraries(volk PRIVATE ${CMAKE_DL_LIBS})
 
+# Tisma Slicer: the Khronos OpenCL headers (Apache-2.0) for computing on the graphics card while slicing
+# (src/libslic3r/OpenCL.cpp). OpenCL itself is loaded at run time: no SDK nor driver is needed to build or to run.
+add_library(opencl_headers INTERFACE)
+target_include_directories(opencl_headers INTERFACE opencl/include)
+target_compile_definitions(opencl_headers INTERFACE CL_TARGET_OPENCL_VERSION=120)
+
 # Tisma Slicer: the USB cameras of the computer (UVC webcams) for the printers without one or with a slow one.
 add_subdirectory(openpnp-capture)
 

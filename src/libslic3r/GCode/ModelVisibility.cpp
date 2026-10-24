@@ -2,11 +2,14 @@
 #include <igl/Hit.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <mutex>
+#include <optional>
 
 #include "libslic3r/ShortEdgeCollapse.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
@@ -14,6 +17,7 @@
 #include "admesh/stl.h"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/OpenCL.hpp"
 
 namespace Slic3r::ModelInfo {
 namespace Impl {
@@ -97,12 +101,284 @@ Vec3f sample_power_cosine_hemisphere(const Vec2f &samples, float power) {
     return Vec3f(cos(term1) * term3, sin(term1) * term3, term2);
 }
 
+// Tisma (phase 8): the rays of raycast_visibility() on the graphics card (OpenCL.hpp), one work item per ray: the same
+// walk of the implicit balanced AABB tree (the children of node i are 2i+1 and 2i+2, left first) and the same ray-box and
+// ray-triangle tests as AABBTreeIndirect.hpp. On a card with double precision (TISMA_DOUBLE) the arithmetic is the one of
+// the CPU, operation by operation, so that every ray ends as there; in single precision a ray grazing an edge may end
+// otherwise. The rays themselves (origins and directions) are made on the CPU exactly as there, and the result of each
+// sample is summed the same way.
+const char *visibility_kernel_body = R"CL(
+#pragma OPENCL FP_CONTRACT OFF
+#ifdef TISMA_DOUBLE
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+typedef double  real;
+typedef double3 real3;
+#define convert_real3 convert_double3
+#else
+typedef float  real;
+typedef float3 real3;
+#define convert_real3
+#endif
+#define NODE_UNUSED -1
+#define NODE_INNER  -2
+
+// The arithmetic of Eigen, in its order: Vec3d::dot() adds the first two products first (one SSE2 pair), Vec3f::dot()
+// the last two.
+real dot_d(real3 a, real3 b) { return (a.x * b.x + a.y * b.y) + a.z * b.z; }
+float dot_f(float3 a, float3 b) { return a.x * b.x + (a.y * b.y + a.z * b.z); }
+real3 cross_d(real3 a, real3 b) { return (real3)(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x); }
+real3 load(__global const float *p, int i) { return convert_real3(vload3(i, p)); }
+
+// ray_box_intersect_invdir() with t0 = 0.
+bool ray_box(real3 o, real3 inv, __global const float *box, real t1)
+{
+    real minx = box[0], miny = box[1], minz = box[2], maxx = box[3], maxy = box[4], maxz = box[5], t;
+    if (inv.x < 0) { t = minx; minx = maxx; maxx = t; }
+    if (inv.y < 0) { t = miny; miny = maxy; maxy = t; }
+    real tmin  = (minx - o.x) * inv.x;
+    real tymax = (maxy - o.y) * inv.y;
+    if (tmin > tymax)
+        return false;
+    real tmax  = (maxx - o.x) * inv.x;
+    real tymin = (miny - o.y) * inv.y;
+    if (tymin > tmax)
+        return false;
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+    if (inv.z < 0) { t = minz; minz = maxz; maxz = t; }
+    real tzmin = (minz - o.z) * inv.z;
+    if (tzmin > tmax)
+        return false;
+    real tzmax = (maxz - o.z) * inv.z;
+    if (tmin > tzmax)
+        return false;
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+    return tmin < t1 && tmax > 0;
+}
+
+// intersect_triangle() (Moeller and Trumbore).
+bool ray_triangle(real3 orig, real3 dir, real3 v0, real3 v1, real3 v2, real eps, real *t)
+{
+    real3 edge1 = v1 - v0;
+    real3 edge2 = v2 - v0;
+    real3 pvec  = cross_d(dir, edge2);
+    real  det   = dot_d(edge1, pvec);
+    real3 qvec;
+    real  u, v;
+    if (det > eps) {
+        real3 tvec = orig - v0;
+        u = dot_d(tvec, pvec);
+        if (u < 0 || u > det)
+            return false;
+        qvec = cross_d(tvec, edge1);
+        v = dot_d(dir, qvec);
+        if (v < 0 || u + v > det)
+            return false;
+    } else if (det < -eps) {
+        real3 tvec = orig - v0;
+        u = dot_d(tvec, pvec);
+        if (u > 0 || u < det)
+            return false;
+        qvec = cross_d(tvec, edge1);
+        v = dot_d(dir, qvec);
+        if (v > 0 || u + v < det)
+            return false;
+    } else
+        return false;
+    real inv_det = (real)1 / det;
+    *t = dot_d(edge2, qvec) * inv_det;
+    return true;
+}
+
+int sgn(float x) { return (0.f < x) - (x < 0.f); }
+
+__kernel void visibility_rays(
+    __global const float *vertices, __global const int *faces, __global const float *normals, __global const float *boxes,
+    __global const int *nodes, __global const float *origins, __global const float *dirs, __global uchar *occluded,
+    int n_rays, int rays_per_sample, int negative_start, int has_negative, real eps)
+{
+    const int r = get_global_id(0);
+    if (r >= n_rays)
+        return;
+    const float3 dir = vload3(r, dirs);
+    const real3  o   = load(origins, r / rays_per_sample);
+    const real3  d   = convert_real3(dir);
+    const real3  inv = (real3)((real)1 / d.x, (real)1 / d.y, (real)1 / d.z);
+    int stack[64];
+    int sp = 0;
+    stack[sp++] = 0;
+    if (! has_negative) {
+        // The first hit; hidden when the face hit looks back at the ray. igl::Hit keeps t as a float, and the CPU
+        // compares the hits by that float.
+        real best_t = INFINITY;
+        int  best   = -1;
+        while (sp > 0) {
+            const int n   = stack[--sp];
+            const int idx = nodes[n];
+            if (idx == NODE_UNUSED || ! ray_box(o, inv, boxes + 6 * n, best_t))
+                continue;
+            if (idx >= 0) {
+                const int3 f = vload3(idx, faces);
+                real t;
+                if (ray_triangle(o, d, load(vertices, f.x), load(vertices, f.y), load(vertices, f.z), eps, &t) && t > 0) {
+                    const real t_hit = (real)(float)t;
+                    if (t_hit < best_t) {
+                        best_t = t_hit;
+                        best   = idx;
+                    }
+                }
+            } else {
+                stack[sp++] = 2 * n + 2;
+                stack[sp++] = 2 * n + 1;
+            }
+        }
+        occluded[r] = best >= 0 && dot_f(vload3(best, normals), dir) <= 0.f;
+    } else {
+        // Every hit: the faces of the model count the ray going in and out, those of the negative volumes the other way.
+        int  counter = 0;
+        bool some    = false;
+        while (sp > 0) {
+            const int n   = stack[--sp];
+            const int idx = nodes[n];
+            if (idx == NODE_UNUSED || ! ray_box(o, inv, boxes + 6 * n, INFINITY))
+                continue;
+            if (idx >= 0) {
+                const int3 f = vload3(idx, faces);
+                real t;
+                if (ray_triangle(o, d, load(vertices, f.x), load(vertices, f.y), load(vertices, f.z), eps, &t) && t > 0) {
+                    some = true;
+                    const int s = sgn(dot_f(vload3(idx, normals), dir));
+                    counter += idx >= negative_start ? -s : s;
+                }
+            } else {
+                stack[sp++] = 2 * n + 2;
+                stack[sp++] = 2 * n + 1;
+            }
+        }
+        occluded[r] = some && counter == 0;
+    }
+}
+)CL";
+
+const char* visibility_kernel(bool double_precision)
+{
+    static const std::string single_precision = visibility_kernel_body;
+    static const std::string with_doubles     = std::string("#define TISMA_DOUBLE\n") + visibility_kernel_body;
+    return double_precision ? with_doubles.c_str() : single_precision.c_str();
+}
+
+std::optional<std::vector<float>> raycast_visibility_gpu(
+    OpenCL::Device &gpu,
+    bool double_precision,
+    const AABBTreeIndirect::Tree<3, float> &raycasting_tree,
+    const indexed_triangle_set &triangles,
+    const TriangleSetSamples &samples,
+    size_t negative_volumes_start_index,
+    const std::vector<Vec3f> &directions
+) {
+    using Tree = AABBTreeIndirect::Tree<3, float>;
+    const auto start = std::chrono::steady_clock::now();
+    const size_t n_samples = samples.positions.size();
+    const size_t n_dirs    = directions.size();
+    const size_t n_rays    = n_samples * n_dirs;
+    if (n_rays == 0 || raycasting_tree.empty() || n_rays > size_t(std::numeric_limits<int>::max()) ||
+        triangles.vertices.size() > size_t(std::numeric_limits<int>::max() / 3))
+        return std::nullopt;
+
+    const auto &tree_nodes = raycasting_tree.nodes();
+    std::vector<float>   boxes(tree_nodes.size() * 6);
+    std::vector<int32_t> nodes(tree_nodes.size());
+    for (size_t i = 0; i < tree_nodes.size(); ++i) {
+        const auto &n = tree_nodes[i];
+        nodes[i] = n.idx == Tree::npos ? -1 : n.idx == Tree::inner ? -2 : int32_t(n.idx);
+        for (int k = 0; k < 3; ++k) {
+            boxes[i * 6 + k]     = n.bbox.min()[k];
+            boxes[i * 6 + 3 + k] = n.bbox.max()[k];
+        }
+    }
+    std::vector<float> vertices(triangles.vertices.size() * 3);
+    for (size_t i = 0; i < triangles.vertices.size(); ++i)
+        for (int k = 0; k < 3; ++k)
+            vertices[i * 3 + k] = triangles.vertices[i][k];
+    // The faces and their normals as its_face_normal() gives them to the CPU code.
+    std::vector<int32_t> faces(triangles.indices.size() * 3);
+    std::vector<float>   normals(triangles.indices.size() * 3);
+    for (size_t i = 0; i < triangles.indices.size(); ++i) {
+        const Vec3f normal = its_face_normal(triangles, int(i));
+        for (int k = 0; k < 3; ++k) {
+            faces[i * 3 + k]   = triangles.indices[i][k];
+            normals[i * 3 + k] = normal[k];
+        }
+    }
+
+    // The rays, made as in raycast_visibility().
+    const bool has_negative = negative_volumes_start_index < triangles.indices.size();
+    std::vector<float> origins(n_samples * 3);
+    std::vector<float> dirs(n_rays * 3);
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, n_samples), [&](const tbb::blocked_range<size_t> &r) {
+        for (size_t s = r.begin(); s < r.end(); ++s) {
+            const Vec3f &center = samples.positions[s];
+            const Vec3f &normal = samples.normals[s];
+            Frame f;
+            f.set_from_z(normal);
+            const bool from_negative = has_negative && samples.triangle_indices[s] >= negative_volumes_start_index;
+            const Vec3f origin = from_negative ? Vec3f(center - normal * 0.01f) : Vec3f(center + normal * 0.01f);
+            for (int k = 0; k < 3; ++k)
+                origins[s * 3 + k] = origin[k];
+            for (size_t d = 0; d < n_dirs; ++d) {
+                Vec3f dir = f.to_world(directions[d]);
+                if (from_negative)
+                    dir = -dir;
+                for (int k = 0; k < 3; ++k)
+                    dirs[(s * n_dirs + d) * 3 + k] = dir[k];
+            }
+        }
+    });
+
+    std::vector<uint8_t> occluded(n_rays);
+    const int32_t n_rays_i       = int32_t(n_rays);
+    const int32_t per_sample     = int32_t(n_dirs);
+    const int32_t negative       = int32_t(std::min(negative_volumes_start_index, size_t(std::numeric_limits<int>::max())));
+    const int32_t has_negative_i = has_negative ? 1 : 0;
+    // The epsilon of intersect_ray_first_hit() / intersect_ray_all_hits() as called by raycast_visibility().
+    const double eps        = 0.000001;
+    const float  eps_single = float(eps);
+    std::vector<OpenCL::Arg> args {
+        OpenCL::Arg::input(vertices), OpenCL::Arg::input(faces), OpenCL::Arg::input(normals), OpenCL::Arg::input(boxes),
+        OpenCL::Arg::input(nodes), OpenCL::Arg::input(origins), OpenCL::Arg::input(dirs), OpenCL::Arg::output(occluded),
+        OpenCL::Arg::value(n_rays_i), OpenCL::Arg::value(per_sample), OpenCL::Arg::value(negative),
+        OpenCL::Arg::value(has_negative_i), double_precision ? OpenCL::Arg::value(eps) : OpenCL::Arg::value(eps_single) };
+    if (! gpu.run(visibility_kernel(double_precision), "visibility_rays", n_rays, args))
+        return std::nullopt;
+
+    // Summed as on the CPU (one decrease per hidden ray, in order), so that equal rays give equal values.
+    const float decrease_step = 1.0f / float(n_dirs);
+    std::vector<float> result(n_samples);
+    for (size_t s = 0; s < n_samples; ++s) {
+        float v = 1.0f;
+        for (size_t d = 0; d < n_dirs; ++d)
+            if (occluded[s * n_dirs + d])
+                v -= decrease_step;
+        result[s] = v;
+    }
+    BOOST_LOG_TRIVIAL(info) << "SeamPlacer: " << n_rays << " visibility rays over " << triangles.indices.size()
+        << " triangles on " << gpu.name() << (double_precision ? " (double precision)" : " (single precision)") << " in "
+        << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() << " ms";
+    return result;
+}
+
 std::vector<float> raycast_visibility(
     const AABBTreeIndirect::Tree<3, float> &raycasting_tree,
     const indexed_triangle_set &triangles,
     const TriangleSetSamples &samples,
     size_t negative_volumes_start_index,
-    const Visibility::Params &params
+    const Visibility::Params &params,
+    RaycastOn on = RaycastOn::Gpu
 ) {
     BOOST_LOG_TRIVIAL(debug)
     << "SeamPlacer: raycast visibility of " << samples.positions.size() << " samples over " << triangles.indices.size()
@@ -120,6 +396,12 @@ std::vector<float> raycast_visibility(
             precomputed_sample_directions[dir_index] = sample_hemisphere_uniform( { sample_x, sample_y });
         }
     }
+
+    if (OpenCL::Device *gpu = on != RaycastOn::Cpu ? OpenCL::Device::get() : nullptr)
+        if (std::optional<std::vector<float>> on_gpu = raycast_visibility_gpu(*gpu,
+                on == RaycastOn::Gpu && gpu->double_precision(), raycasting_tree, triangles, samples,
+                negative_volumes_start_index, precomputed_sample_directions))
+            return std::move(*on_gpu);
 
     bool model_contains_negative_parts = negative_volumes_start_index < triangles.indices.size();
 
@@ -193,6 +475,15 @@ std::vector<float> raycast_visibility(
             << " triangles: end";
 
     return result;
+}
+
+std::vector<float> sample_visibility(const indexed_triangle_set &triangles, const TriangleSetSamples &samples,
+                                     size_t negative_volumes_start_index, size_t sqr_rays_per_sample_point, RaycastOn on)
+{
+    const auto tree = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(triangles.vertices, triangles.indices);
+    Visibility::Params params;
+    params.sqr_rays_per_sample_point = sqr_rays_per_sample_point;
+    return raycast_visibility(tree, triangles, samples, negative_volumes_start_index, params, on);
 }
 }
 

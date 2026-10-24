@@ -105,6 +105,19 @@ curados (marcados así en la nota de cada material).
 |---|---|---|---|
 | Shaders y parámetros del render de PrusaSlicer 3.0 (`resources/shaders/140/ao_*.fs`, `gbuffer_ao.fs`, `Scene.cpp`, `LightingHelper.hpp`, `GraphicsSettings.hpp`) | 3.0.0-alpha12 | AGPL-3.0, Copyright (c) Prusa Research (la misma que Tisma) | Sombras, oclusión ambiental, codificación de normales y PBR adaptados en `resources/shaders/140/tisma_*.fs` y `src/slic3r/GUI/TismaShading.cpp`, con la cita en cada archivo. Ver `docs/RENDER.md`. |
 
+### App de Android (`android/`)
+
+| Origen | Versión | Licencia | Notas |
+|---|---|---|---|
+| AndroidX (core-ktx, activity-compose, lifecycle) y Jetpack Compose (BOM) | las de `android/app/build.gradle.kts` | Apache-2.0 (developer.android.com/jetpack/androidx) | Se distribuyen dentro del APK. |
+| Kotlin (biblioteca estándar) | 2.0.21 | Apache-2.0 | Dentro del APK. |
+| Gradle wrapper (`android/gradle/wrapper/gradle-wrapper.jar`) | 8.10.2 | Apache-2.0 | Solo para compilar. |
+| Android NDK (libc++_shared.so) | r27d | Apache-2.0 con excepciones de LLVM | Dentro del APK. |
+| Certificado de la CA de Bambu Lab (`resources/cert/bambu_printer_ca.pem`) | el de Bambu Studio | AGPL-3.0 (Bambu Studio) | Se copia al APK para verificar las impresoras Bambu Lab por LAN, como el programa de escritorio. |
+| Conscrypt (`org.conscrypt:conscrypt-openjdk-uber`) | 2.5.2 | Apache-2.0 (github.com/google/conscrypt) | Solo en los tests: la TLS de Android (BoringSSL) para probar la conexión con las impresoras. No va en el APK. |
+
+La app es código propio (AGPL-3.0 como el resto de Tisma); no se usa código de Slice Beam ni de otras apps.
+
 ## 3. Dependencias incluidas (`bundled_deps/`)
 
 | Dependencia | Licencia (detectada en cabeceras) |
@@ -130,6 +143,13 @@ curados (marcados así en la nota de cada material).
 | tcbspan | BSL-1.0 |
 | vulkan (Khronos Vulkan-Headers `vulkan-sdk-1.3.275.0`, commit `217e93c`: solo las cabeceras C `vulkan.h`, `vk_platform.h`, `vulkan_core.h` y `vk_video/`) | Apache-2.0 OR MIT (`bundled_deps/vulkan/LICENSE.md`); compatible con AGPL-3.0. Para el análisis estructural en la GPU. |
 | volk (`vulkan-sdk-1.3.275.0`, commit `f2a16e3`) | MIT (`bundled_deps/volk/LICENSE.md`). Carga Vulkan al ejecutar: no hace falta el SDK ni el driver para compilar o usar Tisma. |
+| opencl (Khronos OpenCL-Headers `v2023.12.14`, commit `2368105`: solo las cabeceras C `cl.h`, `cl_platform.h`, `cl_version.h` y `cl_function_types.h`) | Apache-2.0, Copyright (c) 2008-2023 The Khronos Group Inc. (`bundled_deps/opencl/LICENSE`); compatible con AGPL-3.0. OpenCL se carga al ejecutar (`OpenCL.dll`, `libOpenCL.so.1`, instalados por el driver de la placa): no hace falta ningún SDK para compilar ni para usar Tisma. Para laminar con la placa de video (`docs/PERFORMANCE.md`). |
+
+**Servidor de Tisma Cloud (`server/`).** No forma parte de Tisma: es software propietario aparte (`server/LICENSE`),
+escrito en Python, que no incluye código de PrusaSlicer ni de Tisma y ejecuta `tisma-slicer` y `tisma-fea` como
+programas separados. Sus dependencias (FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx…) y sus licencias están en
+`server/THIRD_PARTY_LICENSES.md`. Tisma no agrega dependencias para el cliente de la nube: usa `Http` (libcurl),
+`nlohmann/json` y `wxSecretStore`, que ya estaban.
 
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 

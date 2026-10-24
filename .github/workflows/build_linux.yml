@@ -117,6 +117,19 @@ jobs:
           timeout 60 bash -c "until grep -q 'fake printer' '$fake.log'; do sleep 0.5; done" || { cat "$fake.log"; exit 1; }
           TISMA_BAMBU_FAKE="$fake" build/tests/slic3rutils/slic3rutils_tests "[BambuLanFake]" || { cat "$fake.log"; exit 1; }
 
+      # Seam visibility on the graphics card (OpenCL): pocl runs the kernels on the CPU of the runner and the result must
+      # be the one of the CPU code, docs/PERFORMANCE.md. The pocl 1.8 of Ubuntu 22.04 cannot build kernels on CPUs newer
+      # than its LLVM ("unknown target CPU 'generic'", and it has no setting to choose another), so the same test binary
+      # runs with the pocl 5 of Ubuntu 24.04, in a container.
+      - name: Seam visibility with OpenCL (pocl)
+        if: ${{ inputs.run_tests }}
+        run: |
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" -e TISMA_GPU_DEVICE=cpu ubuntu:24.04 bash -euo pipefail -c '
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends pocl-opencl-icd ocl-icd-libopencl1 libpng16-16t64 > /dev/null
+            ldd build/tests/fff_print/fff_print_tests | grep "not found" || true
+            build/tests/fff_print/fff_print_tests "[TismaGpu]"'
+
       - name: AppImage
         run: |
           appimage=$(packaging/linux/make_appimage.sh build "$TISMA_VERSION" dist | tail -n 1)

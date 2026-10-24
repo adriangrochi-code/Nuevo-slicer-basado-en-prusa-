@@ -34494,3 +34494,18 @@ msgstr "Escalón 1 en la primera capa (X)"
 
 msgid "Width X of step 1 right at the bed (the first layer). Empty: no elephant foot correction."
 msgstr "Ancho X del escalón 1 justo sobre la cama (la primera capa). Vacío: sin corrección de pata de elefante."
+
+msgid "Color mixing (Full Spectrum)"
+msgstr "Mezcla de colores (Full Spectrum)"
+
+msgid "Colors mixed by alternating the filaments layer by layer. On a printer that changes filaments in a single nozzle (AMS, MMU), each layer with a mix needs a filament change and its purge."
+msgstr "Colores mezclados alternando los filamentos capa por capa. En una impresora que cambia de filamento en una sola boquilla (AMS, MMU), cada capa con mezcla necesita un cambio de filamento y su purga."
+
+msgid "This printer changes filaments in a single nozzle (AMS, MMU). A color mix alternates the filaments layer by layer: each layer with a mix is a filament change, and each change purges filament. The print uses noticeably more filament and takes longer. After slicing, a warning tells how much filament goes to purging."
+msgstr "Esta impresora cambia de filamento en una sola boquilla (AMS, MMU). Una mezcla de colores alterna los filamentos capa por capa: cada capa con mezcla es un cambio de filamento, y cada cambio purga filamento. La impresión gasta bastante más filamento y tarda más. Después de laminar, un aviso dice cuánto filamento se va en purga."
+
+msgid "Turn on"
+msgstr "Activar"
+
+msgid "Color mixing with a single nozzle: %1% %% of the filament (%2%) goes to purging."
+msgstr "Mezcla de colores con una sola boquilla: el %1% %% del filamento (%2%) se va en purga."

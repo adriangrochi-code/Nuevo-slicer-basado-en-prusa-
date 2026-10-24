@@ -21,6 +21,7 @@
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
 #include "Plater.hpp"
+#include "Sidebar.hpp"
 #include "Camera.hpp"
 #include "I18N.hpp"
 #include "GUI_Utils.hpp"
@@ -2949,6 +2950,25 @@ void GCodeViewer::render_legend(float& legend_height)
             break;
         }
         default : { assert(false); break; }
+        }
+    }
+
+    // Tisma: the slicing information of the plate (filament, cost, tool changes, main settings), here instead of in the
+    // panel of the plate; the estimated time when the section above does not show it.
+    if (wxGetApp().is_editor() && wxGetApp().plater() != nullptr) {
+        const std::vector<std::pair<std::string, std::string>>& rows = wxGetApp().sidebar().sliced_info_rows();
+        const bool show_time = ! show_estimated_time && time_mode.time > 0.0f;
+        if (! rows.empty() || show_time) {
+            ImGui::Spacing();
+            ImGuiPureWrap::title(_u8L("Sliced Info") + ":");
+            if (ImGui::BeginTable("SlicedInfo", 2)) {
+                if (show_time)
+                    add_strings_row_to_table(_u8L("Estimated printing time") + ":", ImGuiPureWrap::COL_ORANGE_LIGHT,
+                        short_time_ui(get_time_dhms(time_mode.time)), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
+                for (const auto& [name, value] : rows)
+                    add_strings_row_to_table(name, ImGuiPureWrap::COL_ORANGE_LIGHT, value, ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
+                ImGui::EndTable();
+            }
         }
     }
 

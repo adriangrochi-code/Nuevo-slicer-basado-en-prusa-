@@ -308,6 +308,8 @@ set(SLIC3R_SOURCES
     DimensionalCorrection.hpp
     ZAntiAliasing.cpp
     ZAntiAliasing.hpp
+    OpenCL.cpp
+    OpenCL.hpp
     InterlockInfill.cpp
     InterlockInfill.hpp
     GCodeMoveLine.hpp
@@ -583,6 +585,11 @@ if (APPLE)
         )
 endif ()
 
+# Sequential arrangement needs libseqarrange (Z3), not built for the Android app (android/).
+if (ANDROID)
+    list(REMOVE_ITEM SLIC3R_SOURCES ArrangeHelper.cpp ArrangeHelper.hpp)
+endif ()
+
 add_library(libslic3r STATIC ${SLIC3R_SOURCES})
 
 if (WIN32)
@@ -653,6 +660,7 @@ find_package(JPEG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 target_link_libraries(libslic3r PRIVATE
+    opencl_headers
     sla_time_estimate
     libnest2d
     libcereal
@@ -685,9 +693,11 @@ target_link_libraries(libslic3r PUBLIC
     agg
     ankerl
     boost_headeronly
-    libseqarrange
     prusa_fdm_mixer
 )
+if (NOT ANDROID)
+    target_link_libraries(libslic3r PUBLIC libseqarrange)
+endif ()
 
 if (APPLE)
     # TODO: we need to fix notarization with the separate shared library
