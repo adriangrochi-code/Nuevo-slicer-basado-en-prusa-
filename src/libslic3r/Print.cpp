@@ -549,19 +549,29 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return object.model_object()->engineering.layer_field.empty() ?
                 _u8L("Non-planar layers following the stresses: compute them first in Engineering (Curved layers for strength).") :
                 _u8L("Non-planar layers following the stresses: the part changed since they were computed in Engineering, compute them again.");
-        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field);
-        const NonPlanar::Deformation::Check check = deformation.check(bbox);
-        if (check.j_min < NonPlanar::J_MIN || check.j_max > NonPlanar::J_MAX)
+        const NonPlanar::Deformation deformation = NonPlanar::make_deformation(m_config, bbox, &mesh, &object.model_object()->engineering.layer_field,
+                                                                               NonPlanar::support_threshold_deg(object.config(), m_config));
+        // Tisma: the layer thickness and the slope where the part is printed; around it (travels, supports) the layers
+        // may be thinner, down to J_MIN_AIR.
+        const std::vector<Vec3d> part = NonPlanar::part_samples(mesh);
+        const NonPlanar::Deformation::Check check = deformation.check(bbox, part);
+        // The layer shapes are fitted on a coarser sampling of the box: 1 % of margin between its points.
+        constexpr double J_TOLERANCE = 0.01;
+        const bool thin_air = check.j_min_air < NonPlanar::J_MIN_AIR * (1. - J_TOLERANCE) ||
+                              check.j_max_air > NonPlanar::J_MAX * (1. + J_TOLERANCE);
+        if (check.j_min < NonPlanar::J_MIN * (1. - J_TOLERANCE) || check.j_max > NonPlanar::J_MAX * (1. + J_TOLERANCE) || thin_air)
             return format(_u8L("Non-planar layers: the layer thickness would vary between %1% %% and %2% %% of the "
                                "nominal one (allowed %3% %% to %4% %%). Check the free angle and the clearance height of "
                                "the print head (Printer Settings > General > Print head)."),
-                          int(std::round(check.j_min * 100.)), int(std::round(check.j_max * 100.)),
-                          int(std::round(NonPlanar::J_MIN * 100.)), int(std::round(NonPlanar::J_MAX * 100.)));
+                          int(std::round((thin_air ? check.j_min_air : check.j_min) * 100.)),
+                          int(std::round((thin_air ? check.j_max_air : check.j_max) * 100.)),
+                          int(std::round((thin_air ? NonPlanar::J_MIN_AIR : NonPlanar::J_MIN) * 100.)),
+                          int(std::round(NonPlanar::J_MAX * 100.)));
         // The calibration of the maximum slope prints steeper layers on purpose.
         // Tisma: the free angles of the print head along X and Y (or the maximum layer slope where not measured).
         const NonPlanar::HeadLimits limits = NonPlanar::head_limits(m_config);
         if (m_config.calib_mode.value != CalibMode::NonPlanarSlope &&
-            deformation.head_slope_ratio(bbox, limits.tan_x, limits.tan_y) > 1. + 1e-3)
+            deformation.head_slope_ratio(part, limits.tan_x, limits.tan_y) > 1. + 1e-3)
             return format(_u8L("Non-planar layers: the layers would be up to %1%° steep, more than the print head allows "
                                "(%2%° along X, %3%° along Y). Check the free angle of the print head (Printer Settings > "
                                "General > Print head)."),
