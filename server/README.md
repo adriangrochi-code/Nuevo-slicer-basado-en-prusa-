@@ -314,8 +314,8 @@ los programas que corren los trabajos (`tisma-slicer-console.exe` y `tisma-fea.e
 de Tisma Slicer ya extraído, `usr/bin/tisma-slicer` y `usr/bin/tisma-fea`), de la última compilación de `main` que
 pasó el CI. No hace falta instalar Tisma Slicer ni nada más en ninguna máquina: se descomprime el paquete entero y
 `tisma-cloud` encuentra los programas solo (la carpeta `tisma-slicer` tiene que quedar junto a `tisma-cloud.exe`).
-En Linux los programas usan GTK 3 y WebKitGTK 4.1 del sistema, como el AppImage (Ubuntu 24.04:
-`sudo apt install libgtk-3-0t64 libwebkit2gtk-4.1-0`). La carpeta lleva la licencia de Tisma Slicer (AGPL-3.0) y en
+En Linux los programas usan GTK 3, WebKitGTK 4.1 y hidapi del sistema, como el AppImage (Ubuntu 24.04:
+`sudo apt install libgtk-3-0t64 libwebkit2gtk-4.1-0 libhidapi-hidraw0`). La carpeta lleva la licencia de Tisma Slicer (AGPL-3.0) y en
 `SOURCE.txt` el código fuente exacto de esa compilación.
 
 Se maneja de dos formas, con lo mismo:
