@@ -43,6 +43,8 @@ class StaticBox;
 
 namespace Slic3r {
 
+struct PrintReviewItem;
+
 namespace GUI {
 
 class ConfigOptionsGroup;
@@ -51,6 +53,7 @@ class FreqChangedParams;
 class QuickSettings;
 class ObjectInfo;
 class SlicedInfo;
+class ReviewInfo;
 class ObjectManipulation;
 class ObjectSettings;
 class ObjectLayers;
@@ -119,6 +122,7 @@ class Sidebar : public wxPanel
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
     SlicedInfo*     m_sliced_info               { nullptr };
+    ReviewInfo*     m_review_info               { nullptr };
     wxBoxSizer*     m_btns_sizer                { nullptr };
     wxBoxSizer*     m_autoslicing_btns_sizer    { nullptr };
 
@@ -214,6 +218,8 @@ public:
     void show_bulk_btns_sizer(const bool show);
 
     void update_sliced_info_sizer();
+    // Tisma: the review before printing of the G-code just made (PrintReview.hpp); hidden when show is false.
+    void show_print_review(const std::vector<PrintReviewItem> &items, bool show);
 
     void enable_buttons(bool enable);
     void set_btn_label(const ActionButtonType btn_type, const wxString& label) const;

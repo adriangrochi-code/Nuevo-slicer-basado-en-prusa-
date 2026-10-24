@@ -52,6 +52,7 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/PrintReview.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -81,6 +82,7 @@
 #include "ImGuiPureWrap.hpp"
 
 #include <imgui/imgui.h>
+#include <wx/hyperlink.h>
 
 using Slic3r::Preset;
 using Slic3r::GUI::format_wxstr;
@@ -368,6 +370,58 @@ void SlicedInfo::SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const w
         info_vec[idx].first->SetLabelText(new_label);
     info_vec[idx].first->Show(show);
     info_vec[idx].second->Show(show);
+}
+
+
+// Tisma: the review before printing (PrintReview.hpp), under the summary of the slicing: one row per problem, the most
+// severe first, with what was found, what to do and the link that shows its layers in the preview.
+class ReviewInfo : public InfoCard
+{
+public:
+    ReviewInfo(wxWindow *parent) : InfoCard(parent, _L("Review before printing")) { this->Show(false); }
+    void set_items(const std::vector<PrintReviewItem> &items, std::function<void(double)> show_layers);
+};
+
+void ReviewInfo::set_items(const std::vector<PrintReviewItem> &items, std::function<void(double)> show_layers)
+{
+    content->Clear(true);
+    captions.clear();
+    const int  em   = wxGetApp().em_unit();
+    const int  wrap = 27 * em;
+    if (items.empty()) {
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        row->Add(new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle("checked")), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, int(0.4 * em));
+        row->Add(new wxStaticText(card, wxID_ANY, _L("No problems found.")), 0, wxALIGN_CENTER_VERTICAL);
+        content->Add(row, 0, wxEXPAND);
+        sys_color_changed();
+        return;
+    }
+    bool first = true;
+    for (const PrintReviewItem &item : items) {
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        row->Add(new wxStaticBitmap(card, wxID_ANY, *get_bmp_bundle(item.severity == PrintReviewItem::Severity::Info ? "info" : "exclamation")),
+                 0, wxTOP | wxRIGHT, int(0.2 * em));
+        auto *texts = new wxBoxSizer(wxVERTICAL);
+        auto *title = new wxStaticText(card, wxID_ANY, from_u8(item.title));
+        title->SetFont(wxGetApp().bold_font());
+        if (item.severity == PrintReviewItem::Severity::Critical)
+            title->SetForegroundColour(wxColour(0xD3, 0x2F, 0x2F));
+        auto *detail = new wxStaticText(card, wxID_ANY, from_u8(item.detail));
+        detail->Wrap(wrap);
+        auto *hint = caption(from_u8(item.hint));
+        hint->Wrap(wrap);
+        auto *link = new wxHyperlinkCtrl(card, wxID_ANY, _L("Show in the preview"), wxEmptyString);
+        const double z = item.z;
+        link->Bind(wxEVT_HYPERLINK, [show_layers, z](wxHyperlinkEvent&) { show_layers(z); });
+        texts->Add(title, 0);
+        texts->Add(detail, 0, wxTOP, int(0.2 * em));
+        texts->Add(hint, 0, wxTOP, int(0.2 * em));
+        texts->Add(link, 0, wxTOP, int(0.2 * em));
+        row->Add(texts, 1, wxEXPAND);
+        content->Add(row, 0, wxEXPAND | (first ? 0 : wxTOP), int(0.8 * em));
+        first = false;
+    }
+    sys_color_changed();
 }
 
 
@@ -703,8 +757,10 @@ Sidebar::Sidebar(Plater *parent)
     // Info boxes
     m_object_info = new ObjectInfo(m_scrolled_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
+    m_review_info = new ReviewInfo(m_scrolled_panel);
     m_titles.push_back(m_object_info->title);
     m_titles.push_back(m_sliced_info->title);
+    m_titles.push_back(m_review_info->title);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
 
@@ -714,6 +770,7 @@ Sidebar::Sidebar(Plater *parent)
     // Órbita Pro: the summary of the slicing right under the profiles, where it is seen. The objects at the bottom of
     // the sidebar, as in PrusaSlicer.
     scrolled_sizer->Add(m_sliced_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
+    scrolled_sizer->Add(m_review_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
     scrolled_sizer->Add(params_sizer, 1, wxEXPAND | size_margin, margin_5);
     scrolled_sizer->Add(m_object_info, 0, wxEXPAND | wxTOP | size_margin, margin_5);
 
@@ -1435,7 +1492,7 @@ void Sidebar::apply_tisma_theme()
         title->sys_color_changed();
     if (m_frequently_changed_parameters)
         m_frequently_changed_parameters->sys_color_changed();
-    for (InfoCard *info : std::initializer_list<InfoCard*>{ m_object_info, m_sliced_info })
+    for (InfoCard *info : std::initializer_list<InfoCard*>{ m_object_info, m_sliced_info, m_review_info })
         if (info)
             info->sys_color_changed();
     for (::StaticBox *card : m_cards) {
@@ -1897,7 +1954,19 @@ void Sidebar::show_sliced_info_sizer(const bool show)
     m_sliced_info->Show(show);
     if (show)
         update_sliced_info_sizer();
+    else
+        m_review_info->Show(false);
 
+    Layout();
+    m_scrolled_panel->Refresh();
+}
+
+void Sidebar::show_print_review(const std::vector<PrintReviewItem> &items, bool show)
+{
+    wxWindowUpdateLocker freeze_guard(this);
+    if (show)
+        m_review_info->set_items(items, [this](double z) { m_plater->show_layers_up_to(z); });
+    m_review_info->Show(show);
     Layout();
     m_scrolled_panel->Refresh();
 }

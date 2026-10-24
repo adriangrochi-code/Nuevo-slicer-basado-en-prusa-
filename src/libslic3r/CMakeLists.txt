@@ -353,6 +353,8 @@ set(SLIC3R_SOURCES
     PrintObject.cpp
     PrintObjectSlice.cpp
     PrintRegion.cpp
+    PrintReview.cpp
+    PrintReview.hpp
     PointGrid.hpp
     PNGReadWrite.hpp
     PNGReadWrite.cpp

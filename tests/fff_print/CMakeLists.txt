@@ -42,6 +42,7 @@ add_executable(${_TEST_NAME}_tests
 	test_interlock_infill.cpp
 	test_perimeters.cpp
 	test_print.cpp
+	test_print_review.cpp
 	test_printgcode.cpp
 	test_printobject.cpp
     test_retraction.cpp
