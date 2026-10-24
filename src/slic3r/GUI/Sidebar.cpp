@@ -322,6 +322,8 @@ class SlicedInfo : public InfoCard
 public:
     SlicedInfo(wxWindow *parent);
     void SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label="");
+    // The names and values shown, with the estimated time or without it.
+    std::vector<std::pair<std::string, std::string>> rows(bool with_time) const;
 
 private:
     std::vector<std::pair<wxStaticText*, wxStaticText*>> info_vec;
@@ -357,6 +359,20 @@ SlicedInfo::SlicedInfo(wxWindow *parent) : InfoCard(parent, _L("Sliced Info"))
 
     content->Add(grid_sizer, 0, wxEXPAND);
     this->Show(false);
+}
+
+std::vector<std::pair<std::string, std::string>> SlicedInfo::rows(bool with_time) const
+{
+    std::vector<std::pair<std::string, std::string>> out;
+    for (size_t i = 0; i < info_vec.size(); ++ i)
+        if ((with_time || i != siEstimatedTime) && info_vec[i].first->IsShown()) {
+            // The names end with a colon only when values of parts follow.
+            std::string name = into_u8(info_vec[i].first->GetLabelText());
+            if (name.find('\n') == std::string::npos && (name.empty() || name.back() != ':'))
+                name += ":";
+            out.emplace_back(std::move(name), into_u8(info_vec[i].second->GetLabelText()));
+        }
+    return out;
 }
 
 void SlicedInfo::SetTextAndShow(SlicedInfoIdx idx, const wxString& text, const wxString& new_label/*=""*/)
@@ -1633,7 +1649,7 @@ void Sidebar::show_info_sizer()
 
 void Sidebar::update_sliced_info_sizer()
 {
-    if (m_sliced_info->IsShown(size_t(0)))
+    if (m_sliced_info_shown)
     {
         if (m_plater->printer_technology() == ptSLA)
         {
@@ -1870,8 +1886,12 @@ void Sidebar::update_sliced_info_sizer()
                 m_sliced_info->SetTextAndShow(siPerimeters, wxString::Format("%d", cfg.opt_int("perimeters")));
             if (const ConfigOptionPercent *density = cfg.option<ConfigOptionPercent>("fill_density")) {
                 wxString infill = wxString::Format("%.0f %%", density->value);
-                if (const ConfigOption *pattern = cfg.option("fill_pattern"))
-                    infill += " " + from_u8(pattern->serialize());
+                if (const ConfigOption *pattern = cfg.option("fill_pattern")) {
+                    // The name of the pattern as in the settings ("Stars", translated), else its key.
+                    const ConfigOptionDef *def = print_config_def.get("fill_pattern");
+                    const std::optional<int> idx = def && def->enum_def ? def->enum_def->value_to_index(pattern->serialize()) : std::nullopt;
+                    infill += " " + (idx ? _(def->enum_def->label(*idx)) : from_u8(pattern->serialize()));
+                }
                 m_sliced_info->SetTextAndShow(siInfill, infill);
             }
             if (cfg.has("support_material"))
@@ -1880,6 +1900,13 @@ void Sidebar::update_sliced_info_sizer()
             if (const ConfigOptionFloats *c = cfg.option<ConfigOptionFloats>("filament_coast_distance"); c && ! c->values.empty())
                 coast = c->get_at(0);
             m_sliced_info->SetTextAndShow(siCoasting, coast > 0. ? wxString::Format("%.2f mm", coast) : "N/A");
+        }
+
+        // Shown with the legend of the preview, the estimated time too for a resin print (its legend has no times).
+        m_sliced_info_rows = m_sliced_info->rows(m_plater->printer_technology() == ptSLA);
+        if (GLCanvas3D *canvas = m_plater->get_current_canvas3D()) {
+            canvas->set_as_dirty();
+            canvas->request_extra_frame();
         }
     }
 
@@ -1894,7 +1921,11 @@ void Sidebar::show_sliced_info_sizer(const bool show)
 
     wxWindowUpdateLocker freeze_guard(this);
 
-    m_sliced_info->Show(show);
+    // Tisma: the information is shown with the legend of the preview, on the left, not in the panel, so that it is not
+    // shown twice (the legend of a filament print has the times and the filament of each feature).
+    m_sliced_info_shown = show;
+    m_sliced_info->Show(false);
+    m_sliced_info_rows.clear();
     if (show)
         update_sliced_info_sizer();
 
