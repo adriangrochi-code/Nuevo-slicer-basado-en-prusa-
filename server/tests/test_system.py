@@ -130,6 +130,30 @@ def test_processes_of_the_executable(tmp_path, monkeypatch):
     assert system.own_env()["LD_LIBRARY_PATH"] == "/opt/lib" and "PYINSTALLER_RESET_ENVIRONMENT" not in system.own_env()
 
 
+def test_programs_come_with_the_package(tmp_path, monkeypatch):
+    """tisma-slicer/ next to the executable: the Windows package of Tisma Slicer, or the AppImage extracted (usr/bin)."""
+    exe = tmp_path / "Tisma Cloud" / "tisma-cloud.exe"
+    bundled = exe.parent / system.BUNDLED_FOLDER
+    (bundled / "usr" / "bin").mkdir(parents=True)
+    exe.write_text("")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(exe))
+    monkeypatch.setattr(system.shutil, "which", lambda _name: None)
+    folders = system.tisma_slicer_folders()
+    assert folders[:3] == [bundled.resolve(), (bundled / "usr" / "bin").resolve(), exe.parent.resolve()]
+    linux = bundled.resolve() / "usr" / "bin"
+    for name in (system.SLICER_NAMES[0], system.FEA_NAMES[0]):
+        (linux / name).write_text("")
+    assert system.find_tisma_programs() == (str(linux / system.SLICER_NAMES[0]), str(linux / system.FEA_NAMES[0]))
+    # A node made with the package finds them by itself, also after its folder moved.
+    m = Manager(tmp_path / "home")
+    m.set_role("node")
+    assert m.read_node()["tisma_slicer"] == str(linux / system.SLICER_NAMES[0])
+    m.write_node({"tisma_slicer": str(tmp_path / "old" / "tisma-slicer")})
+    m.children()
+    assert m.read_node()["tisma_slicer"] == str(linux / system.SLICER_NAMES[0])
+
+
 def test_node_programs_are_found(tmp_path, monkeypatch):
     install = tmp_path / "Tisma Slicer"
     install.mkdir()

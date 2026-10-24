@@ -822,14 +822,16 @@ class Manager:
                 slicer, fea = system.find_tisma_programs()
                 out.append(Check("El maestro calcula", bool(slicer and fea),
                                  f"Nodo «{MASTER_NODE}» con {slicer}" if slicer and fea else
-                                 "Falta Tisma Slicer en esta máquina: instalalo para que el maestro calcule"))
+                                 "Faltan tisma-slicer y tisma-fea: vienen en la carpeta tisma-slicer del paquete de "
+                                 "Tisma Cloud, junto al programa"))
         else:
             node = self.read_node()
             for key, label in (("tisma_slicer", "Programa tisma-slicer"), ("tisma_fea", "Programa tisma-fea")):
                 path = str(node.get(key) or "")
                 ok = bool(path) and Path(path).is_file()
                 out.append(Check(label, ok, path if ok else (f"No existe: {path}" if path else
-                                                             "No configurado: instalá Tisma Slicer en esta máquina"),
+                                                             "No configurado: «Buscar Tisma Slicer» (vienen en la "
+                                                             "carpeta tisma-slicer del paquete)"),
                                  None if ok else "programs"))
             asked = self.node_path.with_name(self.node_path.name + ".join").is_file()
             out.append(Check("Token del nodo", True if node.get("token") else None, "Configurado" if node.get("token")
@@ -872,7 +874,8 @@ class Manager:
         if key == "programs":
             found = self.detect_programs(replace=True)
             if not found:
-                raise RuntimeError("No se encontró Tisma Slicer en esta máquina: instalalo o indicá los programas")
+                raise RuntimeError("No se encontraron tisma-slicer y tisma-fea: copiá la carpeta tisma-slicer del "
+                                   "paquete de Tisma Cloud junto al programa, o indicá los programas")
             return "Programas encontrados: " + ", ".join(found.values())
         raise ValueError(f"Nothing to fix for {key}")
 
@@ -912,6 +915,9 @@ class Manager:
     def children(self) -> dict[str, list[str]]:
         """The processes of the service: the master or the node, and the node of the master when it computes too."""
         out = {"main": run_command(self.home, "--child")}
+        if self.role() == "node":
+            # The programs that came with the package, when node.toml names none that exists (a moved folder).
+            self.detect_programs()
         if self.role() == "master" and self.master_computes():
             try:
                 ready = self.prepare_master_node() is not None

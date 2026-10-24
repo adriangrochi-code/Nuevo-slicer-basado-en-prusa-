@@ -38,7 +38,7 @@ Programs run as separate processes (not linked):
 
 | Program | License | Notes |
 |---|---|---|
-| Tisma Slicer (`tisma-slicer`, `tisma-fea`) | AGPL-3.0 | The source of the version used by the service, with every change, must stay published (AGPL §13). |
+| Tisma Slicer (`tisma-slicer`, `tisma-fea`) | AGPL-3.0 | The source of the version used by the service, with every change, must stay published (AGPL §13). The package of `tisma-cloud` carries the unmodified programs of a build of `main` in `tisma-slicer/`, with the AGPL text (`LICENSE-AGPL-3.0.txt`) and the address of the exact source (`SOURCE.txt`, the public repository at that commit): two separate programs side by side ("aggregate", AGPL §5; GNU GPL FAQ "mere aggregation", https://www.gnu.org/licenses/gpl-faq.html#MereAggregation), the server runs them as processes and links nothing of them. |
 | PostgreSQL 16 | PostgreSQL License | Database (Docker image `postgres:16`). |
 | Caddy 2.8 | Apache-2.0 | HTTPS proxy (Docker image `caddy:2.8`). |
 | ClamAV 1.5 (optional) | GPL-2.0 | Antivirus of the uploads (Docker image `clamav/clamav:1.5`, `--profile antivirus`); the master only talks to it over its TCP protocol (clamd INSTREAM), nothing is linked. Its signatures come from Cisco Talos under their own terms. |

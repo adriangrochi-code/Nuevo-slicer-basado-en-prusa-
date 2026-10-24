@@ -306,8 +306,19 @@ Sin Docker: `pip install ".[master]"`, `TISMA_DATABASE_URL=postgresql+psycopg://
 
 Cada pull request y cada cambio en `main` que toca `server/` genera el programa **`tisma-cloud`** (`tisma-cloud.exe`
 en Windows) en la pestaña *Actions* del PR, artefactos `tisma-cloud-windows` y `tisma-cloud-linux` (se guardan 30
-días). Es un solo archivo para todas las máquinas: en cada una se elige si es el **maestro** (el servidor central) o
-un **nodo de cómputo** (esclavo). Se maneja de dos formas, con lo mismo:
+días). Es el mismo programa para todas las máquinas: en cada una se elige si es el **maestro** (el servidor central)
+o un **nodo de cómputo** (esclavo).
+
+**Trae todo lo que necesita:** el paquete es `dist/tisma-cloud.exe` y, al lado, la carpeta `dist/tisma-slicer/` con
+los programas que corren los trabajos (`tisma-slicer-console.exe` y `tisma-fea.exe` en Windows; en Linux el AppImage
+de Tisma Slicer ya extraído, `usr/bin/tisma-slicer` y `usr/bin/tisma-fea`), de la última compilación de `main` que
+pasó el CI. No hace falta instalar Tisma Slicer ni nada más en ninguna máquina: se descomprime el paquete entero y
+`tisma-cloud` encuentra los programas solo (la carpeta `tisma-slicer` tiene que quedar junto a `tisma-cloud.exe`).
+En Linux los programas usan GTK 3 y WebKitGTK 4.1 del sistema, como el AppImage (Ubuntu 24.04:
+`sudo apt install libgtk-3-0t64 libwebkit2gtk-4.1-0`). La carpeta lleva la licencia de Tisma Slicer (AGPL-3.0) y en
+`SOURCE.txt` el código fuente exacto de esa compilación.
+
+Se maneja de dos formas, con lo mismo:
 
 - **En la pantalla del servidor:** doble clic en `tisma-cloud.exe` abre la ventana de Tisma Cloud: rol de la máquina,
   configuración (la del maestro o la del nodo; en un nodo, «Buscar Tisma Slicer» encuentra los programas), Iniciar /
@@ -391,10 +402,11 @@ firewall, supervisor que revive el maestro, arrancar y detener. Pasos en el serv
    <https://developer.microsoft.com/microsoft-edge/webview2/> (instalador «Evergreen Standalone», x64). Sin él, el
    panel se abre desde el navegador de otra PC de la red: `http://IP-del-servidor:8000/admin`, con el correo y la
    contraseña del administrador (el Internet Explorer de Windows Server no sirve para el panel).
-6. En cada **nodo** con Windows: instalar Tisma Slicer, abrir `tisma-cloud.exe` como administrador, elegir **Nodo**,
-   poner la dirección del maestro, dejar el token vacío e **Iniciar**: el nodo pide unirse y en el maestro aparece en
-   **Nodos** para aceptarlo (ver «Instalar un nodo»); los programas `tisma-slicer-console.exe` y `tisma-fea.exe` se
-   encuentran solos en la carpeta de instalación de Tisma Slicer («Buscar Tisma Slicer»).
+6. En cada **nodo** con Windows: descomprimir el paquete entero (con la carpeta `tisma-slicer`), abrir
+   `tisma-cloud.exe` como administrador, elegir **Nodo**, poner la dirección del maestro, dejar el token vacío e
+   **Iniciar**: el nodo pide unirse y en el maestro aparece en **Nodos** para aceptarlo (ver «Instalar un nodo»). Los
+   programas `tisma-slicer-console.exe` y `tisma-fea.exe` se encuentran solos en la carpeta `tisma-slicer` del paquete
+   (o, si no está, en la instalación de Tisma Slicer: «Buscar Tisma Slicer»).
    **Iniciar con la máquina** y **Diagnóstico** igual que en el maestro (un nodo no necesita abrir puertos: él llama
    al maestro).
 
@@ -454,10 +466,10 @@ docker compose --env-file .env -f deploy/compose.master.yaml start api
 Con una sola máquina (o para aprovechar la del maestro) el maestro también corre trabajos: es la opción **«El maestro
 también calcula»** de la ventana (`tisma-cloud config master_computes true|false`), activada salvo que se apague. El
 servicio registra en la base del maestro un nodo **«maestro»** con su token, escribe `master-node.toml` (conectado a
-`http://127.0.0.1:PUERTO`, con los programas de Tisma Slicer de la máquina) y lo corre junto al maestro, cada uno
-reiniciado aparte si falla. Qué hace se cambia como en cualquier nodo («Qué hace…»); los trabajos a la vez, en
-`master-node.toml`. Hace falta Tisma Slicer instalado en la máquina del maestro: si no está, el maestro atiende sin
-calcular y el Diagnóstico lo dice.
+`http://127.0.0.1:PUERTO`, con los programas de la carpeta `tisma-slicer` del paquete) y lo corre junto al maestro,
+cada uno reiniciado aparte si falla. Qué hace se cambia como en cualquier nodo («Qué hace…»); los trabajos a la vez,
+en `master-node.toml`. Si faltan los programas (la carpeta `tisma-slicer` no quedó junto al programa), el maestro
+atiende sin calcular y el Diagnóstico lo dice.
 
 ### IP pública que cambia: dirección automática y DNS dinámico
 

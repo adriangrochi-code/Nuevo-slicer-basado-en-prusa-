@@ -57,6 +57,10 @@ jobs:
             name: linux
             exe: tisma-cloud
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      # The package of Tisma Slicer of the last build of main (an artifact of ci.yml).
+      actions: read
     defaults:
       run:
         working-directory: server
@@ -70,6 +74,32 @@ jobs:
         run: pip install ".[master,exe]"
       - name: Build
         run: pyinstaller --noconfirm --clean tisma-cloud.spec
+      # The programs a node runs come with the package, in tisma-slicer/ next to the executable, so that no machine
+      # needs Tisma Slicer installed: the Windows package of Tisma Slicer of the last successful build of main, or its
+      # AppImage extracted on Linux (usr/bin; GTK 3 and WebKitGTK 4.1 come from the system, as for the AppImage).
+      # Tisma Slicer is AGPL-3.0: its license and where its source is go with it.
+      - name: Tisma Slicer programs (last build of main)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          read -r run_id sha <<< "$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --status success \
+            --limit 1 --json databaseId,headSha -q '.[0] | "\(.databaseId) \(.headSha)"')"
+          echo "Tisma Slicer of the CI run $run_id of main ($sha)"
+          gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n "TismaSlicer-${{ matrix.name }}" -D tisma-download
+          rm -rf dist/tisma-slicer
+          if [ "${{ matrix.name }}" = windows ]; then
+            mv tisma-download dist/tisma-slicer
+          else
+            chmod +x tisma-download/*.AppImage
+            (cd tisma-download && ./*.AppImage --appimage-extract > /dev/null)
+            mv tisma-download/squashfs-root dist/tisma-slicer
+            rm -rf tisma-download
+          fi
+          cp ../LICENSE dist/tisma-slicer/LICENSE-AGPL-3.0.txt
+          printf 'Tisma Slicer (tisma-slicer, tisma-fea): GNU Affero General Public License 3.0, LICENSE-AGPL-3.0.txt.\nSource of this build: https://github.com/%s/tree/%s\n' \
+            "$GITHUB_REPOSITORY" "$sha" > dist/tisma-slicer/SOURCE.txt
+          du -sh dist/tisma-slicer
       - name: Try it
         env:
           TISMA_DATABASE_URL: sqlite:///./try.db
@@ -129,7 +159,7 @@ jobs:
           tc start
           Start-Sleep 3
           $sup = [int](Get-Content "$svc/tisma-cloud.pid")
-          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Select-Object -First 1
+          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Where-Object { $_.CommandLine -notmatch '--local-node' } | Select-Object -First 1
           if (-not $child) { throw "no child of the supervisor $sup" }
           taskkill /PID $child.ProcessId /T /F | Out-Null
           Start-Sleep 2
@@ -138,6 +168,31 @@ jobs:
           tc logs 15
           if (-not $back) { throw "the master was not started again" }
           tc stop
+      # The node of the package finds its programs by itself and slices and analyses a real project with them, on a
+      # machine without Tisma Slicer installed.
+      - name: Programs of the package
+        run: |
+          set -e
+          if [ "${{ matrix.name }}" = windows ]; then
+            slicer=dist/tisma-slicer/tisma-slicer-console.exe
+            fea=dist/tisma-slicer/tisma-fea.exe
+          else
+            sudo apt-get update -q > /dev/null
+            sudo apt-get install -y -q libgtk-3-0t64 libwebkit2gtk-4.1-0 libgl1 libegl1 libglu1-mesa > /dev/null
+            slicer=dist/tisma-slicer/usr/bin/tisma-slicer
+            fea=dist/tisma-slicer/usr/bin/tisma-fea
+          fi
+          "$slicer" --help | head -n 2
+          "$fea" --help | head -n 1
+          export TISMA_HOME="$PWD/package-home"
+          dist/${{ matrix.exe }} role node
+          dist/${{ matrix.exe }} config | grep -E '^tisma_slicer = .*tisma-slicer[/\\]'
+          dist/${{ matrix.exe }} config | grep -E '^tisma_fea = .*tisma-slicer[/\\]'
+          unset TISMA_HOME
+          pip install ".[master,test]" > /dev/null
+          TISMA_SLICER_BIN="$PWD/$slicer" TISMA_FEA_BIN="$PWD/$fea" pytest -q tests/test_node.py -k real_programs -rs \
+            | tee real.log
+          grep -q "1 passed" real.log
       # The runners of GitHub are Windows Server 2022 with an administrator: what a server does at boot.
       - name: Windows Server (start with the machine as SYSTEM, firewall, supervisor)
         if: matrix.name == 'windows'
@@ -161,7 +216,7 @@ jobs:
           if (-not (healthy)) { tc logs 40; throw "the master does not answer" }
           # The supervisor starts the master again when it dies.
           $sup = [int](Get-Content "$svc/tisma-cloud.pid")
-          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Select-Object -First 1
+          $child = Get-CimInstance Win32_Process -Filter "ParentProcessId=$sup" | Where-Object { $_.CommandLine -notmatch '--local-node' } | Select-Object -First 1
           if (-not $child) { throw "no child of the supervisor $sup" }
           taskkill /PID $child.ProcessId /T /F | Out-Null
           Start-Sleep 2
@@ -187,6 +242,7 @@ jobs:
           name: tisma-cloud-${{ matrix.name }}
           path: |
             server/dist/${{ matrix.exe }}
+            server/dist/tisma-slicer
             server/.env.example
             server/deploy/node.example.toml
           retention-days: 30

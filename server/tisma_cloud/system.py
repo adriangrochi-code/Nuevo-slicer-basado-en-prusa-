@@ -29,6 +29,9 @@ FIREWALL_RULE = "Tisma Cloud"
 TISMA_SLICER_APP_ID = "{EF9BF87F-A56B-4EBB-B89B-4C957B7E3899}"
 WEBVIEW2_CLIENT = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
 # Programs a node runs: the console slicer and the structural analysis.
+# They come with the package of Tisma Cloud, in this folder next to the executable (server.yml): the Windows package of
+# Tisma Slicer, or its AppImage extracted on Linux (usr/bin).
+BUNDLED_FOLDER = "tisma-slicer"
 SLICER_NAMES = ("tisma-slicer-console.exe", "tisma-slicer.exe") if os.name == "nt" else ("tisma-slicer",)
 FEA_NAMES = ("tisma-fea.exe",) if os.name == "nt" else ("tisma-fea",)
 
@@ -255,11 +258,13 @@ def webview2_version() -> str | None:
 
 # ---- the programs of Tisma Slicer (computing nodes)
 def tisma_slicer_folders() -> list[Path]:
-    """Folders where Tisma Slicer may be installed, most likely first: next to this program, where its installer put
-    it (for all users or for one), the default folders."""
+    """Folders where the programs of Tisma Slicer may be, most likely first: the ones that come with this program
+    (tisma-slicer/ next to it), next to it, where the installer of Tisma Slicer put it (for all users or for one), the
+    default folders."""
     folders: list[Path] = []
     if getattr(sys, "frozen", False):
-        folders.append(Path(sys.executable).resolve().parent)
+        here = Path(sys.executable).resolve().parent
+        folders += [here / BUNDLED_FOLDER, here / BUNDLED_FOLDER / "usr" / "bin", here]
     if os.name == "nt":
         import winreg
 
@@ -290,8 +295,15 @@ def tisma_slicer_folders() -> list[Path]:
 def find_program(names: tuple[str, ...]) -> str | None:
     for folder in tisma_slicer_folders():
         for name in names:
-            if (folder / name).is_file():
-                return str(folder / name)
+            path = folder / name
+            if path.is_file():
+                if os.name != "nt" and not os.access(path, os.X_OK):
+                    # Unpacked from a ZIP (the package made by the CI keeps no permissions).
+                    try:
+                        path.chmod(path.stat().st_mode | 0o111)
+                    except OSError:
+                        pass
+                return str(path)
     for name in names:
         found = shutil.which(name)
         if found:

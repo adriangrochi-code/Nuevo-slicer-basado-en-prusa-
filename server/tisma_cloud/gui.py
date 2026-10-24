@@ -895,7 +895,8 @@ class App:
             self.build_settings()
             messagebox.showinfo("Tisma Cloud", "Encontrados:\n" + "\n".join(found.values()), parent=self.root)
         else:
-            messagebox.showwarning("Tisma Cloud", "No se encontró Tisma Slicer en esta máquina: instalalo, o indicá "
+            messagebox.showwarning("Tisma Cloud", "No se encontraron tisma-slicer y tisma-fea. Vienen en la carpeta "
+                                   "tisma-slicer del paquete de Tisma Cloud: dejala junto a tisma-cloud.exe, o indicá "
                                    "los programas con «Buscar…».", parent=self.root)
         self.load_checks()
 
