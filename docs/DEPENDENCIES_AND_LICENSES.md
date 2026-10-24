@@ -130,6 +130,7 @@ curados (marcados así en la nota de cada material).
 | tcbspan | BSL-1.0 |
 | vulkan (Khronos Vulkan-Headers `vulkan-sdk-1.3.275.0`, commit `217e93c`: solo las cabeceras C `vulkan.h`, `vk_platform.h`, `vulkan_core.h` y `vk_video/`) | Apache-2.0 OR MIT (`bundled_deps/vulkan/LICENSE.md`); compatible con AGPL-3.0. Para el análisis estructural en la GPU. |
 | volk (`vulkan-sdk-1.3.275.0`, commit `f2a16e3`) | MIT (`bundled_deps/volk/LICENSE.md`). Carga Vulkan al ejecutar: no hace falta el SDK ni el driver para compilar o usar Tisma. |
+| opencl (Khronos OpenCL-Headers `v2023.12.14`, commit `2368105`: solo las cabeceras C `cl.h`, `cl_platform.h`, `cl_version.h` y `cl_function_types.h`) | Apache-2.0, Copyright (c) 2008-2023 The Khronos Group Inc. (`bundled_deps/opencl/LICENSE`); compatible con AGPL-3.0. OpenCL se carga al ejecutar (`OpenCL.dll`, `libOpenCL.so.1`, instalados por el driver de la placa): no hace falta ningún SDK para compilar ni para usar Tisma. Para laminar con la placa de video (`docs/PERFORMANCE.md`). |
 
 ## 4. Dependencias candidatas para la especificación (no incorporadas)
 
