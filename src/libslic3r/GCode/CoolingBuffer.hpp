@@ -76,6 +76,9 @@ private:
     // the PrintConfig slice of FullPrintConfig is constant, thus no thread synchronization is required.
     const PrintConfig          &m_config;
     unsigned int                m_current_extruder;
+    // Tisma: the current layer was slowed down below min_print_speed to reach slowdown_below_layer_time. It is a
+    // short layer, so it keeps the fan at full speed although it now takes slowdown_below_layer_time.
+    bool                        m_slowed_below_min_print_speed { false };
 };
 
 }

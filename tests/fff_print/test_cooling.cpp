@@ -100,6 +100,21 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
         }
     }
 
+    WHEN("G-code block too short at min_print_speed") {
+        // Tisma: 10 mm take 0.2 s at 50 mm/s and 1 s at min_print_speed (10 mm/s). To take 5 s it is slowed down to 2 mm/s.
+        config.set_deserialize_strict({ { "slowdown_below_layer_time", "5" }, { "fan_below_layer_time", "5" } });
+        GCodeGenerator gcodegen;
+        auto buffer = make_cooling_buffer(gcodegen, config);
+        std::string gcode = buffer->process_layer("G1 F3000;_EXTRUDE_SET_SPEED\nG1 X10 E1\n;_EXTRUDE_END\n", 0, true);
+        INFO(gcode);
+        THEN("speed is lowered below min_print_speed to reach the slowdown threshold") {
+            REQUIRE(gcode.find("F120") != gcode.npos);
+        }
+        THEN("fan runs at full speed although the layer now takes the slowdown threshold") {
+            REQUIRE(gcode.find("M106 S255") != gcode.npos);
+        }
+    }
+
     WHEN("G-code block 1") {
         THEN("fan is not activated when elapsed time is greater than fan threshold") {
             config.set_deserialize_strict({

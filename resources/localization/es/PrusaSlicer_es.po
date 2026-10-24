@@ -3914,8 +3914,15 @@ msgid "Min print speed"
 msgstr "Velocidad de impresión mínima"
 
 #: src/libslic3r/PrintConfig.cpp:2453
-msgid "Slic3r will not scale speed down below this speed."
-msgstr "Slic3r no escalará la velocidad por debajo de esta velocidad."
+msgid ""
+"The cooling slows the extrusions down to this speed first. If a layer still "
+"takes less than \"Slow down if layer print time is below\", its extrusions "
+"are slowed down further, to a common speed, until it takes that time."
+msgstr ""
+"El enfriamiento baja primero la velocidad de las extrusiones hasta esta. Si "
+"la capa todavía tarda menos que «Disminuir la velocidad si el tiempo de "
+"impresión de la capa está por debajo», sus extrusiones se frenan más, a una "
+"misma velocidad, hasta que tarde ese tiempo."
 
 #: src/libslic3r/PrintConfig.cpp:2460
 msgid "Minimal filament extrusion length"
@@ -19283,13 +19290,13 @@ msgstr "Añadir/Quitar impresoras"
 #, boost-format
 msgid ""
 "If estimated layer time is below ~%1%s, fan will run at %2%%% and print "
-"speed will be reduced so that no less than %3%s are spent on that layer "
-"(however, speed will never be reduced below %4%mm/s)."
+"speed will be reduced so that no less than %3%s are spent on that layer: "
+"first down to %4%mm/s and, if that is not enough, further."
 msgstr ""
 "Si el tiempo de capa estimado está por debajo de ~%1%s, el ventilador "
 "funcionará en %2%%% y la velocidad de impresión se reducirá de modo que no "
-"se gaste menos de %3%s en esa capa (sin embargo, la velocidad nunca se "
-"reducirá por debajo de %4%mm/s) ."
+"se gaste menos de %3%s en esa capa: primero hasta %4%mm/s y, si no alcanza, "
+"más todavía."
 
 #: src/slic3r/GUI/PresetHints.cpp:45
 #, boost-format

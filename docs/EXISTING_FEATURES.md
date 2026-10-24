@@ -17,6 +17,7 @@ Fecha: 2026-10-05. "Heredada" = viene de PrusaSlicer 2.9.6 sin cambios. "Fork" =
 | Soportes normales y en árbol; pintado de soportes | Heredada | `Support/`, `GLGizmoFdmSupports` |
 | Brim, skirt, balsa | Heredada | `Brim.cpp` |
 | Velocidades, aceleraciones, enfriamiento, temperaturas | Heredada | `GCode.cpp`, `CoolingBuffer` |
+| **Tiempo mínimo de capa siempre alcanzado**: si con todas las extrusiones a la velocidad mínima del filamento (`min_print_speed`) la capa sigue tardando menos que `slowdown_below_layer_time`, se frenan más, a una velocidad común (la más alta que alcanza el tiempo; las que ya iban más lento no cambian). Esas capas mantienen el ventilador al máximo. Sin límite inferior salvo 1 mm/min (nunca `F0`): en la punta de un cono puede bajar de 1 mm/s | **Fork** | `GCode/CoolingBuffer.cpp` (`calculate_layer_slowdown`) |
 | Vista previa por capas y trayectorias (libvgcode) | Heredada | `libvgcode/`, `GCodeViewer` |
 | G-code ASCII y binario, macros, post-procesado | Heredada | `GCode*`, `libbgcode` |
 | Multimaterial, torre de purga, pintado por colores | Heredada | `MultiMaterialSegmentation`, `WipeTower*` |
