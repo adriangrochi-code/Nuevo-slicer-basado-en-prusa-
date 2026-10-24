@@ -20,8 +20,9 @@ by CI too.
 
 ## Development flow
 
-Follow `CONTRIBUTING.md` and the `tisma-dev-workflow` skill: branch per task, Conventional Commits, pull request with
-CI and code review, squash merge; release-please makes the releases; nightly builds from `main`.
+Follow `CONTRIBUTING.md` and the `tisma-dev-workflow` skill: branch per task from `dev`, Conventional Commits, pull
+request to `dev` with CI and code review, squash merge; `dev` goes to `alpha` (under test) and `alpha` to `main`
+(stable) with merge commits; release-please makes the releases; nightly builds from `main`.
 
 ## Build and test (Linux)
 

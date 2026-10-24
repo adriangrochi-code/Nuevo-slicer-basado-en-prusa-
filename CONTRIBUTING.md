@@ -2,17 +2,23 @@
 
 ## Branches and pull requests
 
-- `main` is the integration branch: it always builds, and every push to it is a candidate for the nightly build.
-- Work happens on a short branch per task (`feat/resin-exposure-tower`, `fix/goo-header`, ...) and reaches `main`
-  through a pull request. Nothing is pushed to `main` directly.
+- Three long-lived branches, each one reached only through a pull request (nothing is pushed to them directly):
+  - `dev`: the daily work; every task branch goes there.
+  - `alpha`: the version under test; `dev` goes there when a set of changes is ready to try.
+  - `main`: the stable version; `alpha` goes there once tested. release-please makes the releases from it and every
+    push to it is a candidate for the nightly build.
+- Work happens on a short branch per task (`feat/resin-exposure-tower`, `fix/goo-header`, ...) taken from `dev`, and
+  reaches `dev` through a pull request.
 - Every pull request runs **CI** (`.github/workflows/ci.yml`): Windows, Linux (with the unit tests) and macOS builds.
   The packages of the run stay 14 days as artifacts, for testing the branch before merging.
 - Every pull request gets a code review before merging (for Claude sessions: the `/code-review` skill, findings posted
   on the pull request and fixed or answered).
 - Merge when CI is green and the review has no open findings:
-  - **Squash and merge** (default): the pull request title becomes the commit on `main`.
-  - **Rebase and merge** only when the pull request has several commits that must stay separate (for example a
+  - Task branch into `dev`: **Squash and merge** (default), the pull request title becomes the commit on `dev`;
+    **Rebase and merge** only when the pull request has several commits that must stay separate (for example a
     refactor commit followed by the fixes that build on it).
+  - `dev` into `alpha` and `alpha` into `main`: **Create a merge commit**, so that each change keeps its own commit and
+    release-please, which reads the commits of `main`, lists all of them.
 
 ## Conventional Commits
 

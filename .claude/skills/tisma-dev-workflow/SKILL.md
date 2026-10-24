@@ -10,7 +10,8 @@ The full policy is in `CONTRIBUTING.md`; this is the checklist for a Claude sess
 ## 1. Start
 
 - Audit first: read the code involved, `git log` for related work, and the docs in `docs/`.
-- Work on a branch for the task. In a cloud session the branch may be assigned by the session: use it.
+- Work on a branch for the task, taken from `dev`. In a cloud session the branch may be assigned by the session: use it.
+- Branches: task branch -> `dev` (daily work) -> `alpha` (version under test) -> `main` (stable, releases).
 - Large refactors only with explicit authorization from the owner.
 
 ## 2. Commit
@@ -30,13 +31,14 @@ is visible. For CI failures use `systematic-debugging` and reproduce locally whe
 
 ## 4. Pull request
 
-- Title = the Conventional Commit that will land on `main` (checked by `pr-title.yml`). Body from
+- Base `dev`. Title = the Conventional Commit that will land on `dev` (checked by `pr-title.yml`). Body from
   `.github/pull_request_template.md`: summary, how it was tested, what was not tested.
 - Wait for CI (`ci.yml`: Windows, Linux with tests, macOS). A red check is work, never "flaky" without evidence.
 - Review: run the `/code-review` skill on the PR diff, post the findings on the PR, fix them in new commits (or answer
   why not), and repeat until no blocking findings remain.
 - Merge only when CI is green and the review is clean: **squash** by default; **rebase** when the commits must stay
-  separate (a refactor commit). Merging needs the owner's go-ahead unless they said otherwise.
+  separate (a refactor commit). `dev` -> `alpha` and `alpha` -> `main` use a **merge commit** (release-please reads
+  every commit of `main`). Merging needs the owner's go-ahead unless they said otherwise.
 
 ## 5. Releases and nightly
 
