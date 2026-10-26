@@ -1,7 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <boost/algorithm/string/predicates.hpp>
-
 #include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/TriangleMesh.hpp"
@@ -530,7 +528,7 @@ TEST_CASE("SupportMaterial: ironing of the top interface", "[SupportMaterial][Ti
         GCodeReader parser;
         parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
             const std::string_view raw = line.raw();
-            if (boost::starts_with(raw, ";TYPE:")) {
+            if (raw.substr(0, 6) == ";TYPE:") {
                 previous_type = type;
                 type = std::string(raw.substr(6));
             } else if (line.cmd_is("G1") && type == "Ironing" && line.dist_XY(self) > 0 && line.dist_E(self) > 0)
