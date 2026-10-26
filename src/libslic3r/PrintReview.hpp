@@ -31,7 +31,7 @@ struct PrintReviewItem
         LowBedAdhesion,       // the object may come off the bed
         FragilePart,          // thin part that may break while printing
         LostDetails,          // parts of the model too thin to get any extrusion
-        Overheating,          // layers shorter than the cooling time even at the minimum speed
+        Overheating,          // layers slowed down below the minimum speed to take the cooling time
         TravelsOverAir,       // travels leaving the part: strings
         SpeedLimited,         // moves faster than the printer allows (it slows them down)
     };

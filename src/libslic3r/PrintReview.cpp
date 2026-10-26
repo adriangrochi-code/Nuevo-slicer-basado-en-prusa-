@@ -282,13 +282,14 @@ void review_bridges(const Print &print, double z_offset, std::vector<Item> &out)
              "and set the longest bridge the printer makes well.")));
 }
 
-// The layers of the G-code: time, height and the extruder printing most of it.
+// The layers of the G-code: time, height, the extruder printing most of it and the slowest extrusion.
 struct GCodeLayer
 {
     double                    time { 0. };
     double                    z    { std::numeric_limits<double>::lowest() };
     std::map<size_t, double>  extrusion_time;
     bool                      extrudes { false };
+    double                    slowest { std::numeric_limits<double>::max() }; // mm/s
 };
 
 std::vector<GCodeLayer> gcode_layers(const GCodeProcessorResult &result)
@@ -306,17 +307,21 @@ std::vector<GCodeLayer> gcode_layers(const GCodeProcessorResult &result)
             l.extrudes = true;
             l.z = std::max(l.z, double(m.position.z()));
             l.extrusion_time[m.extruder_id] += t;
+            l.slowest = std::min(l.slowest, double(m.feedrate));
         }
     }
     return layers;
 }
 
-// Layers printed faster than the cooling asks even at the minimum print speed: they do not cool down and sag.
+// Layers too small to cool down at the minimum print speed. The cooling slows them down below it to take the time the
+// filament asks for (CoolingBuffer): they print very slowly and may get blobs or lose their shape. A layer still
+// shorter than that time (the cooling could not slow it down enough) is reported too.
 void review_overheating(const Print &print, const std::vector<GCodeLayer> &layers, std::vector<Item> &out)
 {
     const PrintConfig &config = print.config();
     Places places;
-    double shortest = std::numeric_limits<double>::max();
+    double slowest  = std::numeric_limits<double>::max();
+    double minimum  = 0.;
     double asked    = 0.;
     for (const GCodeLayer &l : layers) {
         if (! l.extrudes || l.extrusion_time.empty())
@@ -325,28 +330,34 @@ void review_overheating(const Print &print, const std::vector<GCodeLayer> &layer
             [](const auto &a, const auto &b) { return a.second < b.second; })->first;
         if (! config.cooling.get_at(extruder))
             continue;
-        const double slowdown = config.slowdown_below_layer_time.get_at(extruder);
-        // The cooling slows the layer down to this time unless it reaches the minimum print speed; the time
-        // estimate of the G-code (with the accelerations) is a little longer than the one of the cooling.
-        if (slowdown > 0. && l.time < 0.9 * slowdown) {
+        const double slowdown  = config.slowdown_below_layer_time.get_at(extruder);
+        const double min_speed = config.min_print_speed.get_at(extruder);
+        if (slowdown <= 0.)
+            continue;
+        // Slowed down below the minimum print speed to take the cooling time (the time estimate of the G-code, with
+        // the accelerations, is a little longer than the one of the cooling, hence the margins), or still too short.
+        const bool stretched = min_speed > 0. && l.slowest < 0.95 * min_speed && l.time > 0.9 * slowdown &&
+                               l.time < 1.5 * slowdown;
+        if (stretched || l.time < 0.9 * slowdown) {
             places.add(l.z);
-            if (l.time < shortest) {
-                shortest = l.time;
-                asked    = slowdown;
+            if (l.slowest < slowest) {
+                slowest = l.slowest;
+                minimum = min_speed;
+                asked   = slowdown;
             }
         }
     }
     if (places.empty())
         return;
-    // Shown at the shortest layer: it is the worst one.
-    Item item = make_item(Kind::Overheating, Severity::Warning, places, 0., _u8L("Layers without time to cool down"),
-        format(_u8L("%1% layers %2% take only %3% s (the filament asks for at least %4% s) even at the minimum print "
-                    "speed: they may sag or lose their shape."),
-               places.count, heights(places, 0.), mm(shortest, 1), int(std::round(asked))),
-        _u8L("Print several copies at once (the layers take longer), or lower the minimum print speed (Filament "
-             "Settings > Cooling)."));
+    // Shown at the slowest layer: it is the worst one.
+    Item item = make_item(Kind::Overheating, Severity::Warning, places, 0., _u8L("Layers too small to cool down"),
+        format(_u8L("%1% layers %2% are too small to cool down in %3% s at the minimum print speed (%4% mm/s): they are "
+                    "printed as slowly as %5% mm/s, and may get blobs or lose their shape."),
+               places.count, heights(places, 0.), int(std::round(asked)), mm(minimum, 0), mm(slowest, 1)),
+        _u8L("Print several copies at once (the layers take longer), or lower the time of the slow down for short layers "
+             "(Filament Settings > Cooling)."));
     for (const GCodeLayer &l : layers)
-        if (l.extrudes && std::abs(l.time - shortest) < EPSILON) {
+        if (l.extrudes && std::abs(l.slowest - slowest) < EPSILON) {
             item.z = l.z;
             break;
         }
