@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <boost/algorithm/string/predicates.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/Layer.hpp"
