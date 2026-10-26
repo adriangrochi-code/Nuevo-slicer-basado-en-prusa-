@@ -34591,14 +34591,14 @@ msgstr "Detalles que no se imprimen"
 msgid "Use a thinner nozzle or a thinner extrusion width, scale the detail up, or turn on \"Detect thin walls\" (Print Settings > Layers and perimeters)."
 msgstr "Usá una boquilla más fina o un ancho de extrusión menor, agrandá el detalle o activá «Detecta paredes delgadas» (Configuración de Impresión > Capas y perímetros)."
 
-msgid "Layers without time to cool down"
-msgstr "Capas sin tiempo para enfriarse"
+msgid "Layers too small to cool down"
+msgstr "Capas demasiado chicas para enfriarse"
 
-msgid "%1% layers %2% take only %3% s (the filament asks for at least %4% s) even at the minimum print speed: they may sag or lose their shape."
-msgstr "%1% capas %2% tardan solo %3% s (el filamento pide al menos %4% s) aun a la velocidad mínima: pueden deformarse o perder la forma."
+msgid "%1% layers %2% are too small to cool down in %3% s at the minimum print speed (%4% mm/s): they are printed as slowly as %5% mm/s, and may get blobs or lose their shape."
+msgstr "%1% capas %2% son demasiado chicas para enfriarse en %3% s a la velocidad mínima (%4% mm/s): se imprimen hasta a %5% mm/s y pueden quedar con gotas o perder la forma."
 
-msgid "Print several copies at once (the layers take longer), or lower the minimum print speed (Filament Settings > Cooling)."
-msgstr "Imprimí varias copias a la vez (las capas tardan más) o bajá la velocidad de impresión mínima (Configuración del filamento > Enfriamiento)."
+msgid "Print several copies at once (the layers take longer), or lower the time of the slow down for short layers (Filament Settings > Cooling)."
+msgstr "Imprimí varias copias a la vez (las capas tardan más) o bajá el tiempo para frenar las capas cortas (Configuración del filamento > Enfriamiento)."
 
 msgid "Travels over the air without retraction"
 msgstr "Viajes por el aire sin retracción"
