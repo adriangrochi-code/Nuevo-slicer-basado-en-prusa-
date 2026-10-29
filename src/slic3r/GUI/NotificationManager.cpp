@@ -2245,6 +2245,12 @@ void NotificationManager::close_plater_warning_notification(const std::string& t
 		}
 	}
 }
+void NotificationManager::close_custom_notification(const std::string& text)
+{
+	for (std::unique_ptr<PopNotification> &notification : m_pop_notifications)
+		if (notification->get_type() == NotificationType::CustomNotification && notification->compare_text(text))
+			notification->close();
+}
 void NotificationManager::set_all_slicing_errors_gray(bool g)
 {
 	for (std::unique_ptr<PopNotification> &notification : m_pop_notifications) {

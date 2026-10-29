@@ -43,6 +43,9 @@ class StaticBox;
 
 namespace Slic3r {
 
+struct PrintReviewItem;
+struct PrintStatistics;
+
 namespace GUI {
 
 class ConfigOptionsGroup;
@@ -51,6 +54,7 @@ class FreqChangedParams;
 class QuickSettings;
 class ObjectInfo;
 class SlicedInfo;
+class ReviewInfo;
 class ObjectManipulation;
 class ObjectSettings;
 class ObjectLayers;
@@ -112,13 +116,32 @@ class Sidebar : public wxPanel
         std::string preset;
     };
     std::vector<NozzleChoice>           m_nozzles;          // item of the nozzle combo -> nozzle
+    // Tisma: a filament printer with several extruders (tool changer, IDEX, several hotends): the nozzle of each one,
+    // since the nozzle combo above sets all of them, and when they differ a switch that prints the walls with the
+    // finest nozzle and the infill with the coarsest one ("printing with different nozzle diameters" of Prusa Research).
+    wxSizerItem*                        m_extruder_nozzles_row      { nullptr };
+    wxSizer*                            m_extruder_nozzles_sizer    { nullptr };
+    std::vector<wxStaticText*>          m_labels_extruder_nozzle;
+    std::vector<BitmapComboBox*>        m_combos_extruder_nozzle;
+    wxSizerItem*                        m_fine_coarse_row           { nullptr };
+    ::SwitchButton*                     m_fine_coarse               { nullptr };
     // Rows of the preset chooser shown for the filament (FFF) and the resin (SLA) printers, and for the Prusa SLX.
     std::vector<wxSizerItem*>           m_fff_rows, m_sla_rows, m_slx_rows;
     wxSizerItem*                        m_full_spectrum_row { nullptr };
+    // Tisma: Full Spectrum (colors mixed by alternating the filaments layer by layer) on a printer that changes filaments
+    // in a single nozzle (AMS, MMU): each layer with a mix is a filament change and its purge, so it is an option, off
+    // until it is turned on past a warning, and a warning after slicing tells how much filament went to purging.
+    wxSizerItem*                        m_full_spectrum_option_row { nullptr };
+    ::SwitchButton*                     m_full_spectrum_option     { nullptr };
+    std::string                         m_full_spectrum_warning;
 
     ObjectList*     m_object_list               { nullptr };
     ObjectInfo*     m_object_info               { nullptr };
     SlicedInfo*     m_sliced_info               { nullptr };
+    ReviewInfo*     m_review_info               { nullptr };
+    // The slicing information is up to date (shown with the legend of the preview).
+    bool            m_sliced_info_shown         { false };
+    std::vector<std::pair<std::string, std::string>> m_sliced_info_rows;
     wxBoxSizer*     m_btns_sizer                { nullptr };
     wxBoxSizer*     m_autoslicing_btns_sizer    { nullptr };
 
@@ -181,6 +204,18 @@ class Sidebar : public wxPanel
     // Tisma: a diameter typed in the nozzle field.
     void on_type_nozzle();
     void apply_nozzle(const NozzleChoice &nozzle);
+    // The edited printer with other nozzles: then the print and filament profiles compatible with them.
+    void load_printer_nozzles(const DynamicPrintConfig &printer_config);
+    // The combos of the nozzle of each extruder and the switch of the fine and coarse nozzles.
+    void update_extruder_nozzles();
+    void on_extruder_nozzle(size_t extruder);
+    void on_fine_coarse(bool on);
+    // A filament printer that changes filaments in a single nozzle (single_extruder_multi_material, several filaments).
+    bool single_nozzle_multi_material() const;
+    void update_full_spectrum_rows();
+    void on_full_spectrum_option(bool on);
+    // The warning of the purge of a print with color mixes on a single nozzle (none: no statistics, not sliced).
+    void update_full_spectrum_warning(const PrintStatistics *ps);
     void on_select_bed();
 
     void show_preset_comboboxes();
@@ -214,6 +249,12 @@ public:
     void show_bulk_btns_sizer(const bool show);
 
     void update_sliced_info_sizer();
+    // Tisma: the review before printing of the G-code just made (PrintReview.hpp); hidden when show is false.
+    void show_print_review(const std::vector<PrintReviewItem> &items, bool show);
+    // Tisma: the slicing information (name, value), shown with the legend of the preview instead of in the panel: of a
+    // filament print without the estimated time (GCodeViewer::render_legend() has it), of a resin print with it
+    // (GLCanvas3D, render_sla_legend()). Empty while the plate is not sliced.
+    const std::vector<std::pair<std::string, std::string>>& sliced_info_rows() const { return m_sliced_info_rows; }
 
     void enable_buttons(bool enable);
     void set_btn_label(const ActionButtonType btn_type, const wxString& label) const;

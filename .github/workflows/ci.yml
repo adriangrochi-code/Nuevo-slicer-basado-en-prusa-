@@ -1,7 +1,7 @@
 name: CI
 
-# Every pull request and every push to main: Windows, Linux (with the unit tests) and macOS builds. The packages are
-# kept 14 days as artifacts of the run (development builds); nightly.yml and release.yml publish them.
+# Every pull request and every push to main: Windows, Linux (with the unit tests), macOS and Android builds. The
+# packages are kept 14 days as artifacts of the run (development builds); nightly.yml and release.yml publish them.
 
 on:
   pull_request:
@@ -26,6 +26,9 @@ jobs:
     uses: ./.github/workflows/build_linux.yml
     with:
       run_tests: true
+
+  android:
+    uses: ./.github/workflows/build_android.yml
 
   macos:
     uses: ./.github/workflows/build_macos.yml

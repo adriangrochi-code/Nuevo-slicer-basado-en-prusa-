@@ -2,6 +2,7 @@
 
 #include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/Layer.hpp"
+#include "libslic3r/TriangleMesh.hpp"
 
 #include "test_data.hpp" // get access to init_print, etc
 
@@ -495,3 +496,56 @@ Old Perl tests, which were disabled by Vojtech at the time of first Support Gene
 }
 
 */
+
+// Tisma: ironing of the top support interface.
+TEST_CASE("SupportMaterial: ironing of the top interface", "[SupportMaterial][TismaSupportIroning]")
+{
+    // Two pillars 30 mm apart joined by a slab: the slab rests on supports with top interface layers.
+    auto box = [](float x, float y, float z, const Vec3f &at) {
+        indexed_triangle_set its = its_make_cube(x, y, z);
+        for (stl_vertex &v : its.vertices)
+            v += at;
+        return its;
+    };
+    indexed_triangle_set its = box(5.f, 10.f, 10.f, Vec3f::Zero());
+    its_merge(its, box(5.f, 10.f, 10.f, Vec3f(35.f, 0.f, 0.f)));
+    its_merge(its, box(40.f, 10.f, 2.f, Vec3f(0.f, 0.f, 10.f)));
+    const TriangleMesh mesh(its);
+
+    // Z, feedrate and the previous extrusion type of every ironing move.
+    struct IroningMove { double z; double feedrate; std::string previous_type; };
+    auto ironing_moves = [&mesh](bool ironing) {
+        const std::string gcode = Slic3r::Test::slice({ mesh }, {
+            { "support_material",                  1 },
+            { "support_material_auto",             1 },
+            { "dont_support_bridges",              0 },
+            { "support_material_interface_layers", 2 },
+            { "support_material_ironing",          ironing ? 1 : 0 },
+            { "support_material_ironing_speed",    12 }
+        });
+        std::vector<IroningMove> moves;
+        std::string type, previous_type;
+        GCodeReader parser;
+        parser.parse_buffer(gcode, [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
+            const std::string_view raw = line.raw();
+            if (raw.substr(0, 6) == ";TYPE:") {
+                previous_type = type;
+                type = std::string(raw.substr(6));
+            } else if (line.cmd_is("G1") && type == "Ironing" && line.dist_XY(self) > 0 && line.dist_E(self) > 0)
+                moves.push_back({ self.z(), line.new_F(self), previous_type });
+        });
+        return moves;
+    };
+
+    const std::vector<IroningMove> ironed = ironing_moves(true);
+    REQUIRE(! ironed.empty());
+    for (const IroningMove &m : ironed) {
+        // The top interface under the slab, which starts at 10 mm.
+        CHECK(m.z < 10.);
+        CHECK(m.z > 9.);
+        // At its own speed, right after the interface it irons.
+        CHECK(m.feedrate == 12. * 60.);
+        CHECK(m.previous_type == "Support material interface");
+    }
+    CHECK(ironing_moves(false).empty());
+}

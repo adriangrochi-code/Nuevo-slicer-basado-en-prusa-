@@ -73,8 +73,8 @@ LayerPtrs new_layers(
 
 // Non-planar layers: deformation of this object (in object coordinates), if enabled.
 static std::optional<NonPlanar::Deformation> nonplanar_deformation(
-    const PrintConfig &print_config, const Transform3d &object_trafo, const ModelVolumePtrs &model_volumes,
-    const EngineeringLayerField *layer_field)
+    const PrintConfig &print_config, const PrintObjectConfig &print_object_config, const Transform3d &object_trafo,
+    const ModelVolumePtrs &model_volumes, const EngineeringLayerField *layer_field)
 {
     if (! NonPlanar::enabled(print_config))
         return std::nullopt;
@@ -83,7 +83,8 @@ static std::optional<NonPlanar::Deformation> nonplanar_deformation(
         if (model_volume->is_model_part())
             bbox.merge(model_volume->mesh().transformed_bounding_box(object_trafo * model_volume->get_matrix()));
     const indexed_triangle_set mesh = NonPlanar::object_mesh(model_volumes, object_trafo);
-    return NonPlanar::make_deformation(print_config, bbox, &mesh, layer_field);
+    return NonPlanar::make_deformation(print_config, bbox, &mesh, layer_field,
+                                       NonPlanar::support_threshold_deg(print_object_config, print_config));
 }
 
 // Slice single triangle mesh.
@@ -208,7 +209,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
 
     params_base.mode_below     = params_base.mode;
 
-    const std::optional<NonPlanar::Deformation> deformation = nonplanar_deformation(print_config, object_trafo, model_volumes, layer_field);
+    const std::optional<NonPlanar::Deformation> deformation = nonplanar_deformation(print_config, print_object_config, object_trafo, model_volumes, layer_field);
     const NonPlanar::Deformation *deformation_ptr = deformation ? &*deformation : nullptr;
     const double nonplanar_max_edge = NonPlanar::mesh_max_edge(print_config);
 
@@ -568,7 +569,7 @@ void PrintObject::slice()
     this->clear_layers();
     SlicingParameters slicing_params = m_slicing_params;
     if (const std::optional<NonPlanar::Deformation> deformation =
-            nonplanar_deformation(m_print->config(), this->trafo_centered(), this->model_object()->volumes,
+            nonplanar_deformation(m_print->config(), this->config(), this->trafo_centered(), this->model_object()->volumes,
                                   &this->model_object()->engineering.layer_field)) {
         // The deformed mesh may reach above the object height in slice space: slice up to there,
         // the empty layers on top are removed after slicing.

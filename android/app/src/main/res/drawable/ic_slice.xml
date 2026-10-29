@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Slice: a wand with a spark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M4,20L15,9" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M18,2l1,2.5l2.5,1l-2.5,1l-1,2.5l-1,-2.5l-2.5,-1l2.5,-1Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M10,3l0.6,1.4l1.4,0.6l-1.4,0.6l-0.6,1.4l-0.6,-1.4l-1.4,-0.6l1.4,-0.6Z" />
+</vector>

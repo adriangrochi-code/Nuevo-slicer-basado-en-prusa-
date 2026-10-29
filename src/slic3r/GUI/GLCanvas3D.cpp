@@ -43,6 +43,7 @@
 #include "Plater.hpp"
 #include "MainFrame.hpp"
 #include "GUI_App.hpp"
+#include "Sidebar.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GUI_ObjectManipulation.hpp"
 #include "Mouse3DController.hpp"
@@ -2977,6 +2978,8 @@ void GLCanvas3D::load_sla_preview()
         _load_sla_shells();
         _update_sla_shells_outside_state();
         m_gcode_viewer.set_force_shells_visible(false);
+        // Tisma: a resin print has its own legend (render_sla_legend()), shown and hidden as the one of the G-code.
+        m_gcode_viewer.enable_legend(true);
         _set_warning_notification_if_needed(EWarning::ObjectClashed);
         _set_warning_notification_if_needed(EWarning::SlaSupportsOutside);
     }
@@ -7188,6 +7191,59 @@ static void render_sla_layer_legend(const SLAPrint& print, int layer_idx, int cn
 
 
 
+// Tisma: the legend of a resin print, on the left as the one of the G-code of a filament print
+// (GCodeViewer::render_legend()): the parts shown, in their colors, and the slicing information.
+static void render_sla_legend(const GLVolumeCollection& volumes)
+{
+    // The color of the object, of the supports and of the pad as drawn (the first volume of each).
+    std::optional<ColorRGBA> object, supports, pad;
+    for (const GLVolume* v : volumes.volumes) {
+        const int id = v->composite_id.volume_id;
+        std::optional<ColorRGBA>& part = id == -int(slaposSupportTree) ? supports : id == -int(slaposPad) ? pad : object;
+        if (! part.has_value())
+            part = v->color;
+    }
+    const std::vector<std::pair<std::string, std::string>>& rows = wxGetApp().sidebar().sliced_info_rows();
+    if (! object.has_value() && rows.empty())
+        return;
+
+    ImGuiPureWrap::set_next_window_pos(0.0f, 0.0f, ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::SetNextWindowBgAlpha(0.6f);
+    ImGuiPureWrap::begin(_u8L("Legend") + "###Legend", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    const float icon_size = ImGui::GetTextLineHeight();
+    auto item = [icon_size](const ColorRGBA& color, const std::string& label) {
+        const ImVec2 pos = ImGui::GetCursorScreenPos();
+        ImGui::GetWindowDrawList()->AddRectFilled({ pos.x + 1.0f, pos.y + 1.0f }, { pos.x + icon_size - 1.0f, pos.y + icon_size - 1.0f },
+                                                  ImGuiPSWrap::to_ImU32(color));
+        ImGui::Dummy({ icon_size, icon_size });
+        ImGui::SameLine();
+        ImGuiPureWrap::text(label);
+    };
+    if (object.has_value())
+        item(*object, _u8L("Object"));
+    if (supports.has_value())
+        item(*supports, _u8L("Supports"));
+    if (pad.has_value())
+        item(*pad, _u8L("Pad"));
+    if (! rows.empty()) {
+        ImGui::Spacing();
+        ImGuiPureWrap::title(_u8L("Sliced Info") + ":");
+        if (ImGui::BeginTable("SlicedInfo", 2)) {
+            for (const auto& [name, value] : rows) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, name);
+                ImGui::TableSetColumnIndex(1);
+                ImGuiPureWrap::text(value);
+            }
+            ImGui::EndTable();
+        }
+    }
+    ImGuiPureWrap::end();
+    ImGui::PopStyleVar();
+}
+
 void GLCanvas3D::_render_sla_slices()
 {
     if (!m_use_clipping_planes || current_printer_technology() != ptSLA)
@@ -7204,6 +7260,8 @@ void GLCanvas3D::_render_sla_slices()
         if (const Preview* preview = dynamic_cast<Preview*>(m_canvas->GetParent()))
             slider_width = preview->get_layers_slider_width();
         render_sla_layer_legend(*print, m_layer_slider_index, get_canvas_size().get_width() - slider_width, m_bed_selector_current_height);
+        if (is_legend_shown())
+            render_sla_legend(m_volumes);
     }
 
     double clip_min_z = -m_clipping_planes[0].get_data()[3];

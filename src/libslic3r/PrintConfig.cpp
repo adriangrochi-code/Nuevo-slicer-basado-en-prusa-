@@ -2455,6 +2455,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.));
 
+    // Tisma: the bridging capability of the printer, for the review before printing (PrintReview.cpp).
+    def = this->add("max_bridge_length", coFloat);
+    def->label = L("Longest bridge");
+    def->full_label = L("Longest bridge without supports");
+    def->tooltip = L("Longest span this printer bridges well, with nothing under it: the bridges over the infill or "
+                     "over the layer below do not count. The review before printing warns about longer bridges. 16 mm is "
+                     "the span PrusaSlicer assumes for its stability check. 0 = no check.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(16.));
+
     def = this->add("nonplanar_head_clearance_radius", coFloat);
     def->label = L("Head clearance radius");
     def->full_label = L("Print head clearance radius (non-planar)");
@@ -2694,7 +2706,10 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("min_print_speed", coFloats);
     def->label = L("Min print speed");
-    def->tooltip = L("Slic3r will not scale speed down below this speed.");
+    // Tisma: the cooling goes below this speed when a layer is still too short at it (CoolingBuffer.cpp).
+    def->tooltip = L("The cooling slows the extrusions down to this speed first. If a layer still takes less than "
+                     "\"Slow down if layer print time is below\", its extrusions are slowed down further, to a common "
+                     "speed, until it takes that time.");
     def->sidetext = L("mm/s");
     def->min = 0;
     def->mode = comExpert;
@@ -3964,6 +3979,43 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloatOrPercent(100, true));
+
+    // Tisma: ironing of the top support interface (SupportCommon.cpp, generate_support_toolpaths).
+    def = this->add("support_material_ironing", coBool);
+    def->label = L("Iron the top interface");
+    def->category = L("Support material");
+    def->tooltip = L("Print the top interface layer solid and iron it before printing the object over it, so that the "
+                     "faces of the object resting on the supports come out smoother. Needs top interface layers.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("support_material_ironing_flowrate", coPercent);
+    def->label = L("Interface ironing flow rate");
+    def->category = L("Support material");
+    def->tooltip = L("Flow of the ironing of the top support interface, in percent of the flow of a layer as high as "
+                     "the interface layer.");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercent(15));
+
+    def = this->add("support_material_ironing_spacing", coFloat);
+    def->label = L("Interface ironing spacing");
+    def->category = L("Support material");
+    def->tooltip = L("Distance between the ironing lines of the top support interface.");
+    def->sidetext = L("mm");
+    def->min = 0.01;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.1));
+
+    def = this->add("support_material_ironing_speed", coFloat);
+    def->label = L("Support interface ironing");
+    def->category = L("Speed");
+    def->tooltip = L("Speed of the ironing of the top support interface.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(15));
 
     def = this->add("support_material_pattern", coEnum);
     def->label = L("Pattern");

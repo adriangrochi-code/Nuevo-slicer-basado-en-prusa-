@@ -189,6 +189,8 @@ public:
 
     void select_view(const std::string& direction);
     void select_view_3D(const std::string& name);
+    // Tisma: the preview with the toolpaths up to the layer nearest to the height z (the review before printing).
+    void show_layers_up_to(double z);
 
     bool is_preview_shown() const;
     bool is_preview_loaded() const;
