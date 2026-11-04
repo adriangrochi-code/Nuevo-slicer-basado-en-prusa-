@@ -1,7 +1,7 @@
 # Spec and QA session: handoff
 
 Read this first in a new session of the spec and QA side. Keep it current. A session that passes about 500 000 tokens
-of context writes it up to date, then hands over to a fresh session. The owner authorized this on 2026-11-04.
+of context no longer hands over: no session is renewed, this one included (owner, 2026-11-04, after one renewal).
 
 ## Role
 
@@ -11,8 +11,7 @@ of context writes it up to date, then hands over to a fresh session. The owner a
 - It maintains the proprietary Tisma Cloud server in this repo (`server/`), on branch `ccr-7e2013d9-qwmclz`.
 - **Never read or write the engine's `src/` or `apps/`.** This side has read PrusaSlicer and Cura code (clean room,
   `CLEANROOM.md` of the engine).
-- **Never create sessions without the owner's authorization.** It is authorized to renew a session past the limit,
-  with a handoff, archiving the old one.
+- **Never create sessions without the owner's authorization.** No session is renewed (owner, 2026-11-04).
 - Answer the owner in Spanish. Code, comments, commit messages and PR titles in English. No model names in code or
   commits.
 
@@ -20,7 +19,7 @@ of context writes it up to date, then hands over to a fresh session. The owner a
 
 | Session | Role |
 |---|---|
-| `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev). No renewal for it (owner, 2026-11-04; engine CLAUDE.md, b77b454) |
+| `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev). No renewal (engine CLAUDE.md, b77b454) |
 | `session_01QadJfKGJU2WtuAunZW5p9B` | Android app (tisma_engine `apps/android`, branch `android`) |
 | `session_01QadJfL7KViJEaJL92p8Swb` | This one: specs, QA, server (renewed 2026-11-04 from `session_015csYE6YXftDTgfC23i81xG`, now archived) |
 
