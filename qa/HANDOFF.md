@@ -8,7 +8,8 @@ of context no longer hands over: no session is renewed, this one included (owner
 - This session writes the feature specs ("fichas") of the clean-room engine `adriangrochi-code/tisma_engine` in
   `docs/spec/features/`, on branch `spec/next`. The PRs go to `dev`; the owner merges them.
 - It does black-box QA of the engine, and later of the Android app.
-- It maintains the proprietary Tisma Cloud server in this repo (`server/`), on branch `ccr-7e2013d9-qwmclz`.
+- The proprietary Tisma Cloud server is in the private repository `adriangrochi-code/tisma-cloud` (branch `main`),
+  kept by the server session; it was `server/` of this repository until 2026-11-04.
 - Push access to `tisma_engine` granted by the owner on 2026-11-04, only for `spec/next` and only with the clean room
   respected (add it with `add_repo` in a new session).
 - **Never read or write the engine's `src/` or `apps/`.** This side has read PrusaSlicer and Cura code (clean room,
@@ -81,7 +82,7 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH26, UI52
   FDM (OR1-like T: upside down, cost -900) and resin (least_peel) pass; the cloud result equals the local one. fea
   without conditions fails cleanly (needs_conditions, Spanish text); a fea success needs a project saved by the
   interface. aero fast took 442 s with a second job on the node (estimate 360 s, order only). The owner's real server
-  needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
+  needs the Cloudflare tunnel (`deploy/cloudflare-tunnel-windows.md` of tisma-cloud).
 - Inside-out FDM part oriented wrong: fixed in engine 5326a49, checked (upside down, bed area 900).
 - Android black box (owner authorized 2026-11-04): branch `android` 7dfe406 built with `./gradlew :app:assembleDebug`
   (no source read), API 30 x86_64 emulator without KVM (`-no-accel`, boots in about 6 min; SDK in the scratchpad),
