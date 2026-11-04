@@ -80,7 +80,7 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH24, UI50
   without conditions fails cleanly (needs_conditions, Spanish text); a fea success needs a project saved by the
   interface. aero fast took 442 s with a second job on the node (estimate 360 s, order only). The owner's real server
   needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
-- To check with the engine: an inside-out FDM part gets a wrong orientation (resin was fixed for it in 0b76ae6).
+- Inside-out FDM part oriented wrong: fixed in engine 5326a49, checked (upside down, bed area 900).
 - Owner decisions:
   - whether to write the woven walls spec, with the patent warning;
   - PR #53 of the engine (`dev` → `alpha`);
