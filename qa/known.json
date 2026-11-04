@@ -1,5 +1,5 @@
 {
- "max_id": "BH25",
+ "max_id": "BH26",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -31,5 +31,10 @@
   "state": "fixed 5326a49 (checked: upside down, bed area 900)",
   "title": "orient FDM: inside-out mesh gets a tilted orientation",
   "dev": "8930804"
+ },
+ "BH26": {
+  "state": "open (47acfd9): sent to engine 10:30, MATERIALS.md says Zt <= Yt",
+  "title": "rule 8: PLA cantilever recommends layers across the bending stress (bead-to-bead weaker than layer-to-layer in the adhesion model)",
+  "dev": "6889c9b"
  }
 }
