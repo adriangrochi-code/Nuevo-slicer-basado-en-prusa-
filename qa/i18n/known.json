@@ -1,0 +1,20 @@
+{
+ "max_id": "TR29",
+ "open": [
+  "TR23",
+  "TR24",
+  "TR28",
+  "TR29"
+ ],
+ "fixed": [
+  "TR22",
+  "TR25",
+  "TR26",
+  "TR27"
+ ],
+ "TR25": "21 setting labels cut (dump-ui cut:true) + transitions angle info icon half cut; dev b6f67fe",
+ "TR26": "top/bottom pattern labels not paired: Superficie superior / Patron de abajo",
+ "TR27": "Estructural panel: decimal point in es, sheet in material label, ambiguous profile source line; dev bc4fcd5",
+ "TR28": "Ingenieria tab tooltip describes only Diseno",
+ "TR29": "engine error texts reach users in English via the cloud"
+}

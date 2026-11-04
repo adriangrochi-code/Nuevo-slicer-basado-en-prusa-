@@ -1,0 +1,23 @@
+{
+ "max_id": "UI50",
+ "open": [
+  "UI43",
+  "UI44",
+  "UI46"
+ ],
+ "fixed_verified": [
+  "UI42",
+  "UI45",
+  "UI48",
+  "UI49",
+  "UI50"
+ ],
+ "half_verified": {
+  "UI47": "no-session view OK; with-session not checked"
+ },
+ "UI49": {
+  "title": "Cloud dialog says 'El servidor no mand\u00f3 planes.' when the server is unreachable",
+  "dev": "12579b8"
+ },
+ "UI50": "Estructural: marking click snaps camera to top view"
+}

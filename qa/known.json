@@ -1,0 +1,26 @@
+{
+ "max_id": "BH23",
+ "BH19": {
+  "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
+  "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
+  "dev": "12579b8"
+ },
+ "BH20": {
+  "state": "fixed b6f67fe (verified 5.02/12.05 mm/s)",
+  "title": "zigzag infill: G-code F ignores machine.max_feed_z (28.3 mm/s Z); null max_feed_z assumes unlimited Z",
+  "dev": "177eae6"
+ },
+ "BH21": {
+  "state": "fixed 6cff67e (verified)",
+  "title": "monotonic_lines top pattern identical to monotonic (alternating, not one direction)",
+  "dev": "c033143"
+ },
+ "BH22": {
+  "state": "not a bug: my test sent --quality fast (solid); server fixed to omit quality",
+  "title": "cloud analyze (CLI) solid vs UI as-printed: mass 4.96 vs 2.5 g"
+ },
+ "BH23": {
+  "state": "fixed in engine dc4e419 (pending push)",
+  "title": "analyze refuses --quality extreme"
+ }
+}
