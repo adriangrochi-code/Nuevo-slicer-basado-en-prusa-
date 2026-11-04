@@ -81,6 +81,11 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH24, UI50
   interface. aero fast took 442 s with a second job on the node (estimate 360 s, order only). The owner's real server
   needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
 - Inside-out FDM part oriented wrong: fixed in engine 5326a49, checked (upside down, bed area 900).
+- Android black box (owner authorized 2026-11-04): branch `android` 7dfe406 built with `./gradlew :app:assembleDebug`
+  (no source read), API 30 x86_64 emulator without KVM (`-no-accel`, boots in about 6 min; SDK in the scratchpad),
+  real master+node at `http://10.0.2.2:8765`. Sign in and account pass. AND1: "Send to the cloud" sends nothing
+  (blocks). AND2: an unlimited account shows hours left. Both sent to the Android session. In the emulator, taps in
+  the system file picker do not register: pick with DPAD and Enter.
 - Owner decisions:
   - whether to write the woven walls spec, with the patent warning;
   - PR #53 of the engine (`dev` → `alpha`);
