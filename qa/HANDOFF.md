@@ -9,6 +9,8 @@ of context no longer hands over: no session is renewed, this one included (owner
   `docs/spec/features/`, on branch `spec/next`. The PRs go to `dev`; the owner merges them.
 - It does black-box QA of the engine, and later of the Android app.
 - It maintains the proprietary Tisma Cloud server in this repo (`server/`), on branch `ccr-7e2013d9-qwmclz`.
+- Push access to `tisma_engine` granted by the owner on 2026-11-04, only for `spec/next` and only with the clean room
+  respected (add it with `add_repo` in a new session).
 - **Never read or write the engine's `src/` or `apps/`.** This side has read PrusaSlicer and Cura code (clean room,
   `CLEANROOM.md` of the engine).
 - **Never create sessions without the owner's authorization.** No session is renewed (owner, 2026-11-04).
