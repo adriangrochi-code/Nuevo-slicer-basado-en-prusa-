@@ -3,24 +3,16 @@
  "open": [
   "UI43",
   "UI44",
-  "UI46",
-  {
-   "id": "UI51",
-   "state": "open (0f4951d)",
-   "title": "Ctrl+Z after «Girar la pieza» removes conditions instead of undoing the turn"
-  },
-  {
-   "id": "UI52",
-   "state": "open (0f4951d)",
-   "title": "Optimizar button tooltip covers the orientation result line"
-  }
+  "UI46"
  ],
  "fixed_verified": [
   "UI42",
   "UI45",
   "UI48",
   "UI49",
-  "UI50"
+  "UI50",
+  "UI51",
+  "UI52"
  ],
  "half_verified": {
   "UI47": "no-session view OK; with-session not checked"
