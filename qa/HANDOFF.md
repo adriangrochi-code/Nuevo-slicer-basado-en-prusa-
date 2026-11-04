@@ -75,9 +75,12 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH24, UI50
 
 - Engine: `orient` (cloud rule 19c), BH24 and the aero resolution check are on `dev` at 832341d. Next: Design D4.
   The server's aero estimates are raised by 20 % for the resolution check (`AERO_RESOLUTION_CHECK_FACTOR`).
-- Cloud end to end: slice, fea and aero passed before 832341d. Orient is still to run end to end, against 832341d;
-  the engine build in this session was blocked by the permission classifier on 2026-11-04 (needs the owner's
-  approval). The owner's real server needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
+- Cloud end to end on engine 8930804 (2026-11-04): slice, aero friction and fast (cd_low/cd_high present), orient
+  FDM (OR1-like T: upside down, cost -900) and resin (least_peel) pass; the cloud result equals the local one. fea
+  without conditions fails cleanly (needs_conditions, Spanish text); a fea success needs a project saved by the
+  interface. aero fast took 442 s with a second job on the node (estimate 360 s, order only). The owner's real server
+  needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
+- To check with the engine: an inside-out FDM part gets a wrong orientation (resin was fixed for it in 0b76ae6).
 - Owner decisions:
   - whether to write the woven walls spec, with the patent warning;
   - PR #53 of the engine (`dev` → `alpha`);
