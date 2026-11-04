@@ -57,6 +57,8 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
   Version 1.0 in January 2027 (second week).
 - Owner's decisions, 2026-11-04 afternoon: Tisma Scanner (`openscanner`) is open source, AGPL-3.0; Tisma Cloud stays
   private; scans send only relative positions between shots, never the absolute GPS position.
+  The server and its node packages (TismaScan-windows included) run only on the owner's machines, never given to
+  third parties.
 - The owner's real prints no longer block anything. They stay marked as not tested on hardware.
 
 ## Tools (in `qa/`; copy to the scratchpad to run)
