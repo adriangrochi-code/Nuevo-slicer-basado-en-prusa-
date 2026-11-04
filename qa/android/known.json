@@ -33,7 +33,7 @@
   "title": "Engineering result rows show raw key max_von_mises_mpa and raw null"
  },
  "AND9": {
-  "state": "fixed e32ef83 per Android session; retest pending (emulator down)",
+  "state": "fixed e32ef83 (checked 9786e31)",
   "title": "scrolling over the Plate 3D view turns the model; easy to mark the wrong face"
  }
 }
