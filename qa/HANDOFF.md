@@ -50,9 +50,9 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
   3. Design D4, then D5b;
   4. the rest of PLAN.md.
 - When a session is unsure, it picks what the roadmap and the specs say, writes the decision down and keeps going.
-- Dates (owner, 2026-11-04): the roadmap closes in the second week of January 2027. That week starts the closed
-  beta, used to debug: every bug seen until then (the `known.json` lists and the beta's reports) gets fixed, and the
-  hardware checks happen alongside, without blocking the software.
+- Dates (owner, 2026-11-04): closed beta in December 2026 with what is ready, used to debug: every bug seen (the
+  `known.json` lists and the beta's reports) gets fixed; hardware checks run alongside, without blocking the software.
+  Version 1.0 in January 2027 (second week).
 - The owner's real prints no longer block anything. They stay marked as not tested on hardware.
 
 ## Tools (in `qa/`; copy to the scratchpad to run)
