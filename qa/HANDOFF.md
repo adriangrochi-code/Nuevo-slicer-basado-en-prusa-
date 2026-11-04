@@ -22,11 +22,11 @@ of context writes it up to date, then hands over to a fresh session. The owner a
 |---|---|
 | `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev) |
 | `session_01QadJfKGJU2WtuAunZW5p9B` | Android app (tisma_engine `apps/android`, branch `android`) |
-| `session_015csYE6YXftDTgfC23i81xG` | This one: specs, QA, server |
+| `session_01QadJfL7KViJEaJL92p8Swb` | This one: specs, QA, server (renewed 2026-11-04 from `session_015csYE6YXftDTgfC23i81xG`, now archived) |
 
 ## Routine
 
-One scheduled task, «Tisma: control combinado cada 3 h» (`trig_017Majyx7RbJpqLTBoSwTDgu`), runs every three hours.
+One scheduled task, «Tisma: control combinado cada 3 h» (`trig_01L2ps35vnEbjWRzEkxsjNbf`, bound to this session), runs every three hours.
 If `dev` has not changed since `last_checked.txt`, it writes one line and stops. Otherwise it tests only what changed.
 The 7:37 firing leaves the owner a morning summary. The old routines are disabled.
 
