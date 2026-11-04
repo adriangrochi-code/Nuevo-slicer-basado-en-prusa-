@@ -39,6 +39,16 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
 - Short messages between sessions: what changed, the commit, how to try it.
 - Message the owner only for a milestone, a decision, something broken, a new or fixed bug, or the morning summary.
 
+## Way of working (owner, 2026-11-04)
+
+- Follow the January roadmap, with no detours. The engine works in this order:
+  1. the cloud (`orient`);
+  2. Ingeniería (EP1 to EP10, a faster CFD);
+  3. Design D4, then D5b;
+  4. the rest of PLAN.md.
+- When a session is unsure, it picks what the roadmap and the specs say, writes the decision down and keeps going.
+- The owner's real prints no longer block anything. They stay marked as not tested on hardware.
+
 ## Tools (in `qa/`; copy to the scratchpad to run)
 
 - `hunt.py N seed`: random slices from the keys in `keys.json`, which `keys.py` builds from the engine's
