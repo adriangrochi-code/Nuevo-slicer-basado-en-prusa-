@@ -17,11 +17,11 @@
   "title": "cloud job summary shows raw keys and print_time twice"
  },
  "AND5": {
-  "state": "open (af6b5eb)",
+  "state": "fixed 0385e12 (checked: bgcode opens in preview, 50 layers)",
   "title": ".bgcode opened from Plate or Share goes to the plate as a model, not to the G-code preview"
  },
  "AND6": {
-  "state": "open (af6b5eb), maybe emulator-only",
+  "state": "not reproduced on 0385e12 (3MF drawn, no ANR)",
   "title": "ANR (5 s) opening a 3MF in the Plate 3D view"
  }
 }
