@@ -1,15 +1,15 @@
 {
  "max_id": "AND3",
  "AND1": {
-  "state": "open (7dfe406, 71ee074)",
+  "state": "open (1b52589): now shows why: HTTP 411 Content-Length is required (chunked multipart upload)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
  },
  "AND2": {
-  "state": "open (7dfe406)",
+  "state": "fixed fe28f6f (per Android session; not retested)",
   "title": "unlimited account shows '0 of 100 h used, 100 h left'"
  },
  "AND3": {
-  "state": "open (71ee074)",
+  "state": "fixed 1b52589 (checked: layer 120 of 120, Z 24.00)",
   "title": "preview after a phone slice: 'The file cannot be read.'"
  }
 }
