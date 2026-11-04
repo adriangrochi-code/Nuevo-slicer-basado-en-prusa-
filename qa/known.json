@@ -1,5 +1,5 @@
 {
- "max_id": "BH26",
+ "max_id": "BH27",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -36,5 +36,10 @@
   "state": "not a bug: MATERIALS.md uses the measured Z when the sheet gives it (Bambu PLA Basic t_z 31 vs t_xy 35); QA misread",
   "title": "rule 8: PLA cantilever recommends layers across the bending stress (bead-to-bead weaker than layer-to-layer in the adhesion model)",
   "dev": "6889c9b"
+ },
+ "BH27": {
+  "state": "open (2a59313)",
+  "title": "pack profile: print profile speed group dropped (null), slices at stock Ender-3 speeds",
+  "dev": "2a59313"
  }
 }
