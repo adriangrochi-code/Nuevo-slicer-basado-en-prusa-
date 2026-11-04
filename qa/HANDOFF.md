@@ -24,7 +24,7 @@ of context no longer hands over: no session is renewed, this one included (owner
 |---|---|
 | `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev). No renewal (engine CLAUDE.md, b77b454) |
 | `session_01QadJfKGJU2WtuAunZW5p9B` | Android app (tisma_engine `apps/android`, branch `android`) |
-| `session_01QadJfL79pTm8Ks4houx1oK` | Tisma Cloud server (`server/`, branch `server/next`), created 2026-11-04 with the owner's authorization |
+| `session_01QadJfL79pTm8Ks4houx1oK` | Tisma Cloud server (`server/`, branch `server/next`), created 2026-11-04 with the owner's authorization. It may read everything, engine `src/` and `apps/` included (owner), but never writes to `tisma_engine` nor sends code to the engine or Android sessions |
 | `session_01QadJfL7KViJEaJL92p8Swb` | This one: specs, QA, server (renewed 2026-11-04 from `session_015csYE6YXftDTgfC23i81xG`, now archived) |
 
 ## Routine
