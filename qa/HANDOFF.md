@@ -54,6 +54,8 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
 - Dates (owner, 2026-11-04): closed beta in December 2026 with what is ready, used to debug: every bug seen (the
   `known.json` lists and the beta's reports) gets fixed; hardware checks run alongside, without blocking the software.
   Version 1.0 in January 2027 (second week).
+- Owner's decisions, 2026-11-04 afternoon: Tisma Scanner (`openscanner`) is open source, AGPL-3.0; Tisma Cloud stays
+  private; scans send only relative positions between shots, never the absolute GPS position.
 - The owner's real prints no longer block anything. They stay marked as not tested on hardware.
 
 ## Tools (in `qa/`; copy to the scratchpad to run)
