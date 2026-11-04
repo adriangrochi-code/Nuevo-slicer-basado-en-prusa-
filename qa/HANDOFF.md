@@ -20,7 +20,7 @@ of context writes it up to date, then hands over to a fresh session. The owner a
 
 | Session | Role |
 |---|---|
-| `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev) |
+| `session_01JDAJxTVh345Lfm4794rJF8` | Engine (tisma_engine, branch dev). No renewal for it (owner, 2026-11-04; engine CLAUDE.md, b77b454) |
 | `session_01QadJfKGJU2WtuAunZW5p9B` | Android app (tisma_engine `apps/android`, branch `android`) |
 | `session_01QadJfL7KViJEaJL92p8Swb` | This one: specs, QA, server (renewed 2026-11-04 from `session_015csYE6YXftDTgfC23i81xG`, now archived) |
 
