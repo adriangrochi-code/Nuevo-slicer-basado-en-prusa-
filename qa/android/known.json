@@ -1,5 +1,5 @@
 {
- "max_id": "AND4",
+ "max_id": "AND6",
  "AND1": {
   "state": "fixed e89db9e (checked: job sent, done, summary shown)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
@@ -15,5 +15,13 @@
  "AND4": {
   "state": "fixed 9978e74 (checked: Filament 1.31 m, Layers, Print time)",
   "title": "cloud job summary shows raw keys and print_time twice"
+ },
+ "AND5": {
+  "state": "open (af6b5eb)",
+  "title": ".bgcode opened from Plate or Share goes to the plate as a model, not to the G-code preview"
+ },
+ "AND6": {
+  "state": "open (af6b5eb), maybe emulator-only",
+  "title": "ANR (5 s) opening a 3MF in the Plate 3D view"
  }
 }
