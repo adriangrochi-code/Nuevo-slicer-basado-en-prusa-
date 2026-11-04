@@ -33,7 +33,7 @@
   "dev": "8930804"
  },
  "BH26": {
-  "state": "open (47acfd9): sent to engine 10:30, MATERIALS.md says Zt <= Yt",
+  "state": "not a bug: MATERIALS.md uses the measured Z when the sheet gives it (Bambu PLA Basic t_z 31 vs t_xy 35); QA misread",
   "title": "rule 8: PLA cantilever recommends layers across the bending stress (bead-to-bead weaker than layer-to-layer in the adhesion model)",
   "dev": "6889c9b"
  }
