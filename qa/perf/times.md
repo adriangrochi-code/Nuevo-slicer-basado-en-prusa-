@@ -12,6 +12,6 @@ are estimates from the measured column (factors below), not measurements.
 | CFD friction only | 0.01 s | < 1 s | < 1 s | < 0.1 s |
 | CFD fast (16 cells), T part | 312 s | 5-10 min | 10-20 min | 1.5-3 min |
 | CFD normal (24 cells), T part | 1998 s | 35-65 min | 65-130 min | 10-20 min |
-| 3D scan | not measured (no COLMAP/GPU here) | capture only | capture only | needs an NVIDIA GPU |
+| 3D scan, small test part (CI of tisma-cloud, CPU COLMAP + OpenMVS) | 25 min (reported, not rerun by QA) | capture only | capture only | faster with an NVIDIA GPU (not measured) |
 
 The Android emulator here (no KVM) ran the FEA normal case for over 40 min: useless for timing.
