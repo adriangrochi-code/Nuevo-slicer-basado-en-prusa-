@@ -38,7 +38,7 @@
   "dev": "6889c9b"
  },
  "BH27": {
-  "state": "open (2a59313)",
+  "state": "fixed b8f5906 (checked: MK4S/M5C/MINI/XL speeds from the pack, no warning; M5 pack print has no first_layer speed, falls back with a warning: pack data)",
   "title": "pack profile: print profile speed group dropped (null), slices at stock Ender-3 speeds",
   "dev": "2a59313"
  }
