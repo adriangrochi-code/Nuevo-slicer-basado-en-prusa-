@@ -1,5 +1,5 @@
 {
- "max_id": "AND6",
+ "max_id": "AND9",
  "AND1": {
   "state": "fixed e89db9e (checked: job sent, done, summary shown)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
@@ -23,5 +23,17 @@
  "AND6": {
   "state": "not reproduced on 0385e12 (3MF drawn, no ANR)",
   "title": "ANR (5 s) opening a 3MF in the Plate 3D view"
+ },
+ "AND7": {
+  "state": "open (7f4c2e8)",
+  "title": "Engineering verdict 'No result (see the warnings)' with no warnings shown"
+ },
+ "AND8": {
+  "state": "open (7f4c2e8)",
+  "title": "Engineering result rows show raw key max_von_mises_mpa and raw null"
+ },
+ "AND9": {
+  "state": "open (7f4c2e8), usability",
+  "title": "scrolling over the Plate 3D view turns the model; easy to mark the wrong face"
  }
 }
