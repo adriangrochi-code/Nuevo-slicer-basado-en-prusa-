@@ -74,10 +74,11 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH24, UI50
 
 ## Open items (2026-11-04)
 
-- Engine: `orient` (cloud rule 19c), then Design D4. BH24 (extreme quality capped) and the aero resolution check are
-  still to push. When the resolution check lands, raise the server's aero estimates by 20 %.
-- Cloud end to end: slice, fea and aero pass. Orient is missing. The owner's real server needs the Cloudflare tunnel
-  (`server/deploy/cloudflare-tunnel-windows.md`).
+- Engine: `orient` (cloud rule 19c), BH24 and the aero resolution check are on `dev` at 832341d. Next: Design D4.
+  The server's aero estimates are raised by 20 % for the resolution check (`AERO_RESOLUTION_CHECK_FACTOR`).
+- Cloud end to end: slice, fea and aero passed before 832341d. Orient is still to run end to end, against 832341d;
+  the engine build in this session was blocked by the permission classifier on 2026-11-04 (needs the owner's
+  approval). The owner's real server needs the Cloudflare tunnel (`server/deploy/cloudflare-tunnel-windows.md`).
 - Owner decisions:
   - whether to write the woven walls spec, with the patent warning;
   - PR #53 of the engine (`dev` → `alpha`);
