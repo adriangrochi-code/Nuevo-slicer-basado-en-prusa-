@@ -5,7 +5,8 @@ en los equipos reales están pendientes. Los tiempos y capacidades son estimacio
 
 ## Implementación (v1)
 
-- **`server/`** (propietario, aparte de Tisma; ver `server/README.md`): el **maestro** (FastAPI + PostgreSQL) recibe
+- **Tisma Cloud** (propietario, aparte de Tisma: repositorio privado `tisma-cloud`, que estuvo en `server/` hasta el
+  04-11-2026; ver su `README.md`): el **maestro** (FastAPI + PostgreSQL) recibe
   todo lo que llega de internet, controla las cuentas y guarda los trabajos en una cola en la base de datos; los
   **nodos** se instalan aparte y piden trabajos al maestro. Cada nodo tiene una **lista de prioridades** de clases de
   trabajo (`slice`, `slice_large`, `fea`, `fea_optimize`) que el administrador cambia desde el maestro: toma la primera
@@ -16,7 +17,7 @@ en los equipos reales están pendientes. Los tiempos y capacidades son estimacio
 - **Acceso**: los usuarios entran por internet (`tismaservidores.net`); el panel de administración (`/admin`) solo
   desde la red interna del rack. Los pagos quedan en el maestro: «Mi cuenta» (`/cuenta`), pagos registrados por el
   administrador y suscripciones de Google Play desde la app de Android, que valen en todos lados (ver «Cobro en el
-  central» y «Suscripciones con Google Play» en `server/README.md`).
+  central» y «Suscripciones con Google Play» en el `README.md` de Tisma Cloud).
 - **Protección**: límite de trabajos simultáneos por usuario, de peticiones por minuto (usuario, nodo, inicio de
   sesión), de tamaño de los proyectos; los nodos quitan los scripts de post-procesado de los proyectos y corren sin
   privilegios.
@@ -104,7 +105,7 @@ con más RAM, puede correr un FEA y un laminado a la vez.
 |---|---|---|
 | Tisma sin interfaz (línea de comandos) | Laminado y FEA | AGPL-3.0 (el código del servicio se publica) |
 | Caddy | Proxy HTTPS | Apache 2.0 |
-| FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx | API del maestro y nodos | MIT / BSD-3 / LGPL-3.0 (psycopg), ver `server/THIRD_PARTY_LICENSES.md` |
+| FastAPI, SQLAlchemy, Uvicorn, psycopg, httpx | API del maestro y nodos | MIT / BSD-3 / LGPL-3.0 (psycopg), ver el `THIRD_PARTY_LICENSES.md` de Tisma Cloud |
 | PostgreSQL | Usuarios, planes, trabajos | PostgreSQL (permisiva) |
 | keepalived | IP de entrada de respaldo | GPL-2.0 (programa aparte) |
 | Docker Compose | Instalación en cada equipo | Apache 2.0 |
