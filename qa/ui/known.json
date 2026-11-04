@@ -1,5 +1,5 @@
 {
- "max_id": "UI50",
+ "max_id": "UI52",
  "open": [
   "UI43",
   "UI44",
@@ -16,8 +16,16 @@
   "UI47": "no-session view OK; with-session not checked"
  },
  "UI49": {
-  "title": "Cloud dialog says 'El servidor no mand\u00f3 planes.' when the server is unreachable",
+  "title": "Cloud dialog says 'El servidor no mandó planes.' when the server is unreachable",
   "dev": "12579b8"
  },
- "UI50": "Estructural: marking click snaps camera to top view"
+ "UI50": "Estructural: marking click snaps camera to top view",
+ "UI51": {
+  "state": "open (0f4951d)",
+  "title": "Ctrl+Z after «Girar la pieza» removes conditions instead of undoing the turn"
+ },
+ "UI52": {
+  "state": "open (0f4951d)",
+  "title": "Optimizar button tooltip covers the orientation result line"
+ }
 }
