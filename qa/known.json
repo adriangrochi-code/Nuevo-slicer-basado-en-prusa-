@@ -1,5 +1,5 @@
 {
- "max_id": "BH23",
+ "max_id": "BH25",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -22,5 +22,14 @@
  "BH23": {
   "state": "fixed in engine dc4e419 (pending push)",
   "title": "analyze refuses --quality extreme"
+ },
+ "BH24": {
+  "state": "fixed 083170a (voxel_mm, voxel_capped)",
+  "title": "extreme quality refused instead of capped"
+ },
+ "BH25": {
+  "state": "fixed 5326a49 (checked: upside down, bed area 900)",
+  "title": "orient FDM: inside-out mesh gets a tilted orientation",
+  "dev": "8930804"
  }
 }
