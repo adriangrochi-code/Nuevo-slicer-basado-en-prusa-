@@ -3,7 +3,17 @@
  "open": [
   "UI43",
   "UI44",
-  "UI46"
+  "UI46",
+  {
+   "id": "UI51",
+   "state": "open (0f4951d)",
+   "title": "Ctrl+Z after «Girar la pieza» removes conditions instead of undoing the turn"
+  },
+  {
+   "id": "UI52",
+   "state": "open (0f4951d)",
+   "title": "Optimizar button tooltip covers the orientation result line"
+  }
  ],
  "fixed_verified": [
   "UI42",
@@ -19,13 +29,5 @@
   "title": "Cloud dialog says 'El servidor no mandó planes.' when the server is unreachable",
   "dev": "12579b8"
  },
- "UI50": "Estructural: marking click snaps camera to top view",
- "UI51": {
-  "state": "open (0f4951d)",
-  "title": "Ctrl+Z after «Girar la pieza» removes conditions instead of undoing the turn"
- },
- "UI52": {
-  "state": "open (0f4951d)",
-  "title": "Optimizar button tooltip covers the orientation result line"
- }
+ "UI50": "Estructural: marking click snaps camera to top view"
 }
