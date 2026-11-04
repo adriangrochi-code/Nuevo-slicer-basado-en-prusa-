@@ -13,7 +13,7 @@
   "title": "preview after a phone slice: 'The file cannot be read.'"
  },
  "AND4": {
-  "state": "open (e89db9e)",
+  "state": "fixed 9978e74 (checked: Filament 1.31 m, Layers, Print time)",
   "title": "cloud job summary shows raw keys and print_time twice"
  }
 }
