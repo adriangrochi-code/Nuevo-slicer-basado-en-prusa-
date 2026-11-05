@@ -1,5 +1,5 @@
 {
- "max_id": "BH36",
+ "max_id": "BH41",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -85,5 +85,25 @@
  "BH36": {
   "state": "open: A1 mini (port 6000, supported). Suspect: camera TLS verifies peer against Bambu CA; also LAN liveview setting. Message pending.",
   "title": "Beta: Devices does not show the Bambu Lab camera"
+ },
+ "BH37": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Painting seam + support enforcers: slicing takes ~180 s (tester, Windows)"
+ },
+ "BH38": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Supports on: slicing goes from ~3 s to ~20 s (Phone+stand, 2487 triangles, tree)"
+ },
+ "BH39": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Tree support 'only from the bed' ignored"
+ },
+ "BH40": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Save G-code uses the app's own file dialog; tester wants the native Windows dialog"
+ },
+ "BH41": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Start G-code '[first_layer_bed_temperature]' and '[first_layer_temperature[initial_tool]]' -> unknown variable (Kobra 3, G-code from the vendor's slicer)"
  }
 }
