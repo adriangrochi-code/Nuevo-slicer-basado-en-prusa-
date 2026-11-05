@@ -95,7 +95,7 @@
   "title": "Supports on: slicing goes from ~3 s to ~20 s (Phone+stand, 2487 triangles, tree)"
  },
  "BH39": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed cd08b5d (not yet checked)",
   "title": "Tree support 'only from the bed' ignored"
  },
  "BH40": {
@@ -103,7 +103,7 @@
   "title": "Save G-code uses the app's own file dialog; tester wants the native Windows dialog"
  },
  "BH41": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed 58f4058 (checked CLI: G9111 bedTemp=60 extruderTemp=220 with filament temps)",
   "title": "Start G-code '[first_layer_bed_temperature]' and '[first_layer_temperature[initial_tool]]' -> unknown variable (Kobra 3, G-code from the vendor's slicer)"
  },
  "BH42": {
