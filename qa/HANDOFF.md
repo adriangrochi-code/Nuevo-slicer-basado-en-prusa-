@@ -82,7 +82,7 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
 
 ## Known findings
 
-See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH28, UI52, TR29, AND9 (`android/known.json`).
+See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH31, UI52, TR29, AND9 (`android/known.json`).
 
 ## Open items (2026-11-04)
 

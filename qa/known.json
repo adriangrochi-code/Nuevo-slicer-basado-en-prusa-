@@ -1,5 +1,5 @@
 {
- "max_id": "BH28",
+ "max_id": "BH31",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -46,5 +46,20 @@
   "state": "fixed 12066e4 (checked 7ea9514: windows-x64/windows-x86/android, current/legacy, es+en)",
   "title": "updates_list.py writes system 'windows' and family 'classic', spec says windows-x64/windows-x86/linux-x64/android and current/legacy",
   "dev": "7c863b2"
+ },
+ "BH29": {
+  "state": "open (7ea9514)",
+  "title": "456 pack variants refuse their default print/filament: 392 pack entries point to an empty compatible set",
+  "dev": "7ea9514"
+ },
+ "BH30": {
+  "state": "open (7ea9514)",
+  "title": "pack start G-code: unknown variable chamber_temperature (4 variants)",
+  "dev": "7ea9514"
+ },
+ "BH31": {
+  "state": "open (7ea9514)",
+  "title": "G-code check fails Klipper START_PRINT starts (heater 0 then macro), 7 variants",
+  "dev": "7ea9514"
  }
 }
