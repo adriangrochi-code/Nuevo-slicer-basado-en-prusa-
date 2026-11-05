@@ -63,17 +63,17 @@
   "dev": "7ea9514"
  },
  "BH32": {
-  "state": "open (c07643e)",
+  "state": "fixed 1472b68 (checked d937deb: unfit prints refused before slicing, 0 slice failures in 500 combos)",
   "title": "print profiles valid for all are offered to printers they don't fit (56/500 random combos fail: layer height, nozzle)",
   "dev": "c07643e"
  },
  "BH33": {
-  "state": "open (c07643e)",
+  "state": "fixed d937deb (checked: project_too_new)",
   "title": "project JSON version 99 accepted (PROJECT.md says refused)",
   "dev": "c07643e"
  },
  "BH34": {
-  "state": "open (c07643e)",
+  "state": "fixed d937deb (checked: model_too_large in slice and orient)",
   "title": "absurd coordinates: orient accepts (cost -1.6e31); slice refuses with generic code slice_failed",
   "dev": "c07643e"
  }
