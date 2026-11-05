@@ -1,5 +1,5 @@
 {
- "max_id": "BH34",
+ "max_id": "BH35",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -76,5 +76,10 @@
   "state": "fixed d937deb (checked: model_too_large in slice and orient)",
   "title": "absurd coordinates: orient accepts (cost -1.6e31); slice refuses with generic code slice_failed",
   "dev": "c07643e"
+ },
+ "BH35": {
+  "state": "open (d937deb), minor",
+  "title": "0.8-nozzle prints without `nozzle` field offered to 0.4/0.5 printers",
+  "dev": "d937deb"
  }
 }
