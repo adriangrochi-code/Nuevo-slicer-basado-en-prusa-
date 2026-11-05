@@ -99,7 +99,7 @@
   "title": "Tree support 'only from the bed' ignored"
  },
  "BH40": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed 1a84619 (not tested on Windows) (not yet checked)",
   "title": "Save G-code uses the app's own file dialog; tester wants the native Windows dialog"
  },
  "BH41": {
@@ -107,15 +107,15 @@
   "title": "Start G-code '[first_layer_bed_temperature]' and '[first_layer_temperature[initial_tool]]' -> unknown variable (Kobra 3, G-code from the vendor's slicer)"
  },
  "BH42": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed 26a7429 (not yet checked)",
   "title": "Brim: no setting for the gap between brim and part"
  },
  "BH43": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed c94c0b2 (not yet checked)",
   "title": "Painting supports: the bed does not turn see-through when viewing from below (still opaque)"
  },
  "BH44": {
-  "state": "open (beta tester 2026-11-05)",
+  "state": "fixed cbbe20e (not yet checked)",
   "title": "Painting seam: FPS drop and lag while dragging (better than before); stroke leaves separate dots instead of a line"
  }
 }
