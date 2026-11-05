@@ -1,11 +1,11 @@
 {
- "max_id": "AND9",
+ "max_id": "AND10",
  "AND1": {
   "state": "fixed e89db9e (checked: job sent, done, summary shown)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
  },
  "AND2": {
-  "state": "fixed fe28f6f (checked e89db9e: '0 h used \u00b7 no limit')",
+  "state": "fixed fe28f6f (checked e89db9e: '0 h used · no limit')",
   "title": "unlimited account shows '0 of 100 h used, 100 h left'"
  },
  "AND3": {
@@ -35,5 +35,9 @@
  "AND9": {
   "state": "fixed e32ef83 (checked 9786e31)",
   "title": "scrolling over the Plate 3D view turns the model; easy to mark the wrong face"
+ },
+ "AND10": {
+  "state": "fixed c0aaa32 (not yet checked on emulator)",
+  "title": "Material tab has no filament selector; owner typed temperatures by hand"
  }
 }
