@@ -48,17 +48,17 @@
   "dev": "7c863b2"
  },
  "BH29": {
-  "state": "open (7ea9514)",
+  "state": "fixed c07643e (checked: 2261/2261 FDM variants slice with their defaults)",
   "title": "456 pack variants refuse their default print/filament: 392 pack entries point to an empty compatible set",
   "dev": "7ea9514"
  },
  "BH30": {
-  "state": "open (7ea9514)",
+  "state": "fixed c07643e (checked: 2261/2261 FDM variants slice with their defaults)",
   "title": "pack start G-code: unknown variable chamber_temperature (4 variants)",
   "dev": "7ea9514"
  },
  "BH31": {
-  "state": "open (7ea9514)",
+  "state": "fixed c07643e (checked: 2261/2261 FDM variants slice with their defaults)",
   "title": "G-code check fails Klipper START_PRINT starts (heater 0 then macro), 7 variants",
   "dev": "7ea9514"
  }
