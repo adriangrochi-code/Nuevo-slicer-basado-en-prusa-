@@ -59,6 +59,9 @@ The 7:37 firing leaves the owner a morning summary. The old routines are disable
   private; scans send only relative positions between shots, never the absolute GPS position.
   The server and its node packages (TismaScan-windows included) run only on the owner's machines, never given to
   third parties.
+- Beta this week (owner, 2026-11-05): desktop (Windows + Linux) and Android APK for the owner's testers; the testers'
+  previous beta was Tisma Slicer. Missing before it: Bambu Lab LAN on the desktop, BH32-BH34. Scanner app later.
+  QA smoke-tests the packages before the owner sends them.
 - The owner's real prints no longer block anything. They stay marked as not tested on hardware.
 
 ## Tools (in `qa/`; copy to the scratchpad to run)
