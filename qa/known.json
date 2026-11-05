@@ -1,5 +1,5 @@
 {
- "max_id": "BH41",
+ "max_id": "BH44",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -105,5 +105,17 @@
  "BH41": {
   "state": "open (beta tester 2026-11-05)",
   "title": "Start G-code '[first_layer_bed_temperature]' and '[first_layer_temperature[initial_tool]]' -> unknown variable (Kobra 3, G-code from the vendor's slicer)"
+ },
+ "BH42": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Brim: no setting for the gap between brim and part"
+ },
+ "BH43": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Painting supports: the bed does not turn see-through when viewing from below (still opaque)"
+ },
+ "BH44": {
+  "state": "open (beta tester 2026-11-05)",
+  "title": "Painting seam: FPS drop and lag while dragging (better than before); stroke leaves separate dots instead of a line"
  }
 }
