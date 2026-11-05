@@ -108,3 +108,6 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH35, UI52
   - real prints: Kobra 3 cube with and without the ACE Pro, zigzag tensile specimens, M8 screw and gears before
     15 Nov.
 - Ctrl+A in the save dialog's name field does not select all (seen 2026-11-03, not yet reported).
+
+## Builds para probar (dueño, 2026-11-05)
+Al llegar al 95 % del uso semanal: dejar armada una build de Android (APK) y de PC (instalador de Windows y zip de Linux) de lo último que pase las pruebas, con enlace y qué probar. El uso no se ve desde la sesión: el dueño avisa, o se arma igual cada viernes.
