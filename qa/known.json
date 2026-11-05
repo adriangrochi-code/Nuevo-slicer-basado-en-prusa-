@@ -1,5 +1,5 @@
 {
- "max_id": "BH32",
+ "max_id": "BH34",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -65,6 +65,16 @@
  "BH32": {
   "state": "open (c07643e)",
   "title": "print profiles valid for all are offered to printers they don't fit (56/500 random combos fail: layer height, nozzle)",
+  "dev": "c07643e"
+ },
+ "BH33": {
+  "state": "open (c07643e)",
+  "title": "project JSON version 99 accepted (PROJECT.md says refused)",
+  "dev": "c07643e"
+ },
+ "BH34": {
+  "state": "open (c07643e)",
+  "title": "absurd coordinates: orient accepts (cost -1.6e31); slice refuses with generic code slice_failed",
   "dev": "c07643e"
  }
 }
