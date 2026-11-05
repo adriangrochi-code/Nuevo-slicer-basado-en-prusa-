@@ -43,7 +43,7 @@
   "dev": "2a59313"
  },
  "BH28": {
-  "state": "open (7c863b2)",
+  "state": "fixed 12066e4 (checked 7ea9514: windows-x64/windows-x86/android, current/legacy, es+en)",
   "title": "updates_list.py writes system 'windows' and family 'classic', spec says windows-x64/windows-x86/linux-x64/android and current/legacy",
   "dev": "7c863b2"
  }
