@@ -1,5 +1,5 @@
 {
- "max_id": "BH31",
+ "max_id": "BH32",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -61,5 +61,10 @@
   "state": "fixed c07643e (checked: 2261/2261 FDM variants slice with their defaults)",
   "title": "G-code check fails Klipper START_PRINT starts (heater 0 then macro), 7 variants",
   "dev": "7ea9514"
+ },
+ "BH32": {
+  "state": "open (c07643e)",
+  "title": "print profiles valid for all are offered to printers they don't fit (56/500 random combos fail: layer height, nozzle)",
+  "dev": "c07643e"
  }
 }
