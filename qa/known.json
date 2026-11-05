@@ -78,7 +78,7 @@
   "dev": "c07643e"
  },
  "BH35": {
-  "state": "open (d937deb), minor",
+  "state": "fixed eaa263f (checked 4060e79: 0 slice failures in 500 combos; unfit refused with reason)",
   "title": "0.8-nozzle prints without `nozzle` field offered to 0.4/0.5 printers",
   "dev": "d937deb"
  }
