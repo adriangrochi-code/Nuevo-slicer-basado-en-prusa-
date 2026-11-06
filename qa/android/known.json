@@ -1,5 +1,5 @@
 {
- "max_id": "AND11",
+ "max_id": "AND12",
  "AND1": {
   "state": "fixed e89db9e (checked: job sent, done, summary shown)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
@@ -43,5 +43,9 @@
  "AND11": {
   "state": "fixed ef42eae, checked 2026-11-06 on emulator (fresh install offline: Material shows 260/260/90/90). Phone slice with it not checked.",
   "title": "Material > Temperatures shows the four fields empty with a pack filament chosen (Kobra 2, Anycubic ABS, offline built-in pack); the filament's temperatures are not shown"
+ },
+ "AND12": {
+  "state": "open",
+  "title": "Design (CAD) Build on a fresh install: 'cannot make a temporary folder', volume 0.0 cm3 (R8 beta x86_64 cb4a0e3)"
  }
 }
