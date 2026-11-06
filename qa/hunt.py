@@ -60,7 +60,7 @@ for i in range(N):
             zs = [float(z) for z in re.findall(r'^G[01] [^;\n]*Z(-?\d+\.?\d*)', txt, re.M)]
             if zs and min(zs) < 0: problem = f'negative Z {min(zs)}'
             ex = [float(e) for e in re.findall(r'^G1 [^;\n]*[EA](-?\d+\.?\d*)', txt, re.M)]
-            if not ex: problem = 'no extrusion'
+            if not ex and (cfg.get('machine') or {}).get('flavor') != 'no_extrusion': problem = 'no extrusion'
     elif rc not in (1, 2, 3, 4): problem = f'unexpected rc={rc}'
     if problem:
         found.append(dict(i=i, model=model, cfg=cfg, rc=rc, problem=problem, err=err, secs=round(dt,1)))
