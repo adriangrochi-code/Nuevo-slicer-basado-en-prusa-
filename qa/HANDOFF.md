@@ -111,3 +111,6 @@ See `known.json`, `ui/known.json` and `i18n/known.json`. Highest ids: BH35, UI52
 
 ## Builds para probar (dueño, 2026-11-05)
 Al llegar al 95 % del uso semanal: dejar armada una build de Android (APK) y de PC (instalador de Windows y zip de Linux) de lo último que pase las pruebas, con enlace y qué probar. El uso no se ve desde la sesión: el dueño avisa, o se arma igual cada viernes.
+
+## Sin tiempo libre (dueño, 2026-11-06)
+Ninguna sesión queda esperando: al terminar un pedido toma el siguiente ítem de su plan sin esperar respuesta; si está bloqueada en algo, sigue con otro y lo anota. Esta sesión, en cada control de 3 h, revisa que cada sesión haya avanzado y, si alguna quedó quieta, le manda el próximo ítem.
