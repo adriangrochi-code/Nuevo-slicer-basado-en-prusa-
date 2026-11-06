@@ -41,7 +41,7 @@
   "title": "Material tab has no filament selector; owner typed temperatures by hand"
  },
  "AND11": {
-  "state": "open",
+  "state": "fixed ef42eae, checked 2026-11-06 on emulator (fresh install offline: Material shows 260/260/90/90). Phone slice with it not checked.",
   "title": "Material > Temperatures shows the four fields empty with a pack filament chosen (Kobra 2, Anycubic ABS, offline built-in pack); the filament's temperatures are not shown"
  }
 }
