@@ -1,5 +1,5 @@
 {
- "max_id": "AND10",
+ "max_id": "AND11",
  "AND1": {
   "state": "fixed e89db9e (checked: job sent, done, summary shown)",
   "title": "New job: Send to the cloud sends no request and shows nothing"
@@ -37,7 +37,11 @@
   "title": "scrolling over the Plate 3D view turns the model; easy to mark the wrong face"
  },
  "AND10": {
-  "state": "fixed c0aaa32 (not yet checked on emulator)",
+  "state": "fixed c0aaa32, checked 2026-11-06 on emulator (filament card and chooser present)",
   "title": "Material tab has no filament selector; owner typed temperatures by hand"
+ },
+ "AND11": {
+  "state": "open",
+  "title": "Material > Temperatures shows the four fields empty with a pack filament chosen (Kobra 2, Anycubic ABS, offline built-in pack); the filament's temperatures are not shown"
  }
 }
