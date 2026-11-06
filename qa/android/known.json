@@ -45,7 +45,7 @@
   "title": "Material > Temperatures shows the four fields empty with a pack filament chosen (Kobra 2, Anycubic ABS, offline built-in pack); the filament's temperatures are not shown"
  },
  "AND12": {
-  "state": "open",
+  "state": "fixed 30fc1a3, checked 2026-11-06 on emulator (Box build: 8.0 cm3)",
   "title": "Design (CAD) Build on a fresh install: 'cannot make a temporary folder', volume 0.0 cm3 (R8 beta x86_64 cb4a0e3)"
  }
 }
