@@ -107,7 +107,7 @@
   "title": "Start G-code '[first_layer_bed_temperature]' and '[first_layer_temperature[initial_tool]]' -> unknown variable (Kobra 3, G-code from the vendor's slicer)"
  },
  "BH42": {
-  "state": "fixed 26a7429 (not yet checked)",
+  "state": "fixed 26a7429, checked 2026-11-06 (--dump-ui at level normal shows adhesion.brim_gap «Separación del borde»)",
   "title": "Brim: no setting for the gap between brim and part"
  },
  "BH43": {
