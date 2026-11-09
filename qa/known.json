@@ -111,7 +111,7 @@
   "title": "Brim: no setting for the gap between brim and part"
  },
  "BH43": {
-  "state": "fixed c94c0b2 (not yet checked)",
+  "state": "fixed c94c0b2, checked 2026-11-09 (paint tool, eye under the bed: no plate, only the grid, the part's underside shows)",
   "title": "Painting supports: the bed does not turn see-through when viewing from below (still opaque)"
  },
  "BH44": {
