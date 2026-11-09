@@ -95,7 +95,7 @@
   "title": "Supports on: slicing goes from ~3 s to ~20 s (Phone+stand, 2487 triangles, tree)"
  },
  "BH39": {
-  "state": "fixed cd08b5d (not yet checked)",
+  "state": "fixed cd08b5d, checked 2026-11-09 (shelf over slab, organic: support area 16841 without the option, 0 with buildplate_only)",
   "title": "Tree support 'only from the bed' ignored"
  },
  "BH40": {
