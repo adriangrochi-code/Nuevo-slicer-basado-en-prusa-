@@ -1,5 +1,5 @@
 {
- "max_id": "BH44",
+ "max_id": "BH45",
  "BH19": {
   "state": "fixed 45607f0 (message and CONFIG.md say more than 0)",
   "title": "infill.dense_density=0 and infill.combine_max_height=0 refused though range says 0 allowed",
@@ -117,5 +117,9 @@
  "BH44": {
   "state": "fixed cbbe20e (not yet checked)",
   "title": "Painting seam: FPS drop and lag while dragging (better than before); stroke leaves separate dots instead of a line"
+ },
+ "BH45": {
+  "state": "open (owner, urgent)",
+  "title": "Bambu A1 original start G-code pasted in machine.start_gcode: unfilled variables become 0 (outer_wall_volumetric_speed, flush_volumetric_speeds) -> F0 lines -> G-code check rejects the slice (rc 6, 13 problems)"
  }
 }
