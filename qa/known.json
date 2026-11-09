@@ -119,7 +119,7 @@
   "title": "Painting seam: FPS drop and lag while dragging (better than before); stroke leaves separate dots instead of a line"
  },
  "BH45": {
-  "state": "open (owner, urgent)",
+  "state": "fixed ff6ff34 for the A1 start G-code (checked: rc 0, no F0, M620.1 E F199.6). Rest of the pack: profiles session runs validate.py --macros on every variant",
   "title": "Bambu A1 original start G-code pasted in machine.start_gcode: unfilled variables become 0 (outer_wall_volumetric_speed, flush_volumetric_speeds) -> F0 lines -> G-code check rejects the slice (rc 6, 13 problems)"
  }
 }
