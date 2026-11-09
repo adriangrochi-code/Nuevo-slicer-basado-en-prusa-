@@ -115,7 +115,7 @@
   "title": "Painting supports: the bed does not turn see-through when viewing from below (still opaque)"
  },
  "BH44": {
-  "state": "fixed cbbe20e (not yet checked)",
+  "state": "fixed cbbe20e, checked 2026-11-09 (seam stroke dragged across a cube with xdotool: one continuous band). Frame rate on the tester's laptop not measured",
   "title": "Painting seam: FPS drop and lag while dragging (better than before); stroke leaves separate dots instead of a line"
  },
  "BH45": {
