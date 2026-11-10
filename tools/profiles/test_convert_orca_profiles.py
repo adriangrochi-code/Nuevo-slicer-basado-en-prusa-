@@ -18,5 +18,10 @@ class OptionTypes(unittest.TestCase):
                 self.assertEqual(types.get('machine_max_%s_%s' % (kind, axis)), 'coFloats', (kind, axis))
 
 
+    def test_orca_axis_speeds_are_feedrates(self):
+        for axis in 'xyze':
+            self.assertEqual(convert_orca_profiles.RENAMED['machine_max_speed_' + axis], 'machine_max_feedrate_' + axis)
+
+
 if __name__ == '__main__':
     unittest.main()
