@@ -114,3 +114,6 @@ Al llegar al 95 % del uso semanal: dejar armada una build de Android (APK) y de 
 
 ## Sin tiempo libre (dueño, 2026-11-06)
 Ninguna sesión queda esperando: al terminar un pedido toma el siguiente ítem de su plan sin esperar respuesta; si está bloqueada en algo, sigue con otro y lo anota. Esta sesión, en cada control de 3 h, revisa que cada sesión haya avanzado y, si alguna quedó quieta, le manda el próximo ítem.
+
+## macOS e iOS (dueño, 2026-11-10)
+macOS e iOS antes de la beta cerrada de diciembre, reutilizando todo lo posible (cambia la decisión del 24-10 de dejar macOS al final). macOS: sesión del motor. iOS: sesión de Android (Kotlin Multiplatform + SwiftUI). Pendiente del dueño: cuenta de Apple Developer (firma, notarización, TestFlight) y un Mac/iPhone para pruebas reales.
