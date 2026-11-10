@@ -136,6 +136,19 @@
    "title": "A painted support BLOCKER of radius 6 under a flat overhang ADDS support (2647 -> 5472 support moves, 728 -> 3449 inside the blocked circle) instead of removing it; a blocker covering everything removes all; enforcers work",
    "repro": "tee.stl (pillar 4x4x15 + plate 20x20x3 at z 15), settings {support:{enabled:true,automatic:true}}; tisma tee.stl s.json --export a.gcode vs --paint support,block,0,0,15,6 --export b.gcode; count ;TYPE:Support extrusions",
    "state": "fixed 7ad7e5f (dev b926456), verified 2026-11-10 20:50: support length inside blocked r6 circle grid 8596->0 mm, snug 7685->0, organic contact layers stay >=6.27 mm from centre"
+  },
+  {
+   "id": "BH49",
+   "area": "engine multi-extruder",
+   "title": "After a 2-extruder printer's own start G-code the engine writes 'M104 T-1 S-5' and 'M104 T0 S0', then prints with T0 at 0 (UltiMaker S5, Sermoon D3 Pro)",
+   "repro": "profiles multi-extruder patch + engine 9c69ade, validate --macros",
+   "state": "sent to engine 2026-11-10 22:00"
+  },
+  {
+   "id": "BH48",
+   "area": "engine infill",
+   "title": "infill.pattern honeycomb_3d in the spec (infill_patterns.md 11, P8) is refused by the engine; 34 pack prints use it",
+   "state": "sent to engine 2026-11-10 21:50"
   }
  ]
 }
