@@ -154,7 +154,7 @@
    "id": "BH50",
    "area": "engine macros",
    "title": "GM15 list-as-number fails in comparisons with numeric-text lists: {if a > 0} with a=[\"5000\",\"5000\"] errors 'only numbers or texts can be put in order'; Bambu X1/X1E/X1C start G-code falls back",
-   "state": "sent to engine 2026-11-10 22:35"
+   "state": "fixed 55cd05c, verified on dev b98f6e1 23:12: {if a > 0} with a=[\"5000\",\"5000\"] -> yes"
   }
  ]
 }
