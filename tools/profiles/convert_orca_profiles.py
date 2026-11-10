@@ -642,6 +642,11 @@ def tisma_option_types(tisma_root):
     types = {}
     for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)",\s*(co\w+)\)', src):
         types.setdefault(m.group(1), m.group(2))
+    # Options defined in a loop over the axes ("machine_max_feedrate_" + axis.name and the like).
+    axes = re.findall(r'\{\s*"([a-z])",\s*\{[^}]*\},\s*\{[^}]*\},\s*\{[^}]*\}\s*\}', src)
+    for m in re.finditer(r'this->add(?:_nullable)?\("([A-Za-z0-9_]+)"\s*\+\s*axis\.name,\s*(co\w+)\)', src):
+        for axis in axes:
+            types.setdefault(m.group(1) + axis, m.group(2))
     enums = {}
     for m in re.finditer(r'this->add\("([a-z0-9_]+)",\s*coEnum\);(.{0,3000}?)(?=this->add\(|\Z)', src, re.S):
         t = re.search(r'set_enum<(\w+)>', m.group(2))
