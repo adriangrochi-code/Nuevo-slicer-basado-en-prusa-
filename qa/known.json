@@ -83,7 +83,7 @@
   "dev": "d937deb"
  },
  "BH36": {
-  "state": "open: A1 mini (port 6000, supported). Suspect: camera TLS verifies peer against Bambu CA; also LAN liveview setting. Message pending.",
+  "state": "open: owner 11-10: the same A1 mini camera works from the phone app (android 836db5b, TLS 6000 with saved cert). So printer settings are fine; the PC side fails. Suspect the PC client's certificate check.",
   "title": "Beta: Devices does not show the Bambu Lab camera"
  },
  "BH37": {
