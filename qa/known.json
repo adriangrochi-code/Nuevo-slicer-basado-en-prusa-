@@ -142,7 +142,7 @@
    "area": "engine multi-extruder",
    "title": "After a 2-extruder printer's own start G-code the engine writes 'M104 T-1 S-5' and 'M104 T0 S0', then prints with T0 at 0 (UltiMaker S5, Sermoon D3 Pro)",
    "repro": "profiles multi-extruder patch + engine 9c69ade, validate --macros",
-   "state": "fixed a4439e9; profiles to verify with the multi-extruder patch"
+   "state": "fixed a4439e9, verified by profiles 22:33 (UltiMaker S5, Sermoon D3 Pro, XL, U1 read their own G-code)"
   },
   {
    "id": "BH48",
