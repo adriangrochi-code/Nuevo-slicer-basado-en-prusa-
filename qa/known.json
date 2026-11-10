@@ -129,6 +129,13 @@
    "title": "Status bar says '1 avisos' (plural with one)",
    "repro": "tisma overhang.stl --screenshot --view preview",
    "state": "fixed 92966b9, verified 2026-11-10 12:20"
+  },
+  {
+   "id": "BH47",
+   "area": "engine GUI supports",
+   "title": "A painted support BLOCKER of radius 6 under a flat overhang ADDS support (2647 -> 5472 support moves, 728 -> 3449 inside the blocked circle) instead of removing it; a blocker covering everything removes all; enforcers work",
+   "repro": "tee.stl (pillar 4x4x15 + plate 20x20x3 at z 15), settings {support:{enabled:true,automatic:true}}; tisma tee.stl s.json --export a.gcode vs --paint support,block,0,0,15,6 --export b.gcode; count ;TYPE:Support extrusions",
+   "state": "sent to engine 2026-11-10 20:00"
   }
  ]
 }
