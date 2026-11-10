@@ -83,7 +83,7 @@
   "dev": "d937deb"
  },
  "BH36": {
-  "state": "open: owner 11-10: the same A1 mini camera works from the phone app (android 836db5b, TLS 6000 with saved cert). So printer settings are fine; the PC side fails. Suspect the PC client's certificate check.",
+  "state": "fix 038ce72 (engine desktop): the camera port 6000 may use a different certificate than MQTT 8883; separate fingerprint with «Aceptar el certificado de la cámara», Spanish errors. Not tested on the real A1 mini",
   "title": "Beta: Devices does not show the Bambu Lab camera"
  },
  "BH37": {
