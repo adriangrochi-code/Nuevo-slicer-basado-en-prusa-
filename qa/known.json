@@ -142,13 +142,13 @@
    "area": "engine multi-extruder",
    "title": "After a 2-extruder printer's own start G-code the engine writes 'M104 T-1 S-5' and 'M104 T0 S0', then prints with T0 at 0 (UltiMaker S5, Sermoon D3 Pro)",
    "repro": "profiles multi-extruder patch + engine 9c69ade, validate --macros",
-   "state": "sent to engine 2026-11-10 22:00"
+   "state": "fixed a4439e9; profiles to verify with the multi-extruder patch"
   },
   {
    "id": "BH48",
    "area": "engine infill",
    "title": "infill.pattern honeycomb_3d in the spec (infill_patterns.md 11, P8) is refused by the engine; 34 pack prints use it",
-   "state": "sent to engine 2026-11-10 21:50"
+   "state": "fixed 73df43f (dev a4439e9), verified 22:25: honeycomb_3d accepted, cube slices with infill on 94 layers"
   }
  ]
 }
