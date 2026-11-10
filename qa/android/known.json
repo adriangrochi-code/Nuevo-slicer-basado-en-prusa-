@@ -47,5 +47,25 @@
  "AND12": {
   "state": "fixed 30fc1a3, checked 2026-11-06 on emulator (Box build: 8.0 cm3)",
   "title": "Design (CAD) Build on a fresh install: 'cannot make a temporary folder', volume 0.0 cm3 (R8 beta x86_64 cb4a0e3)"
- }
+ },
+ "bugs": [
+  {
+   "id": "AND13",
+   "title": "Printer drawing for Bambu A1 mini is an open-frame gantry, not a bed-slinger with single Z column",
+   "repro": "x86_64 debug APK f95f72e, fresh install, wizard → built-in printers → Bambu Lab A1 mini 0.4",
+   "state": "sent to Android 2026-11-10 13:10"
+  },
+  {
+   "id": "AND14",
+   "title": "Bed drawing is a plain rectangle; Bambu plate name/texture not shown",
+   "repro": "x86_64 debug APK f95f72e, fresh install, wizard → built-in printers → Bambu Lab A1 mini 0.4",
+   "state": "sent to Android 2026-11-10 13:10"
+  },
+  {
+   "id": "AND15",
+   "title": "Filament step lists 'ABS · Anycubic ABS' first for a Bambu printer; own brand / PLA should come first",
+   "repro": "x86_64 debug APK f95f72e, fresh install, wizard → built-in printers → Bambu Lab A1 mini 0.4",
+   "state": "sent to Android 2026-11-10 13:10"
+  }
+ ]
 }
