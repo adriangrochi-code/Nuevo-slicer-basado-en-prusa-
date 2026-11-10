@@ -128,7 +128,7 @@
    "area": "engine GUI",
    "title": "Status bar says '1 avisos' (plural with one)",
    "repro": "tisma overhang.stl --screenshot --view preview",
-   "state": "sent to engine 2026-11-10"
+   "state": "fixed 92966b9, verified 2026-11-10 12:20"
   }
  ]
 }
