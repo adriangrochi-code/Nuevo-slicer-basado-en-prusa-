@@ -135,7 +135,7 @@
    "area": "engine GUI supports",
    "title": "A painted support BLOCKER of radius 6 under a flat overhang ADDS support (2647 -> 5472 support moves, 728 -> 3449 inside the blocked circle) instead of removing it; a blocker covering everything removes all; enforcers work",
    "repro": "tee.stl (pillar 4x4x15 + plate 20x20x3 at z 15), settings {support:{enabled:true,automatic:true}}; tisma tee.stl s.json --export a.gcode vs --paint support,block,0,0,15,6 --export b.gcode; count ;TYPE:Support extrusions",
-   "state": "sent to engine 2026-11-10 20:00"
+   "state": "fixed 7ad7e5f (dev b926456), verified 2026-11-10 20:50: support length inside blocked r6 circle grid 8596->0 mm, snug 7685->0, organic contact layers stay >=6.27 mm from centre"
   }
  ]
 }
