@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
-"""Retraction and travel sanity on a G-code with relative E: retract/unretract balance, long travels without a
+"""Retraction and travel sanity on a G-code with relative E (M83) or absolute E (M82, G92 resets): retract/unretract balance, long travels without a
 retraction, extrusion while the filament is retracted, and Z hops that are not undone.
 Usage: travel_check.py file.gcode [min_travel_mm]"""
 import re, sys, math
 f = sys.argv[1]; MINT = float(sys.argv[2]) if len(sys.argv) > 2 else 2.0
+absolute = True; epos = 0.0
 x = y = z = 0.0; retracted = 0.0; issues = []; n_trav = n_ret = 0; layer = 0; typ = ''
 for i, l in enumerate(open(f), 1):
     if l.startswith(';LAYER_CHANGE'): layer += 1
     if l.startswith(';TYPE:'): typ = l[6:].strip()
     s = l.split(';')[0].strip()
+    if s.startswith('M83'): absolute = False
+    if s.startswith('M82'): absolute = True
+    if s.startswith('G92'):
+        m = re.search(r'E(-?[\d.]+)', s)
+        if m: epos = float(m.group(1))
+        continue
     if not s.startswith(('G0', 'G1', 'G2', 'G3', 'G10', 'G11')): continue
     if s.startswith('G10'): retracted += 1; n_ret += 1; continue
     if s.startswith('G11'): retracted = 0; continue
     d = dict((m[0], float(m[1:])) for m in re.findall(r'[XYZEF]-?[\d.]+', s))
     nx, ny = d.get('X', x), d.get('Y', y); e = d.get('E', 0.0)
+    if absolute and 'E' in d: e, epos = d['E'] - epos, d['E']
     moved = math.hypot(nx - x, ny - y)
     if e < 0 and moved < 1e-6: retracted += -e; n_ret += 1
     elif e > 0 and moved < 1e-6: retracted = max(0.0, retracted - e)
