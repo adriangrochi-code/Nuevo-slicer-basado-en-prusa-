@@ -155,6 +155,14 @@
    "area": "engine macros",
    "title": "GM15 list-as-number fails in comparisons with numeric-text lists: {if a > 0} with a=[\"5000\",\"5000\"] errors 'only numbers or texts can be put in order'; Bambu X1/X1E/X1C start G-code falls back",
    "state": "fixed 55cd05c, verified on dev b98f6e1 23:12: {if a > 0} with a=[\"5000\",\"5000\"] -> yes"
+  },
+  {
+   "id": "BH53",
+   "area": "profiles/pack reader",
+   "status": "reported",
+   "date": "2026-11-11",
+   "summary": "Pack reader drops filament extrusion.type as unknown and print extrusion.bridge_flow_ratio as a filament setting (1364 prints lose their bridge flow); printer purge volumes have no place. Spec PF7-PF9 (3f1decf).",
+   "repro": "tisma-engine profile --pack ... Anycubic_Predator#0.4 + Generic_PLA_@PREDATOR + 0.08mm DETAILED @PREDATOR: two warnings"
   }
  ]
 }
