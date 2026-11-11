@@ -167,7 +167,7 @@
  {
   "id": "BH56",
   "area": "profiles/pack reader",
-  "status": "reported",
+  "status": "verified (dev 05023bf, --reader 19000 runs, 0 left out)",
   "date": "2026-11-11",
   "summary": "Pack reader drops filament extrusion.travel as unknown (4831 runs) and the resin print resin.bottom_layers as a filament setting (35 prints). Spec PF10, PF11 (653d6cd).",
   "repro": "validate.py --reader on the pack 6668972 with engine 4d2bf58"
