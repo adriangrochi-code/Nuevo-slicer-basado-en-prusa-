@@ -163,6 +163,14 @@
    "date": "2026-11-11",
    "summary": "Pack reader drops filament extrusion.type as unknown and print extrusion.bridge_flow_ratio as a filament setting (1364 prints lose their bridge flow); printer purge volumes have no place. Spec PF7-PF9 (3f1decf).",
    "repro": "tisma-engine profile --pack ... Anycubic_Predator#0.4 + Generic_PLA_@PREDATOR + 0.08mm DETAILED @PREDATOR: two warnings"
-  }
+  },
+ {
+  "id": "BH56",
+  "area": "profiles/pack reader",
+  "status": "reported",
+  "date": "2026-11-11",
+  "summary": "Pack reader drops filament extrusion.travel as unknown (4831 runs) and the resin print resin.bottom_layers as a filament setting (35 prints). Spec PF10, PF11 (653d6cd).",
+  "repro": "validate.py --reader on the pack 6668972 with engine 4d2bf58"
+ }
  ]
 }
