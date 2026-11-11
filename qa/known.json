@@ -157,7 +157,7 @@
    "state": "fixed 55cd05c, verified on dev b98f6e1 23:12: {if a > 0} with a=[\"5000\",\"5000\"] -> yes"
   },
   {
-   "id": "BH53",
+   "id": "BH54",
    "area": "profiles/pack reader",
    "status": "reported",
    "date": "2026-11-11",
