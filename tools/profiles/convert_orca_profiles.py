@@ -794,8 +794,15 @@ def main():
 
     library = vendors.get('OrcaFilamentLibrary', ({}, {}))[1]
 
+    # Presets merged into an identical one stay readable as parents: in Orca-Flashforge an instantiated process is
+    # also the parent of others, and a merge must not cut their inheritance.
+    merged_away = {}
+
     def lookup(vendor, kind, name):
         p = vendors[vendor][1].get((kind, name))
+        if p is not None:
+            return vendor, p
+        p = merged_away.get((vendor, kind, name))
         if p is not None:
             return vendor, p
         p = library.get((kind, name))
@@ -961,7 +968,7 @@ def main():
                 merged_compat[(kind, keep)] = union
                 for n, cps in members[1:]:
                     rename[(kind, n)] = keep  # resolved to the final name of "keep" below
-                    del presets[(kind, n)]
+                    merged_away[(vendor, kind, n)] = presets.pop((kind, n))
                     total['merged_' + kind] = total.get('merged_' + kind, 0) + 1
 
         # Intermediate presets without a descendant.
